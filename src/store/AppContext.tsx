@@ -7,15 +7,20 @@ import {
   NOTIFICATIONS,
   THREADS,
 } from "../data/mockData";
+import { getFallbackRecipe } from "../data/nutritionLibrary";
+import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import type {
   AppNotification,
   AppNotificationType,
   CommunityEvent,
+  ContentBatchEntry,
   ForumCategory,
   ForumThread,
   Inspiration,
   NotificationSettings,
+  Recipe,
   User,
+  WellActivity,
 } from "../types";
 
 const STORAGE_KEY = "well-collective-state-v1";
@@ -28,6 +33,9 @@ interface PersistedState {
   events: CommunityEvent[];
   notifications: AppNotification[];
   notificationSettings: NotificationSettings;
+  contentSchedule: ContentBatchEntry[];
+  processedDates: string[];
+  featuredEventId: string | null;
 }
 
 const DEFAULT_STATE: PersistedState = {
@@ -42,7 +50,13 @@ const DEFAULT_STATE: PersistedState = {
     replies: true,
     mentions: true,
     general: true,
+    weeklyTheme: true,
+    dailyInspiration: true,
+    pushEnabled: false,
   },
+  contentSchedule: [],
+  processedDates: [],
+  featuredEventId: null,
 };
 
 function loadState(): PersistedState {
@@ -58,11 +72,21 @@ function loadState(): PersistedState {
       inspirations: parsed.inspirations ?? DEFAULT_STATE.inspirations,
       events: parsed.events ?? DEFAULT_STATE.events,
       notifications: parsed.notifications ?? DEFAULT_STATE.notifications,
-      notificationSettings: parsed.notificationSettings ?? DEFAULT_STATE.notificationSettings,
+      notificationSettings: {
+        ...DEFAULT_STATE.notificationSettings,
+        ...parsed.notificationSettings,
+      },
+      contentSchedule: parsed.contentSchedule ?? DEFAULT_STATE.contentSchedule,
+      processedDates: parsed.processedDates ?? DEFAULT_STATE.processedDates,
+      featuredEventId: parsed.featuredEventId ?? DEFAULT_STATE.featuredEventId,
     };
   } catch {
     return DEFAULT_STATE;
   }
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function uid(prefix: string): string {
@@ -91,6 +115,13 @@ interface AppContextValue extends PersistedState {
   markNotificationRead: (notificationId: string) => void;
   markAllNotificationsRead: () => void;
   sendNotification: (type: AppNotificationType, title: string, body: string, link?: string) => void;
+  logWorkoutCompletion: () => void;
+  importContentSchedule: (entries: ContentBatchEntry[]) => void;
+  removeContentEntry: (date: string) => void;
+  setFeaturedEvent: (eventId: string | null) => void;
+  currentWeeklyTheme: Inspiration | undefined;
+  todaysWellActivity: WellActivity;
+  todaysRecipe: Recipe;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -350,6 +381,151 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const logWorkoutCompletion: AppContextValue["logWorkoutCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.workoutLog ?? [];
+      if (log.includes(today)) return prev;
+      return { ...prev, user: { ...prev.user, workoutLog: [...log, today] } };
+    });
+  };
+
+  const importContentSchedule: AppContextValue["importContentSchedule"] = (entries) => {
+    setState((prev) => {
+      const byDate = new Map(prev.contentSchedule.map((entry) => [entry.date, entry]));
+      for (const entry of entries) {
+        byDate.set(entry.date, entry);
+      }
+      const merged = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+      return { ...prev, contentSchedule: merged };
+    });
+  };
+
+  const removeContentEntry: AppContextValue["removeContentEntry"] = (date) => {
+    setState((prev) => ({
+      ...prev,
+      contentSchedule: prev.contentSchedule.filter((entry) => entry.date !== date),
+    }));
+  };
+
+  const setFeaturedEvent: AppContextValue["setFeaturedEvent"] = (eventId) => {
+    setState((prev) => ({
+      ...prev,
+      featuredEventId: eventId,
+      events: prev.events.map((event) => ({ ...event, featured: event.id === eventId })),
+    }));
+  };
+
+  // Process any scheduled content for "today" — adds the weekly theme / daily
+  // inspiration to the feed and (if permitted) fires a local push notification.
+  useEffect(() => {
+    const today = todayISO();
+    if (state.processedDates.includes(today)) return;
+    const entry = state.contentSchedule.find((item) => item.date === today);
+    if (!entry) return;
+
+    setState((prev) => {
+      let next = { ...prev };
+      const now = new Date().toISOString();
+      const isMonday = new Date().getDay() === 1;
+
+      if (entry.weeklyTheme && isMonday) {
+        next = {
+          ...next,
+          inspirations: [
+            {
+              id: uid("i"),
+              title: entry.weeklyTheme.title,
+              body: entry.weeklyTheme.body,
+              author: "Loretta Bates",
+              cadence: "weekly",
+              sentAt: now,
+              likes: [],
+              savedBy: [],
+            },
+            ...next.inspirations,
+          ],
+          notifications: [
+            {
+              id: uid("n"),
+              type: "general",
+              title: `This week's focus: ${entry.weeklyTheme.title}`,
+              body: entry.weeklyTheme.body,
+              createdAt: now,
+              read: false,
+              link: "/inspirations",
+            },
+            ...next.notifications,
+          ],
+        };
+        if (
+          prev.notificationSettings.pushEnabled &&
+          prev.notificationSettings.weeklyTheme &&
+          typeof Notification !== "undefined" &&
+          Notification.permission === "granted"
+        ) {
+          new Notification(`This week's focus: ${entry.weeklyTheme.title}`, { body: entry.weeklyTheme.body });
+        }
+      }
+
+      if (entry.dailyInspiration) {
+        next = {
+          ...next,
+          inspirations: [
+            {
+              id: uid("i"),
+              title: entry.dailyInspiration.title,
+              body: entry.dailyInspiration.body,
+              author: "Loretta Bates",
+              cadence: "daily",
+              sentAt: now,
+              likes: [],
+              savedBy: [],
+            },
+            ...next.inspirations,
+          ],
+          notifications: [
+            {
+              id: uid("n"),
+              type: "general",
+              title: entry.dailyInspiration.title,
+              body: entry.dailyInspiration.body,
+              createdAt: now,
+              read: false,
+              link: "/inspirations",
+            },
+            ...next.notifications,
+          ],
+        };
+        if (
+          prev.notificationSettings.pushEnabled &&
+          prev.notificationSettings.dailyInspiration &&
+          typeof Notification !== "undefined" &&
+          Notification.permission === "granted"
+        ) {
+          new Notification(entry.dailyInspiration.title, { body: entry.dailyInspiration.body });
+        }
+      }
+
+      return { ...next, processedDates: [...next.processedDates, today] };
+    });
+  }, [state.contentSchedule, state.processedDates]);
+
+  const today = todayISO();
+  const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);
+
+  const currentWeeklyTheme = [...state.inspirations]
+    .filter((i) => i.cadence === "weekly")
+    .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
+
+  const todaysWellActivity: WellActivity = todaysEntry?.wellActivity
+    ? { date: today, ...todaysEntry.wellActivity }
+    : { date: today, ...getFallbackWellActivity(new Date()) };
+
+  const todaysRecipe: Recipe = todaysEntry?.recipe
+    ? { date: today, ...todaysEntry.recipe }
+    : { date: today, ...getFallbackRecipe(new Date()) };
+
   const value: AppContextValue = {
     ...state,
     updateProfile,
@@ -373,6 +549,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markNotificationRead,
     markAllNotificationsRead,
     sendNotification,
+    logWorkoutCompletion,
+    importContentSchedule,
+    removeContentEntry,
+    setFeaturedEvent,
+    currentWeeklyTheme,
+    todaysWellActivity,
+    todaysRecipe,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

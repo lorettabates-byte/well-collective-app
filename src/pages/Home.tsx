@@ -1,7 +1,8 @@
-import { Bell, Calendar, Dumbbell, MessageCircle, PenSquare, Phone, Rss, Sparkles, Video } from "lucide-react";
+import { Bell, Calendar, MessageCircle, PenSquare, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
+import NotificationOptInModal from "../components/NotificationOptInModal";
 import EventCard from "../components/events/EventCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import InspirationCard from "../components/inspiration/InspirationCard";
@@ -16,7 +17,8 @@ const QUICK_LINKS = [
   { to: "/events", label: "Events", icon: Calendar },
   { to: "/community/general-chat/new", label: "New Post", icon: PenSquare },
   { to: "/videos", label: "Classes", icon: Video },
-  { to: "/workouts", label: "Workouts", icon: Dumbbell },
+  { to: "/wellness", label: "Wellness", icon: Waves },
+  { to: "/nutrition", label: "Nutrition", icon: Salad },
   { to: "/blog", label: "Blog", icon: Rss },
 ];
 
@@ -34,6 +36,7 @@ export default function Home() {
     .slice(0, 3);
 
   const [showBirthday, setShowBirthday] = useState(false);
+  const [showNotifOptIn, setShowNotifOptIn] = useState(false);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -48,10 +51,21 @@ export default function Home() {
     setShowBirthday(true);
   }, [user.birthday, user.id]);
 
+  useEffect(() => {
+    const key = "well-notifications-onboarding-v1";
+    if (localStorage.getItem(key)) return;
+    setShowNotifOptIn(true);
+  }, []);
+
+  const handleCloseNotifOptIn = () => {
+    localStorage.setItem("well-notifications-onboarding-v1", "1");
+    setShowNotifOptIn(false);
+  };
+
   return (
     <div className="px-4 pt-5">
       <div className="flex items-center justify-between mb-6">
-        <img src={LOGO_URL} alt="WELL Collective" className="h-12" />
+        <img src={LOGO_URL} alt="WELL Collective" className="h-24" />
         <div className="flex items-center gap-3">
           <Link to="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-2 border border-border">
             <Bell size={17} />
@@ -119,6 +133,7 @@ export default function Home() {
       </div>
 
       {showBirthday && <BirthdayModal name={user.name} onClose={() => setShowBirthday(false)} />}
+      {!showBirthday && showNotifOptIn && <NotificationOptInModal onClose={handleCloseNotifOptIn} />}
     </div>
   );
 }

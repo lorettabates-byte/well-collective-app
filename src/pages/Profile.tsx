@@ -1,4 +1,4 @@
-import { Bell, Bookmark, ChevronRight, Dumbbell, LogOut, Pencil, Rss, ShieldCheck, SlidersHorizontal, Video } from "lucide-react";
+import { Bell, Bookmark, ChevronRight, LogOut, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Video, Waves } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
@@ -86,7 +86,8 @@ export default function Profile() {
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations" badge={savedCount} />
         <MenuRow icon={<Video size={16} />} label="Classes" to="/videos" />
-        <MenuRow icon={<Dumbbell size={16} />} label="AI Workout Generator" to="/workouts" />
+        <MenuRow icon={<Waves size={16} />} label="Wellness" to="/wellness" />
+        <MenuRow icon={<Salad size={16} />} label="Nutrition" to="/nutrition" />
         <MenuRow icon={<Rss size={16} />} label="Blog" to="/blog" />
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
       </div>

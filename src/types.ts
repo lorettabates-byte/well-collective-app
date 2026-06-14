@@ -6,6 +6,7 @@ export interface User {
   isAdmin: boolean;
   joinedAt: string;
   birthday?: string; // MM-DD
+  workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
 }
 
 export interface NotificationSettings {
@@ -13,6 +14,40 @@ export interface NotificationSettings {
   replies: boolean;
   mentions: boolean;
   general: boolean;
+  weeklyTheme: boolean;
+  dailyInspiration: boolean;
+  pushEnabled: boolean;
+}
+
+export interface Badge {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+}
+
+export interface WellActivity {
+  date: string; // ISO date (yyyy-mm-dd)
+  title: string;
+  description: string;
+}
+
+export interface Recipe {
+  date: string; // ISO date (yyyy-mm-dd)
+  name: string;
+  description: string;
+  ingredients: string[];
+  steps: string[];
+  image: string;
+}
+
+export interface ContentBatchEntry {
+  date: string; // ISO date (yyyy-mm-dd)
+  weeklyTheme?: { title: string; body: string };
+  dailyInspiration?: { title: string; body: string };
+  wellActivity?: { title: string; description: string };
+  recipe?: { name: string; description: string; ingredients: string[]; steps: string[]; image: string };
 }
 
 export interface ForumCategory {
@@ -68,6 +103,7 @@ export interface CommunityEvent {
   location: string;
   rsvps: string[];
   color: string;
+  featured?: boolean;
 }
 
 export type AppNotificationType = "post" | "reply" | "mention" | "general";

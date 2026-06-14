@@ -1,4 +1,4 @@
-import { CalendarDays, List } from "lucide-react";
+import { CalendarDays, List, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
@@ -22,10 +22,17 @@ export default function Events() {
     [events]
   );
 
-  const upcomingEvents = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    return sortedEvents.filter((e) => e.date >= todayStr);
-  }, [sortedEvents]);
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const featuredEvent = useMemo(
+    () => sortedEvents.find((e) => e.featured && e.date >= todayStr),
+    [sortedEvents, todayStr]
+  );
+
+  const upcomingEvents = useMemo(
+    () => sortedEvents.filter((e) => e.date >= todayStr && e.id !== featuredEvent?.id),
+    [sortedEvents, todayStr, featuredEvent]
+  );
 
   const selectedDateEvents = selectedDate
     ? sortedEvents.filter((e) => e.date === selectedDate)
@@ -93,6 +100,19 @@ export default function Events() {
               <div>
                 <h2 className="text-sm font-bold text-text mb-3">Upcoming Events</h2>
                 <div className="flex flex-col gap-3">
+                  {featuredEvent && (
+                    <div className="sticky top-2 z-10 -mx-1 px-1 pb-1">
+                      <div className="gradient-brand p-[2px] rounded-card shadow-glow">
+                        <div className="bg-surface rounded-card p-1">
+                          <div className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-brand-light">
+                            <Star size={14} className="fill-brand-light" />
+                            <span className="text-[11px] font-bold uppercase tracking-wide">Featured Event</span>
+                          </div>
+                          <EventCard event={featuredEvent} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {upcomingEvents.map((event) => (
                     <EventCard key={event.id} event={event} />
                   ))}
@@ -102,7 +122,20 @@ export default function Events() {
           </>
         ) : (
           <div className="flex flex-col gap-3">
-            {upcomingEvents.length === 0 ? (
+            {featuredEvent && (
+              <div className="sticky top-2 z-10 -mx-1 px-1 pb-1">
+                <div className="gradient-brand p-[2px] rounded-card shadow-glow">
+                  <div className="bg-surface rounded-card p-1">
+                    <div className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-brand-light">
+                      <Star size={14} className="fill-brand-light" />
+                      <span className="text-[11px] font-bold uppercase tracking-wide">Featured Event</span>
+                    </div>
+                    <EventCard event={featuredEvent} />
+                  </div>
+                </div>
+              </div>
+            )}
+            {upcomingEvents.length === 0 && !featuredEvent ? (
               <p className="text-sm text-text-muted text-center py-12">No upcoming events.</p>
             ) : (
               upcomingEvents.map((event) => <EventCard key={event.id} event={event} />)

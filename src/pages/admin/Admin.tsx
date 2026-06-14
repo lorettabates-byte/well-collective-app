@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Calendar, Layers, ShieldCheck, Sparkles } from "lucide-react";
+import { BarChart3, Bell, Calendar, CalendarClock, Layers, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -8,6 +8,7 @@ const TILES = [
   { to: "/admin/posts", label: "Posts", description: "Moderate threads & messages", icon: ShieldCheck },
   { to: "/admin/notifications", label: "Notifications", description: "Send push notifications", icon: Bell },
   { to: "/admin/inspirations", label: "Inspirations", description: "Schedule daily content", icon: Sparkles },
+  { to: "/admin/content", label: "Content Schedule", description: "Bulk-upload themes, inspirations & recipes", icon: CalendarClock },
   { to: "/admin/events", label: "Events", description: "Manage the community calendar", icon: Calendar },
   { to: "/admin/analytics", label: "Analytics", description: "View engagement stats", icon: BarChart3 },
 ];

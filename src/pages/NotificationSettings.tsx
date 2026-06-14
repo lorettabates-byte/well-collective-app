@@ -23,6 +23,16 @@ const TOGGLES: { key: keyof NotificationSettingsType; label: string; description
     label: "General Announcements",
     description: "Inspirations, events, and updates from WELL",
   },
+  {
+    key: "weeklyTheme",
+    label: "Weekly Theme",
+    description: "Sent every Monday at 7am with this week's theme",
+  },
+  {
+    key: "dailyInspiration",
+    label: "Daily Inspiration",
+    description: "Sent daily at 7am, following this week's theme",
+  },
 ];
 
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
@@ -44,10 +54,33 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 export default function NotificationSettings() {
   const { notificationSettings, updateNotificationSettings } = useApp();
 
+  const handleTogglePush = async () => {
+    if (notificationSettings.pushEnabled) {
+      updateNotificationSettings({ pushEnabled: false });
+      return;
+    }
+    try {
+      const permission =
+        typeof Notification !== "undefined" ? await Notification.requestPermission() : "denied";
+      updateNotificationSettings({ pushEnabled: permission === "granted" });
+    } catch {
+      // ignore permission errors
+    }
+  };
+
   return (
     <div>
       <TopBar title="Notification Settings" showBack />
       <div className="px-4 pt-4 flex flex-col gap-2.5">
+        <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text">Push Notifications</p>
+            <p className="text-xs text-text-muted mt-0.5">
+              Allow WELL Collective to send notifications to this device
+            </p>
+          </div>
+          <Toggle enabled={notificationSettings.pushEnabled} onToggle={handleTogglePush} />
+        </div>
         {TOGGLES.map(({ key, label, description }) => (
           <div key={key} className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
             <div className="flex-1 min-w-0">

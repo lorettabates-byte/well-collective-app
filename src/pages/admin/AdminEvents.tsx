@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -106,7 +106,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel }: EventFormProps)
 }
 
 export default function AdminEvents() {
-  const { events, addEvent, updateEvent, deleteEvent } = useApp();
+  const { events, addEvent, updateEvent, deleteEvent, setFeaturedEvent } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -152,10 +152,26 @@ export default function AdminEvents() {
               <div key={event.id} className="flex items-center gap-3 glass-card rounded-card p-4">
                 <div className="w-2 h-12 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-text">{event.title}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-text">{event.title}</h3>
+                    {event.featured && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide gradient-brand text-white rounded-pill px-2 py-0.5">
+                        Featured
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-text-muted">{formatDateLong(event.date)} · {event.time}</p>
                   <p className="text-[11px] text-text-dim mt-0.5">{event.rsvps.length} RSVPs</p>
                 </div>
+                <button
+                  onClick={() => setFeaturedEvent(event.featured ? null : event.id)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
+                    event.featured ? "gradient-brand text-white" : "bg-surface-2 text-text-muted"
+                  }`}
+                  aria-label={event.featured ? "Remove highlight" : "Highlight event"}
+                >
+                  <Star size={14} className={event.featured ? "fill-white" : ""} />
+                </button>
                 <button
                   onClick={() => setEditingId(event.id)}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0"
