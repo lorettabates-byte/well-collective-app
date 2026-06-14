@@ -5,6 +5,27 @@ import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+
+async function syncContentSchedule(entries: ContentBatchEntry[]): Promise<boolean> {
+  if (!API_URL || !ADMIN_API_KEY) return false;
+  const res = await fetch(`${API_URL}/api/content-schedule`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-key": ADMIN_API_KEY },
+    body: JSON.stringify(entries),
+  });
+  return res.ok;
+}
+
+async function deleteContentScheduleEntry(date: string): Promise<void> {
+  if (!API_URL || !ADMIN_API_KEY) return;
+  await fetch(`${API_URL}/api/content-schedule/${date}`, {
+    method: "DELETE",
+    headers: { "x-admin-key": ADMIN_API_KEY },
+  });
+}
+
 function buildTemplate(days: number): ContentBatchEntry[] {
   const entries: ContentBatchEntry[] = [];
   const start = new Date();
@@ -64,7 +85,7 @@ export default function AdminContent() {
     URL.revokeObjectURL(url);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     try {
       const parsed = JSON.parse(jsonText);
       if (!Array.isArray(parsed)) throw new Error("Expected a JSON array of entries.");
@@ -74,11 +95,29 @@ export default function AdminContent() {
         }
       }
       importContentSchedule(parsed as ContentBatchEntry[]);
-      setStatus({ type: "success", message: `Scheduled ${parsed.length} day(s) of content.` });
       setJsonText("");
+
+      let synced = false;
+      try {
+        synced = await syncContentSchedule(parsed as ContentBatchEntry[]);
+      } catch {
+        synced = false;
+      }
+
+      setStatus({
+        type: "success",
+        message: synced
+          ? `Scheduled ${parsed.length} day(s) of content and synced to the push backend.`
+          : `Scheduled ${parsed.length} day(s) of content on this device. Push backend sync was not configured.`,
+      });
     } catch (err) {
       setStatus({ type: "error", message: err instanceof Error ? err.message : "Invalid JSON." });
     }
+  };
+
+  const handleRemove = (date: string) => {
+    removeContentEntry(date);
+    deleteContentScheduleEntry(date).catch(() => {});
   };
 
   const sorted = [...contentSchedule].sort((a, b) => a.date.localeCompare(b.date));
@@ -162,7 +201,7 @@ export default function AdminContent() {
                     </div>
                   </div>
                   <button
-                    onClick={() => removeContentEntry(entry.date)}
+                    onClick={() => handleRemove(entry.date)}
                     className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400"
                     aria-label="Remove scheduled content"
                   >

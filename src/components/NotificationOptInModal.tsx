@@ -1,4 +1,5 @@
 import { Bell, Sparkles } from "lucide-react";
+import { subscribeToPush } from "../lib/push";
 import { useApp } from "../store/AppContext";
 
 interface NotificationOptInModalProps {
@@ -10,10 +11,9 @@ export default function NotificationOptInModal({ onClose }: NotificationOptInMod
 
   const handleEnable = async () => {
     try {
-      const permission =
-        typeof Notification !== "undefined" ? await Notification.requestPermission() : "denied";
+      const subscribed = await subscribeToPush();
       updateNotificationSettings({
-        pushEnabled: permission === "granted",
+        pushEnabled: subscribed,
         weeklyTheme: true,
         dailyInspiration: true,
       });

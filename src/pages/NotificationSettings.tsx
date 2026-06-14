@@ -1,4 +1,5 @@
 import TopBar from "../components/layout/TopBar";
+import { subscribeToPush, unsubscribeFromPush } from "../lib/push";
 import { useApp } from "../store/AppContext";
 import type { NotificationSettings as NotificationSettingsType } from "../types";
 
@@ -56,13 +57,13 @@ export default function NotificationSettings() {
 
   const handleTogglePush = async () => {
     if (notificationSettings.pushEnabled) {
+      await unsubscribeFromPush();
       updateNotificationSettings({ pushEnabled: false });
       return;
     }
     try {
-      const permission =
-        typeof Notification !== "undefined" ? await Notification.requestPermission() : "denied";
-      updateNotificationSettings({ pushEnabled: permission === "granted" });
+      const subscribed = await subscribeToPush();
+      updateNotificationSettings({ pushEnabled: subscribed });
     } catch {
       // ignore permission errors
     }
