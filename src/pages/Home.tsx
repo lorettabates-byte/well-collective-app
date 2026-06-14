@@ -1,4 +1,4 @@
-import { Bell, Calendar, Dumbbell, MessageCircle, PenSquare, Rss, Sparkles, Video } from "lucide-react";
+import { Bell, Calendar, Dumbbell, MessageCircle, PenSquare, Phone, Rss, Sparkles, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
@@ -15,7 +15,7 @@ const QUICK_LINKS = [
   { to: "/inspirations", label: "Inspiration", icon: Sparkles },
   { to: "/events", label: "Events", icon: Calendar },
   { to: "/community/general-chat/new", label: "New Post", icon: PenSquare },
-  { to: "/videos", label: "Video Library", icon: Video },
+  { to: "/videos", label: "Classes", icon: Video },
   { to: "/workouts", label: "Workouts", icon: Dumbbell },
   { to: "/blog", label: "Blog", icon: Rss },
 ];
@@ -51,7 +51,7 @@ export default function Home() {
   return (
     <div className="px-4 pt-5">
       <div className="flex items-center justify-between mb-6">
-        <img src={LOGO_URL} alt="WELL Collective" className="h-7" />
+        <img src={LOGO_URL} alt="WELL Collective" className="h-12" />
         <div className="flex items-center gap-3">
           <Link to="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-2 border border-border">
             <Bell size={17} />
@@ -82,6 +82,14 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      <a
+        href="sms:+17863093356"
+        className="flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow mb-6"
+      >
+        <Phone size={16} />
+        Contact Loretta
+      </a>
 
       {todaysInspiration && (
         <div className="mb-6">

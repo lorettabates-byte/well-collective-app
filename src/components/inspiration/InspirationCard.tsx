@@ -1,7 +1,9 @@
 import { Bookmark, Heart, Share2 } from "lucide-react";
+import { useState } from "react";
 import { useApp } from "../../store/AppContext";
 import type { Inspiration, InspirationCadence } from "../../types";
 import { timeAgo } from "../../utils/format";
+import ShareCardModal from "../ShareCardModal";
 
 const CADENCE_LABEL: Record<InspirationCadence, string> = {
   daily: "Daily Inspiration",
@@ -18,19 +20,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
   const { user, toggleInspirationLike, toggleInspirationSave } = useApp();
   const hasLiked = inspiration.likes.includes(user.id);
   const hasSaved = inspiration.savedBy.includes(user.id);
-
-  const handleShare = async () => {
-    const shareText = `${inspiration.title}\n\n${inspiration.body}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: inspiration.title, text: shareText });
-      } catch {
-        // user cancelled share
-      }
-    } else if (navigator.clipboard) {
-      await navigator.clipboard.writeText(shareText);
-    }
-  };
+  const [showShareCard, setShowShareCard] = useState(false);
 
   return (
     <div className="gradient-brand p-[1px] rounded-card animate-fade-in-up">
@@ -60,12 +50,24 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
             <Bookmark size={16} className={hasSaved ? "fill-brand-light text-brand-light" : ""} />
             {hasSaved ? "Saved" : "Save"}
           </button>
-          <button onClick={handleShare} className="flex items-center gap-1.5 text-xs font-medium text-text-muted ml-auto">
+          <button
+            onClick={() => setShowShareCard(true)}
+            className="flex items-center gap-1.5 text-xs font-medium text-text-muted ml-auto"
+          >
             <Share2 size={16} />
             Share
           </button>
         </div>
       </div>
+
+      {showShareCard && (
+        <ShareCardModal
+          cadenceLabel={CADENCE_LABEL[inspiration.cadence]}
+          title={inspiration.title}
+          body={inspiration.body}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
     </div>
   );
 }

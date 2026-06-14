@@ -5,7 +5,7 @@ import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 export default function VideoLibrary() {
   return (
     <div>
-      <TopBar title="Video Library" subtitle="WELL Collective on-demand classes" showBack />
+      <TopBar title="Classes" subtitle="WELL Collective on-demand classes" showBack />
       <div className="px-4 pt-4 flex flex-col gap-3">
         {VIDEO_CATEGORIES.map(({ id, title, description, url, icon: Icon, color }) => (
           <a

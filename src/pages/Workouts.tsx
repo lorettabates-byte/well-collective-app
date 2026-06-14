@@ -1,10 +1,18 @@
-import { ArrowUpRight, Dumbbell, Flame, RefreshCw, StretchHorizontal, Wind } from "lucide-react";
+import { ArrowUpRight, Dumbbell, Flame, Info, RefreshCw, StretchHorizontal, Wind } from "lucide-react";
 import { useState } from "react";
+import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import TopBar from "../components/layout/TopBar";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
 
+interface SelectedExercise {
+  name: string;
+  meta: string;
+  description: string;
+}
+
 export default function Workouts() {
   const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout());
+  const [selected, setSelected] = useState<SelectedExercise | null>(null);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -53,10 +61,19 @@ export default function Workouts() {
             </h2>
             <div className="glass-card rounded-card p-4 flex flex-col gap-2.5">
               {plan.resistance.map((exercise) => (
-                <div key={exercise.name} className="flex items-center justify-between">
-                  <span className="text-sm text-text">{exercise.name}</span>
-                  <span className="text-xs text-text-dim">{exercise.sets}</span>
-                </div>
+                <button
+                  key={exercise.name}
+                  onClick={() =>
+                    setSelected({ name: exercise.name, meta: exercise.sets, description: exercise.description })
+                  }
+                  className="flex items-center justify-between gap-2 text-left"
+                >
+                  <span className="flex items-center gap-1.5 text-sm text-text">
+                    {exercise.name}
+                    <Info size={13} className="text-brand-light/70 shrink-0" />
+                  </span>
+                  <span className="text-xs text-text-dim shrink-0">{exercise.sets}</span>
+                </button>
               ))}
             </div>
           </section>
@@ -68,10 +85,19 @@ export default function Workouts() {
             </h2>
             <div className="glass-card rounded-card p-4 flex flex-col gap-2.5">
               {plan.stretches.map((stretch) => (
-                <div key={stretch.name} className="flex items-center justify-between">
-                  <span className="text-sm text-text">{stretch.name}</span>
-                  <span className="text-xs text-text-dim">{stretch.duration}</span>
-                </div>
+                <button
+                  key={stretch.name}
+                  onClick={() =>
+                    setSelected({ name: stretch.name, meta: stretch.duration, description: stretch.description })
+                  }
+                  className="flex items-center justify-between gap-2 text-left"
+                >
+                  <span className="flex items-center gap-1.5 text-sm text-text">
+                    {stretch.name}
+                    <Info size={13} className="text-brand-light/70 shrink-0" />
+                  </span>
+                  <span className="text-xs text-text-dim shrink-0">{stretch.duration}</span>
+                </button>
               ))}
             </div>
           </section>
@@ -93,6 +119,15 @@ export default function Workouts() {
           </section>
         </div>
       </div>
+
+      {selected && (
+        <ExerciseInfoModal
+          name={selected.name}
+          meta={selected.meta}
+          description={selected.description}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }

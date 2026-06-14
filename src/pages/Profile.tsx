@@ -85,7 +85,7 @@ export default function Profile() {
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations" badge={savedCount} />
-        <MenuRow icon={<Video size={16} />} label="Video Library" to="/videos" />
+        <MenuRow icon={<Video size={16} />} label="Classes" to="/videos" />
         <MenuRow icon={<Dumbbell size={16} />} label="AI Workout Generator" to="/workouts" />
         <MenuRow icon={<Rss size={16} />} label="Blog" to="/blog" />
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
