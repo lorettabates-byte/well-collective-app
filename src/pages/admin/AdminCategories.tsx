@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
+import { CATEGORY_ICON_OPTIONS, CategoryIcon } from "../../data/iconMap";
 import { useApp } from "../../store/AppContext";
 import type { ForumCategory } from "../../types";
 
@@ -14,7 +15,7 @@ interface CategoryFormProps {
 }
 
 function CategoryForm({ initial, onSubmit, onCancel, submitLabel }: CategoryFormProps) {
-  const [icon, setIcon] = useState(initial?.icon ?? "✨");
+  const [icon, setIcon] = useState(initial?.icon ?? CATEGORY_ICON_OPTIONS[0]);
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [color, setColor] = useState(initial?.color ?? COLOR_OPTIONS[0]);
@@ -22,28 +23,35 @@ function CategoryForm({ initial, onSubmit, onCancel, submitLabel }: CategoryForm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) return;
-    onSubmit({ icon: icon.trim() || "✨", name: name.trim(), description: description.trim(), color });
+    onSubmit({ icon, name: name.trim(), description: description.trim(), color });
   };
 
   return (
     <form onSubmit={handleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
-      <div className="flex gap-3">
-        <div className="w-16">
-          <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Icon</label>
-          <input
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-center text-lg text-text focus:outline-none focus:border-brand-blue"
-          />
+      <div>
+        <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Icon</label>
+        <div className="flex gap-2 flex-wrap">
+          {CATEGORY_ICON_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setIcon(option)}
+              className={`w-10 h-10 flex items-center justify-center rounded-2xl bg-surface-2 border transition-colors ${
+                icon === option ? "border-brand-light" : "border-border"
+              }`}
+            >
+              <CategoryIcon icon={option} size={18} />
+            </button>
+          ))}
         </div>
-        <div className="flex-1">
-          <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
-          />
-        </div>
+      </div>
+      <div>
+        <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Name</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+        />
       </div>
       <div>
         <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Description</label>
@@ -125,10 +133,10 @@ export default function AdminCategories() {
             ) : (
               <div key={category.id} className="flex items-center gap-3 glass-card rounded-card p-4">
                 <div
-                  className="flex items-center justify-center w-11 h-11 rounded-2xl text-xl shrink-0"
+                  className="flex items-center justify-center w-11 h-11 rounded-2xl shrink-0"
                   style={{ backgroundColor: `${category.color}22` }}
                 >
-                  {category.icon}
+                  <CategoryIcon icon={category.icon} size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-text">{category.name}</h3>

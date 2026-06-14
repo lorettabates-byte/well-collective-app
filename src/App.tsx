@@ -9,6 +9,9 @@ import Inspirations from "./pages/Inspirations";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
+import Blog from "./pages/Blog";
+import VideoLibrary from "./pages/VideoLibrary";
+import Workouts from "./pages/Workouts";
 import NotificationSettings from "./pages/NotificationSettings";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/admin/Admin";
@@ -30,6 +33,9 @@ function App() {
         <Route path="/community/:categoryId/:threadId" element={<Thread />} />
         <Route path="/inspirations" element={<Inspirations />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/videos" element={<VideoLibrary />} />
+        <Route path="/workouts" element={<Workouts />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/edit" element={<EditProfile />} />

@@ -1,5 +1,7 @@
-import { Bell, Calendar, MessageCircle, PenSquare, Sparkles } from "lucide-react";
+import { Bell, Calendar, Dumbbell, MessageCircle, PenSquare, Rss, Sparkles, Video } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import BirthdayModal from "../components/BirthdayModal";
 import EventCard from "../components/events/EventCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import InspirationCard from "../components/inspiration/InspirationCard";
@@ -13,6 +15,9 @@ const QUICK_LINKS = [
   { to: "/inspirations", label: "Inspiration", icon: Sparkles },
   { to: "/events", label: "Events", icon: Calendar },
   { to: "/community/general-chat/new", label: "New Post", icon: PenSquare },
+  { to: "/videos", label: "Video Library", icon: Video },
+  { to: "/workouts", label: "Workouts", icon: Dumbbell },
+  { to: "/blog", label: "Blog", icon: Rss },
 ];
 
 export default function Home() {
@@ -27,6 +32,21 @@ export default function Home() {
   const latestThreads = [...threads]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
+
+  const [showBirthday, setShowBirthday] = useState(false);
+
+  useEffect(() => {
+    if (!user.birthday) return;
+    const now = new Date();
+    const todayMD = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (user.birthday !== todayMD) return;
+
+    const key = `well-birthday-shown-${user.id}-${now.getFullYear()}`;
+    if (localStorage.getItem(key)) return;
+
+    localStorage.setItem(key, "1");
+    setShowBirthday(true);
+  }, [user.birthday, user.id]);
 
   return (
     <div className="px-4 pt-5">
@@ -89,6 +109,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {showBirthday && <BirthdayModal name={user.name} onClose={() => setShowBirthday(false)} />}
     </div>
   );
 }

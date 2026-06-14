@@ -1,5 +1,6 @@
 import { Heart, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CategoryIcon } from "../../data/iconMap";
 import { useApp } from "../../store/AppContext";
 import type { ForumThread } from "../../types";
 import { timeAgo } from "../../utils/format";
@@ -29,7 +30,8 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
           className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-pill mb-2"
           style={{ backgroundColor: `${category.color}22`, color: category.color }}
         >
-          {category.icon} {category.name}
+          <CategoryIcon icon={category.icon} size={12} className="drop-shadow-none" />
+          {category.name}
         </span>
       )}
 

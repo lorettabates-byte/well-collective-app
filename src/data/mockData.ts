@@ -14,6 +14,7 @@ export const CURRENT_USER: User = {
   bio: "Founder of WELL Collective. On a mission to help women feel calm, strong, and supported. 🌿",
   isAdmin: true,
   joinedAt: "2025-01-12",
+  birthday: "06-14",
 };
 
 export const USERS: User[] = [
@@ -57,42 +58,42 @@ export const CATEGORIES: ForumCategory[] = [
     id: "introductions",
     name: "Introductions",
     description: "Say hello & introduce yourself to the WELL family",
-    icon: "👋",
+    icon: "hand",
     color: "#0191CE",
   },
   {
     id: "wellness-nutrition",
     name: "Wellness & Nutrition",
     description: "Recipes, habits, and nourishment tips",
-    icon: "🥗",
+    icon: "salad",
     color: "#84D8FD",
   },
   {
     id: "fitness-movement",
     name: "Fitness & Movement",
     description: "Workouts, movement wins, and motivation",
-    icon: "🏃‍♀️",
+    icon: "dumbbell",
     color: "#01519D",
   },
   {
     id: "emotional-spiritual",
     name: "Emotional & Spiritual Growth",
     description: "Mindfulness, journaling, and inner work",
-    icon: "🌿",
+    icon: "leaf",
     color: "#0191CE",
   },
   {
     id: "success-stories",
     name: "Success Stories",
     description: "Celebrate wins — big or small",
-    icon: "✨",
+    icon: "award",
     color: "#84D8FD",
   },
   {
     id: "general-chat",
     name: "General Chat",
     description: "Anything & everything WELL Collective",
-    icon: "💬",
+    icon: "messages",
     color: "#01519D",
   },
 ];

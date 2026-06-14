@@ -5,6 +5,7 @@ export interface User {
   bio: string;
   isAdmin: boolean;
   joinedAt: string;
+  birthday?: string; // MM-DD
 }
 
 export interface NotificationSettings {
