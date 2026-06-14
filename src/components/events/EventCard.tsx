@@ -1,0 +1,94 @@
+import { Calendar, MapPin } from "lucide-react";
+import { useApp } from "../../store/AppContext";
+import type { CommunityEvent } from "../../types";
+import { formatDateLong, getDayNumber } from "../../utils/format";
+import Avatar from "../ui/Avatar";
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+function monthAbbrev(dateStr: string): string {
+  const month = Number(dateStr.split("-")[1]);
+  return MONTHS[month - 1];
+}
+
+interface EventCardProps {
+  event: CommunityEvent;
+  compact?: boolean;
+}
+
+export default function EventCard({ event, compact }: EventCardProps) {
+  const { user, toggleRsvp } = useApp();
+  const isGoing = event.rsvps.includes(user.id);
+
+  if (compact) {
+    return (
+      <div className="glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up">
+        <div
+          className="flex flex-col items-center justify-center w-10 h-10 rounded-xl mb-2 text-white"
+          style={{ backgroundColor: event.color }}
+        >
+          <span className="text-[10px] font-semibold leading-none uppercase">{monthAbbrev(event.date)}</span>
+          <span className="text-sm font-bold leading-none">{getDayNumber(event.date)}</span>
+        </div>
+        <h4 className="text-xs font-bold text-text line-clamp-2 mb-1">{event.title}</h4>
+        <p className="text-[11px] text-text-dim">{event.time}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-card rounded-card p-4 animate-fade-in-up">
+      <div className="flex gap-3">
+        <div
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-xl shrink-0 text-white"
+          style={{ backgroundColor: event.color }}
+        >
+          <span className="text-[10px] font-semibold leading-none uppercase">{monthAbbrev(event.date)}</span>
+          <span className="text-base font-bold leading-none">{getDayNumber(event.date)}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold text-text mb-1">{event.title}</h3>
+          <div className="flex items-center gap-1 text-xs text-text-muted mb-0.5">
+            <Calendar size={13} />
+            <span>{formatDateLong(event.date)} · {event.time}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-text-muted">
+            <MapPin size={13} />
+            <span className="truncate">{event.location}</span>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-muted leading-relaxed mt-3">{event.description}</p>
+
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center -space-x-2">
+          {event.rsvps.slice(0, 4).map((rsvpId) => (
+            <Avatar
+              key={rsvpId}
+              src={`https://i.pravatar.cc/150?img=${rsvpId === "u1" ? 47 : rsvpId === "u2" ? 12 : rsvpId === "u3" ? 32 : rsvpId === "u4" ? 45 : 24}`}
+              alt="attendee"
+              size={24}
+              ring
+            />
+          ))}
+          {event.rsvps.length > 0 && (
+            <span className="ml-3 text-[11px] text-text-dim">
+              {event.rsvps.length} going
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => toggleRsvp(event.id)}
+          className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
+            isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
+          }`}
+        >
+          {isGoing ? "Going ✓" : "RSVP"}
+        </button>
+      </div>
+    </div>
+  );
+}
