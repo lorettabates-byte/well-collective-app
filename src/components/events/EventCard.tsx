@@ -1,4 +1,4 @@
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, ExternalLink, MapPin } from "lucide-react";
 import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
 import { formatDateLong, getDayNumber } from "../../utils/format";
@@ -21,10 +21,14 @@ interface EventCardProps {
 export default function EventCard({ event, compact }: EventCardProps) {
   const { user, toggleRsvp } = useApp();
   const isGoing = event.rsvps.includes(user.id);
+  const isLive = event.source === "live";
 
   if (compact) {
     return (
-      <div className="glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up">
+      <div className="glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up overflow-hidden">
+        {event.image && (
+          <img src={event.image} alt="" className="w-full h-20 object-cover rounded-lg -mt-1 mb-2" />
+        )}
         <div
           className="flex flex-col items-center justify-center w-10 h-10 rounded-xl mb-2 text-white"
           style={{ backgroundColor: event.color }}
@@ -39,7 +43,10 @@ export default function EventCard({ event, compact }: EventCardProps) {
   }
 
   return (
-    <div className="glass-card rounded-card p-4 animate-fade-in-up">
+    <div className="glass-card rounded-card p-4 animate-fade-in-up overflow-hidden">
+      {event.image && (
+        <img src={event.image} alt="" className="w-full h-40 object-cover rounded-card -mt-4 -mx-4 mb-3" style={{ width: "calc(100% + 2rem)" }} />
+      )}
       <div className="flex gap-3">
         <div
           className="flex flex-col items-center justify-center w-12 h-12 rounded-xl shrink-0 text-white"
@@ -54,40 +61,61 @@ export default function EventCard({ event, compact }: EventCardProps) {
             <Calendar size={13} />
             <span>{formatDateLong(event.date)} · {event.time}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-text-muted">
-            <MapPin size={13} />
-            <span className="truncate">{event.location}</span>
-          </div>
+          {event.location && (
+            <div className="flex items-center gap-1 text-xs text-text-muted">
+              <MapPin size={13} />
+              <span className="truncate">{event.location}</span>
+            </div>
+          )}
         </div>
       </div>
 
       <p className="text-xs text-text-muted leading-relaxed mt-3">{event.description}</p>
 
       <div className="flex items-center justify-between mt-3">
-        <div className="flex items-center -space-x-2">
-          {event.rsvps.slice(0, 4).map((rsvpId) => (
-            <Avatar
-              key={rsvpId}
-              src={`https://i.pravatar.cc/150?img=${rsvpId === "u1" ? 47 : rsvpId === "u2" ? 12 : rsvpId === "u3" ? 32 : rsvpId === "u4" ? 45 : 24}`}
-              alt="attendee"
-              size={24}
-              ring
-            />
-          ))}
-          {event.rsvps.length > 0 && (
-            <span className="ml-3 text-[11px] text-text-dim">
-              {event.rsvps.length} going
-            </span>
-          )}
-        </div>
-        <button
-          onClick={() => toggleRsvp(event.id)}
-          className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
-            isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
-          }`}
-        >
-          {isGoing ? "Going ✓" : "RSVP"}
-        </button>
+        {isLive ? (
+          <>
+            <div className="flex-1 min-w-0">
+              {event.cost && <span className="text-[11px] font-semibold text-brand-light">{event.cost}</span>}
+            </div>
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-pill gradient-brand text-white"
+            >
+              Find Out More
+              <ExternalLink size={12} />
+            </a>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center -space-x-2">
+              {event.rsvps.slice(0, 4).map((rsvpId) => (
+                <Avatar
+                  key={rsvpId}
+                  src={`https://i.pravatar.cc/150?img=${rsvpId === "u1" ? 47 : rsvpId === "u2" ? 12 : rsvpId === "u3" ? 32 : rsvpId === "u4" ? 45 : 24}`}
+                  alt="attendee"
+                  size={24}
+                  ring
+                />
+              ))}
+              {event.rsvps.length > 0 && (
+                <span className="ml-3 text-[11px] text-text-dim">
+                  {event.rsvps.length} going
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => toggleRsvp(event.id)}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
+                isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
+              }`}
+            >
+              {isGoing ? "Going ✓" : "RSVP"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

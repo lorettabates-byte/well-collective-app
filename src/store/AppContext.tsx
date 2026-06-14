@@ -412,7 +412,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       featuredEventId: eventId,
-      events: prev.events.map((event) => ({ ...event, featured: event.id === eventId })),
     }));
   };
 

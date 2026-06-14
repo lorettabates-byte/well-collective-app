@@ -3,11 +3,13 @@ import { useMemo, useState } from "react";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
 import TopBar from "../components/layout/TopBar";
+import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { formatDateLong } from "../utils/format";
 
 export default function Events() {
-  const { events } = useApp();
+  const { events, featuredEventId } = useApp();
+  const { events: liveEvents } = useEventsFeed();
   const [view, setView] = useState<"calendar" | "list">("calendar");
 
   const today = new Date();
@@ -15,18 +17,20 @@ export default function Events() {
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const eventDates = useMemo(() => new Set(events.map((e) => e.date)), [events]);
+  const allEvents = useMemo(() => [...events, ...liveEvents], [events, liveEvents]);
+
+  const eventDates = useMemo(() => new Set(allEvents.map((e) => e.date)), [allEvents]);
 
   const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
-    [events]
+    () => [...allEvents].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
+    [allEvents]
   );
 
   const todayStr = today.toISOString().slice(0, 10);
 
   const featuredEvent = useMemo(
-    () => sortedEvents.find((e) => e.featured && e.date >= todayStr),
-    [sortedEvents, todayStr]
+    () => sortedEvents.find((e) => e.id === featuredEventId && e.date >= todayStr),
+    [sortedEvents, featuredEventId, todayStr]
   );
 
   const upcomingEvents = useMemo(

@@ -9,6 +9,7 @@ import InspirationCard from "../components/inspiration/InspirationCard";
 import SectionHeader from "../components/ui/SectionHeader";
 import Avatar from "../components/ui/Avatar";
 import { LOGO_URL } from "../components/layout/MobileShell";
+import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 
 const QUICK_LINKS = [
@@ -24,10 +25,11 @@ const QUICK_LINKS = [
 
 export default function Home() {
   const { user, threads, inspirations, events, notifications } = useApp();
+  const { events: liveEvents } = useEventsFeed();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const todaysInspiration = inspirations[0];
-  const upcomingEvents = [...events]
+  const upcomingEvents = [...events, ...liveEvents]
     .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 4);

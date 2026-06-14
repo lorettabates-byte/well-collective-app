@@ -1,6 +1,7 @@
 import { Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
+import { useEventsFeed } from "../../hooks/useEventsFeed";
 import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
 import { formatDateLong } from "../../utils/format";
@@ -106,11 +107,17 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel }: EventFormProps)
 }
 
 export default function AdminEvents() {
-  const { events, addEvent, updateEvent, deleteEvent, setFeaturedEvent } = useApp();
+  const { events, addEvent, updateEvent, deleteEvent, setFeaturedEvent, featuredEventId } = useApp();
+  const { events: liveEvents, loading: liveLoading } = useEventsFeed();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+  const sortedLive = [...liveEvents].sort((a, b) => a.date.localeCompare(b.date));
+
+  const toggleFeatured = (id: string) => {
+    setFeaturedEvent(featuredEventId === id ? null : id);
+  };
 
   return (
     <div>
@@ -154,7 +161,7 @@ export default function AdminEvents() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-sm font-bold text-text">{event.title}</h3>
-                    {event.featured && (
+                    {event.id === featuredEventId && (
                       <span className="text-[10px] font-bold uppercase tracking-wide gradient-brand text-white rounded-pill px-2 py-0.5">
                         Featured
                       </span>
@@ -164,13 +171,13 @@ export default function AdminEvents() {
                   <p className="text-[11px] text-text-dim mt-0.5">{event.rsvps.length} RSVPs</p>
                 </div>
                 <button
-                  onClick={() => setFeaturedEvent(event.featured ? null : event.id)}
+                  onClick={() => toggleFeatured(event.id)}
                   className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
-                    event.featured ? "gradient-brand text-white" : "bg-surface-2 text-text-muted"
+                    event.id === featuredEventId ? "gradient-brand text-white" : "bg-surface-2 text-text-muted"
                   }`}
-                  aria-label={event.featured ? "Remove highlight" : "Highlight event"}
+                  aria-label={event.id === featuredEventId ? "Remove highlight" : "Highlight event"}
                 >
-                  <Star size={14} className={event.featured ? "fill-white" : ""} />
+                  <Star size={14} className={event.id === featuredEventId ? "fill-white" : ""} />
                 </button>
                 <button
                   onClick={() => setEditingId(event.id)}
@@ -189,6 +196,43 @@ export default function AdminEvents() {
               </div>
             )
           )}
+        </div>
+
+        <h2 className="text-sm font-bold text-text mt-6 mb-3">From lorettabates.com</h2>
+        <p className="text-xs text-text-muted mb-3">
+          Synced live from your website's events calendar. Pick the star to highlight one as the featured event.
+        </p>
+        <div className="flex flex-col gap-3">
+          {liveLoading && <p className="text-sm text-text-muted">Loading live events…</p>}
+          {!liveLoading && sortedLive.length === 0 && (
+            <p className="text-sm text-text-muted">No upcoming events found on lorettabates.com.</p>
+          )}
+          {sortedLive.map((event) => (
+            <div key={event.id} className="flex items-center gap-3 glass-card rounded-card p-4">
+              <div className="w-2 h-12 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-bold text-text">{event.title}</h3>
+                  {event.id === featuredEventId && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide gradient-brand text-white rounded-pill px-2 py-0.5">
+                      Featured
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-muted">{formatDateLong(event.date)} · {event.time}</p>
+                <p className="text-[11px] text-text-dim mt-0.5 truncate">{event.location}</p>
+              </div>
+              <button
+                onClick={() => toggleFeatured(event.id)}
+                className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
+                  event.id === featuredEventId ? "gradient-brand text-white" : "bg-surface-2 text-text-muted"
+                }`}
+                aria-label={event.id === featuredEventId ? "Remove highlight" : "Highlight event"}
+              >
+                <Star size={14} className={event.id === featuredEventId ? "fill-white" : ""} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

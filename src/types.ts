@@ -104,6 +104,10 @@ export interface CommunityEvent {
   rsvps: string[];
   color: string;
   featured?: boolean;
+  image?: string;
+  url?: string;
+  cost?: string;
+  source?: "local" | "live";
 }
 
 export type AppNotificationType = "post" | "reply" | "mention" | "general";
