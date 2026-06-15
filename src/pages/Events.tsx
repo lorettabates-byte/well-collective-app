@@ -1,4 +1,4 @@
-import { CalendarDays, List, Star } from "lucide-react";
+import { Calendar, CalendarDays, List, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
@@ -47,6 +47,8 @@ export default function Events() {
       <TopBar
         title="Events"
         subtitle="Workshops, classes, and meetups"
+        icon={Calendar}
+        iconColor="#0191CE"
         right={
           <div className="flex items-center gap-1 bg-surface-2 border border-border rounded-pill p-1">
             <button

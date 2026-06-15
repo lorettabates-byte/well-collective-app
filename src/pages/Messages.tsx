@@ -1,4 +1,4 @@
-import { MessageCircle, Send } from "lucide-react";
+import { Mail, MessageCircle, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -73,7 +73,7 @@ export default function Messages() {
   if (!selectedUserId) {
     return (
       <div>
-        <TopBar title="Messages" subtitle="Private conversations" showBack />
+        <TopBar title="Messages" subtitle="Private conversations" icon={Mail} iconColor="#0191CE" showBack />
         <div className="px-4 pt-8 flex flex-col items-center justify-center text-center gap-3 py-12">
           <MessageCircle size={48} className="text-text-muted" />
           <p className="text-sm text-text-muted">Select a conversation to start messaging</p>

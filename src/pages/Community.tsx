@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
@@ -17,7 +18,7 @@ export default function Community() {
 
   return (
     <div>
-      <TopBar title="Community" subtitle="Connect, share, and support one another" />
+      <TopBar title="Community" subtitle="Connect, share, and support one another" icon={MessageCircle} iconColor="#0191CE" />
       <div className="px-4 pt-4">
         {trending.length > 0 && (
           <div className="mb-6">

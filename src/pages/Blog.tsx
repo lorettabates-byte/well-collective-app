@@ -8,7 +8,7 @@ export default function Blog() {
 
   return (
     <div>
-      <TopBar title="Blog" subtitle="Fresh reads from Loretta" showBack />
+      <TopBar title="Blog" subtitle="Fresh reads from Loretta" icon={Rss} iconColor="#FF6B6B" showBack />
       <div className="px-4 pt-4">
         {loading && (
           <div className="flex flex-col items-center py-16 gap-3">

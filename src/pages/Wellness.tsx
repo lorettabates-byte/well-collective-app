@@ -13,6 +13,7 @@ import {
   StretchHorizontal,
   Trophy,
   Users,
+  Waves,
   Wind,
   type LucideIcon,
 } from "lucide-react";
@@ -68,7 +69,7 @@ export default function Wellness() {
 
   return (
     <div>
-      <TopBar title="Wellness" subtitle="Daily workouts, streaks & mindful activities" showBack />
+      <TopBar title="Wellness" subtitle="Daily workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
       <div className="px-4 pt-4 flex flex-col gap-6">
         <section>
           <h2 className="text-sm font-bold text-text mb-2">Daily Workout</h2>

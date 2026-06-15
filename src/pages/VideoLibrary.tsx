@@ -14,7 +14,7 @@ export default function VideoLibrary() {
 
   return (
     <div>
-      <TopBar title="Classes" subtitle="WELL Collective on-demand classes" showBack />
+      <TopBar title="Classes" subtitle="WELL Collective on-demand classes" icon={Play} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
         {/* Featured Video Library */}
         <a
