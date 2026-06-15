@@ -7,11 +7,11 @@ interface NotificationOptInModalProps {
 }
 
 export default function NotificationOptInModal({ onClose }: NotificationOptInModalProps) {
-  const { updateNotificationSettings } = useApp();
+  const { user, updateNotificationSettings } = useApp();
 
   const handleEnable = async () => {
     try {
-      const subscribed = await subscribeToPush();
+      const subscribed = await subscribeToPush(user.email || user.name);
       updateNotificationSettings({
         pushEnabled: subscribed,
         weeklyTheme: true,

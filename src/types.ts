@@ -3,6 +3,7 @@ export interface User {
   name: string;
   avatar: string;
   bio: string;
+  email?: string;
   isAdmin: boolean;
   joinedAt: string;
   birthday?: string; // MM-DD

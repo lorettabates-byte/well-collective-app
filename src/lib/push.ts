@@ -23,7 +23,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  * backend push subscription succeeded), so local in-app notifications keep
  * working even without a configured backend.
  */
-export async function subscribeToPush(): Promise<boolean> {
+export async function subscribeToPush(userEmail?: string): Promise<boolean> {
   if (typeof Notification === "undefined") return false;
 
   const permission = await Notification.requestPermission();
@@ -41,10 +41,15 @@ export async function subscribeToPush(): Promise<boolean> {
         });
       }
 
+      const payload = {
+        ...subscription.toJSON(),
+        userEmail: userEmail || undefined,
+      };
+
       await fetch(`${API_URL}/api/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
+        body: JSON.stringify(payload),
       });
     } catch (err) {
       console.error("Push subscription failed:", err);
