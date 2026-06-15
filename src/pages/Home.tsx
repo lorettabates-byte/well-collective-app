@@ -154,7 +154,7 @@ export default function Home() {
         </div>
       </div>
 
-      {showBirthday && <BirthdayModal name={user.name} onClose={() => setShowBirthday(false)} />}
+      {showBirthday && <BirthdayModal name={user.name} email={user.email} onClose={() => setShowBirthday(false)} />}
       {!showBirthday && showNotifOptIn && <NotificationOptInModal onClose={handleCloseNotifOptIn} />}
     </div>
   );

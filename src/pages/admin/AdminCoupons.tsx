@@ -1,6 +1,9 @@
 import { Copy, Download, Gift, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
+import { BIRTHDAY_STOREWIDE_POOL, BIRTHDAY_WELL_ESCAPE_POOL } from "../../constants/birthdayCoupons";
+
+type BirthdayPool = "" | typeof BIRTHDAY_WELL_ESCAPE_POOL | typeof BIRTHDAY_STOREWIDE_POOL;
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -139,6 +142,7 @@ export default function AdminCoupons() {
   const [genDiscountValue, setGenDiscountValue] = useState("");
   const [genMaxUses, setGenMaxUses] = useState("1");
   const [genExpiresAt, setGenExpiresAt] = useState("");
+  const [genPool, setGenPool] = useState<BirthdayPool>("");
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
 
   // Restrict generated codes to a specific product (e.g. "Well Escape")
@@ -146,6 +150,23 @@ export default function AdminCoupons() {
   const [productMatches, setProductMatches] = useState<{ id: number; name: string }[]>([]);
   const [productSearchLoading, setProductSearchLoading] = useState(false);
   const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
+
+  const handlePoolChange = (value: BirthdayPool) => {
+    setGenPool(value);
+    if (value === BIRTHDAY_WELL_ESCAPE_POOL) {
+      setGenDiscountType("fixed");
+      setGenDiscountValue("100");
+      setGenDescription("Birthday gift - $100 off Well Escape");
+      setGenRestrictProduct("Well Escape");
+      setSelectedProductName(null);
+    } else if (value === BIRTHDAY_STOREWIDE_POOL) {
+      setGenDiscountType("fixed");
+      setGenDiscountValue("10");
+      setGenDescription("Birthday gift - $10 off");
+      setGenRestrictProduct("");
+      setSelectedProductName(null);
+    }
+  };
 
   useEffect(() => {
     if (!genRestrictProduct || genRestrictProduct === selectedProductName || !API_URL) {
@@ -246,6 +267,7 @@ export default function AdminCoupons() {
           max_uses: genMaxUses ? parseInt(genMaxUses) : undefined,
           expires_at: genExpiresAt || undefined,
           restrict_product: selectedProductName || undefined,
+          pool: genPool || undefined,
         }),
       });
 
@@ -411,6 +433,27 @@ export default function AdminCoupons() {
             Create a batch of unique one-time codes that all share the same discount — perfect for birthday gifts.
           </p>
           <div className="flex flex-col gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-wide text-text-dim mb-1 block">
+                Birthday gift pool
+              </label>
+              <select
+                value={genPool}
+                onChange={(e) => handlePoolChange(e.target.value as BirthdayPool)}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text focus:outline-none focus:border-brand-light"
+              >
+                <option value="">None (custom batch)</option>
+                <option value={BIRTHDAY_WELL_ESCAPE_POOL}>Birthday: $100 off Well Escape</option>
+                <option value={BIRTHDAY_STOREWIDE_POOL}>Birthday: $10 off anything</option>
+              </select>
+              {genPool && (
+                <p className="text-[10px] text-text-muted mt-1">
+                  This batch will be claimable from the birthday popup. The discount, description
+                  {genPool === BIRTHDAY_WELL_ESCAPE_POOL ? " and product restriction" : ""} are preset below — generate
+                  as many codes as you have members.
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
