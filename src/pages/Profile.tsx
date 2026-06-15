@@ -77,6 +77,7 @@ export default function Profile() {
       const data = await response.json();
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("adminEmail", email);
+      localStorage.setItem("admin", JSON.stringify(data.admin));
 
       // Update user with email
       (user as any).email = email;
@@ -93,6 +94,7 @@ export default function Profile() {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminEmail");
+    localStorage.removeItem("admin");
     (user as any).email = undefined;
     setShowLoginModal(true);
   };
