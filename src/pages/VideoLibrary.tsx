@@ -1,48 +1,55 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Play } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 
+const FEATURED_VIDEO = {
+  title: "Video Library",
+  description: "Browse all WELL Collective classes, workshops, and livestreams curated by Loretta",
+  image: "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png",
+  url: "https://lorettabates.com/videolibrary.lorettabates.com/",
+};
+
 export default function VideoLibrary() {
-  const featuredCategory = VIDEO_CATEGORIES[0];
-  const otherCategories = VIDEO_CATEGORIES.slice(1);
+  const otherCategories = VIDEO_CATEGORIES;
 
   return (
     <div>
       <TopBar title="Classes" subtitle="WELL Collective on-demand classes" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
-        {/* Featured Trending Class */}
-        {featuredCategory && (
-          <a
-            href={featuredCategory.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="gradient-brand p-[2px] rounded-card animate-fade-in-up"
+        {/* Featured Video Library */}
+        <a
+          href={FEATURED_VIDEO.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="gradient-brand p-[2px] rounded-card animate-fade-in-up overflow-hidden"
+        >
+          <div
+            className="rounded-card flex flex-col gap-0 relative overflow-hidden bg-surface h-48"
           >
+            {/* Background Image */}
             <div
-              className="rounded-card p-4 flex flex-col gap-3 relative overflow-hidden"
+              className="absolute inset-0 bg-cover bg-center opacity-30"
               style={{
-                background: `linear-gradient(135deg, ${featuredCategory.color}15 0%, ${featuredCategory.color}08 100%)`,
+                backgroundImage: `url(${FEATURED_VIDEO.image})`,
               }}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-brand-light">Trending Now</span>
-                  <h2 className="text-lg font-bold text-text mt-1">{featuredCategory.title}</h2>
-                  <p className="text-sm text-text-muted mt-1.5">{featuredCategory.description}</p>
-                </div>
-                <div
-                  className="flex items-center justify-center w-14 h-14 rounded-2xl shrink-0 ml-3"
-                  style={{ backgroundColor: `${featuredCategory.color}22` }}
-                >
-                  <featuredCategory.icon size={28} className="text-brand-light" />
-                </div>
+            />
+
+            {/* Content Overlay */}
+            <div className="relative z-10 p-4 h-full flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-brand-light">Featured</span>
+                <h2 className="text-xl font-bold text-white mt-2">{FEATURED_VIDEO.title}</h2>
               </div>
-              <div className="flex items-center gap-2 text-brand-light text-xs font-semibold">
-                Join Now <ArrowUpRight size={14} />
+
+              <div className="flex items-end justify-between">
+                <p className="text-sm text-gray-200 max-w-xs">{FEATURED_VIDEO.description}</p>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full gradient-brand shrink-0">
+                  <Play size={20} className="text-white fill-white" />
+                </div>
               </div>
             </div>
-          </a>
-        )}
+          </div>
+        </a>
 
         {/* Category Buttons */}
         <div>
