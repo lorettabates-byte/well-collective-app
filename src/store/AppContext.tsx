@@ -52,6 +52,8 @@ const DEFAULT_STATE: PersistedState = {
     general: true,
     weeklyTheme: true,
     dailyInspiration: true,
+    newEvents: true,
+    newBlogs: true,
     pushEnabled: false,
   },
   contentSchedule: [],
@@ -59,14 +61,39 @@ const DEFAULT_STATE: PersistedState = {
   featuredEventId: null,
 };
 
+function applyMemberInfo(user: User): User {
+  try {
+    const raw = window.localStorage.getItem("memberUser");
+    if (!raw) return user;
+    const member = JSON.parse(raw) as { email?: string; name?: string };
+    const trialEndsAt = window.localStorage.getItem("memberTrialEndsAt");
+
+    const syncedEmail = window.localStorage.getItem("memberProfileSyncedEmail");
+    const isNewMember = !!member.email && member.email !== syncedEmail;
+    if (member.email) {
+      window.localStorage.setItem("memberProfileSyncedEmail", member.email);
+    }
+
+    return {
+      ...user,
+      ...(isNewMember ? { avatar: "", bio: "", birthday: undefined, isAdmin: false } : {}),
+      email: member.email || user.email,
+      name: member.name || user.name,
+      trialEndsAt: trialEndsAt || user.trialEndsAt,
+    };
+  } catch {
+    return user;
+  }
+}
+
 function loadState(): PersistedState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_STATE;
+    if (!raw) return { ...DEFAULT_STATE, user: applyMemberInfo(DEFAULT_STATE.user) };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     return {
-      user: parsed.user ?? DEFAULT_STATE.user,
+      user: applyMemberInfo(parsed.user ?? DEFAULT_STATE.user),
       categories: parsed.categories ?? DEFAULT_STATE.categories,
       threads: parsed.threads ?? DEFAULT_STATE.threads,
       inspirations: parsed.inspirations ?? DEFAULT_STATE.inspirations,

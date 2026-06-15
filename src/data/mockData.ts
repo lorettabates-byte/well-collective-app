@@ -16,12 +16,11 @@ function getTrialEndDate(joinedAt: string): string {
 
 export const CURRENT_USER: User = {
   id: "u1",
-  name: "Loretta Bates",
-  avatar: "https://i.pravatar.cc/150?img=47",
-  bio: "Founder of WELL Collective. On a mission to help women feel calm, strong, and supported. 🌿",
-  isAdmin: true,
+  name: "Member",
+  avatar: "",
+  bio: "",
+  isAdmin: false,
   joinedAt: "2025-01-12",
-  birthday: "06-14",
   trialEndsAt: getTrialEndDate("2025-01-12"),
 };
 
