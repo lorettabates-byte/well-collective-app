@@ -24,7 +24,7 @@ export default function VideoLibrary() {
           className="gradient-brand p-[2px] rounded-card animate-fade-in-up overflow-hidden"
         >
           <div
-            className="rounded-card flex flex-col gap-0 relative overflow-hidden bg-surface h-48"
+            className="rounded-card flex flex-col gap-0 relative overflow-hidden bg-surface h-64"
           >
             {/* Background Image */}
             <div

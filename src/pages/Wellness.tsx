@@ -39,6 +39,10 @@ export default function Wellness() {
   const { user, threads, currentWeeklyTheme, todaysWellActivity, logWorkoutCompletion } = useApp();
   const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout());
   const [selected, setSelected] = useState<SelectedExercise | null>(null);
+  const [wellActivityCompleted, setWellActivityCompleted] = useState(() => {
+    const key = `well-activity-${new Date().toISOString().slice(0, 10)}`;
+    return localStorage.getItem(key) === "true";
+  });
 
   const CardioIcon = plan.cardio.icon;
 
@@ -46,6 +50,12 @@ export default function Wellness() {
   const today = new Date().toISOString().slice(0, 10);
   const completedToday = workoutLog.includes(today);
   const streak = computeStreak(workoutLog);
+
+  const handleWellActivityComplete = () => {
+    const key = `well-activity-${today}`;
+    localStorage.setItem(key, "true");
+    setWellActivityCompleted(true);
+  };
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
@@ -223,6 +233,18 @@ export default function Wellness() {
               )}
               <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
               <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
+              <button
+                onClick={handleWellActivityComplete}
+                disabled={wellActivityCompleted}
+                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
+                  wellActivityCompleted
+                    ? "bg-surface-2 border border-border text-brand-light"
+                    : "gradient-brand text-white"
+                }`}
+              >
+                <CheckCircle2 size={14} />
+                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
+              </button>
             </div>
           </div>
         </section>

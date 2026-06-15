@@ -1,9 +1,26 @@
-import { ChefHat, Sparkles } from "lucide-react";
+import { Bookmark, ChefHat, Sparkles } from "lucide-react";
+import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 
 export default function Nutrition() {
   const { currentWeeklyTheme, todaysRecipe } = useApp();
+  const [isSaved, setIsSaved] = useState(() => {
+    const saved = localStorage.getItem("savedRecipes") ? JSON.parse(localStorage.getItem("savedRecipes")!) : [];
+    return saved.includes(todaysRecipe.name);
+  });
+
+  const handleSaveRecipe = () => {
+    const saved = localStorage.getItem("savedRecipes") ? JSON.parse(localStorage.getItem("savedRecipes")!) : [];
+    if (isSaved) {
+      const updated = saved.filter((name: string) => name !== todaysRecipe.name);
+      localStorage.setItem("savedRecipes", JSON.stringify(updated));
+    } else {
+      saved.push(todaysRecipe.name);
+      localStorage.setItem("savedRecipes", JSON.stringify(saved));
+    }
+    setIsSaved(!isSaved);
+  };
 
   return (
     <div>
@@ -34,7 +51,19 @@ export default function Nutrition() {
                 Today's Recipe
               </span>
             </div>
-            <h2 className="text-lg font-bold text-text mb-1.5">{todaysRecipe.name}</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-text flex-1">{todaysRecipe.name}</h2>
+              <button
+                onClick={handleSaveRecipe}
+                className="flex items-center gap-1.5 text-xs font-semibold text-text-muted"
+              >
+                <Bookmark
+                  size={16}
+                  className={isSaved ? "fill-brand-light text-brand-light" : ""}
+                />
+                {isSaved ? "Saved" : "Save"}
+              </button>
+            </div>
             <p className="text-sm text-text-muted leading-relaxed mb-4">{todaysRecipe.description}</p>
 
             <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
