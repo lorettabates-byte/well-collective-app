@@ -145,11 +145,12 @@ export default function AdminCoupons() {
   const [genPool, setGenPool] = useState<BirthdayPool>("");
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
 
-  // Restrict generated codes to a specific product (e.g. "Well Escape")
-  const [genRestrictProduct, setGenRestrictProduct] = useState("");
-  const [productMatches, setProductMatches] = useState<{ id: number; name: string }[]>([]);
-  const [productSearchLoading, setProductSearchLoading] = useState(false);
-  const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
+  // Restrict generated codes to a specific product or product category (e.g. "Well Escape")
+  const [genRestrictType, setGenRestrictType] = useState<"" | "product" | "category">("");
+  const [genRestrictValue, setGenRestrictValue] = useState("");
+  const [restrictMatches, setRestrictMatches] = useState<{ id: number; name: string }[]>([]);
+  const [restrictSearchLoading, setRestrictSearchLoading] = useState(false);
+  const [selectedRestrictName, setSelectedRestrictName] = useState<string | null>(null);
 
   const handlePoolChange = (value: BirthdayPool) => {
     setGenPool(value);
@@ -157,42 +158,46 @@ export default function AdminCoupons() {
       setGenDiscountType("fixed");
       setGenDiscountValue("100");
       setGenDescription("Birthday gift - $100 off Well Escape");
-      setGenRestrictProduct("Well Escape");
-      setSelectedProductName(null);
+      setGenRestrictType("category");
+      setGenRestrictValue("Well Escape");
+      setSelectedRestrictName(null);
     } else if (value === BIRTHDAY_STOREWIDE_POOL) {
       setGenDiscountType("fixed");
       setGenDiscountValue("10");
       setGenDescription("Birthday gift - $10 off");
-      setGenRestrictProduct("");
-      setSelectedProductName(null);
+      setGenRestrictType("");
+      setGenRestrictValue("");
+      setSelectedRestrictName(null);
     }
   };
 
   useEffect(() => {
-    if (!genRestrictProduct || genRestrictProduct === selectedProductName || !API_URL) {
-      setProductMatches([]);
+    if (!genRestrictType || !genRestrictValue || genRestrictValue === selectedRestrictName || !API_URL) {
+      setRestrictMatches([]);
       return;
     }
 
     const timer = setTimeout(async () => {
-      setProductSearchLoading(true);
+      setRestrictSearchLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/coupons/wc-products?search=${encodeURIComponent(genRestrictProduct)}`, {
+        const endpoint = genRestrictType === "product" ? "wc-products" : "wc-categories";
+        const key = genRestrictType === "product" ? "products" : "categories";
+        const res = await fetch(`${API_URL}/api/coupons/${endpoint}?search=${encodeURIComponent(genRestrictValue)}`, {
           headers: getAuthHeaders(),
         });
         if (res.ok) {
           const data = await res.json();
-          setProductMatches(data.products);
+          setRestrictMatches(data[key]);
         }
       } catch (err) {
-        console.error("Product search error:", err);
+        console.error("Restriction search error:", err);
       } finally {
-        setProductSearchLoading(false);
+        setRestrictSearchLoading(false);
       }
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [genRestrictProduct, selectedProductName]);
+  }, [genRestrictType, genRestrictValue, selectedRestrictName]);
 
   useEffect(() => {
     fetchCoupons();
@@ -266,7 +271,8 @@ export default function AdminCoupons() {
           discount_value: parseFloat(genDiscountValue),
           max_uses: genMaxUses ? parseInt(genMaxUses) : undefined,
           expires_at: genExpiresAt || undefined,
-          restrict_product: selectedProductName || undefined,
+          restrict_product: genRestrictType === "product" ? selectedRestrictName || undefined : undefined,
+          restrict_category: genRestrictType === "category" ? selectedRestrictName || undefined : undefined,
           pool: genPool || undefined,
         }),
       });
@@ -449,7 +455,7 @@ export default function AdminCoupons() {
               {genPool && (
                 <p className="text-[10px] text-text-muted mt-1">
                   This batch will be claimable from the birthday popup. The discount, description
-                  {genPool === BIRTHDAY_WELL_ESCAPE_POOL ? " and product restriction" : ""} are preset below — generate
+                  {genPool === BIRTHDAY_WELL_ESCAPE_POOL ? " and category restriction" : ""} are preset below — generate
                   as many codes as you have members.
                 </p>
               )}
@@ -513,43 +519,86 @@ export default function AdminCoupons() {
               />
             </div>
             <div>
-              <input
-                type="text"
-                value={genRestrictProduct}
-                onChange={(e) => {
-                  setGenRestrictProduct(e.target.value);
-                  setSelectedProductName(null);
-                }}
-                placeholder="Limit to a product (optional, e.g. Well Escape)"
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-              />
-              {selectedProductName ? (
-                <p className="text-[11px] text-brand-light mt-1.5">
-                  Discount will only apply when "{selectedProductName}" is in the cart
-                </p>
-              ) : genRestrictProduct ? (
-                <div className="mt-1.5 flex flex-col gap-1">
-                  {productSearchLoading && <p className="text-[11px] text-text-dim">Searching store...</p>}
-                  {!productSearchLoading && productMatches.length === 0 && (
-                    <p className="text-[11px] text-text-dim">No matching products found</p>
-                  )}
-                  {productMatches.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setGenRestrictProduct(p.name);
-                        setSelectedProductName(p.name);
-                        setProductMatches([]);
-                      }}
-                      className="text-left text-[11px] text-text-muted hover:text-brand-light px-2 py-1.5 rounded-card bg-surface-2 border border-border"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-text-dim mt-1.5">Leave blank for storewide (any purchase)</p>
+              <label className="text-[10px] uppercase tracking-wide text-text-dim mb-1 block">
+                Limit discount to
+              </label>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {(
+                  [
+                    ["", "Storewide"],
+                    ["product", "One product"],
+                    ["category", "Category"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setGenRestrictType(value);
+                      setGenRestrictValue("");
+                      setSelectedRestrictName(null);
+                      setRestrictMatches([]);
+                    }}
+                    className={`text-xs font-semibold rounded-card py-2 border ${
+                      genRestrictType === value
+                        ? "border-brand-light text-brand-light bg-surface-2"
+                        : "border-border text-text-muted bg-surface-2"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {genRestrictType && (
+                <>
+                  <input
+                    type="text"
+                    value={genRestrictValue}
+                    onChange={(e) => {
+                      setGenRestrictValue(e.target.value);
+                      setSelectedRestrictName(null);
+                    }}
+                    placeholder={
+                      genRestrictType === "product"
+                        ? "Product name (e.g. Well Escape Retreat - June)"
+                        : "Category name (e.g. Well Escape)"
+                    }
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                  />
+                  {selectedRestrictName ? (
+                    <p className="text-[11px] text-brand-light mt-1.5">
+                      {genRestrictType === "product"
+                        ? `Discount will only apply when "${selectedRestrictName}" is in the cart`
+                        : `Discount will only apply to products in the "${selectedRestrictName}" category`}
+                    </p>
+                  ) : genRestrictValue ? (
+                    <div className="mt-1.5 flex flex-col gap-1">
+                      {restrictSearchLoading && <p className="text-[11px] text-text-dim">Searching store...</p>}
+                      {!restrictSearchLoading && restrictMatches.length === 0 && (
+                        <p className="text-[11px] text-text-dim">
+                          No matching {genRestrictType === "product" ? "products" : "categories"} found
+                        </p>
+                      )}
+                      {restrictMatches.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            setGenRestrictValue(m.name);
+                            setSelectedRestrictName(m.name);
+                            setRestrictMatches([]);
+                          }}
+                          className="text-left text-[11px] text-text-muted hover:text-brand-light px-2 py-1.5 rounded-card bg-surface-2 border border-border"
+                        >
+                          {m.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
+              {!genRestrictType && (
+                <p className="text-[11px] text-text-dim mt-1.5">Discount applies to any purchase</p>
               )}
             </div>
             <button
