@@ -1,5 +1,6 @@
 import { Bookmark, Heart, Share2 } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useApp } from "../../store/AppContext";
 import type { Inspiration, InspirationCadence } from "../../types";
 import { timeAgo } from "../../utils/format";
@@ -60,7 +61,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
         </div>
       </div>
 
-      {showShareCard && (
+      {showShareCard && createPortal(
         <ShareCardModal
           cadenceLabel={CADENCE_LABEL[inspiration.cadence]}
           title={inspiration.title}
@@ -68,7 +69,8 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
           userAvatar={user.avatar}
           userName={user.name}
           onClose={() => setShowShareCard(false)}
-        />
+        />,
+        document.body
       )}
     </div>
   );
