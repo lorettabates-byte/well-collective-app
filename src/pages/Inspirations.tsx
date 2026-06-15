@@ -29,7 +29,7 @@ export default function Inspirations() {
 
   return (
     <div>
-      <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#FFD93D" />
+      <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#0191CE" />
       <div className="px-4 pt-4">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 mb-4 -mx-4 px-4">
           {FILTERS.map(({ id, label }) => (

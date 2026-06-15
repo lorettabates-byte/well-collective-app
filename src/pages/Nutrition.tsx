@@ -24,7 +24,7 @@ export default function Nutrition() {
 
   return (
     <div>
-      <TopBar title="Nutrition" subtitle="Recipes inspired by this week's theme" icon={ChefHat} iconColor="#FFB347" showBack />
+      <TopBar title="Nutrition" subtitle="Recipes inspired by this week's theme" icon={ChefHat} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
         {currentWeeklyTheme && (
           <div className="gradient-brand p-[1px] rounded-card">
