@@ -7,6 +7,7 @@ export interface User {
   isAdmin: boolean;
   joinedAt: string;
   birthday?: string; // MM-DD
+  showBirthdayOnCalendar?: boolean;
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
   trialEndsAt?: string; // ISO date when free trial expires
 }

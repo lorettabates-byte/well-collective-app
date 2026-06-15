@@ -16,6 +16,7 @@ export default function EditProfile() {
   const [bio, setBio] = useState(user.bio);
   const [avatar, setAvatar] = useState(user.avatar);
   const [birthday, setBirthday] = useState(user.birthday ?? "");
+  const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,6 +35,7 @@ export default function EditProfile() {
       bio: bio.trim(),
       avatar,
       birthday: birthday || undefined,
+      showBirthdayOnCalendar: birthday ? showBirthdayOnCalendar : false,
     });
     navigate("/profile");
   };
@@ -110,6 +112,20 @@ export default function EditProfile() {
           <p className="text-[11px] text-text-dim mt-1.5">
             We'll celebrate with you on this day every year 🎉 (year doesn't matter)
           </p>
+
+          {birthday && (
+            <label className="flex items-center gap-2.5 mt-3 glass-card rounded-card px-3.5 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showBirthdayOnCalendar}
+                onChange={(e) => setShowBirthdayOnCalendar(e.target.checked)}
+                className="w-4 h-4 accent-brand-blue"
+              />
+              <span className="text-xs text-text-muted">
+                Show my birthday 🎂 on the Events calendar
+              </span>
+            </label>
+          )}
         </div>
 
         <button type="submit" className="gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow">

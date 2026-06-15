@@ -1,14 +1,16 @@
 import { Calendar, CalendarDays, List, Star } from "lucide-react";
 import { useMemo, useState } from "react";
+import BirthdayCard from "../components/events/BirthdayCard";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
 import TopBar from "../components/layout/TopBar";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
+import { birthdayDateForYear, nextBirthdayDate } from "../utils/birthday";
 import { formatDateLong } from "../utils/format";
 
 export default function Events() {
-  const { events, featuredEventId } = useApp();
+  const { user, events, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const [view, setView] = useState<"calendar" | "list">("calendar");
 
@@ -41,6 +43,38 @@ export default function Events() {
   const selectedDateEvents = selectedDate
     ? sortedEvents.filter((e) => e.date === selectedDate)
     : [];
+
+  const showBirthday = !!user.birthday && !!user.showBirthdayOnCalendar;
+  const birthdayDateThisMonth = showBirthday ? birthdayDateForYear(user.birthday!, year) : null;
+  const birthdayDates = useMemo(() => {
+    const set = new Set<string>();
+    if (birthdayDateThisMonth) set.add(birthdayDateThisMonth);
+    return set;
+  }, [birthdayDateThisMonth]);
+
+  const upcomingBirthday = showBirthday ? nextBirthdayDate(user.birthday!) : null;
+  const isSelectedBirthday = !!selectedDate && selectedDate === birthdayDateThisMonth;
+
+  // Only surface the user's birthday in the upcoming list if it's coming up soon.
+  const maxBirthdayLookahead = useMemo(() => {
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 30);
+    return limit.toISOString().slice(0, 10);
+  }, [today]);
+
+  const showUpcomingBirthday = !!upcomingBirthday && upcomingBirthday <= maxBirthdayLookahead;
+
+  type UpcomingItem = { kind: "event"; event: (typeof upcomingEvents)[number] } | { kind: "birthday"; date: string };
+
+  const upcomingItems = useMemo<UpcomingItem[]>(() => {
+    const items: UpcomingItem[] = upcomingEvents.map((event) => ({ kind: "event", event }));
+    if (showUpcomingBirthday) items.push({ kind: "birthday", date: upcomingBirthday! });
+    return items.sort((a, b) => {
+      const dateA = a.kind === "event" ? a.event.date : a.date;
+      const dateB = b.kind === "event" ? b.event.date : b.date;
+      return dateA.localeCompare(dateB);
+    });
+  }, [upcomingEvents, showUpcomingBirthday, upcomingBirthday]);
 
   return (
     <div>
@@ -80,6 +114,7 @@ export default function Events() {
               year={year}
               month={month}
               eventDates={eventDates}
+              birthdayDates={birthdayDates}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               onChangeMonth={(y, m) => {
@@ -92,10 +127,11 @@ export default function Events() {
             {selectedDate ? (
               <div>
                 <h2 className="text-sm font-bold text-text mb-3">{formatDateLong(selectedDate)}</h2>
-                {selectedDateEvents.length === 0 ? (
+                {selectedDateEvents.length === 0 && !isSelectedBirthday ? (
                   <p className="text-sm text-text-muted">No events on this day.</p>
                 ) : (
                   <div className="flex flex-col gap-3">
+                    {isSelectedBirthday && <BirthdayCard name={user.name} date={selectedDate} />}
                     {selectedDateEvents.map((event) => (
                       <EventCard key={event.id} event={event} />
                     ))}
@@ -119,9 +155,13 @@ export default function Events() {
                       </div>
                     </div>
                   )}
-                  {upcomingEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
+                  {upcomingItems.map((item) =>
+                    item.kind === "birthday" ? (
+                      <BirthdayCard key="birthday" name={user.name} date={item.date} />
+                    ) : (
+                      <EventCard key={item.event.id} event={item.event} />
+                    )
+                  )}
                 </div>
               </div>
             )}
@@ -141,10 +181,16 @@ export default function Events() {
                 </div>
               </div>
             )}
-            {upcomingEvents.length === 0 && !featuredEvent ? (
+            {upcomingItems.length === 0 && !featuredEvent ? (
               <p className="text-sm text-text-muted text-center py-12">No upcoming events.</p>
             ) : (
-              upcomingEvents.map((event) => <EventCard key={event.id} event={event} />)
+              upcomingItems.map((item) =>
+                item.kind === "birthday" ? (
+                  <BirthdayCard key="birthday" name={user.name} date={item.date} />
+                ) : (
+                  <EventCard key={item.event.id} event={item.event} />
+                )
+              )
             )}
           </div>
         )}

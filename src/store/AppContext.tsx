@@ -134,7 +134,7 @@ export function uid(prefix: string): string {
 }
 
 interface AppContextValue extends PersistedState {
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string) => ForumThread;
   addMessage: (threadId: string, text: string) => void;

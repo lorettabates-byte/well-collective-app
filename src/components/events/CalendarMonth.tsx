@@ -10,6 +10,7 @@ interface CalendarMonthProps {
   year: number;
   month: number; // 0-indexed
   eventDates: Set<string>;
+  birthdayDates?: Set<string>;
   selectedDate: string | null;
   onSelectDate: (date: string) => void;
   onChangeMonth: (year: number, month: number) => void;
@@ -23,6 +24,7 @@ export default function CalendarMonth({
   year,
   month,
   eventDates,
+  birthdayDates,
   selectedDate,
   onSelectDate,
   onChangeMonth,
@@ -75,6 +77,7 @@ export default function CalendarMonth({
           if (day === null) return <div key={i} />;
           const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
           const hasEvent = eventDates.has(dateStr);
+          const hasBirthday = birthdayDates?.has(dateStr);
           const isToday = dateStr === todayStr;
           const isSelected = dateStr === selectedDate;
 
@@ -91,6 +94,9 @@ export default function CalendarMonth({
               }`}
             >
               {day}
+              {hasBirthday && (
+                <span className="absolute -top-1 -right-1 text-[10px] leading-none">🎂</span>
+              )}
               {hasEvent && !isSelected && (
                 <span className="absolute bottom-1 w-1 h-1 rounded-full bg-brand-light" />
               )}
