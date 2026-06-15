@@ -4,6 +4,17 @@ export interface TrialStatus {
   expiresAt: string;
 }
 
+export function isActiveMember(): boolean {
+  try {
+    const raw = window.localStorage.getItem("memberMembershipStatus");
+    if (!raw) return false;
+    const cached = JSON.parse(raw) as { active?: boolean };
+    return cached.active === true;
+  } catch {
+    return false;
+  }
+}
+
 export function getTrialStatus(trialEndsAt?: string): TrialStatus {
   if (!trialEndsAt) {
     return { isActive: false, daysRemaining: 0, expiresAt: "" };

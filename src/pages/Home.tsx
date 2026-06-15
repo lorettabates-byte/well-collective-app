@@ -11,7 +11,7 @@ import Avatar from "../components/ui/Avatar";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
-import { getTrialStatus } from "../utils/trial";
+import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
@@ -70,6 +70,7 @@ export default function Home() {
   };
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
+  const showTrialBanner = trialStatus.isActive && !isActiveMember();
 
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
@@ -90,7 +91,7 @@ export default function Home() {
         </div>
       </div>
 
-      {trialStatus.isActive && (
+      {showTrialBanner && (
         <div className="gradient-brand p-[1px] rounded-card mb-4">
           <div className="bg-surface rounded-card p-3 flex items-center gap-2.5">
             <Gift size={18} className="text-brand-light shrink-0" />
