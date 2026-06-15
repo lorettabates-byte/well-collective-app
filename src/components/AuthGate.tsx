@@ -35,7 +35,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!authed || trialStatus.isActive) return;
+    if (!authed) return;
 
     const raw = localStorage.getItem("memberMembershipStatus");
     if (raw) {
@@ -52,7 +52,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     }
 
     refreshMembership();
-  }, [authed, trialStatus.isActive]);
+  }, [authed]);
 
   const handleLogout = () => {
     localStorage.removeItem("memberToken");

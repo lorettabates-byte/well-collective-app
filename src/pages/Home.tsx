@@ -70,7 +70,7 @@ export default function Home() {
   };
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
-  const showTrialBanner = trialStatus.isActive && !isActiveMember();
+  const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
