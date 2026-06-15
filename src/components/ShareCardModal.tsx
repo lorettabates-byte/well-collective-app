@@ -96,10 +96,10 @@ export default function ShareCardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
       onClick={onClose}
     >
-      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-pop-in" onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-pop-in z-[10000]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
@@ -108,7 +108,10 @@ export default function ShareCardModal({
           <X size={14} />
         </button>
 
-        <div ref={cardRef} className="bg-white rounded-card p-6 flex flex-col items-center text-center gap-4 w-full">
+        <div ref={cardRef} className="rounded-card p-6 flex flex-col items-center text-center gap-4 w-full" style={{
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+          color: '#fff'
+        }}>
           {/* WELL Logo */}
           <img src={LOGO_URL} alt="WELL Collective" className="h-12" />
 
@@ -116,31 +119,32 @@ export default function ShareCardModal({
           <img
             src={LORETTA_IMAGE}
             alt="Loretta Bates"
-            className="w-24 h-24 rounded-full object-cover border-2 border-[#0191CE]"
+            className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
 
           {/* Branding */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#0191CE] mb-1">{cadenceLabel}</p>
-            <h2 className="text-lg font-bold text-gray-900 leading-snug">{title}</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
+            <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
           </div>
 
           {/* Message */}
-          <p className="text-sm text-gray-700 leading-relaxed max-w-xs">{body}</p>
+          <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
 
           {/* User Avatar (if available) */}
           {userAvatar && (
             <div className="flex flex-col items-center gap-2">
-              <img src={userAvatar} alt={userName} className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" />
-              <p className="text-xs font-semibold text-gray-700">{userName}</p>
+              <img src={userAvatar} alt={userName} className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]" />
+              <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
             </div>
           )}
 
           {/* Branding Footer */}
-          <div className="w-full pt-3 border-t border-gray-200">
+          <div className="w-full pt-3 border-t border-[#0191CE]/30">
             <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
-            <p className="text-xs font-semibold text-gray-700">with Loretta Bates</p>
-            <p className="text-[10px] text-gray-500 mt-1">lorettabates.com</p>
+            <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
+            <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
           </div>
         </div>
 

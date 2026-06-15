@@ -1,11 +1,11 @@
-import { Calendar, Home, MessageCircle, Sparkles, User } from "lucide-react";
+import { Home, Mail, MessageCircle, Sparkles, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home", icon: Home },
   { to: "/community", label: "Community", icon: MessageCircle },
+  { to: "/messages", label: "Messages", icon: Mail },
   { to: "/inspirations", label: "Inspiration", icon: Sparkles },
-  { to: "/events", label: "Events", icon: Calendar },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
