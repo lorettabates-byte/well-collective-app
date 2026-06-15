@@ -135,11 +135,43 @@ export default function AdminCoupons() {
   const [genPrefix, setGenPrefix] = useState("BDAY");
   const [genCount, setGenCount] = useState("10");
   const [genDescription, setGenDescription] = useState("Birthday gift");
-  const [genDiscountType, setGenDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [genDiscountType, setGenDiscountType] = useState<"percentage" | "fixed">("fixed");
   const [genDiscountValue, setGenDiscountValue] = useState("");
   const [genMaxUses, setGenMaxUses] = useState("1");
   const [genExpiresAt, setGenExpiresAt] = useState("");
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+
+  // Restrict generated codes to a specific product (e.g. "Well Escape")
+  const [genRestrictProduct, setGenRestrictProduct] = useState("");
+  const [productMatches, setProductMatches] = useState<{ id: number; name: string }[]>([]);
+  const [productSearchLoading, setProductSearchLoading] = useState(false);
+  const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!genRestrictProduct || genRestrictProduct === selectedProductName || !API_URL) {
+      setProductMatches([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setProductSearchLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/api/coupons/wc-products?search=${encodeURIComponent(genRestrictProduct)}`, {
+          headers: getAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProductMatches(data.products);
+        }
+      } catch (err) {
+        console.error("Product search error:", err);
+      } finally {
+        setProductSearchLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [genRestrictProduct, selectedProductName]);
 
   useEffect(() => {
     fetchCoupons();
@@ -213,13 +245,20 @@ export default function AdminCoupons() {
           discount_value: parseFloat(genDiscountValue),
           max_uses: genMaxUses ? parseInt(genMaxUses) : undefined,
           expires_at: genExpiresAt || undefined,
+          restrict_product: selectedProductName || undefined,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
         setGeneratedCodes(data.codes);
-        setStatus({ type: "success", message: `Generated ${data.count} new codes!` });
+        setStatus({
+          type: "success",
+          message:
+            data.failed > 0
+              ? `Generated ${data.count} codes on the store (${data.failed} failed)`
+              : `Generated ${data.count} codes on the store!`,
+        });
         fetchCoupons();
       } else {
         const err = await res.json();
@@ -429,6 +468,46 @@ export default function AdminCoupons() {
                 onChange={(e) => setGenExpiresAt(e.target.value)}
                 className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text focus:outline-none focus:border-brand-light"
               />
+            </div>
+            <div>
+              <input
+                type="text"
+                value={genRestrictProduct}
+                onChange={(e) => {
+                  setGenRestrictProduct(e.target.value);
+                  setSelectedProductName(null);
+                }}
+                placeholder="Limit to a product (optional, e.g. Well Escape)"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+              {selectedProductName ? (
+                <p className="text-[11px] text-brand-light mt-1.5">
+                  Discount will only apply when "{selectedProductName}" is in the cart
+                </p>
+              ) : genRestrictProduct ? (
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {productSearchLoading && <p className="text-[11px] text-text-dim">Searching store...</p>}
+                  {!productSearchLoading && productMatches.length === 0 && (
+                    <p className="text-[11px] text-text-dim">No matching products found</p>
+                  )}
+                  {productMatches.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setGenRestrictProduct(p.name);
+                        setSelectedProductName(p.name);
+                        setProductMatches([]);
+                      }}
+                      className="text-left text-[11px] text-text-muted hover:text-brand-light px-2 py-1.5 rounded-card bg-surface-2 border border-border"
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-text-dim mt-1.5">Leave blank for storewide (any purchase)</p>
+              )}
             </div>
             <button
               onClick={handleGenerateCodes}
