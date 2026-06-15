@@ -11,6 +11,7 @@ import Events from "./pages/Events";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Blog from "./pages/Blog";
+import Messages from "./pages/Messages";
 import VideoLibrary from "./pages/VideoLibrary";
 import Wellness from "./pages/Wellness";
 import Nutrition from "./pages/Nutrition";
@@ -38,6 +39,8 @@ function App() {
         <Route path="/inspirations" element={<Inspirations />} />
         <Route path="/events" element={<Events />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/messages/:userId" element={<Messages />} />
         <Route path="/videos" element={<VideoLibrary />} />
         <Route path="/wellness" element={<Wellness />} />
         <Route path="/nutrition" element={<Nutrition />} />
