@@ -1,17 +1,28 @@
 import { toPng } from "html-to-image";
-import { Download, Loader2, Share2, Sparkles, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { LOGO_URL } from "./layout/MobileShell";
 
 interface ShareCardModalProps {
   cadenceLabel: string;
   title: string;
   body: string;
+  userAvatar?: string;
+  userName?: string;
   onClose: () => void;
 }
 
-const JOIN_URL = "https://www.lorettabates.com";
+const LORETTA_IMAGE = "https://lorettabates.com/wp-content/uploads/2025/11/Loretta_Bates_Bio.jpg";
+const JOIN_URL = "https://lorettabates.com";
 
-export default function ShareCardModal({ cadenceLabel, title, body, onClose }: ShareCardModalProps) {
+export default function ShareCardModal({
+  cadenceLabel,
+  title,
+  body,
+  userAvatar,
+  userName,
+  onClose,
+}: ShareCardModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -36,27 +47,45 @@ export default function ShareCardModal({ cadenceLabel, title, body, onClose }: S
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = async (platform: "instagram" | "facebook" | "general") => {
     setBusy(true);
     try {
       const dataUrl = await renderImage();
-      if (!dataUrl) return;
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], "well-collective-inspiration.png", { type: "image/png" });
+      if (!dataUrl) {
+        handleDownload();
+        return;
+      }
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "WELL Collective",
-          text: `${title} — join the WELL Collective for inspiration like this. ${JOIN_URL}`,
-        });
-      } else if (navigator.share) {
-        await navigator.share({
-          title: "WELL Collective",
-          text: `${title}\n\n${body}\n\nJoin the WELL Collective: ${JOIN_URL}`,
-        });
+      if (platform === "instagram" || platform === "facebook") {
+        // Instagram/Facebook: download and user shares manually
+        const link = document.createElement("a");
+        link.download = "well-collective-inspiration.png";
+        link.href = dataUrl;
+        link.click();
+        alert(
+          platform === "instagram"
+            ? "Image saved! Open Instagram and share it to your story or feed."
+            : "Image saved! Open Facebook and share it to your profile."
+        );
       } else {
-        await handleDownload();
+        // General share
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], "well-collective-inspiration.png", { type: "image/png" });
+
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "WELL Collective",
+            text: `${title} — join the WELL Collective for inspiration like this. ${JOIN_URL}`,
+          });
+        } else if (navigator.share) {
+          await navigator.share({
+            title: "WELL Collective",
+            text: `${title}\n\n${body}\n\nJoin the WELL Collective: ${JOIN_URL}`,
+          });
+        } else {
+          await handleDownload();
+        }
       }
     } catch {
       // user cancelled share
@@ -79,37 +108,69 @@ export default function ShareCardModal({ cadenceLabel, title, body, onClose }: S
           <X size={14} />
         </button>
 
-        <div ref={cardRef} className="gradient-brand rounded-card p-7 flex flex-col items-center text-center gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles size={20} className="text-white" />
-            <span className="text-lg font-extrabold uppercase tracking-[0.15em] text-white">WELL Collective</span>
+        <div ref={cardRef} className="bg-white rounded-card p-6 flex flex-col items-center text-center gap-4 w-full">
+          {/* WELL Logo */}
+          <img src={LOGO_URL} alt="WELL Collective" className="h-12" />
+
+          {/* Loretta Image */}
+          <img
+            src={LORETTA_IMAGE}
+            alt="Loretta Bates"
+            className="w-24 h-24 rounded-full object-cover border-2 border-[#0191CE]"
+          />
+
+          {/* Branding */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#0191CE] mb-1">{cadenceLabel}</p>
+            <h2 className="text-lg font-bold text-gray-900 leading-snug">{title}</h2>
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/80">{cadenceLabel}</span>
-          <h2 className="text-xl font-bold text-white leading-snug">{title}</h2>
-          <p className="text-sm text-white/90 leading-relaxed">{body}</p>
-          <div className="w-full mt-2 bg-white/15 border border-white/30 rounded-pill py-3 px-4 backdrop-blur-sm">
-            <p className="text-sm font-bold text-white">Join the WELL Collective</p>
-            <p className="text-[11px] text-white/80 mt-0.5">for daily inspiration like this — lorettabates.com</p>
+
+          {/* Message */}
+          <p className="text-sm text-gray-700 leading-relaxed max-w-xs">{body}</p>
+
+          {/* User Avatar (if available) */}
+          {userAvatar && (
+            <div className="flex flex-col items-center gap-2">
+              <img src={userAvatar} alt={userName} className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" />
+              <p className="text-xs font-semibold text-gray-700">{userName}</p>
+            </div>
+          )}
+
+          {/* Branding Footer */}
+          <div className="w-full pt-3 border-t border-gray-200">
+            <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
+            <p className="text-xs font-semibold text-gray-700">with Loretta Bates</p>
+            <p className="text-[10px] text-gray-500 mt-1">lorettabates.com</p>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        {/* Action Buttons */}
+        <div className="flex gap-2 flex-col">
           <button
             onClick={handleDownload}
             disabled={busy}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold text-text border border-border rounded-pill py-3 disabled:opacity-60"
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3 disabled:opacity-60 w-full"
           >
             {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            Save Image
+            Download Image
           </button>
-          <button
-            onClick={handleShare}
-            disabled={busy}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3 shadow-glow disabled:opacity-60"
-          >
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
-            Share
-          </button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => handleShare("instagram")}
+              disabled={busy}
+              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60"
+            >
+              📱 Instagram/TikTok
+            </button>
+            <button
+              onClick={() => handleShare("facebook")}
+              disabled={busy}
+              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60"
+            >
+              👥 Facebook
+            </button>
+          </div>
         </div>
       </div>
     </div>

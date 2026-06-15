@@ -65,7 +65,7 @@ export default function Home() {
   };
 
   return (
-    <div className="px-4 pt-5">
+    <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
       <div className="flex items-center justify-between mb-6">
         <img src={LOGO_URL} alt="WELL Collective" className="h-24" />
         <div className="flex items-center gap-3">
@@ -85,7 +85,7 @@ export default function Home() {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-text-muted">Welcome back to your WELL community.</p>
+        <p className="text-sm text-text-muted">Welcome back to your WELL COLLECTIVE.</p>
       </div>
 
       <div className="grid grid-cols-4 gap-3 mb-6">

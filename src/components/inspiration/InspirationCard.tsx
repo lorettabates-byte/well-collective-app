@@ -65,6 +65,8 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
           cadenceLabel={CADENCE_LABEL[inspiration.cadence]}
           title={inspiration.title}
           body={inspiration.body}
+          userAvatar={user.avatar}
+          userName={user.name}
           onClose={() => setShowShareCard(false)}
         />
       )}

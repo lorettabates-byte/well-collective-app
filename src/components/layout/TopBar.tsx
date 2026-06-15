@@ -13,7 +13,7 @@ export default function TopBar({ title, subtitle, showBack, right }: TopBarProps
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-30 glass-card border-b border-border px-4 pt-5 pb-4 flex items-center gap-3">
+    <div className="sticky top-0 z-30 glass-card border-b border-border px-4 pb-4 flex items-center gap-3" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
       {showBack && (
         <button
           onClick={() => navigate(-1)}
