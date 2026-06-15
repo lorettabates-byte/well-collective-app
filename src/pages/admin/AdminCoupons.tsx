@@ -1,4 +1,4 @@
-import { Download, Plus, Trash2, Upload } from "lucide-react";
+import { Copy, Download, Gift, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 
@@ -131,6 +131,16 @@ export default function AdminCoupons() {
   const [loading, setLoading] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
+  // Bulk code generation (e.g. birthday gift codes)
+  const [genPrefix, setGenPrefix] = useState("BDAY");
+  const [genCount, setGenCount] = useState("10");
+  const [genDescription, setGenDescription] = useState("Birthday gift");
+  const [genDiscountType, setGenDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [genDiscountValue, setGenDiscountValue] = useState("");
+  const [genMaxUses, setGenMaxUses] = useState("1");
+  const [genExpiresAt, setGenExpiresAt] = useState("");
+  const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+
   useEffect(() => {
     fetchCoupons();
   }, []);
@@ -185,6 +195,56 @@ export default function AdminCoupons() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenerateCodes = async () => {
+    if (!genCount || !genDiscountValue || !API_URL) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/coupons/generate`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          count: parseInt(genCount),
+          prefix: genPrefix || undefined,
+          description: genDescription || undefined,
+          discount_type: genDiscountType,
+          discount_value: parseFloat(genDiscountValue),
+          max_uses: genMaxUses ? parseInt(genMaxUses) : undefined,
+          expires_at: genExpiresAt || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedCodes(data.codes);
+        setStatus({ type: "success", message: `Generated ${data.count} new codes!` });
+        fetchCoupons();
+      } else {
+        const err = await res.json();
+        setStatus({ type: "error", message: err.error });
+      }
+    } catch {
+      setStatus({ type: "error", message: "Failed to generate codes" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyGeneratedCodes = () => {
+    navigator.clipboard.writeText(generatedCodes.join("\n"));
+    setStatus({ type: "success", message: "Codes copied to clipboard!" });
+  };
+
+  const downloadGeneratedCodes = () => {
+    const blob = new Blob([generatedCodes.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "birthday-coupon-codes.txt";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleBulkImport = async () => {
@@ -302,6 +362,116 @@ export default function AdminCoupons() {
     <div>
       <TopBar title="Coupon Management" subtitle="Create and manage promotional codes" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
+        {/* Generate Bulk Codes (e.g. birthday gifts) */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Gift size={16} className="text-brand-light" />
+            <h2 className="text-sm font-bold text-text">Generate Bulk Codes</h2>
+          </div>
+          <p className="text-xs text-text-muted mb-3">
+            Create a batch of unique one-time codes that all share the same discount — perfect for birthday gifts.
+          </p>
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={genPrefix}
+                onChange={(e) => setGenPrefix(e.target.value.toUpperCase())}
+                placeholder="Prefix (e.g. BDAY)"
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+              <input
+                type="number"
+                value={genCount}
+                onChange={(e) => setGenCount(e.target.value)}
+                placeholder="How many codes"
+                min={1}
+                max={500}
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+            </div>
+            <input
+              type="text"
+              value={genDescription}
+              onChange={(e) => setGenDescription(e.target.value)}
+              placeholder="Description (optional)"
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={genDiscountType}
+                onChange={(e) => setGenDiscountType(e.target.value as "percentage" | "fixed")}
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text focus:outline-none focus:border-brand-light"
+              >
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed ($)</option>
+              </select>
+              <input
+                type="number"
+                value={genDiscountValue}
+                onChange={(e) => setGenDiscountValue(e.target.value)}
+                placeholder="Amount"
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                value={genMaxUses}
+                onChange={(e) => setGenMaxUses(e.target.value)}
+                placeholder="Max uses per code"
+                min={1}
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+              <input
+                type="date"
+                value={genExpiresAt}
+                onChange={(e) => setGenExpiresAt(e.target.value)}
+                className="bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text focus:outline-none focus:border-brand-light"
+              />
+            </div>
+            <button
+              onClick={handleGenerateCodes}
+              disabled={loading || !genCount || !genDiscountValue}
+              className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Gift size={16} />
+              Generate Codes
+            </button>
+          </div>
+
+          {generatedCodes.length > 0 && (
+            <div className="mt-3 bg-surface-2 border border-border rounded-card p-3">
+              <p className="text-xs font-semibold text-text mb-2">
+                {generatedCodes.length} code{generatedCodes.length === 1 ? "" : "s"} generated
+              </p>
+              <div className="max-h-40 overflow-y-auto mb-2">
+                <div className="grid grid-cols-2 gap-1 font-mono text-xs text-text-muted">
+                  {generatedCodes.map((c) => (
+                    <span key={c}>{c}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={copyGeneratedCodes}
+                  className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-text border border-border rounded-pill py-2"
+                >
+                  <Copy size={14} />
+                  Copy All
+                </button>
+                <button
+                  onClick={downloadGeneratedCodes}
+                  className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-text border border-border rounded-pill py-2"
+                >
+                  <Download size={14} />
+                  Download .txt
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Create Single Coupon */}
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-3">Create Single Coupon</h2>
