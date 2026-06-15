@@ -17,6 +17,7 @@ import Nutrition from "./pages/Nutrition";
 import NotificationSettings from "./pages/NotificationSettings";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/admin/Admin";
+import AdminLogin from "./pages/admin/AdminLogin";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminNotifications from "./pages/admin/AdminNotifications";
@@ -44,6 +45,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/notifications" element={<NotificationSettings />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
         <Route path="/admin/posts" element={<AdminRoute><AdminPosts /></AdminRoute>} />

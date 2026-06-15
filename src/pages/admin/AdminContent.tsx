@@ -6,23 +6,36 @@ import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("adminToken");
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else {
+    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+    if (fallbackKey) {
+      headers["x-admin-key"] = fallbackKey;
+    }
+  }
+  return headers;
+}
 
 async function syncContentSchedule(entries: ContentBatchEntry[]): Promise<boolean> {
-  if (!API_URL || !ADMIN_API_KEY) return false;
+  if (!API_URL) return false;
   const res = await fetch(`${API_URL}/api/content-schedule`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-admin-key": ADMIN_API_KEY },
+    headers: getAuthHeaders(),
     body: JSON.stringify(entries),
   });
   return res.ok;
 }
 
 async function deleteContentScheduleEntry(date: string): Promise<void> {
-  if (!API_URL || !ADMIN_API_KEY) return;
+  if (!API_URL) return;
   await fetch(`${API_URL}/api/content-schedule/${date}`, {
     method: "DELETE",
-    headers: { "x-admin-key": ADMIN_API_KEY },
+    headers: getAuthHeaders(),
   });
 }
 
