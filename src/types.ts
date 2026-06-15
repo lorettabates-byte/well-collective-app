@@ -31,6 +31,7 @@ export interface WellActivity {
   date: string; // ISO date (yyyy-mm-dd)
   title: string;
   description: string;
+  completed?: boolean;
 }
 
 export interface Recipe {
@@ -40,6 +41,7 @@ export interface Recipe {
   ingredients: string[];
   steps: string[];
   image: string;
+  saved?: boolean;
 }
 
 export interface ContentBatchEntry {

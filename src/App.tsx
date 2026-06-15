@@ -24,6 +24,7 @@ import AdminPosts from "./pages/admin/AdminPosts";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminInspirations from "./pages/admin/AdminInspirations";
 import AdminContent from "./pages/admin/AdminContent";
+import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
@@ -55,6 +56,7 @@ function App() {
         <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
         <Route path="/admin/inspirations" element={<AdminRoute><AdminInspirations /></AdminRoute>} />
         <Route path="/admin/content" element={<AdminRoute><AdminContent /></AdminRoute>} />
+        <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
         <Route path="/admin/events" element={<AdminRoute><AdminEvents /></AdminRoute>} />
         <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
       </Routes>
