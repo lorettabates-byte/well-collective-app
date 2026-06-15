@@ -6,6 +6,7 @@ import Community from "./pages/Community";
 import CategoryThreads from "./pages/CategoryThreads";
 import Thread from "./pages/Thread";
 import NewThread from "./pages/NewThread";
+import NewMessage from "./pages/NewMessage";
 import Inspirations from "./pages/Inspirations";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
@@ -34,6 +35,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/community/new" element={<NewMessage />} />
         <Route path="/community/:categoryId" element={<CategoryThreads />} />
         <Route path="/community/:categoryId/new" element={<NewThread />} />
         <Route path="/community/:categoryId/:threadId" element={<Thread />} />

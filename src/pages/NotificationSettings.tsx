@@ -1,3 +1,5 @@
+import { AlertCircle } from "lucide-react";
+import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { subscribeToPush, unsubscribeFromPush } from "../lib/push";
 import { useApp } from "../store/AppContext";
@@ -34,6 +36,16 @@ const TOGGLES: { key: keyof NotificationSettingsType; label: string; description
     label: "Daily Inspiration",
     description: "Sent daily at 7am, following this week's theme",
   },
+  {
+    key: "newEvents",
+    label: "New Events",
+    description: "When a new event is added to the calendar",
+  },
+  {
+    key: "newBlogs",
+    label: "New Blog Posts",
+    description: "When a new post is published to the blog",
+  },
 ];
 
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
@@ -53,19 +65,24 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 }
 
 export default function NotificationSettings() {
-  const { notificationSettings, updateNotificationSettings } = useApp();
+  const { user, notificationSettings, updateNotificationSettings } = useApp();
+  const [pushError, setPushError] = useState("");
 
   const handleTogglePush = async () => {
+    setPushError("");
     if (notificationSettings.pushEnabled) {
       await unsubscribeFromPush();
       updateNotificationSettings({ pushEnabled: false });
       return;
     }
     try {
-      const subscribed = await subscribeToPush();
-      updateNotificationSettings({ pushEnabled: subscribed });
-    } catch {
-      // ignore permission errors
+      const result = await subscribeToPush(user.email || user.name);
+      updateNotificationSettings({ pushEnabled: result.success });
+      if (!result.success && result.reason) {
+        setPushError(result.reason);
+      }
+    } catch (err) {
+      setPushError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }
   };
 
@@ -73,6 +90,12 @@ export default function NotificationSettings() {
     <div>
       <TopBar title="Notification Settings" showBack />
       <div className="px-4 pt-4 flex flex-col gap-2.5">
+        {pushError && (
+          <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
+            <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-400">{pushError}</p>
+          </div>
+        )}
         <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-text">Push Notifications</p>

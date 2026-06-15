@@ -18,6 +18,8 @@ export interface NotificationSettings {
   general: boolean;
   weeklyTheme: boolean;
   dailyInspiration: boolean;
+  newEvents: boolean;
+  newBlogs: boolean;
   pushEnabled: boolean;
 }
 
@@ -114,7 +116,7 @@ export interface CommunityEvent {
   source?: "local" | "live";
 }
 
-export type AppNotificationType = "post" | "reply" | "mention" | "general";
+export type AppNotificationType = "post" | "reply" | "mention" | "general" | "event" | "blog";
 
 export interface AppNotification {
   id: string;

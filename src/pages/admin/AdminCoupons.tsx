@@ -1,5 +1,5 @@
-import { Download, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Download, Plus, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -11,6 +11,100 @@ function getAuthHeaders(): HeadersInit {
     headers.Authorization = `Bearer ${token}`;
   }
   return headers;
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ",") {
+      result.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCSV(text: string): Record<string, string>[] {
+  const lines = text.split(/\r\n|\n|\r/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const headers = parseCSVLine(lines[0]).map((h) => h.trim().toLowerCase());
+  return lines.slice(1).map((line) => {
+    const values = parseCSVLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => (row[h] = (values[i] ?? "").trim()));
+    return row;
+  });
+}
+
+function normalizeDate(value: string): string | undefined {
+  if (!value) return undefined;
+  const isoMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+  if (isoMatch) return isoMatch[0];
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString().slice(0, 10);
+}
+
+interface ImportedCoupon {
+  code: string;
+  description?: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  max_uses?: number;
+  expires_at?: string;
+}
+
+function couponsFromCSV(text: string): ImportedCoupon[] {
+  return parseCSV(text)
+    .map((row) => {
+      const code = row["code"] || row["coupon_code"] || row["coupon code"] || "";
+      if (!code) return null;
+
+      const discountTypeRaw = (
+        row["discount_type"] ||
+        row["discount type"] ||
+        row["type"] ||
+        "percent"
+      ).toLowerCase();
+      const discountType: "percentage" | "fixed" = discountTypeRaw.includes("percent") ? "percentage" : "fixed";
+
+      const discountValue = parseFloat(
+        row["coupon_amount"] || row["amount"] || row["discount_value"] || row["discount value"] || "0"
+      );
+
+      const maxUsesRaw = row["usage_limit"] || row["usage limit"] || row["max_uses"] || "";
+      const expiresRaw = row["expiry_date"] || row["expiry date"] || row["date_expires"] || row["expires_at"] || "";
+
+      const coupon: ImportedCoupon = {
+        code: code.toUpperCase(),
+        description: row["description"] || undefined,
+        discount_type: discountType,
+        discount_value: discountValue,
+        max_uses: maxUsesRaw ? parseInt(maxUsesRaw, 10) : undefined,
+        expires_at: normalizeDate(expiresRaw),
+      };
+      return coupon;
+    })
+    .filter((c): c is ImportedCoupon => c !== null && !isNaN(c.discount_value));
 }
 
 interface Coupon {
@@ -35,6 +129,7 @@ export default function AdminCoupons() {
   const [jsonImport, setJsonImport] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchCoupons();
@@ -137,6 +232,44 @@ export default function AdminCoupons() {
     }
   };
 
+  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !API_URL) return;
+
+    setLoading(true);
+    try {
+      const text = await file.text();
+      const parsed = couponsFromCSV(text);
+      if (parsed.length === 0) {
+        setStatus({ type: "error", message: "No valid coupons found in that file" });
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/api/coupons/bulk`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ coupons: parsed }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setStatus({
+          type: "success",
+          message: `Imported ${data.imported} coupons (${data.failed} failed)`,
+        });
+        fetchCoupons();
+      } else {
+        const err = await res.json();
+        setStatus({ type: "error", message: err.error });
+      }
+    } catch {
+      setStatus({ type: "error", message: "Failed to read that CSV file" });
+    } finally {
+      setLoading(false);
+      e.target.value = "";
+    }
+  };
+
   const downloadTemplate = () => {
     const template = [
       {
@@ -226,6 +359,30 @@ export default function AdminCoupons() {
               Create Coupon
             </button>
           </div>
+        </div>
+
+        {/* CSV Import from Advanced Coupons */}
+        <div className="glass-card rounded-card p-4">
+          <h2 className="text-sm font-bold text-text mb-2">Import from Advanced Coupons</h2>
+          <p className="text-xs text-text-muted mb-3">
+            Export your coupons as CSV from Advanced Coupons (WP Admin → Coupons → Export), then upload the file
+            here.
+          </p>
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleCSVUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => csvInputRef.current?.click()}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-50"
+          >
+            <Upload size={14} />
+            Upload CSV
+          </button>
         </div>
 
         {/* Bulk Import */}

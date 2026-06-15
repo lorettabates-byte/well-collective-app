@@ -1,4 +1,4 @@
-import { AtSign, Bell, MessageCircle, Sparkles } from "lucide-react";
+import { AtSign, Bell, Calendar, MessageCircle, Rss, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -10,6 +10,8 @@ const ICONS: Record<AppNotificationType, typeof Bell> = {
   reply: MessageCircle,
   mention: AtSign,
   general: Sparkles,
+  event: Calendar,
+  blog: Rss,
 };
 
 export default function Notifications() {

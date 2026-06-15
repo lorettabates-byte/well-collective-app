@@ -25,6 +25,13 @@ import type {
 
 const STORAGE_KEY = "well-collective-state-v1";
 
+const FOUNDER_EMAIL = "loretta@lorettabates.com";
+const FOUNDER_PROFILE = {
+  avatar: "https://i.pravatar.cc/150?img=47",
+  bio: "Founder of WELL Collective. On a mission to help women feel calm, strong, and supported. 🌿",
+  birthday: "06-14",
+};
+
 interface PersistedState {
   user: User;
   categories: ForumCategory[];
@@ -74,9 +81,15 @@ function applyMemberInfo(user: User): User {
       window.localStorage.setItem("memberProfileSyncedEmail", member.email);
     }
 
+    const isFounder = member.email === FOUNDER_EMAIL;
+
     return {
       ...user,
-      ...(isNewMember ? { avatar: "", bio: "", birthday: undefined, isAdmin: false } : {}),
+      ...(isFounder
+        ? { ...FOUNDER_PROFILE, isAdmin: true }
+        : isNewMember
+          ? { avatar: "", bio: "", birthday: undefined, isAdmin: false }
+          : {}),
       email: member.email || user.email,
       name: member.name || user.name,
       trialEndsAt: trialEndsAt || user.trialEndsAt,

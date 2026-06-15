@@ -11,9 +11,9 @@ export default function NotificationOptInModal({ onClose }: NotificationOptInMod
 
   const handleEnable = async () => {
     try {
-      const subscribed = await subscribeToPush(user.email || user.name);
+      const result = await subscribeToPush(user.email || user.name);
       updateNotificationSettings({
-        pushEnabled: subscribed,
+        pushEnabled: result.success,
         weeklyTheme: true,
         dailyInspiration: true,
       });

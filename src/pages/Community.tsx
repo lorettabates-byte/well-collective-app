@@ -1,4 +1,5 @@
-import { MessageCircle } from "lucide-react";
+import { Mail, MessageCircle, PenSquare } from "lucide-react";
+import { Link } from "react-router-dom";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
@@ -20,6 +21,23 @@ export default function Community() {
     <div>
       <TopBar title="Community" subtitle="Connect, share, and support one another" icon={MessageCircle} iconColor="#0191CE" />
       <div className="px-4 pt-4">
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <Link
+            to="/community/new"
+            className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-4 shadow-glow justify-center"
+          >
+            <PenSquare size={16} />
+            New Message
+          </Link>
+          <Link
+            to="/messages"
+            className="flex items-center gap-2 glass-card text-text text-sm font-semibold rounded-pill py-3 px-4 justify-center"
+          >
+            <Mail size={16} />
+            Messages
+          </Link>
+        </div>
+
         {trending.length > 0 && (
           <div className="mb-6">
             <SectionHeader title="🔥 Trending" />

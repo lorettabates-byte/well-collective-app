@@ -1,11 +1,8 @@
-import { Bell, Bookmark, ChevronRight, LogOut, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Video, Waves, Loader2 } from "lucide-react";
+import { Bell, Bookmark, ChevronRight, LogOut, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Video, Waves } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
 import { useApp } from "../store/AppContext";
-
-const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 function MenuRow({
   icon,
@@ -36,11 +33,6 @@ function MenuRow({
 
 export default function Profile() {
   const { user, threads, inspirations } = useApp();
-  const [showLoginModal, setShowLoginModal] = useState(!user.email);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
@@ -52,51 +44,13 @@ export default function Profile() {
   );
   const savedCount = inspirations.filter((i) => i.savedBy.includes(user.id)).length;
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      if (!API_URL) {
-        setError("API URL not configured");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Login failed");
-      }
-
-      const data = await response.json();
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminEmail", email);
-      localStorage.setItem("admin", JSON.stringify(data.admin));
-
-      // Update user with email
-      (user as any).email = email;
-      setShowLoginModal(false);
-      setEmail("");
-      setPassword("");
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogout = () => {
+    localStorage.removeItem("memberToken");
+    localStorage.removeItem("memberUser");
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminEmail");
     localStorage.removeItem("admin");
-    (user as any).email = undefined;
-    setShowLoginModal(true);
+    window.location.reload();
   };
 
   return (
@@ -147,50 +101,13 @@ export default function Profile() {
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
       </div>
 
-      {user.email && (
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-red-400 border border-red-400/30 rounded-pill py-3 mb-4"
-        >
-          <LogOut size={16} />
-          Log Out
-        </button>
-      )}
-
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6">
-          <div className="w-full max-w-sm bg-surface rounded-card p-6 flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-text">Admin Login</h2>
-            <form onSubmit={handleLogin} className="flex flex-col gap-3">
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-surface-2 border border-border rounded-card px-4 py-2.5 text-sm text-text placeholder-text-muted focus:outline-none focus:border-brand-light"
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-surface-2 border border-border rounded-card px-4 py-2.5 text-sm text-text placeholder-text-muted focus:outline-none focus:border-brand-light"
-                required
-              />
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="gradient-brand text-white font-semibold rounded-pill py-2.5 flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Logging in..." : "Log In"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-red-400 border border-red-400/30 rounded-pill py-3 mb-4"
+      >
+        <LogOut size={16} />
+        Log Out
+      </button>
     </div>
   );
 }

@@ -17,7 +17,7 @@ const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
   { to: "/inspirations", label: "Inspiration", icon: Sparkles },
   { to: "/events", label: "Events", icon: Calendar },
-  { to: "/community/general-chat/new", label: "New Post", icon: PenSquare },
+  { to: "/community/new", label: "New Post", icon: PenSquare },
   { to: "/videos", label: "Classes", icon: Video },
   { to: "/wellness", label: "Wellness", icon: Waves },
   { to: "/nutrition", label: "Nutrition", icon: Salad },
@@ -25,15 +25,19 @@ const QUICK_LINKS = [
 ];
 
 export default function Home() {
-  const { user, threads, inspirations, events, notifications } = useApp();
+  const { user, threads, inspirations, events, notifications, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const todaysInspiration = inspirations[0];
-  const upcomingEvents = [...events, ...liveEvents]
+  const allUpcomingEvents = [...events, ...liveEvents]
     .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 4);
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const featuredEvent = allUpcomingEvents.find((e) => e.id === featuredEventId);
+  const upcomingEvents = [
+    ...(featuredEvent ? [featuredEvent] : []),
+    ...allUpcomingEvents.filter((e) => e.id !== featuredEventId),
+  ].slice(0, 4);
   const latestThreads = [...threads]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
@@ -47,7 +51,7 @@ export default function Home() {
     const todayMD = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     if (user.birthday !== todayMD) return;
 
-    const key = `well-birthday-shown-${user.id}-${now.getFullYear()}`;
+    const key = `well-birthday-shown-${user.id}-${now.getFullYear()}-${todayMD}`;
     if (localStorage.getItem(key)) return;
 
     localStorage.setItem(key, "1");
@@ -100,7 +104,7 @@ export default function Home() {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-text-muted">Welcome back to your WELL COLLECTIVE.</p>
+        <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
       </div>
 
       <div className="grid grid-cols-4 gap-3 mb-6">

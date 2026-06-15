@@ -1,0 +1,124 @@
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { LOGO_URL } from "../components/layout/MobileShell";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (!API_URL) {
+        setError("Backend not configured");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/api/auth/member-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      let data: { error?: string; token?: string; user?: { email: string; name: string } };
+      try {
+        data = await res.json();
+      } catch {
+        setError("Server error. Please try again in a moment.");
+        return;
+      }
+
+      if (!res.ok || !data.token || !data.user) {
+        setError(data.error || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("memberToken", data.token);
+      localStorage.setItem("memberUser", JSON.stringify(data.user));
+
+      if (!localStorage.getItem("memberTrialEndsAt")) {
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        localStorage.setItem("memberTrialEndsAt", trialEnd.toISOString().slice(0, 10));
+      }
+
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-bg flex items-center justify-center px-4">
+      <div className="w-full max-w-sm flex flex-col gap-6">
+        <div className="flex justify-center">
+          <img src={LOGO_URL} alt="WELL Collective" className="h-16" />
+        </div>
+
+        <div className="glass-card rounded-card p-6">
+          <h1 className="text-xl font-bold text-text mb-1">Welcome Back</h1>
+          <p className="text-xs text-text-muted mb-5">
+            Log in with your WELL Collective membership account to continue.
+          </p>
+
+          {error && (
+            <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3 mb-4">
+              <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="text-xs font-semibold text-text mb-1.5 block">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Your WELL Collective username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-text mb-1.5 block">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !username || !password}
+              className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+              {loading ? "Logging in..." : "Log In"}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-xs text-text-muted text-center">
+          Not a member yet? Visit lorettabates.com to join WELL Collective.
+        </p>
+      </div>
+    </div>
+  );
+}

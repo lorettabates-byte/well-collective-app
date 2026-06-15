@@ -9,6 +9,8 @@ const TYPE_OPTIONS: { id: AppNotificationType; label: string }[] = [
   { id: "post", label: "New Post" },
   { id: "reply", label: "Reply" },
   { id: "mention", label: "Mention" },
+  { id: "event", label: "New Event" },
+  { id: "blog", label: "New Blog Post" },
 ];
 
 export default function AdminNotifications() {
