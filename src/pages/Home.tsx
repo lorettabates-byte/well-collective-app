@@ -1,4 +1,4 @@
-import { Bell, Calendar, MessageCircle, PenSquare, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
+import { Bell, Calendar, Gift, MessageCircle, PenSquare, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
@@ -11,6 +11,7 @@ import Avatar from "../components/ui/Avatar";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
+import { getTrialStatus } from "../utils/trial";
 
 const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
@@ -64,6 +65,8 @@ export default function Home() {
     setShowNotifOptIn(false);
   };
 
+  const trialStatus = getTrialStatus(user.trialEndsAt);
+
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
       <div className="flex items-center justify-between mb-6">
@@ -82,6 +85,18 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+      {trialStatus.isActive && (
+        <div className="gradient-brand p-[1px] rounded-card mb-4">
+          <div className="bg-surface rounded-card p-3 flex items-center gap-2.5">
+            <Gift size={18} className="text-brand-light shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-text">Free Trial Active</p>
+              <p className="text-[11px] text-text-muted">{trialStatus.daysRemaining} day{trialStatus.daysRemaining !== 1 ? "s" : ""} remaining</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>

@@ -7,6 +7,7 @@ export interface User {
   joinedAt: string;
   birthday?: string; // MM-DD
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
+  trialEndsAt?: string; // ISO date when free trial expires
 }
 
 export interface NotificationSettings {

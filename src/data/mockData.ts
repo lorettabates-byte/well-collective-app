@@ -7,6 +7,13 @@ import type {
   User,
 } from "../types";
 
+// Helper: Calculate trial end date (7 days from account creation)
+function getTrialEndDate(joinedAt: string): string {
+  const date = new Date(joinedAt);
+  date.setDate(date.getDate() + 7);
+  return date.toISOString().split('T')[0];
+}
+
 export const CURRENT_USER: User = {
   id: "u1",
   name: "Loretta Bates",
@@ -15,6 +22,7 @@ export const CURRENT_USER: User = {
   isAdmin: true,
   joinedAt: "2025-01-12",
   birthday: "06-14",
+  trialEndsAt: getTrialEndDate("2025-01-12"),
 };
 
 export const USERS: User[] = [

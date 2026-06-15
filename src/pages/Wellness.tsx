@@ -2,6 +2,8 @@ import {
   ArrowUpRight,
   Award,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Dumbbell,
   Flame,
   Heart,
@@ -43,6 +45,7 @@ export default function Wellness() {
     const key = `well-activity-${new Date().toISOString().slice(0, 10)}`;
     return localStorage.getItem(key) === "true";
   });
+  const [badgesExpanded, setBadgesExpanded] = useState(false);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -183,7 +186,16 @@ export default function Wellness() {
         </section>
 
         <section>
-          <h2 className="text-sm font-bold text-text mb-2">Your Streak &amp; Badges</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-bold text-text">Your Streak &amp; Badges</h2>
+            <button
+              onClick={() => setBadgesExpanded(!badgesExpanded)}
+              className="flex items-center gap-1 text-xs text-brand-light"
+            >
+              {badgesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
+
           <div className="glass-card rounded-card p-4 mb-3 flex items-center gap-3">
             <div className="w-12 h-12 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
               <Flame size={22} className="text-white" />
@@ -196,8 +208,8 @@ export default function Wellness() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {badges.map((badge) => {
+          <div className={`grid gap-3 transition-all ${badgesExpanded ? "grid-cols-2" : "grid-cols-4"}`}>
+            {(badgesExpanded ? badges : badges.slice(0, 4)).map((badge) => {
               const Icon = BADGE_ICONS[badge.icon] ?? Award;
               return (
                 <div
@@ -211,12 +223,17 @@ export default function Wellness() {
                   >
                     <Icon size={16} className={badge.earned ? "text-white" : "text-text-dim"} />
                   </div>
-                  <p className="text-xs font-bold text-text leading-tight">{badge.label}</p>
-                  <p className="text-[11px] text-text-dim leading-tight">{badge.description}</p>
+                  {badgesExpanded && (
+                    <>
+                      <p className="text-xs font-bold text-text leading-tight">{badge.label}</p>
+                      <p className="text-[11px] text-text-dim leading-tight">{badge.description}</p>
+                    </>
+                  )}
                 </div>
               );
             })}
           </div>
+          {!badgesExpanded && <p className="text-xs text-text-muted mt-2">Click to see all {badges.length} badges</p>}
         </section>
 
         <section>
