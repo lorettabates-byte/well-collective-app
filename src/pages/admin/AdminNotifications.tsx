@@ -4,6 +4,22 @@ import { useApp } from "../../store/AppContext";
 import type { AppNotificationType } from "../../types";
 import { timeAgo } from "../../utils/format";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("adminToken");
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else {
+    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+    if (fallbackKey) {
+      headers["x-admin-key"] = fallbackKey;
+    }
+  }
+  return headers;
+}
+
 const TYPE_OPTIONS: { id: AppNotificationType; label: string }[] = [
   { id: "general", label: "General" },
   { id: "post", label: "New Post" },
@@ -18,11 +34,33 @@ export default function AdminNotifications() {
   const [type, setType] = useState<AppNotificationType>("general");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [pushError, setPushError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     sendNotification(type, title.trim(), body.trim());
+
+    if (API_URL) {
+      setSending(true);
+      setPushError("");
+      try {
+        const res = await fetch(`${API_URL}/api/send-test`, {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ title: title.trim(), body: body.trim() }),
+        });
+        if (!res.ok) {
+          setPushError("Saved here, but the push notification failed to send.");
+        }
+      } catch {
+        setPushError("Saved here, but the push notification failed to send.");
+      } finally {
+        setSending(false);
+      }
+    }
+
     setTitle("");
     setBody("");
   };
@@ -70,12 +108,13 @@ export default function AdminNotifications() {
               className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
             />
           </div>
+          {pushError && <p className="text-xs text-red-400">{pushError}</p>}
           <button
             type="submit"
-            disabled={!title.trim() || !body.trim()}
+            disabled={!title.trim() || !body.trim() || sending}
             className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
           >
-            Send Notification
+            {sending ? "Sending…" : "Send Notification"}
           </button>
         </form>
 
