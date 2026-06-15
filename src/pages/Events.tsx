@@ -105,7 +105,7 @@ export default function Events() {
                 <h2 className="text-sm font-bold text-text mb-3">Upcoming Events</h2>
                 <div className="flex flex-col gap-3">
                   {featuredEvent && (
-                    <div className="sticky top-2 z-10 -mx-1 px-1 pb-1">
+                    <div className="-mx-1 px-1 pb-1">
                       <div className="gradient-brand p-[2px] rounded-card shadow-glow">
                         <div className="bg-surface rounded-card p-1">
                           <div className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-brand-light">
@@ -127,7 +127,7 @@ export default function Events() {
         ) : (
           <div className="flex flex-col gap-3">
             {featuredEvent && (
-              <div className="sticky top-2 z-10 -mx-1 px-1 pb-1">
+              <div className="-mx-1 px-1 pb-1">
                 <div className="gradient-brand p-[2px] rounded-card shadow-glow">
                   <div className="bg-surface rounded-card p-1">
                     <div className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-brand-light">
