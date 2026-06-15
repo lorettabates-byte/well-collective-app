@@ -1,4 +1,5 @@
-const LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
+const LOGO_URL = "/icons/notification-icon.png";
+const BADGE_URL = "/icons/notification-badge.png";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -20,7 +21,7 @@ self.addEventListener("push", (event) => {
   const options = {
     body: data.body || "",
     icon: data.icon || LOGO_URL,
-    badge: data.badge || LOGO_URL,
+    badge: data.badge || BADGE_URL,
     image: data.image || undefined,
     tag: data.tag || "well-collective",
     data: { url: data.url || "/" },
