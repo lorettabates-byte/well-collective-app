@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import VideoLibrary from "./pages/VideoLibrary";
 import Wellness from "./pages/Wellness";
 import Nutrition from "./pages/Nutrition";
+import Music from "./pages/Music";
 import NotificationSettings from "./pages/NotificationSettings";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/admin/Admin";
@@ -28,6 +29,7 @@ import AdminContent from "./pages/admin/AdminContent";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminMusic from "./pages/admin/AdminMusic";
 
 function App() {
   return (
@@ -47,6 +49,7 @@ function App() {
         <Route path="/videos" element={<VideoLibrary />} />
         <Route path="/wellness" element={<Wellness />} />
         <Route path="/nutrition" element={<Nutrition />} />
+        <Route path="/music" element={<Music />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
@@ -61,6 +64,7 @@ function App() {
         <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
         <Route path="/admin/events" element={<AdminRoute><AdminEvents /></AdminRoute>} />
         <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+        <Route path="/admin/music" element={<AdminRoute><AdminMusic /></AdminRoute>} />
       </Routes>
     </MobileShell>
   );

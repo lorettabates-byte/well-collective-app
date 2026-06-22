@@ -117,6 +117,14 @@ export interface CommunityEvent {
   source?: "local" | "live";
 }
 
+export interface Song {
+  id: number;
+  title: string;
+  artist?: string;
+  url: string;
+  sortOrder: number;
+}
+
 export type AppNotificationType = "post" | "reply" | "mention" | "general" | "event" | "blog";
 
 export interface AppNotification {

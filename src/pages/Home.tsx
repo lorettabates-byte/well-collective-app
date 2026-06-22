@@ -1,4 +1,4 @@
-import { Bell, Calendar, Gift, MessageCircle, PenSquare, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
+import { Bell, Calendar, Gift, MessageCircle, Music, PenSquare, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
@@ -22,6 +22,7 @@ const QUICK_LINKS = [
   { to: "/wellness", label: "Wellness", icon: Waves },
   { to: "/nutrition", label: "Nutrition", icon: Salad },
   { to: "/blog", label: "Blog", icon: Rss },
+  { to: "/music", label: "Music", icon: Music },
 ];
 
 export default function Home() {
