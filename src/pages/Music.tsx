@@ -1,12 +1,13 @@
-import { Clock, Music as MusicIcon, Pause, Play, Volume2 } from "lucide-react";
+import { Clock, Music as MusicIcon, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import type { Song } from "../types";
 import { AMBIENT_SOUNDS, playAmbientSound, type AmbientSoundHandle, type AmbientSoundId } from "../utils/ambientSounds";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-type Tab = "soundtrack" | "sounds";
+type Tab = "playlist" | "sounds";
 
 const TIMER_OPTIONS: { label: string; minutes: number | null }[] = [
   { label: "No limit", minutes: null },
@@ -16,11 +17,9 @@ const TIMER_OPTIONS: { label: string; minutes: number | null }[] = [
 ];
 
 export default function Music() {
-  const [tab, setTab] = useState<Tab>("soundtrack");
+  const [tab, setTab] = useState<Tab>("playlist");
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [activeSound, setActiveSound] = useState<AmbientSoundId | null>(null);
   const [volume, setVolume] = useState(0.6);
@@ -60,21 +59,6 @@ export default function Music() {
       clearTimer();
     };
   }, []);
-
-  const togglePlay = (song: Song) => {
-    if (playingId === song.id) {
-      audioRef.current?.pause();
-      setPlayingId(null);
-      return;
-    }
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.onended = () => setPlayingId(null);
-    }
-    audioRef.current.src = song.url;
-    audioRef.current.play();
-    setPlayingId(song.id);
-  };
 
   const startTimer = (minutes: number | null) => {
     clearTimer();
@@ -122,16 +106,16 @@ export default function Music() {
 
   return (
     <div>
-      <TopBar title="Music" subtitle="Soundtrack & peaceful sounds" icon={MusicIcon} iconColor="#0191CE" showBack />
+      <TopBar title="Music" subtitle="Playlist & peaceful sounds" icon={MusicIcon} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4">
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
-            onClick={() => setTab("soundtrack")}
+            onClick={() => setTab("playlist")}
             className={`text-sm font-semibold rounded-pill py-2.5 border ${
-              tab === "soundtrack" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+              tab === "playlist" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
             }`}
           >
-            Soundtrack
+            Playlist
           </button>
           <button
             onClick={() => setTab("sounds")}
@@ -143,40 +127,7 @@ export default function Music() {
           </button>
         </div>
 
-        {tab === "soundtrack" && (
-          <div className="flex flex-col gap-2.5">
-            <p className="text-xs text-text-muted mb-1">
-              Motivational music curated by Loretta — the WELL Collective Soundtrack.
-            </p>
-            {loading ? (
-              <p className="text-sm text-text-muted text-center py-8">Loading songs...</p>
-            ) : songs.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-8">
-                No songs uploaded yet — check back soon.
-              </p>
-            ) : (
-              songs.map((song) => (
-                <button
-                  key={song.id}
-                  onClick={() => togglePlay(song)}
-                  className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 text-left"
-                >
-                  <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0">
-                    {playingId === song.id ? (
-                      <Pause size={16} className="text-white" />
-                    ) : (
-                      <Play size={16} className="text-white" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text truncate">{song.title}</p>
-                    {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        )}
+        {tab === "playlist" && <Playlist songs={songs} loading={loading} />}
 
         {tab === "sounds" && (
           <div className="flex flex-col gap-4">

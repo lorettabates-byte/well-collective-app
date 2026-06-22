@@ -81,14 +81,14 @@ export default function AdminMusic() {
 
   return (
     <div>
-      <TopBar title="Music" subtitle="Manage the WELL Collective Soundtrack" showBack />
+      <TopBar title="Music" subtitle="Manage the WELL Collective Playlist" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
           <p className="text-xs text-text-muted leading-relaxed">
-            Upload each song's audio file to your WordPress media library (WP Admin → Media → Add New),
-            then paste the file's URL here. Songs appear in the app's Music → Soundtrack tab in the order
-            you add them.
+            Upload each song's audio file to your WordPress media library (WP Admin → Media → Add New)
+            or Bunny.net, then paste the file's URL here. Songs appear in the app's Music → Playlist tab
+            in the order you add them — members can favorite, reorder, and download songs from there too.
           </p>
         </div>
 
@@ -133,7 +133,7 @@ export default function AdminMusic() {
         </div>
 
         <div>
-          <h2 className="text-sm font-bold text-text mb-3">Soundtrack ({songs.length})</h2>
+          <h2 className="text-sm font-bold text-text mb-3">WELL Collective Playlist ({songs.length})</h2>
           {loading ? (
             <p className="text-sm text-text-muted">Loading...</p>
           ) : songs.length === 0 ? (
