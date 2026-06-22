@@ -509,6 +509,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      if (entry.motivationBoost) {
+        next = {
+          ...next,
+          inspirations: [
+            {
+              id: uid("i"),
+              title: entry.motivationBoost.title,
+              body: entry.motivationBoost.body,
+              author: "Loretta Bates",
+              cadence: "motivational",
+              sentAt: now,
+              likes: [],
+              savedBy: [],
+            },
+            ...next.inspirations,
+          ],
+        };
+      }
+
       if (entry.dailyInspiration) {
         next = {
           ...next,
@@ -551,6 +570,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { ...next, processedDates: [...next.processedDates, today] };
     });
   }, [state.contentSchedule, state.processedDates]);
+
+  // Sync today's server-side content (recipe, well activity, AI motivation boost,
+  // etc.) into local state so every member's device — not just the admin's —
+  // gets it, even if they've never visited the admin Content Schedule page.
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+    if (!apiUrl) return;
+
+    fetch(`${apiUrl}/api/content-today`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const entry = data?.today as ContentBatchEntry | undefined;
+        if (!entry) return;
+        setState((prev) => {
+          const byDate = new Map(prev.contentSchedule.map((e) => [e.date, e]));
+          byDate.set(entry.date, { ...byDate.get(entry.date), ...entry });
+          return {
+            ...prev,
+            contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
+          };
+        });
+      })
+      .catch(() => {
+        // offline or backend unreachable — fall back to whatever local content exists
+      });
+  }, []);
 
   const today = todayISO();
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);
