@@ -172,8 +172,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // ignore persistence errors
+    } catch (err) {
+      // Most commonly a quota-exceeded error from an oversized avatar data URL —
+      // log loudly since a silent failure here loses the whole state (profile, etc).
+      console.error("Failed to persist app state to localStorage:", err);
     }
   }, [state]);
 

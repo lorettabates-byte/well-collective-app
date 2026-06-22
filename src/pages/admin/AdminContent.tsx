@@ -1,5 +1,5 @@
 import { Download, Trash2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry } from "../../types";
@@ -39,6 +39,27 @@ async function deleteContentScheduleEntry(date: string): Promise<void> {
   });
 }
 
+async function fetchContentSchedule(): Promise<ContentBatchEntry[] | null> {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/api/content-schedule`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.entries as ContentBatchEntry[];
+  } catch {
+    return null;
+  }
+}
+
+function toLocalISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function buildTemplate(days: number): ContentBatchEntry[] {
   const entries: ContentBatchEntry[] = [];
   const start = new Date();
@@ -47,7 +68,7 @@ function buildTemplate(days: number): ContentBatchEntry[] {
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
     date.setDate(start.getDate() + i);
-    const iso = date.toISOString().slice(0, 10);
+    const iso = toLocalISODate(date);
     const isMonday = date.getDay() === 1;
 
     const entry: ContentBatchEntry = {
@@ -86,6 +107,16 @@ export default function AdminContent() {
   const { contentSchedule, importContentSchedule, removeContentEntry } = useApp();
   const [jsonText, setJsonText] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [syncing, setSyncing] = useState(true);
+
+  useEffect(() => {
+    fetchContentSchedule()
+      .then((entries) => {
+        if (entries) importContentSchedule(entries);
+      })
+      .finally(() => setSyncing(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDownloadTemplate = () => {
     const entries = buildTemplate(30);
@@ -134,18 +165,44 @@ export default function AdminContent() {
   };
 
   const sorted = [...contentSchedule].sort((a, b) => a.date.localeCompare(b.date));
+  const todayISO = toLocalISODate(new Date());
+  const todayEntry = contentSchedule.find((e) => e.date === todayISO);
+  const isMondayToday = new Date().getDay() === 1;
 
   return (
     <div>
       <TopBar title="Content Schedule" subtitle="Bulk-upload weekly themes & daily content" showBack />
       <div className="px-4 pt-4 flex flex-col gap-4">
+        <div
+          className={`glass-card rounded-card p-4 border ${
+            syncing ? "border-border" : todayEntry?.dailyInspiration ? "border-green-500/30" : "border-red-500/30"
+          }`}
+        >
+          <h2 className="text-sm font-bold text-text mb-1.5">Today's push status — {formatDateLong(todayISO)}</h2>
+          {syncing ? (
+            <p className="text-xs text-text-dim">Checking the server's schedule...</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-muted">
+                Daily Inspiration: {todayEntry?.dailyInspiration ? "✅ scheduled, will send at 7am" : "⚠️ not scheduled — nothing will send today"}
+              </p>
+              {isMondayToday && (
+                <p className="text-xs text-text-muted mt-1">
+                  Weekly Theme: {todayEntry?.weeklyTheme ? "✅ scheduled, will send at 7am" : "⚠️ not scheduled — nothing will send this Monday"}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
           <p className="text-xs text-text-muted leading-relaxed">
             Upload a month's (or year's) worth of content at once as JSON. Each entry is keyed by date
-            (yyyy-mm-dd). The weekly theme is sent every Monday at 7am, and the daily inspiration, WELL
-            Activity, and recipe are sent/applied automatically each day at 7am when the app is opened —
-            keep daily content aligned with that week's theme.
+            (yyyy-mm-dd). The weekly theme is sent every Monday at 7am, and the daily inspiration is sent
+            every day at 7am — those are pushed straight from this schedule by the server regardless of
+            whether the app is open. Keep daily content (and the WELL Activity / recipe) aligned with
+            that week's theme.
           </p>
           <button
             onClick={handleDownloadTemplate}

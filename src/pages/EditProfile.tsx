@@ -23,7 +23,27 @@ export default function EditProfile() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === "string") setAvatar(reader.result);
+      if (typeof reader.result !== "string") return;
+      const img = new Image();
+      img.onload = () => {
+        const size = 300;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setAvatar(reader.result as string);
+          return;
+        }
+        const scale = Math.max(size / img.width, size / img.height);
+        const sw = size / scale;
+        const sh = size / scale;
+        const sx = (img.width - sw) / 2;
+        const sy = (img.height - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+        setAvatar(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.src = reader.result;
     };
     reader.readAsDataURL(file);
   };
