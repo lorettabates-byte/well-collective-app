@@ -12,6 +12,14 @@ const CADENCE_LABEL: Record<InspirationCadence, string> = {
   motivational: "Motivation Boost",
 };
 
+// Subtle per-cadence background tint so the feed isn't visually flat when all
+// three types appear together on the same page.
+const CADENCE_BG: Record<InspirationCadence, string> = {
+  daily: "bg-gradient-to-br from-surface to-[#11243d]",
+  weekly: "bg-gradient-to-br from-surface to-[#1a1f3d]",
+  motivational: "bg-gradient-to-br from-surface to-[#2a1f30]",
+};
+
 interface InspirationCardProps {
   inspiration: Inspiration;
   compact?: boolean;
@@ -25,7 +33,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
 
   return (
     <div className="gradient-brand p-[1px] rounded-card animate-fade-in-up">
-      <div className="bg-surface/95 rounded-card p-4">
+      <div className={`${CADENCE_BG[inspiration.cadence]} rounded-card p-4`}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
             {CADENCE_LABEL[inspiration.cadence]}
