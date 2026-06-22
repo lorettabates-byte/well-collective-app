@@ -1,10 +1,85 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
+import { uid } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
+function StartTrial({ onSuccess }: { onSuccess: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  const handleStartTrial = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    localStorage.setItem("memberToken", `trial_${uid("local")}`);
+    localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: name.trim() }));
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 7);
+    localStorage.setItem("memberTrialEndsAt", trialEnd.toISOString().slice(0, 10));
+
+    onSuccess();
+  };
+
+  return (
+    <form onSubmit={handleStartTrial} className="flex flex-col gap-4">
+      {error && (
+        <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
+          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-red-400">{error}</p>
+        </div>
+      )}
+
+      <div>
+        <label className="text-xs font-semibold text-text mb-1.5 block">Your Name</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Jane Doe"
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+        />
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="jane@example.com"
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
+      >
+        Start My 7-Day Free Trial
+      </button>
+      <p className="text-[11px] text-text-dim text-center -mt-1">
+        No credit card needed. We'll let you know if you want to become a full WELL Collective member.
+      </p>
+    </form>
+  );
+}
+
 export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
+  const [mode, setMode] = useState<"login" | "trial">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -64,55 +139,88 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
           <img src={LOGO_URL} alt="WELL Collective" className="h-16" />
         </div>
 
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("login")}
+            className={`text-sm font-semibold rounded-pill py-2.5 border ${
+              mode === "login" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+            }`}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("trial")}
+            className={`text-sm font-semibold rounded-pill py-2.5 border ${
+              mode === "trial" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+            }`}
+          >
+            Free Trial
+          </button>
+        </div>
+
         <div className="glass-card rounded-card p-6">
-          <h1 className="text-xl font-bold text-text mb-1">Welcome Back</h1>
-          <p className="text-xs text-text-muted mb-5">
-            Log in with your WELL Collective membership account to continue.
-          </p>
+          {mode === "login" ? (
+            <>
+              <h1 className="text-xl font-bold text-text mb-1">Welcome Back</h1>
+              <p className="text-xs text-text-muted mb-5">
+                Log in with your WELL Collective membership account to continue.
+              </p>
 
-          {error && (
-            <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3 mb-4">
-              <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-400">{error}</p>
-            </div>
+              {error && (
+                <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3 mb-4">
+                  <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-400">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-text mb-1.5 block">Username</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Your WELL Collective username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-text mb-1.5 block">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                    disabled={loading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !username || !password}
+                  className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+                  {loading ? "Logging in..." : "Log In"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold text-text mb-1">Start Your Free Trial</h1>
+              <p className="text-xs text-text-muted mb-5">
+                Try WELL Collective free for 7 days — no membership account needed yet.
+              </p>
+              <StartTrial onSuccess={onSuccess} />
+            </>
           )}
-
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Your WELL Collective username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-                disabled={loading}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !username || !password}
-              className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : null}
-              {loading ? "Logging in..." : "Log In"}
-            </button>
-          </form>
         </div>
 
         <p className="text-xs text-text-muted text-center">
