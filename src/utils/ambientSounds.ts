@@ -9,17 +9,17 @@ export type AmbientSoundId =
   | "pink-noise"
   | "brown-noise"
   | "wind"
-  | "campfire"
-  | "stream"
+  | "singing-bowl"
+  | "wind-chimes"
   | "crickets";
 
 export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string; emoji: string }[] = [
   { id: "rain", label: "Rain", emoji: "🌧️" },
   { id: "thunderstorm", label: "Thunderstorm", emoji: "⛈️" },
   { id: "ocean", label: "Ocean Waves", emoji: "🌊" },
-  { id: "stream", label: "Babbling Stream", emoji: "💧" },
+  { id: "wind-chimes", label: "Wind Chimes", emoji: "🎐" },
   { id: "wind", label: "Wind", emoji: "🍃" },
-  { id: "campfire", label: "Campfire", emoji: "🔥" },
+  { id: "singing-bowl", label: "Singing Bowl", emoji: "🔔" },
   { id: "crickets", label: "Night Crickets", emoji: "🦗" },
   { id: "white-noise", label: "White Noise", emoji: "⚪" },
   { id: "pink-noise", label: "Pink Noise", emoji: "🌸" },
@@ -175,35 +175,39 @@ export function playAmbientSound(id: AmbientSoundId): AmbientSoundHandle {
       noise.connect(lp).connect(waveGain).connect(master);
       break;
     }
-    case "stream": {
-      // Bright, busy bandpassed noise bed (the constant trickle)...
-      const noise = loopingNoise(createNoiseBuffer(ctx));
-      const bp = ctx.createBiquadFilter();
-      bp.type = "bandpass";
-      bp.Q.value = 1.1;
-      makeLfo(ctx, 0.7, 600, bp.frequency, 3200);
-      const lfo2 = makeLfo(ctx, 2.3, 350, bp.frequency);
-      stoppers.push(() => lfo2.stop());
+    case "wind-chimes": {
+      // A very quiet air bed underneath...
+      const bedNoise = loopingNoise(createNoiseBuffer(ctx));
+      const bedFilter = ctx.createBiquadFilter();
+      bedFilter.type = "bandpass";
+      bedFilter.frequency.value = 1000;
+      bedFilter.Q.value = 0.5;
       const bedGain = ctx.createGain();
-      bedGain.gain.value = 0.5;
-      noise.connect(bp).connect(bedGain).connect(master);
+      bedGain.gain.value = 0.025;
+      bedNoise.connect(bedFilter).connect(bedGain).connect(master);
 
-      // ...plus frequent bright "droplet" plinks for the bubbling texture.
+      // ...plus randomly-triggered bell tones with slightly inharmonic overtones
+      // (like real metal chimes) and long, natural decays.
+      const notes = [523.25, 587.33, 659.25, 783.99, 880.0, 987.77]; // pentatonic-ish
+      const partials = [1, 2.76, 4.18];
       scheduleRandomBursts(() => {
         const now = ctx.currentTime;
-        const drop = ctx.createBufferSource();
-        drop.buffer = createNoiseBuffer(ctx, 0.05);
-        const dropBp = ctx.createBiquadFilter();
-        dropBp.type = "bandpass";
-        dropBp.frequency.value = 3200 + Math.random() * 3200;
-        dropBp.Q.value = 6 + Math.random() * 6;
-        const env = ctx.createGain();
-        env.gain.setValueAtTime(0.5, now);
-        env.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        drop.connect(dropBp).connect(env).connect(master);
-        drop.start();
-        drop.stop(now + 0.05);
-      }, 30, 130);
+        const freq = notes[Math.floor(Math.random() * notes.length)];
+        partials.forEach((mult, i) => {
+          const osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = freq * mult;
+          const env = ctx.createGain();
+          const peak = 0.16 / (i + 1);
+          const duration = 2.2 - i * 0.4 + Math.random() * 0.6;
+          env.gain.setValueAtTime(0, now);
+          env.gain.linearRampToValueAtTime(peak, now + 0.015);
+          env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(env).connect(master);
+          osc.start(now);
+          osc.stop(now + duration + 0.05);
+        });
+      }, 1000, 4000);
       break;
     }
     case "wind": {
@@ -215,56 +219,39 @@ export function playAmbientSound(id: AmbientSoundId): AmbientSoundHandle {
       noise.connect(bp).connect(master);
       break;
     }
-    case "campfire": {
-      // Low rumbling "whoosh" bed that breathes slightly, like air feeding a fire...
-      const bed = loopingNoise(createPinkNoiseBuffer(ctx));
-      const lp = ctx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 350;
-      const bedGain = ctx.createGain();
-      makeLfo(ctx, 0.3, 0.08, bedGain.gain, 0.22);
-      bed.connect(lp).connect(bedGain).connect(master);
+    case "singing-bowl": {
+      // A sustained meditative drone: two slightly-detuned sines beating against
+      // each other (the classic "shimmer"), a quiet bell-like overtone, and a
+      // very slow swell in volume — all continuous, no transients to fake.
+      const baseFreq = 220;
+      const osc1 = ctx.createOscillator();
+      osc1.type = "sine";
+      osc1.frequency.value = baseFreq;
+      const osc2 = ctx.createOscillator();
+      osc2.type = "sine";
+      osc2.frequency.value = baseFreq + 2.5;
+      const overtone = ctx.createOscillator();
+      overtone.type = "sine";
+      overtone.frequency.value = baseFreq * 2.76;
+      const overtoneGain = ctx.createGain();
+      overtoneGain.gain.value = 0.15;
 
-      // ...plus irregular pops and crackles at varied pitch/length, the way real
-      // embers snap unevenly rather than on a steady clock.
-      scheduleRandomBursts(() => {
-        const now = ctx.currentTime;
-        const isPop = Math.random() < 0.3;
-        const crackle = ctx.createBufferSource();
-        crackle.buffer = createNoiseBuffer(ctx, 0.2);
-        const hp = ctx.createBiquadFilter();
-        hp.type = "highpass";
-        hp.frequency.value = isPop ? 600 + Math.random() * 400 : 1800 + Math.random() * 2200;
-        const bp = ctx.createBiquadFilter();
-        bp.type = "peaking";
-        bp.frequency.value = hp.frequency.value * 1.4;
-        bp.Q.value = 3;
-        bp.gain.value = 6;
-        const env = ctx.createGain();
-        const duration = isPop ? 0.08 + Math.random() * 0.05 : 0.02 + Math.random() * 0.04;
-        const peak = isPop ? 0.9 : 0.45 + Math.random() * 0.3;
-        env.gain.setValueAtTime(peak, now);
-        env.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        crackle.connect(hp).connect(bp).connect(env).connect(master);
-        crackle.start();
-        crackle.stop(now + duration + 0.02);
+      const swellGain = ctx.createGain();
+      makeLfo(ctx, 0.07, 0.1, swellGain.gain, 0.26);
 
-        // Crackles often arrive in little clusters of 2-3 quick snaps.
-        if (Math.random() < 0.4) {
-          const extra = ctx.createBufferSource();
-          extra.buffer = createNoiseBuffer(ctx, 0.1);
-          const extraHp = ctx.createBiquadFilter();
-          extraHp.type = "highpass";
-          extraHp.frequency.value = 2000 + Math.random() * 2000;
-          const extraEnv = ctx.createGain();
-          const t = now + 0.04 + Math.random() * 0.06;
-          extraEnv.gain.setValueAtTime(0.3, t);
-          extraEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-          extra.connect(extraHp).connect(extraEnv).connect(master);
-          extra.start(t);
-          extra.stop(t + 0.04);
-        }
-      }, 120, 700);
+      osc1.connect(swellGain);
+      osc2.connect(swellGain);
+      overtone.connect(overtoneGain).connect(swellGain);
+      swellGain.connect(master);
+
+      osc1.start();
+      osc2.start();
+      overtone.start();
+      stoppers.push(() => {
+        osc1.stop();
+        osc2.stop();
+        overtone.stop();
+      });
       break;
     }
     case "crickets": {
