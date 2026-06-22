@@ -17,7 +17,7 @@ export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string; emoji: string 
   { id: "rain", label: "Rain", emoji: "🌧️" },
   { id: "thunderstorm", label: "Thunderstorm", emoji: "⛈️" },
   { id: "ocean", label: "Ocean Waves", emoji: "🌊" },
-  { id: "wind-chimes", label: "Wind Chimes", emoji: "🎐" },
+  { id: "wind-chimes", label: "Chimes", emoji: "🎐" },
   { id: "wind", label: "Wind", emoji: "🍃" },
   { id: "singing-bowl", label: "Singing Bowl", emoji: "🔔" },
   { id: "crickets", label: "Night Crickets", emoji: "🦗" },
