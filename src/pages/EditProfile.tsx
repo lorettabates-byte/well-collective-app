@@ -3,9 +3,8 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
+import { AVATAR_OPTIONS } from "../data/avatarOptions";
 import { useApp } from "../store/AppContext";
-
-const AVATAR_OPTIONS = Array.from({ length: 12 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
 
 export default function EditProfile() {
   const { user, updateProfile } = useApp();
