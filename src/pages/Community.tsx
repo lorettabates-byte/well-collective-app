@@ -27,7 +27,7 @@ export default function Community() {
             className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-4 shadow-glow justify-center"
           >
             <PenSquare size={16} />
-            New Message
+            New Post
           </Link>
           <Link
             to="/messages"
