@@ -8,3 +8,16 @@
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 </IfModule>
+
+# Single-page app fallback: this is a React Router (client-side) app, so any
+# URL that isn't an existing file/directory (e.g. /inspirations, /profile,
+# a deep link from a push notification) must still serve index.html and let
+# React Router handle it -- otherwise Apache 404s on direct navigation.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ index.html [L]
+</IfModule>

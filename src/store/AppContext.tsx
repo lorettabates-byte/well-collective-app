@@ -19,6 +19,7 @@ import type {
   Inspiration,
   NotificationSettings,
   Recipe,
+  ThreadMessage,
   User,
   WellActivity,
 } from "../types";
@@ -75,23 +76,27 @@ function applyMemberInfo(user: User): User {
     const member = JSON.parse(raw) as { email?: string; name?: string };
     const trialEndsAt = window.localStorage.getItem("memberTrialEndsAt");
 
-    const syncedEmail = window.localStorage.getItem("memberProfileSyncedEmail");
-    const isNewMember = !!member.email && member.email !== syncedEmail;
+    const memberEmail = member.email?.toLowerCase();
+    const syncedEmail = window.localStorage.getItem("memberProfileSyncedEmail")?.toLowerCase();
+    const isNewMember = !!memberEmail && memberEmail !== syncedEmail;
     if (member.email) {
       window.localStorage.setItem("memberProfileSyncedEmail", member.email);
     }
 
-    const isFounder = member.email === FOUNDER_EMAIL;
+    const isFounder = memberEmail === FOUNDER_EMAIL.toLowerCase();
 
     return {
       ...user,
       ...(isFounder
         ? { ...FOUNDER_PROFILE, isAdmin: true }
         : isNewMember
-          ? { avatar: "", bio: "", birthday: undefined, isAdmin: false }
+          // Only seed name/avatar/bio/birthday from the WP account on first
+          // sync for this email — once synced, the user's own edits in
+          // Edit Profile are authoritative and must not be overwritten on
+          // every load.
+          ? { avatar: "", bio: "", birthday: undefined, isAdmin: false, name: member.name || user.name }
           : {}),
       email: member.email || user.email,
-      name: member.name || user.name,
       // Read fresh from localStorage only — falling back to the previously
       // cached user.trialEndsAt would resurrect a stale trial date forever
       // (e.g. for a real member whose old trial flag was never cleared).
@@ -130,6 +135,89 @@ function loadState(): PersistedState {
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+function adminHeaders(): HeadersInit {
+  const token = window.localStorage.getItem("adminToken");
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+function syncForumThread(thread: ForumThread) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/threads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: thread.id,
+      categoryId: thread.categoryId,
+      title: thread.title,
+      authorId: thread.authorId,
+      authorName: thread.authorName,
+      authorAvatar: thread.authorAvatar,
+      text: thread.messages[0].text,
+      messageId: thread.messages[0].id,
+    }),
+  }).catch((err) => console.error("Failed to sync new thread:", err));
+}
+
+function syncForumMessage(threadId: string, message: ThreadMessage) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/threads/${threadId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: message.id,
+      authorId: message.authorId,
+      authorName: message.authorName,
+      authorAvatar: message.authorAvatar,
+      text: message.text,
+      replyToId: message.replyToId,
+    }),
+  }).catch((err) => console.error("Failed to sync new message:", err));
+}
+
+function syncForumLike(threadId: string, messageId: string, userId: string) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/threads/${threadId}/messages/${messageId}/like`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  }).catch((err) => console.error("Failed to sync like:", err));
+}
+
+function syncAddCategory(category: ForumCategory) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/categories`, {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify(category),
+  }).catch((err) => console.error("Failed to sync category:", err));
+}
+
+function syncDeleteCategory(categoryId: string) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/categories/${categoryId}`, { method: "DELETE", headers: adminHeaders() }).catch((err) =>
+    console.error("Failed to sync category deletion:", err)
+  );
+}
+
+function syncDeleteThread(threadId: string) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/threads/${threadId}`, { method: "DELETE", headers: adminHeaders() }).catch((err) =>
+    console.error("Failed to sync thread deletion:", err)
+  );
+}
+
+function syncDeleteMessage(threadId: string, messageId: string) {
+  if (!API_URL) return;
+  fetch(`${API_URL}/api/forum/threads/${threadId}/messages/${messageId}`, {
+    method: "DELETE",
+    headers: adminHeaders(),
+  }).catch((err) => console.error("Failed to sync message deletion:", err));
 }
 
 export function uid(prefix: string): string {
@@ -216,36 +304,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ],
     };
     setState((prev) => ({ ...prev, threads: [thread, ...prev.threads] }));
+    syncForumThread(thread);
     return thread;
   };
 
   const addMessage: AppContextValue["addMessage"] = (threadId, text) => {
     const now = new Date().toISOString();
+    const message: ThreadMessage = {
+      id: uid("m"),
+      authorId: state.user.id,
+      authorName: state.user.name,
+      authorAvatar: state.user.avatar,
+      text,
+      createdAt: now,
+      likes: [],
+    };
     setState((prev) => ({
       ...prev,
       threads: prev.threads.map((thread) =>
-        thread.id === threadId
-          ? {
-              ...thread,
-              messages: [
-                ...thread.messages,
-                {
-                  id: uid("m"),
-                  authorId: prev.user.id,
-                  authorName: prev.user.name,
-                  authorAvatar: prev.user.avatar,
-                  text,
-                  createdAt: now,
-                  likes: [],
-                },
-              ],
-            }
-          : thread
+        thread.id === threadId ? { ...thread, messages: [...thread.messages, message] } : thread
       ),
     }));
+    syncForumMessage(threadId, message);
   };
 
   const toggleMessageLike: AppContextValue["toggleMessageLike"] = (threadId, messageId) => {
+    syncForumLike(threadId, messageId, state.user.id);
     setState((prev) => ({
       ...prev,
       threads: prev.threads.map((thread) => {
@@ -268,22 +352,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addCategory: AppContextValue["addCategory"] = (category) => {
+    const newCategory = { ...category, id: uid("cat") };
     setState((prev) => ({
       ...prev,
-      categories: [...prev.categories, { ...category, id: uid("cat") }],
+      categories: [...prev.categories, newCategory],
     }));
+    syncAddCategory(newCategory);
   };
 
   const updateCategory: AppContextValue["updateCategory"] = (categoryId, updates) => {
-    setState((prev) => ({
-      ...prev,
-      categories: prev.categories.map((category) =>
-        category.id === categoryId ? { ...category, ...updates } : category
-      ),
-    }));
+    setState((prev) => {
+      const updated = prev.categories.find((c) => c.id === categoryId);
+      if (updated) syncAddCategory({ ...updated, ...updates });
+      return {
+        ...prev,
+        categories: prev.categories.map((category) =>
+          category.id === categoryId ? { ...category, ...updates } : category
+        ),
+      };
+    });
   };
 
   const deleteCategory: AppContextValue["deleteCategory"] = (categoryId) => {
+    syncDeleteCategory(categoryId);
     setState((prev) => ({
       ...prev,
       categories: prev.categories.filter((category) => category.id !== categoryId),
@@ -292,6 +383,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteThread: AppContextValue["deleteThread"] = (threadId) => {
+    syncDeleteThread(threadId);
     setState((prev) => ({
       ...prev,
       threads: prev.threads.filter((thread) => thread.id !== threadId),
@@ -299,6 +391,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteMessage: AppContextValue["deleteMessage"] = (threadId, messageId) => {
+    syncDeleteMessage(threadId, messageId);
     setState((prev) => ({
       ...prev,
       threads: prev.threads.map((thread) =>
@@ -594,6 +687,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
             contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
           };
         });
+      })
+      .catch(() => {
+        // offline or backend unreachable — fall back to whatever local content exists
+      });
+  }, []);
+
+  // Sync the Community forum (categories + threads/messages) from the shared
+  // backend so posts are visible across everyone's devices, not just the one
+  // they were created on.
+  useEffect(() => {
+    if (!API_URL) return;
+
+    Promise.all([
+      fetch(`${API_URL}/api/forum/categories`).then((res) => (res.ok ? res.json() : null)),
+      fetch(`${API_URL}/api/forum/threads`).then((res) => (res.ok ? res.json() : null)),
+    ])
+      .then(([categoriesData, threadsData]) => {
+        setState((prev) => ({
+          ...prev,
+          categories: categoriesData?.categories ?? prev.categories,
+          threads: threadsData?.threads ?? prev.threads,
+        }));
       })
       .catch(() => {
         // offline or backend unreachable — fall back to whatever local content exists

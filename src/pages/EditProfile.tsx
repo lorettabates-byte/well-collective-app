@@ -6,6 +6,30 @@ import Avatar from "../components/ui/Avatar";
 import { AVATAR_OPTIONS } from "../data/avatarOptions";
 import { useApp } from "../store/AppContext";
 
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+// Year doesn't matter for a recurring birthday, so use a leap year as the
+// reference so Feb 29 is always a selectable day.
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function daysInMonth(month: string): number {
+  if (!month) return 31;
+  return DAYS_IN_MONTH[parseInt(month, 10) - 1] ?? 31;
+}
+
 export default function EditProfile() {
   const { user, updateProfile } = useApp();
   const navigate = useNavigate();
@@ -16,6 +40,21 @@ export default function EditProfile() {
   const [avatar, setAvatar] = useState(user.avatar);
   const [birthday, setBirthday] = useState(user.birthday ?? "");
   const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
+
+  const [birthMonth, birthDay] = birthday ? birthday.split("-") : ["", ""];
+
+  const handleMonthChange = (month: string) => {
+    if (!month) {
+      setBirthday("");
+      return;
+    }
+    const day = birthDay && parseInt(birthDay, 10) <= daysInMonth(month) ? birthDay : "01";
+    setBirthday(`${month}-${day}`);
+  };
+
+  const handleDayChange = (day: string) => {
+    setBirthday(birthMonth ? `${birthMonth}-${day}` : "");
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,15 +158,36 @@ export default function EditProfile() {
 
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-1.5">Birthday</label>
-          <input
-            type="date"
-            value={birthday ? `2000-${birthday}` : ""}
-            onChange={(e) => {
-              const value = e.target.value; // yyyy-mm-dd
-              setBirthday(value ? value.slice(5) : "");
-            }}
-            className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text focus:outline-none focus:border-brand-blue"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              value={birthMonth}
+              onChange={(e) => handleMonthChange(e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text focus:outline-none focus:border-brand-blue"
+            >
+              <option value="">Month</option>
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={birthDay}
+              onChange={(e) => handleDayChange(e.target.value)}
+              disabled={!birthMonth}
+              className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text focus:outline-none focus:border-brand-blue disabled:opacity-50"
+            >
+              <option value="">Day</option>
+              {Array.from({ length: daysInMonth(birthMonth) }, (_, i) => {
+                const day = String(i + 1).padStart(2, "0");
+                return (
+                  <option key={day} value={day}>
+                    {i + 1}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           <p className="text-[11px] text-text-dim mt-1.5">
             We'll celebrate with you on this day every year 🎉 (year doesn't matter)
           </p>
