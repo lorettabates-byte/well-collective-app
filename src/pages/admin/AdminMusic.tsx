@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronUp, Music, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Music, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song } from "../../types";
+import { AMBIENT_SOUNDS } from "../../utils/ambientSounds";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -29,6 +30,54 @@ export default function AdminMusic() {
   const [soundIcon, setSoundIcon] = useState(SOUND_ICON_OPTIONS[0]);
   const [soundUrl, setSoundUrl] = useState("");
   const [soundStatus, setSoundStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const [hiddenBuiltins, setHiddenBuiltins] = useState<string[]>([]);
+  const [hiddenLoading, setHiddenLoading] = useState(true);
+
+  const fetchHiddenBuiltins = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/settings/hidden-sounds`);
+      if (res.ok) {
+        const data = await res.json();
+        setHiddenBuiltins(data.hidden || []);
+      }
+    } catch (err) {
+      console.error("Fetch hidden sounds error:", err);
+    } finally {
+      setHiddenLoading(false);
+    }
+  };
+
+  const saveHiddenBuiltins = async (hidden: string[]) => {
+    setHiddenBuiltins(hidden);
+    if (!API_URL) return;
+    try {
+      await fetch(`${API_URL}/api/settings/hidden-sounds`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ hidden }),
+      });
+    } catch (err) {
+      console.error("Save hidden sounds error:", err);
+    }
+  };
+
+  const handleHideBuiltin = (id: string) => saveHiddenBuiltins([...hiddenBuiltins, id]);
+  const handleRestoreBuiltin = (id: string) => saveHiddenBuiltins(hiddenBuiltins.filter((h) => h !== id));
+
+  const handleDeleteAllSounds = async () => {
+    if (!confirm("Remove every peaceful sound (built-in and custom) from the app? You can restore the built-in ones later.")) {
+      return;
+    }
+    await saveHiddenBuiltins(AMBIENT_SOUNDS.map((s) => s.id));
+    if (API_URL) {
+      await Promise.all(
+        sounds.map((sound) => fetch(`${API_URL}/api/peaceful-sounds/${sound.id}`, { method: "DELETE", headers: getAuthHeaders() }))
+      );
+    }
+    fetchSounds();
+  };
 
   const fetchSongs = async () => {
     if (!API_URL) return;
@@ -63,6 +112,7 @@ export default function AdminMusic() {
   useEffect(() => {
     fetchSongs();
     fetchSounds();
+    fetchHiddenBuiltins();
   }, []);
 
   const handleAdd = async () => {
@@ -281,6 +331,49 @@ export default function AdminMusic() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-text">Built-in Peaceful Sounds</h2>
+            <button
+              onClick={handleDeleteAllSounds}
+              className="text-xs font-semibold text-red-400 hover:text-red-300 flex items-center gap-1"
+            >
+              <Trash2 size={14} />
+              Delete All Sounds
+            </button>
+          </div>
+          {hiddenLoading ? (
+            <p className="text-sm text-text-muted">Loading...</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {AMBIENT_SOUNDS.map((sound) => {
+                const isHidden = hiddenBuiltins.includes(sound.id);
+                return (
+                  <div key={sound.id} className="glass-card rounded-card p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+                        <SoundIcon icon={sound.icon} size={16} />
+                      </div>
+                      <p className="text-sm font-semibold text-text">{sound.label}</p>
+                    </div>
+                    <button
+                      onClick={() => (isHidden ? handleRestoreBuiltin(sound.id) : handleHideBuiltin(sound.id))}
+                      className={`text-sm font-semibold rounded-pill px-3 py-1.5 flex items-center gap-1.5 ${
+                        isHidden
+                          ? "bg-surface-2 text-brand-light border border-brand-light"
+                          : "bg-surface-2 text-red-400 border border-border hover:border-red-400"
+                      }`}
+                    >
+                      <RotateCcw size={14} />
+                      {isHidden ? "Restore" : "Hide"}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

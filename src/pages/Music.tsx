@@ -40,6 +40,7 @@ export default function Music() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [customSounds, setCustomSounds] = useState<CustomPeacefulSound[]>([]);
+  const [hiddenSoundIds, setHiddenSoundIds] = useState<string[]>([]);
 
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [volume, setVolume] = useState(0.6);
@@ -76,6 +77,11 @@ export default function Music() {
       .then((res) => (res.ok ? res.json() : { sounds: [] }))
       .then((data) => setCustomSounds(data.sounds || []))
       .catch(() => setCustomSounds([]));
+
+    fetch(`${API_URL}/api/settings/hidden-sounds`)
+      .then((res) => (res.ok ? res.json() : { hidden: [] }))
+      .then((data) => setHiddenSoundIds(data.hidden || []))
+      .catch(() => setHiddenSoundIds([]));
   }, []);
 
   useEffect(() => {
@@ -85,10 +91,10 @@ export default function Music() {
     };
   }, []);
 
-  // Built-in procedurally-generated sounds, plus admin-uploaded custom loops
+  // Built-in procedurally-generated sounds (filtered by admin's hide list), plus admin-uploaded custom loops
   // — same tile grid, same volume/timer controls, regardless of which kind.
   const soundTiles: SoundTile[] = [
-    ...AMBIENT_SOUNDS.map((sound) => ({
+    ...AMBIENT_SOUNDS.filter((sound) => !hiddenSoundIds.includes(sound.id)).map((sound) => ({
       key: `builtin:${sound.id}`,
       label: sound.label,
       icon: sound.icon,
