@@ -3,13 +3,25 @@ import { useEffect, useRef, useState } from "react";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
-import type { Song } from "../types";
-import { AMBIENT_SOUNDS, playAmbientSound, type AmbientSoundHandle, type AmbientSoundId } from "../utils/ambientSounds";
+import type { CustomPeacefulSound, Song } from "../types";
+import {
+  AMBIENT_SOUNDS,
+  playAmbientSound,
+  playLoopingAudio,
+  type AmbientSoundHandle,
+} from "../utils/ambientSounds";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 type Tab = "playlist" | "sounds";
+
+interface SoundTile {
+  key: string;
+  label: string;
+  emoji: string;
+  play: () => AmbientSoundHandle;
+}
 
 const TIMER_OPTIONS: { label: string; minutes: number | null }[] = [
   { label: "No limit", minutes: null },
@@ -26,8 +38,9 @@ export default function Music() {
   const [tab, setTab] = useState<Tab>("playlist");
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customSounds, setCustomSounds] = useState<CustomPeacefulSound[]>([]);
 
-  const [activeSound, setActiveSound] = useState<AmbientSoundId | null>(null);
+  const [activeSound, setActiveSound] = useState<string | null>(null);
   const [volume, setVolume] = useState(0.6);
   const [timerMinutes, setTimerMinutes] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -57,6 +70,11 @@ export default function Music() {
       .then((data) => setSongs(data.songs || []))
       .catch(() => setSongs([]))
       .finally(() => setLoading(false));
+
+    fetch(`${API_URL}/api/peaceful-sounds`)
+      .then((res) => (res.ok ? res.json() : { sounds: [] }))
+      .then((data) => setCustomSounds(data.sounds || []))
+      .catch(() => setCustomSounds([]));
   }, []);
 
   useEffect(() => {
@@ -65,6 +83,23 @@ export default function Music() {
       clearTimer();
     };
   }, []);
+
+  // Built-in procedurally-generated sounds, plus admin-uploaded custom loops
+  // — same tile grid, same volume/timer controls, regardless of which kind.
+  const soundTiles: SoundTile[] = [
+    ...AMBIENT_SOUNDS.map((sound) => ({
+      key: `builtin:${sound.id}`,
+      label: sound.label,
+      emoji: sound.emoji,
+      play: () => playAmbientSound(sound.id),
+    })),
+    ...customSounds.map((sound) => ({
+      key: `custom:${sound.id}`,
+      label: sound.title,
+      emoji: sound.emoji,
+      play: () => playLoopingAudio(sound.url),
+    })),
+  ];
 
   const startTimer = (minutes: number | null) => {
     clearTimer();
@@ -84,8 +119,8 @@ export default function Music() {
     }, minutes * 60 * 1000);
   };
 
-  const toggleSound = (id: AmbientSoundId) => {
-    if (activeSound === id) {
+  const toggleSound = (tile: SoundTile) => {
+    if (activeSound === tile.key) {
       handleRef.current?.stop();
       handleRef.current = null;
       setActiveSound(null);
@@ -93,10 +128,10 @@ export default function Music() {
       return;
     }
     handleRef.current?.stop();
-    const handle = playAmbientSound(id);
+    const handle = tile.play();
     handle.setVolume(volume);
     handleRef.current = handle;
-    setActiveSound(id);
+    setActiveSound(tile.key);
     startTimer(timerMinutes);
   };
 
@@ -182,18 +217,18 @@ export default function Music() {
             )}
 
             <div className="grid grid-cols-2 gap-2.5">
-              {AMBIENT_SOUNDS.map((sound) => (
+              {soundTiles.map((tile) => (
                 <button
-                  key={sound.id}
-                  onClick={() => toggleSound(sound.id)}
+                  key={tile.key}
+                  onClick={() => toggleSound(tile)}
                   className={`flex flex-col items-center gap-1.5 rounded-card p-4 border ${
-                    activeSound === sound.id
+                    activeSound === tile.key
                       ? "gradient-brand border-transparent shadow-glow text-white"
                       : "glass-card border-border text-text"
                   }`}
                 >
-                  <span className="text-2xl">{sound.emoji}</span>
-                  <span className="text-xs font-semibold">{sound.label}</span>
+                  <span className="text-2xl">{tile.emoji}</span>
+                  <span className="text-xs font-semibold">{tile.label}</span>
                 </button>
               ))}
             </div>

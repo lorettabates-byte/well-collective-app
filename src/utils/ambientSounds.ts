@@ -96,15 +96,55 @@ export interface AmbientSoundHandle {
   setVolume: (v: number) => void;
 }
 
+// For admin-uploaded custom peaceful sounds: loop the file regardless of its
+// own length via a plain <audio> element (same playback path as songs, so it
+// isn't subject to the Web Audio / iOS silent-switch issue at all).
+export function playLoopingAudio(url: string): AmbientSoundHandle {
+  const audio = new Audio(url);
+  audio.loop = true;
+  audio.volume = 0.6;
+  audio.play().catch(() => {
+    // best-effort — browser may require a fresh user gesture
+  });
+
+  return {
+    stop: () => {
+      audio.pause();
+      audio.src = "";
+    },
+    setVolume: (v: number) => {
+      audio.volume = Math.max(0, Math.min(1, v));
+    },
+  };
+}
+
 export function playAmbientSound(id: AmbientSoundId): AmbientSoundHandle {
   const ctx = getContext();
   const master = ctx.createGain();
   master.gain.value = 0.6;
-  master.connect(ctx.destination);
+
+  // Route through a real <audio> element instead of straight to
+  // ctx.destination. On iOS, Web Audio API output respects the phone's
+  // silent switch by default while a real <audio> element does not (the
+  // same reason songs always played fine) — without this, generated sounds
+  // can be completely inaudible until some other <audio> element happens to
+  // start playing and "unlocks" the device's audio session.
+  const streamDestination = ctx.createMediaStreamDestination();
+  master.connect(streamDestination);
+  const outputEl = new Audio();
+  outputEl.srcObject = streamDestination.stream;
+  outputEl.play().catch(() => {
+    // best-effort — if this fails, audio will still flow once the context
+    // resumes from another user gesture
+  });
 
   const stoppers: Array<() => void> = [];
   const timers: number[] = [];
   stoppers.push(() => timers.forEach((t) => clearTimeout(t)));
+  stoppers.push(() => {
+    outputEl.pause();
+    outputEl.srcObject = null;
+  });
 
   function loopingNoise(buffer: AudioBuffer): AudioBufferSourceNode {
     const src = ctx.createBufferSource();

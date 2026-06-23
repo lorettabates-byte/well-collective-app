@@ -127,6 +127,14 @@ export interface Song {
   sortOrder: number;
 }
 
+export interface CustomPeacefulSound {
+  id: number;
+  title: string;
+  emoji: string;
+  url: string;
+  sortOrder: number;
+}
+
 export type AppNotificationType = "post" | "reply" | "mention" | "general" | "event" | "blog";
 
 export interface AppNotification {
