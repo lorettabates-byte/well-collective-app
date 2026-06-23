@@ -4,6 +4,7 @@ import {
   Download,
   Heart,
   ListMusic,
+  Lock,
   Pause,
   Play,
   Repeat,
@@ -52,7 +53,15 @@ function formatTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function Playlist({ songs, loading }: { songs: Song[]; loading: boolean }) {
+export default function Playlist({
+  songs,
+  loading,
+  downloadsLocked,
+}: {
+  songs: Song[];
+  loading: boolean;
+  downloadsLocked?: boolean;
+}) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -60,6 +69,7 @@ export default function Playlist({ songs, loading }: { songs: Song[]; loading: b
   const [isPlaying, setIsPlaying] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [progress, setProgress] = useState({ current: 0, duration: 0 });
+  const [lockedMessage, setLockedMessage] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Song[]>([]);
@@ -208,6 +218,13 @@ export default function Playlist({ songs, loading }: { songs: Song[]; loading: b
         Motivational music curated by Loretta — the WELL Collective Playlist.
       </p>
 
+      {lockedMessage && (
+        <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 -mt-1">
+          <Lock size={14} className="text-brand-light shrink-0" />
+          <p className="text-xs text-text-muted">Downloads are available to full members — upgrade to download songs.</p>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           onClick={handlePlayAll}
@@ -286,16 +303,29 @@ export default function Playlist({ songs, loading }: { songs: Song[]; loading: b
               >
                 <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
               </button>
-              <a
-                href={song.url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Download"
-                className="w-8 h-8 flex items-center justify-center shrink-0 text-text-muted"
-              >
-                <Download size={15} />
-              </a>
+              {downloadsLocked ? (
+                <button
+                  onClick={() => {
+                    setLockedMessage(true);
+                    setTimeout(() => setLockedMessage(false), 3000);
+                  }}
+                  aria-label="Download locked for trial members"
+                  className="w-8 h-8 flex items-center justify-center shrink-0 text-text-dim"
+                >
+                  <Lock size={14} />
+                </button>
+              ) : (
+                <a
+                  href={song.url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Download"
+                  className="w-8 h-8 flex items-center justify-center shrink-0 text-text-muted"
+                >
+                  <Download size={15} />
+                </a>
+              )}
               {!favoritesOnly && (
                 <div className="flex flex-col shrink-0">
                   <button
@@ -321,8 +351,12 @@ export default function Playlist({ songs, loading }: { songs: Song[]; loading: b
         );
       })}
 
+      {/* Spacer so the last songs in the list aren't hidden behind the fixed
+          mini player below — without this, those rows would be unclickable. */}
+      {currentSong && <div className="h-28" aria-hidden="true" />}
+
       {currentSong && (
-        <div className="sticky bottom-24 mt-2 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
+        <div className="fixed bottom-24 left-4 right-4 mx-auto max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
             <button onClick={cycleRepeat} aria-label="Cycle repeat mode" className="text-text-muted shrink-0">

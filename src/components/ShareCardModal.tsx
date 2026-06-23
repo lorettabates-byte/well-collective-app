@@ -1,5 +1,5 @@
 import { toPng } from "html-to-image";
-import { Download, Loader2, X } from "lucide-react";
+import { AlertCircle, Download, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { LOGO_URL } from "./layout/MobileShell";
 
@@ -25,23 +25,42 @@ export default function ShareCardModal({
 }: ShareCardModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
   const renderImage = async () => {
     if (!cardRef.current) return null;
     return toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
   };
 
+  // Cross-origin images (the logo, Loretta's photo) can taint the canvas and
+  // make toPng() throw — fall back to a text-only share/copy so the buttons
+  // always do something instead of silently failing.
+  const shareTextOnly = async () => {
+    const text = `${title}\n\n${body}\n\nJoin the WELL Collective: ${JOIN_URL}`;
+    if (navigator.share) {
+      await navigator.share({ title: "WELL Collective", text });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    setStatus("Image couldn't be generated, so we copied the text instead — paste it into your post.");
+  };
+
   const handleDownload = async () => {
     setBusy(true);
+    setStatus(null);
     try {
       const dataUrl = await renderImage();
-      if (!dataUrl) return;
+      if (!dataUrl) throw new Error("no image");
       const link = document.createElement("a");
       link.download = "well-collective-inspiration.png";
       link.href = dataUrl;
       link.click();
     } catch {
-      // ignore export errors
+      try {
+        await shareTextOnly();
+      } catch {
+        setStatus("Couldn't generate the image right now. Please try again.");
+      }
     } finally {
       setBusy(false);
     }
@@ -49,12 +68,10 @@ export default function ShareCardModal({
 
   const handleShare = async (platform: "instagram" | "facebook" | "general") => {
     setBusy(true);
+    setStatus(null);
     try {
       const dataUrl = await renderImage();
-      if (!dataUrl) {
-        handleDownload();
-        return;
-      }
+      if (!dataUrl) throw new Error("no image");
 
       if (platform === "instagram" || platform === "facebook") {
         // Instagram/Facebook: download and user shares manually
@@ -62,7 +79,7 @@ export default function ShareCardModal({
         link.download = "well-collective-inspiration.png";
         link.href = dataUrl;
         link.click();
-        alert(
+        setStatus(
           platform === "instagram"
             ? "Image saved! Open Instagram and share it to your story or feed."
             : "Image saved! Open Facebook and share it to your profile."
@@ -87,8 +104,16 @@ export default function ShareCardModal({
           await handleDownload();
         }
       }
-    } catch {
-      // user cancelled share
+    } catch (err) {
+      // Image generation failed (likely a cross-origin image tainting the
+      // canvas) — fall back to sharing/copying the text instead.
+      try {
+        await shareTextOnly();
+      } catch {
+        if (!(err instanceof Error && err.name === "AbortError")) {
+          setStatus("Couldn't generate the image right now. Please try again.");
+        }
+      }
     } finally {
       setBusy(false);
     }
@@ -113,12 +138,13 @@ export default function ShareCardModal({
           color: '#fff'
         }}>
           {/* WELL Logo */}
-          <img src={LOGO_URL} alt="WELL Collective" className="h-12" />
+          <img src={LOGO_URL} alt="WELL Collective" className="h-12" crossOrigin="anonymous" />
 
           {/* Loretta Image */}
           <img
             src={LORETTA_IMAGE}
             alt="Loretta Bates"
+            crossOrigin="anonymous"
             className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
@@ -135,7 +161,12 @@ export default function ShareCardModal({
           {/* User Avatar (if available) */}
           {userAvatar && (
             <div className="flex flex-col items-center gap-2">
-              <img src={userAvatar} alt={userName} className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]" />
+              <img
+                src={userAvatar}
+                alt={userName}
+                crossOrigin="anonymous"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]"
+              />
               <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
             </div>
           )}
@@ -150,6 +181,12 @@ export default function ShareCardModal({
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-col">
+          {status && (
+            <div className="flex items-start gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
+              <AlertCircle size={14} className="text-brand-light shrink-0 mt-0.5" />
+              <p className="text-xs text-text-muted">{status}</p>
+            </div>
+          )}
           <button
             onClick={handleDownload}
             disabled={busy}

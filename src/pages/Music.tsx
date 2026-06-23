@@ -2,8 +2,10 @@ import { Clock, Music as MusicIcon, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
+import { useApp } from "../store/AppContext";
 import type { Song } from "../types";
 import { AMBIENT_SOUNDS, playAmbientSound, type AmbientSoundHandle, type AmbientSoundId } from "../utils/ambientSounds";
+import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -17,6 +19,10 @@ const TIMER_OPTIONS: { label: string; minutes: number | null }[] = [
 ];
 
 export default function Music() {
+  const { user } = useApp();
+  const trialStatus = getTrialStatus(user.trialEndsAt);
+  const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
+
   const [tab, setTab] = useState<Tab>("playlist");
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +133,7 @@ export default function Music() {
           </button>
         </div>
 
-        {tab === "playlist" && <Playlist songs={songs} loading={loading} />}
+        {tab === "playlist" && <Playlist songs={songs} loading={loading} downloadsLocked={isTrialUser} />}
 
         {tab === "sounds" && (
           <div className="flex flex-col gap-4">
