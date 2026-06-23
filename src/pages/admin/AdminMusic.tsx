@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Music, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
+import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song } from "../../types";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -25,7 +26,7 @@ export default function AdminMusic() {
   const [sounds, setSounds] = useState<CustomPeacefulSound[]>([]);
   const [soundsLoading, setSoundsLoading] = useState(true);
   const [soundTitle, setSoundTitle] = useState("");
-  const [soundEmoji, setSoundEmoji] = useState("");
+  const [soundIcon, setSoundIcon] = useState(SOUND_ICON_OPTIONS[0]);
   const [soundUrl, setSoundUrl] = useState("");
   const [soundStatus, setSoundStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -131,14 +132,14 @@ export default function AdminMusic() {
         headers: getAuthHeaders(),
         body: JSON.stringify({
           title: soundTitle.trim(),
-          emoji: soundEmoji.trim() || undefined,
+          icon: soundIcon,
           url: soundUrl.trim(),
           sortOrder: sounds.length,
         }),
       });
       if (res.ok) {
         setSoundTitle("");
-        setSoundEmoji("");
+        setSoundIcon(SOUND_ICON_OPTIONS[0]);
         setSoundUrl("");
         setSoundStatus({ type: "success", message: "Sound added!" });
         fetchSounds();
@@ -303,13 +304,23 @@ export default function AdminMusic() {
               placeholder="Sound title (e.g. Forest Stream)"
               className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
             />
-            <input
-              type="text"
-              value={soundEmoji}
-              onChange={(e) => setSoundEmoji(e.target.value)}
-              placeholder="Emoji for the tile (optional, e.g. 🌲)"
-              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-            />
+            <div>
+              <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Icon</label>
+              <div className="flex gap-2 flex-wrap">
+                {SOUND_ICON_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSoundIcon(option)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-2xl bg-surface-2 border transition-colors ${
+                      soundIcon === option ? "border-brand-light text-brand-light" : "border-border text-text-muted"
+                    }`}
+                  >
+                    <SoundIcon icon={option} size={18} />
+                  </button>
+                ))}
+              </div>
+            </div>
             <input
               type="text"
               value={soundUrl}
@@ -344,8 +355,8 @@ export default function AdminMusic() {
               {sounds.map((sound, index) => (
                 <div key={sound.id} className="glass-card rounded-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-lg">
-                      {sound.emoji}
+                    <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+                      <SoundIcon icon={sound.icon} size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-text truncate">{sound.title}</p>

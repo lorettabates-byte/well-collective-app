@@ -130,7 +130,7 @@ export interface Song {
 export interface CustomPeacefulSound {
   id: number;
   title: string;
-  emoji: string;
+  icon: string;
   url: string;
   sortOrder: number;
 }

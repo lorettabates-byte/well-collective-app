@@ -2,6 +2,7 @@ import { Clock, Music as MusicIcon, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
+import { SoundIcon } from "../data/soundIconMap";
 import { useApp } from "../store/AppContext";
 import type { CustomPeacefulSound, Song } from "../types";
 import {
@@ -19,7 +20,7 @@ type Tab = "playlist" | "sounds";
 interface SoundTile {
   key: string;
   label: string;
-  emoji: string;
+  icon: string;
   play: () => AmbientSoundHandle;
 }
 
@@ -90,13 +91,13 @@ export default function Music() {
     ...AMBIENT_SOUNDS.map((sound) => ({
       key: `builtin:${sound.id}`,
       label: sound.label,
-      emoji: sound.emoji,
+      icon: sound.icon,
       play: () => playAmbientSound(sound.id),
     })),
     ...customSounds.map((sound) => ({
       key: `custom:${sound.id}`,
       label: sound.title,
-      emoji: sound.emoji,
+      icon: sound.icon,
       play: () => playLoopingAudio(sound.url),
     })),
   ];
@@ -217,20 +218,27 @@ export default function Music() {
             )}
 
             <div className="grid grid-cols-2 gap-2.5">
-              {soundTiles.map((tile) => (
-                <button
-                  key={tile.key}
-                  onClick={() => toggleSound(tile)}
-                  className={`flex flex-col items-center gap-1.5 rounded-card p-4 border ${
-                    activeSound === tile.key
-                      ? "gradient-brand border-transparent shadow-glow text-white"
-                      : "glass-card border-border text-text"
-                  }`}
-                >
-                  <span className="text-2xl">{tile.emoji}</span>
-                  <span className="text-xs font-semibold">{tile.label}</span>
-                </button>
-              ))}
+              {soundTiles.map((tile) => {
+                const isActive = activeSound === tile.key;
+                return (
+                  <button
+                    key={tile.key}
+                    onClick={() => toggleSound(tile)}
+                    className={`flex flex-col items-center gap-2 rounded-card p-4 border ${
+                      isActive ? "gradient-brand border-transparent shadow-glow text-white" : "glass-card border-border text-text"
+                    }`}
+                  >
+                    <div
+                      className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                        isActive ? "bg-white/15" : "bg-surface-2 border border-border"
+                      }`}
+                    >
+                      <SoundIcon icon={tile.icon} size={20} className={isActive ? "text-white" : "text-brand-light"} />
+                    </div>
+                    <span className="text-xs font-semibold">{tile.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

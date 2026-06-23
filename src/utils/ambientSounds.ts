@@ -13,17 +13,17 @@ export type AmbientSoundId =
   | "wind-chimes"
   | "crickets";
 
-export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string; emoji: string }[] = [
-  { id: "rain", label: "Rain", emoji: "🌧️" },
-  { id: "thunderstorm", label: "Thunderstorm", emoji: "⛈️" },
-  { id: "ocean", label: "Ocean Waves", emoji: "🌊" },
-  { id: "wind-chimes", label: "Chimes", emoji: "🎐" },
-  { id: "wind", label: "Wind", emoji: "🍃" },
-  { id: "singing-bowl", label: "Singing Bowl", emoji: "🔔" },
-  { id: "crickets", label: "Night Crickets", emoji: "🦗" },
-  { id: "white-noise", label: "White Noise", emoji: "⚪" },
-  { id: "pink-noise", label: "Pink Noise", emoji: "🌸" },
-  { id: "brown-noise", label: "Brown Noise", emoji: "🟤" },
+export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string; icon: string }[] = [
+  { id: "rain", label: "Rain", icon: "cloud-rain" },
+  { id: "thunderstorm", label: "Thunderstorm", icon: "cloud-lightning" },
+  { id: "ocean", label: "Ocean Waves", icon: "waves" },
+  { id: "wind-chimes", label: "Chimes", icon: "bell" },
+  { id: "wind", label: "Wind", icon: "wind" },
+  { id: "singing-bowl", label: "Singing Bowl", icon: "sparkles" },
+  { id: "crickets", label: "Night Crickets", icon: "moon" },
+  { id: "white-noise", label: "White Noise", icon: "cloud" },
+  { id: "pink-noise", label: "Pink Noise", icon: "flower" },
+  { id: "brown-noise", label: "Brown Noise", icon: "mountain" },
 ];
 
 let sharedCtx: AudioContext | null = null;
