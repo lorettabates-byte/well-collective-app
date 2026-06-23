@@ -118,12 +118,6 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
       localStorage.setItem("memberToken", data.token);
       localStorage.setItem("memberUser", JSON.stringify(data.user));
 
-      if (!localStorage.getItem("memberTrialEndsAt")) {
-        const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 7);
-        localStorage.setItem("memberTrialEndsAt", trialEnd.toISOString().slice(0, 10));
-      }
-
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
