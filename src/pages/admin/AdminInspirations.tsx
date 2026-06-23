@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
-import type { InspirationCadence } from "../../types";
+import type { ContentBatchEntry, InspirationCadence } from "../../types";
 import { timeAgo } from "../../utils/format";
 
 const CADENCE_OPTIONS: { id: InspirationCadence; label: string }[] = [
@@ -10,6 +10,15 @@ const CADENCE_OPTIONS: { id: InspirationCadence; label: string }[] = [
   { id: "weekly", label: "Weekly" },
   { id: "motivational", label: "Motivational" },
 ];
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("adminToken");
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
 
 export default function AdminInspirations() {
   const { user, inspirations, addInspiration, deleteInspiration } = useApp();
@@ -33,6 +42,71 @@ export default function AdminInspirations() {
     setTitle("");
     setBody("");
     setScheduledAt("");
+  };
+
+  // Weekly theme / WELL activity / recipe-or-workout for a specific day —
+  // writes straight to the shared content schedule. Anything left blank for
+  // a given day falls back to AI-generated content automatically.
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [weeklyTitle, setWeeklyTitle] = useState("");
+  const [weeklyBody, setWeeklyBody] = useState("");
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityDescription, setActivityDescription] = useState("");
+  const [recipeName, setRecipeName] = useState("");
+  const [recipeDescription, setRecipeDescription] = useState("");
+  const [recipeIngredients, setRecipeIngredients] = useState("");
+  const [recipeSteps, setRecipeSteps] = useState("");
+  const [scheduleStatus, setScheduleStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleScheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleDate || !API_URL) return;
+
+    const entry: ContentBatchEntry = { date: scheduleDate };
+    if (weeklyTitle.trim() && weeklyBody.trim()) {
+      entry.weeklyTheme = { title: weeklyTitle.trim(), body: weeklyBody.trim() };
+    }
+    if (activityTitle.trim() && activityDescription.trim()) {
+      entry.wellActivity = { title: activityTitle.trim(), description: activityDescription.trim() };
+    }
+    if (recipeName.trim() && recipeDescription.trim()) {
+      entry.recipe = {
+        name: recipeName.trim(),
+        description: recipeDescription.trim(),
+        ingredients: recipeIngredients.split(",").map((s) => s.trim()).filter(Boolean),
+        steps: recipeSteps.split(",").map((s) => s.trim()).filter(Boolean),
+        image: "",
+      };
+    }
+
+    if (!entry.weeklyTheme && !entry.wellActivity && !entry.recipe) {
+      setScheduleStatus({ type: "error", message: "Fill in at least one section before saving." });
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/content-schedule`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify([entry]),
+      });
+      if (res.ok) {
+        setScheduleStatus({ type: "success", message: `Saved for ${scheduleDate}.` });
+        setWeeklyTitle("");
+        setWeeklyBody("");
+        setActivityTitle("");
+        setActivityDescription("");
+        setRecipeName("");
+        setRecipeDescription("");
+        setRecipeIngredients("");
+        setRecipeSteps("");
+      } else {
+        const err = await res.json();
+        setScheduleStatus({ type: "error", message: err.error || "Failed to save." });
+      }
+    } catch {
+      setScheduleStatus({ type: "error", message: "Failed to reach the server." });
+    }
   };
 
   const sorted = [...inspirations].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
@@ -119,6 +193,109 @@ export default function AdminInspirations() {
             className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
           >
             {scheduleMode === "now" ? "Publish Inspiration" : "Schedule Inspiration"}
+          </button>
+        </form>
+
+        <form onSubmit={handleScheduleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
+          <div>
+            <h2 className="text-sm font-bold text-text mb-1">Weekly Theme, WELL Activity & Recipe/Workout</h2>
+            <p className="text-xs text-text-muted">
+              Pick a date and fill in whichever sections you want to set yourself. Anything left blank for that
+              day is filled in automatically by AI.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Date</label>
+            <input
+              type="date"
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+            />
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">Weekly Theme</p>
+            <div className="flex flex-col gap-2">
+              <input
+                value={weeklyTitle}
+                onChange={(e) => setWeeklyTitle(e.target.value)}
+                placeholder="Theme title"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+              <textarea
+                value={weeklyBody}
+                onChange={(e) => setWeeklyBody(e.target.value)}
+                placeholder="Theme description"
+                rows={2}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">WELL Activity</p>
+            <div className="flex flex-col gap-2">
+              <input
+                value={activityTitle}
+                onChange={(e) => setActivityTitle(e.target.value)}
+                placeholder="Activity title"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+              <textarea
+                value={activityDescription}
+                onChange={(e) => setActivityDescription(e.target.value)}
+                placeholder="Activity description"
+                rows={2}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">Recipe / Workout</p>
+            <div className="flex flex-col gap-2">
+              <input
+                value={recipeName}
+                onChange={(e) => setRecipeName(e.target.value)}
+                placeholder="Name"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+              <textarea
+                value={recipeDescription}
+                onChange={(e) => setRecipeDescription(e.target.value)}
+                placeholder="Description"
+                rows={2}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+              />
+              <input
+                value={recipeIngredients}
+                onChange={(e) => setRecipeIngredients(e.target.value)}
+                placeholder="Ingredients/equipment, comma separated"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+              <input
+                value={recipeSteps}
+                onChange={(e) => setRecipeSteps(e.target.value)}
+                placeholder="Steps, comma separated"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+            </div>
+          </div>
+
+          {scheduleStatus && (
+            <p className={`text-xs ${scheduleStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+              {scheduleStatus.message}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={!scheduleDate}
+            className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
+          >
+            Save for This Day
           </button>
         </form>
 

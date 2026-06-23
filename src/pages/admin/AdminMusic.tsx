@@ -1,4 +1,4 @@
-import { Music, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Music, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import type { Song } from "../../types";
@@ -79,6 +79,27 @@ export default function AdminMusic() {
     }
   };
 
+  const handleMove = async (id: number, direction: 1 | -1) => {
+    const index = songs.findIndex((s) => s.id === id);
+    const swapWith = index + direction;
+    if (index < 0 || swapWith < 0 || swapWith >= songs.length || !API_URL) return;
+
+    const reordered = [...songs];
+    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+    setSongs(reordered);
+
+    try {
+      await fetch(`${API_URL}/api/songs/reorder`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ids: reordered.map((s) => s.id) }),
+      });
+    } catch (err) {
+      console.error("Reorder songs error:", err);
+      fetchSongs();
+    }
+  };
+
   return (
     <div>
       <TopBar title="Music" subtitle="Manage the WELL Collective Playlist" showBack />
@@ -140,7 +161,7 @@ export default function AdminMusic() {
             <p className="text-sm text-text-muted">No songs added yet.</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {songs.map((song) => (
+              {songs.map((song, index) => (
                 <div key={song.id} className="glass-card rounded-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
@@ -150,6 +171,24 @@ export default function AdminMusic() {
                       <p className="text-sm font-bold text-text truncate">{song.title}</p>
                       {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
                     </div>
+                  </div>
+                  <div className="flex flex-col shrink-0 mr-1">
+                    <button
+                      onClick={() => handleMove(song.id, -1)}
+                      disabled={index === 0}
+                      aria-label="Move up"
+                      className="text-text-dim disabled:opacity-25"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleMove(song.id, 1)}
+                      disabled={index === songs.length - 1}
+                      aria-label="Move down"
+                      className="text-text-dim disabled:opacity-25"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
                   </div>
                   <button
                     onClick={() => handleDelete(song.id)}
