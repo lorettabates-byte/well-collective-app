@@ -69,6 +69,20 @@ const DEFAULT_STATE: PersistedState = {
   featuredEventId: null,
 };
 
+// Every real member must have a unique, stable id derived from their email —
+// without this, every member's likes/RSVPs/message authorship would be
+// attributed to the same shared mock id ("u1"), making them indistinguishable
+// from each other (e.g. one member's like would show as already-liked for
+// everyone else too).
+function deriveMemberId(email: string): string {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = (hash << 5) - hash + email.charCodeAt(i);
+    hash |= 0;
+  }
+  return `m_${Math.abs(hash).toString(36)}`;
+}
+
 function applyMemberInfo(user: User): User {
   try {
     const raw = window.localStorage.getItem("memberUser");
@@ -96,6 +110,7 @@ function applyMemberInfo(user: User): User {
           // every load.
           ? { avatar: "", bio: "", birthday: undefined, isAdmin: false, name: member.name || user.name }
           : {}),
+      id: memberEmail ? deriveMemberId(memberEmail) : user.id,
       email: member.email || user.email,
       // Read fresh from localStorage only — falling back to the previously
       // cached user.trialEndsAt would resurrect a stale trial date forever
@@ -551,6 +566,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...prev,
       featuredEventId: eventId,
     }));
+    if (API_URL) {
+      fetch(`${API_URL}/api/settings/featured-event`, {
+        method: "PUT",
+        headers: adminHeaders(),
+        body: JSON.stringify({ featuredEventId: eventId }),
+      }).catch((err) => console.error("Failed to sync featured event:", err));
+    }
   };
 
   // Process any scheduled content for "today" — adds the weekly theme / daily
@@ -714,6 +736,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // offline or backend unreachable — fall back to whatever local content exists
       });
   }, []);
+
+  // Sync the admin's featured-event pick from the shared backend so every
+  // member sees the same highlighted event, not just the admin's own device.
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/settings/featured-event`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setState((prev) => ({ ...prev, featuredEventId: data.featuredEventId }));
+      })
+      .catch(() => {
+        // offline or backend unreachable — fall back to whatever local content exists
+      });
+  }, []);
+
+  // Push this member's profile (name/avatar/birthday/calendar opt-in) to the
+  // shared member directory so other members can see their birthday on the
+  // calendar and pick them in the new-message user list.
+  useEffect(() => {
+    if (!API_URL || !state.user.email) return;
+    fetch(`${API_URL}/api/members/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: state.user.email,
+        name: state.user.name,
+        avatar: state.user.avatar,
+        birthday: state.user.showBirthdayOnCalendar ? state.user.birthday : undefined,
+        showBirthdayOnCalendar: state.user.showBirthdayOnCalendar,
+      }),
+    }).catch((err) => console.error("Failed to sync member profile:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    state.user.email,
+    state.user.name,
+    state.user.avatar,
+    state.user.birthday,
+    state.user.showBirthdayOnCalendar,
+  ]);
 
   const today = todayISO();
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);

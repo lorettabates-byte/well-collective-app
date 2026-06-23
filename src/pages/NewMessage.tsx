@@ -1,4 +1,5 @@
 import { ChevronRight, Mail, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
@@ -6,17 +7,30 @@ import SectionHeader from "../components/ui/SectionHeader";
 import { CategoryIcon } from "../data/iconMap";
 import { useApp } from "../store/AppContext";
 
-export default function NewMessage() {
-  const { user, categories, threads } = useApp();
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-  const members = Array.from(
-    new Map(
-      threads
-        .flatMap((t) => t.messages)
-        .filter((m) => m.authorId !== user.id)
-        .map((m) => [m.authorId, { id: m.authorId, name: m.authorName, avatar: m.authorAvatar }])
-    ).values()
-  );
+interface DirectoryMember {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
+export default function NewMessage() {
+  const { user, categories } = useApp();
+  const [members, setMembers] = useState<DirectoryMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) {
+      setLoading(false);
+      return;
+    }
+    fetch(`${API_URL}/api/members?excludeEmail=${encodeURIComponent(user.email)}`)
+      .then((res) => (res.ok ? res.json() : { members: [] }))
+      .then((data) => setMembers(data.members || []))
+      .catch(() => setMembers([]))
+      .finally(() => setLoading(false));
+  }, [user.email]);
 
   return (
     <div>
@@ -49,13 +63,15 @@ export default function NewMessage() {
 
         <div>
           <SectionHeader title="Send a Private Message" />
-          {members.length === 0 ? (
+          {loading ? (
+            <p className="text-xs text-text-muted">Loading members...</p>
+          ) : members.length === 0 ? (
             <div className="glass-card rounded-card p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
                 <Users size={18} className="text-text-muted" />
               </div>
               <p className="text-xs text-text-muted">
-                Once other members post in the community, you'll be able to message them here.
+                Once other members join, you'll be able to message them here.
               </p>
             </div>
           ) : (
@@ -66,7 +82,7 @@ export default function NewMessage() {
                   to={`/messages/${member.id}`}
                   className="flex items-center gap-3 glass-card rounded-card p-4"
                 >
-                  <Avatar src={member.avatar} alt={member.name} size={40} />
+                  <Avatar src={member.avatar || ""} alt={member.name} size={40} />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-text">{member.name}</h3>
                   </div>

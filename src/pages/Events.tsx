@@ -1,5 +1,5 @@
 import { Calendar, CalendarDays, List, Star } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BirthdayCard from "../components/events/BirthdayCard";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
@@ -9,10 +9,37 @@ import { useApp } from "../store/AppContext";
 import { birthdayDateForYear, nextBirthdayDate } from "../utils/birthday";
 import { formatDateLong } from "../utils/format";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+interface MemberBirthday {
+  id: string;
+  name: string;
+  birthday: string;
+}
+
 export default function Events() {
   const { user, events, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const [view, setView] = useState<"calendar" | "list">("calendar");
+
+  // Other members' birthdays, synced from the shared member directory so
+  // everyone's opted-in birthday shows on everyone's calendar — not just
+  // their own. Falls back to just the local user's own birthday if offline.
+  const [memberBirthdays, setMemberBirthdays] = useState<MemberBirthday[]>(() =>
+    user.birthday && user.showBirthdayOnCalendar ? [{ id: user.id, name: user.name, birthday: user.birthday }] : []
+  );
+
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/members/birthdays`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.birthdays) setMemberBirthdays(data.birthdays);
+      })
+      .catch(() => {
+        // offline or backend unreachable — fall back to whatever was set initially
+      });
+  }, []);
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -44,37 +71,44 @@ export default function Events() {
     ? sortedEvents.filter((e) => e.date === selectedDate)
     : [];
 
-  const showBirthday = !!user.birthday && !!user.showBirthdayOnCalendar;
-  const birthdayDateThisMonth = showBirthday ? birthdayDateForYear(user.birthday!, year) : null;
-  const birthdayDates = useMemo(() => {
-    const set = new Set<string>();
-    if (birthdayDateThisMonth) set.add(birthdayDateThisMonth);
-    return set;
-  }, [birthdayDateThisMonth]);
+// This year's calendar date for each member's birthday.
+  const birthdaysThisMonth = useMemo(
+    () => memberBirthdays.map((m) => ({ ...m, date: birthdayDateForYear(m.birthday, year) })),
+    [memberBirthdays, year]
+  );
 
-  const upcomingBirthday = showBirthday ? nextBirthdayDate(user.birthday!) : null;
-  const isSelectedBirthday = !!selectedDate && selectedDate === birthdayDateThisMonth;
+  const birthdayDates = useMemo(() => new Set(birthdaysThisMonth.map((b) => b.date)), [birthdaysThisMonth]);
 
-  // Only surface the user's birthday in the upcoming list if it's coming up soon.
+  const selectedDateBirthdays = selectedDate ? birthdaysThisMonth.filter((b) => b.date === selectedDate) : [];
+
+  // Only surface birthdays in the upcoming list if they're coming up soon.
   const maxBirthdayLookahead = useMemo(() => {
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
     return limit.toISOString().slice(0, 10);
   }, [today]);
 
-  const showUpcomingBirthday = !!upcomingBirthday && upcomingBirthday <= maxBirthdayLookahead;
+  const upcomingBirthdays = useMemo(
+    () =>
+      memberBirthdays
+        .map((m) => ({ ...m, date: nextBirthdayDate(m.birthday) }))
+        .filter((m) => m.date <= maxBirthdayLookahead),
+    [memberBirthdays, maxBirthdayLookahead]
+  );
 
-  type UpcomingItem = { kind: "event"; event: (typeof upcomingEvents)[number] } | { kind: "birthday"; date: string };
+  type UpcomingItem =
+    | { kind: "event"; event: (typeof upcomingEvents)[number] }
+    | { kind: "birthday"; name: string; date: string; id: string };
 
   const upcomingItems = useMemo<UpcomingItem[]>(() => {
     const items: UpcomingItem[] = upcomingEvents.map((event) => ({ kind: "event", event }));
-    if (showUpcomingBirthday) items.push({ kind: "birthday", date: upcomingBirthday! });
+    upcomingBirthdays.forEach((b) => items.push({ kind: "birthday", name: b.name, date: b.date, id: b.id }));
     return items.sort((a, b) => {
       const dateA = a.kind === "event" ? a.event.date : a.date;
       const dateB = b.kind === "event" ? b.event.date : b.date;
       return dateA.localeCompare(dateB);
     });
-  }, [upcomingEvents, showUpcomingBirthday, upcomingBirthday]);
+  }, [upcomingEvents, upcomingBirthdays]);
 
   return (
     <div>
@@ -127,11 +161,13 @@ export default function Events() {
             {selectedDate ? (
               <div>
                 <h2 className="text-sm font-bold text-text mb-3">{formatDateLong(selectedDate)}</h2>
-                {selectedDateEvents.length === 0 && !isSelectedBirthday ? (
+                {selectedDateEvents.length === 0 && selectedDateBirthdays.length === 0 ? (
                   <p className="text-sm text-text-muted">No events on this day.</p>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {isSelectedBirthday && <BirthdayCard name={user.name} date={selectedDate} />}
+                    {selectedDateBirthdays.map((b) => (
+                      <BirthdayCard key={b.id} name={b.name} date={b.date} />
+                    ))}
                     {selectedDateEvents.map((event) => (
                       <EventCard key={event.id} event={event} />
                     ))}
@@ -156,8 +192,8 @@ export default function Events() {
                     </div>
                   )}
                   {upcomingItems.map((item) =>
-                    item.kind === "birthday" ? (
-                      <BirthdayCard key="birthday" name={user.name} date={item.date} />
+    item.kind === "birthday" ? (
+                      <BirthdayCard key={item.id} name={item.name} date={item.date} />
                     ) : (
                       <EventCard key={item.event.id} event={item.event} />
                     )
@@ -186,7 +222,7 @@ export default function Events() {
             ) : (
               upcomingItems.map((item) =>
                 item.kind === "birthday" ? (
-                  <BirthdayCard key="birthday" name={user.name} date={item.date} />
+                  <BirthdayCard key={item.id} name={item.name} date={item.date} />
                 ) : (
                   <EventCard key={item.event.id} event={item.event} />
                 )
