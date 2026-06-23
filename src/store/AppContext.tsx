@@ -92,7 +92,10 @@ function applyMemberInfo(user: User): User {
           : {}),
       email: member.email || user.email,
       name: member.name || user.name,
-      trialEndsAt: trialEndsAt || user.trialEndsAt,
+      // Read fresh from localStorage only — falling back to the previously
+      // cached user.trialEndsAt would resurrect a stale trial date forever
+      // (e.g. for a real member whose old trial flag was never cleared).
+      trialEndsAt: trialEndsAt || undefined,
     };
   } catch {
     return user;

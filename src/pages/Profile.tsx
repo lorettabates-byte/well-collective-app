@@ -47,6 +47,9 @@ export default function Profile() {
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
     localStorage.removeItem("memberUser");
+    localStorage.removeItem("memberTrialEndsAt");
+    localStorage.removeItem("memberMembershipStatus");
+    localStorage.removeItem("memberProfileSyncedEmail");
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminEmail");
     localStorage.removeItem("admin");
