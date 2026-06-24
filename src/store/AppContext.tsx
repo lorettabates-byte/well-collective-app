@@ -102,7 +102,7 @@ function applyMemberInfo(user: User): User {
     return {
       ...user,
       ...(isFounder
-        ? { ...FOUNDER_PROFILE, isAdmin: true }
+        ? { ...FOUNDER_PROFILE, isAdmin: true, avatar: user.avatar || FOUNDER_PROFILE.avatar }
         : isNewMember
           // Only seed name/avatar/bio/birthday from the WP account on first
           // sync for this email — once synced, the user's own edits in
