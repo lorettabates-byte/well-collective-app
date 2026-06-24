@@ -69,10 +69,13 @@ export default function Wellness() {
 
   return (
     <div>
-      <TopBar title="Wellness" subtitle="Daily workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
+      <TopBar title="Daily Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
       <div className="px-4 pt-4 flex flex-col gap-6">
         <section>
-          <h2 className="text-sm font-bold text-text mb-2">Daily Workout</h2>
+          <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4">
+            <h2 className="text-lg font-bold text-text">Daily Workout</h2>
+            <p className="text-xs text-text-muted mt-1">Generate and complete your personalized routine</p>
+          </div>
           <button
             onClick={() => setPlan(generateWorkout())}
             className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 mb-4 shadow-glow"
@@ -81,12 +84,14 @@ export default function Wellness() {
             Generate My Workout
           </button>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             <section>
-              <h3 className="flex items-center gap-1.5 text-sm font-bold text-text mb-2">
-                <Flame size={16} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
-                Cardio
-              </h3>
+              <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-3 mb-3">
+                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
+                  <Flame size={18} className="text-orange-400 drop-shadow-[0_2px_6px_rgba(251,146,60,0.55)]" />
+                  Cardio
+                </h3>
+              </div>
               <a
                 href={plan.cardio.url}
                 target="_blank"
@@ -108,11 +113,13 @@ export default function Wellness() {
             </section>
 
             <section>
-              <h3 className="flex items-center gap-1.5 text-sm font-bold text-text mb-2">
-                <Dumbbell size={16} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
-                Resistance Training
-              </h3>
-              <div className="glass-card rounded-card p-4 flex flex-col gap-2.5">
+              <div className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-3 mb-3">
+                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
+                  <Dumbbell size={18} className="text-blue-400 drop-shadow-[0_2px_6px_rgba(59,130,246,0.55)]" />
+                  Resistance Training
+                </h3>
+              </div>
+              <div className="glass-card rounded-card p-4 flex flex-col gap-3">
                 {plan.resistance.map((exercise) => (
                   <button
                     key={exercise.name}
@@ -132,11 +139,13 @@ export default function Wellness() {
             </section>
 
             <section>
-              <h3 className="flex items-center gap-1.5 text-sm font-bold text-text mb-2">
-                <StretchHorizontal size={16} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
-                Stretching
-              </h3>
-              <div className="glass-card rounded-card p-4 flex flex-col gap-2.5">
+              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-3 mb-3">
+                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
+                  <StretchHorizontal size={18} className="text-purple-400 drop-shadow-[0_2px_6px_rgba(168,85,247,0.55)]" />
+                  Stretching
+                </h3>
+              </div>
+              <div className="glass-card rounded-card p-4 flex flex-col gap-3">
                 {plan.stretches.map((stretch) => (
                   <button
                     key={stretch.name}
@@ -156,7 +165,9 @@ export default function Wellness() {
             </section>
 
             <section>
-              <h3 className="text-sm font-bold text-text mb-2">Breathwork</h3>
+              <div className="bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/30 rounded-xl p-3 mb-3">
+                <h3 className="text-base font-bold text-text">Breathwork</h3>
+              </div>
               <div className="glass-card rounded-card p-4 flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
                   <Wind size={18} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
@@ -187,22 +198,22 @@ export default function Wellness() {
         </section>
 
         <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-text">Your Streak &amp; Badges</h2>
+          <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-text">Your Streak &amp; Badges</h2>
             <button
               onClick={() => setBadgesExpanded(!badgesExpanded)}
-              className="flex items-center gap-1 text-xs text-brand-light"
+              className="flex items-center gap-1 text-xs text-brand-light hover:text-brand-blue transition-colors"
             >
-              {badgesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {badgesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           </div>
 
-          <div className="glass-card rounded-card p-4 mb-3 flex items-center gap-3">
+          <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3">
             <div className="w-12 h-12 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
               <Flame size={22} className="text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-lg font-bold text-text leading-none">
+              <p className="text-2xl font-bold text-text leading-none">
                 {streak} {streak === 1 ? "day" : "days"}
               </p>
               <p className="text-xs text-text-muted mt-1">Current workout streak — keep it going!</p>
