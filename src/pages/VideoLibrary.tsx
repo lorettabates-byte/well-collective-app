@@ -1,8 +1,11 @@
 import { ArrowUpRight, Play } from "lucide-react";
+import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 
-const FEATURED_VIDEO = {
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+const FEATURED_VIDEO_DEFAULTS = {
   title: "Video Library",
   description: "Browse all WELL Collective classes, workshops, and livestreams curated by Loretta",
   image: "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png",
@@ -10,7 +13,21 @@ const FEATURED_VIDEO = {
 };
 
 export default function VideoLibrary() {
+  const [livestreamCoverUrl, setLivestreamCoverUrl] = useState<string | null>(null);
   const otherCategories = VIDEO_CATEGORIES;
+
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/settings/livestream-cover`)
+      .then((res) => (res.ok ? res.json() : { url: null }))
+      .then((data) => setLivestreamCoverUrl(data.url || null))
+      .catch(() => {});
+  }, []);
+
+  const FEATURED_VIDEO = {
+    ...FEATURED_VIDEO_DEFAULTS,
+    image: livestreamCoverUrl || FEATURED_VIDEO_DEFAULTS.image,
+  };
 
   return (
     <div>
