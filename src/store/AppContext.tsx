@@ -9,7 +9,7 @@ import {
 } from "../data/mockData";
 import { getFallbackRecipe } from "../data/nutritionLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
-import { getRecipePhoto } from "../utils/recipePhotos";
+import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
 import type {
   AppNotification,
   AppNotificationType,
@@ -789,13 +789,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ? { date: today, ...todaysEntry.wellActivity }
     : { date: today, ...getFallbackWellActivity(new Date()) };
 
-  const baseRecipe = todaysEntry?.recipe
-    ? { date: today, ...todaysEntry.recipe }
-    : { date: today, ...getFallbackRecipe(new Date()) };
+  const rawRecipe = todaysEntry?.recipe
+    ? todaysEntry.recipe
+    : getFallbackRecipe(new Date());
+  const recipeCategory = (rawRecipe as Record<string, unknown>).imageCategory as string | undefined;
+
+  const baseRecipe = { date: today, ...rawRecipe };
 
   const todaysRecipe: Recipe = {
     ...baseRecipe,
-    image: baseRecipe.image || getRecipePhoto(baseRecipe.name, baseRecipe.ingredients),
+    imageCategory: recipeCategory,
+    image: baseRecipe.image
+      || (recipeCategory
+        ? getRecipePhotoByCategory(recipeCategory, baseRecipe.name)
+        : getRecipePhoto(baseRecipe.name, baseRecipe.ingredients)),
   };
 
   const value: AppContextValue = {

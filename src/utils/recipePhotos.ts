@@ -4,10 +4,10 @@ const PHOTOS: Record<string, string[]> = {
     "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=70",
   ],
-  bowl: [
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=70",
+  grain_bowl: [
     "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1543339308-d595ac3e9dab?auto=format&fit=crop&w=900&q=70",
   ],
   smoothie: [
     "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=70",
@@ -34,14 +34,15 @@ const PHOTOS: Record<string, string[]> = {
     "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?auto=format&fit=crop&w=900&q=70",
   ],
-  breakfast: [
-    "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=70",
+  oatmeal: [
+    "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1587116861219-230ac19df100?auto=format&fit=crop&w=900&q=70",
   ],
   toast: [
     "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=70",
   ],
   wrap: [
     "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=900&q=70",
@@ -55,11 +56,35 @@ const PHOTOS: Record<string, string[]> = {
     "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=70",
   ],
+  roasted_vegetables: [
+    "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1506484381205-f7945b742a1e?auto=format&fit=crop&w=900&q=70",
+  ],
+  curry: [
+    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=900&q=70",
+  ],
+  tacos: [
+    "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=900&q=70",
+  ],
+  sandwich: [
+    "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&w=900&q=70",
+  ],
+  fruit: [
+    "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=900&q=70",
+  ],
+  baked: [
+    "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=70",
+    "https://images.unsplash.com/photo-1486427944544-d2c246c4df14?auto=format&fit=crop&w=900&q=70",
+  ],
   dessert: [
     "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=70",
   ],
-  default: [
+  general_healthy: [
     "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=70",
@@ -69,22 +94,6 @@ const PHOTOS: Record<string, string[]> = {
   ],
 };
 
-const KEYWORDS: [string[], string][] = [
-  [["salad", "greens", "kale", "spinach", "arugula", "lettuce", "slaw"], "salad"],
-  [["bowl", "buddha", "grain bowl", "power bowl", "poke"], "bowl"],
-  [["smoothie", "shake", "blend", "juice"], "smoothie"],
-  [["soup", "broth", "stew", "chili", "chowder", "bisque"], "soup"],
-  [["pasta", "noodle", "spaghetti", "penne", "linguine", "fettuccine"], "pasta"],
-  [["chicken", "turkey", "poultry"], "chicken"],
-  [["salmon", "fish", "tuna", "shrimp", "seafood", "cod", "tilapia"], "fish"],
-  [["toast", "avocado toast", "bread", "bruschetta"], "toast"],
-  [["oat", "pancake", "waffle", "egg", "omelet", "granola", "breakfast", "morning"], "breakfast"],
-  [["wrap", "burrito", "taco", "roll-up", "roll up"], "wrap"],
-  [["rice", "risotto", "pilaf", "fried rice", "quinoa"], "rice"],
-  [["stir fry", "stir-fry", "wok", "teriyaki", "sesame"], "stir_fry"],
-  [["cake", "cookie", "brownie", "dessert", "sweet", "chocolate", "berry crisp", "parfait"], "dessert"],
-];
-
 function hashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -93,16 +102,43 @@ function hashCode(s: string): number {
   return Math.abs(h);
 }
 
+export function getRecipePhotoByCategory(category: string, recipeName: string): string {
+  const photos = PHOTOS[category] || PHOTOS.general_healthy;
+  return photos[hashCode(recipeName) % photos.length];
+}
+
 export function getRecipePhoto(name: string, ingredients: string[]): string {
   const text = `${name} ${ingredients.join(" ")}`.toLowerCase();
 
-  for (const [keywords, category] of KEYWORDS) {
+  const matchers: [string[], string][] = [
+    [["porridge", "oatmeal", "oats", "granola", "muesli", "overnight oats"], "oatmeal"],
+    [["smoothie", "shake", "blend", "juice", "acai"], "smoothie"],
+    [["salad", "slaw", "greens", "arugula", "kale salad", "lettuce"], "salad"],
+    [["soup", "broth", "stew", "chili", "chowder", "bisque", "gazpacho"], "soup"],
+    [["curry", "tikka", "masala", "dal", "lentil"], "curry"],
+    [["pasta", "noodle", "spaghetti", "penne", "linguine", "fettuccine", "ziti", "macaroni"], "pasta"],
+    [["stir fry", "stir-fry", "wok", "teriyaki", "sesame", "asian"], "stir_fry"],
+    [["taco", "burrito", "enchilada", "fajita", "quesadilla", "mexican"], "tacos"],
+    [["salmon", "fish", "tuna", "shrimp", "seafood", "cod", "tilapia", "mahi"], "fish"],
+    [["chicken", "turkey", "poultry", "hen"], "chicken"],
+    [["toast", "avocado toast", "bruschetta", "crostini"], "toast"],
+    [["wrap", "roll-up", "roll up", "spring roll", "lettuce wrap"], "wrap"],
+    [["sandwich", "panini", "club", "sub", "melt"], "sandwich"],
+    [["rice", "risotto", "pilaf", "fried rice", "quinoa", "grain bowl", "buddha bowl", "power bowl"], "grain_bowl"],
+    [["roast", "roasted", "baked vegeta", "sheet pan"], "roasted_vegetables"],
+    [["cake", "cookie", "brownie", "dessert", "sweet", "chocolate", "parfait", "pudding", "mousse"], "dessert"],
+    [["fruit", "berry", "melon", "citrus", "tropical"], "fruit"],
+    [["muffin", "scone", "bread", "baked", "banana bread"], "baked"],
+    [["egg", "omelet", "omelette", "frittata", "scramble", "breakfast"], "toast"],
+  ];
+
+  for (const [keywords, category] of matchers) {
     if (keywords.some((kw) => text.includes(kw))) {
       const photos = PHOTOS[category];
       return photos[hashCode(name) % photos.length];
     }
   }
 
-  const photos = PHOTOS.default;
+  const photos = PHOTOS.general_healthy;
   return photos[hashCode(name) % photos.length];
 }

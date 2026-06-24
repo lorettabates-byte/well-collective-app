@@ -46,6 +46,7 @@ export interface Recipe {
   ingredients: string[];
   steps: string[];
   image: string;
+  imageCategory?: string;
   saved?: boolean;
 }
 
