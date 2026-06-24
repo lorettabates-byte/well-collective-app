@@ -16,12 +16,82 @@ interface Message {
   created_at: string;
 }
 
+interface Conversation {
+  user_id: string;
+  last_message_at: string;
+  last_body: string;
+  unread_count: number;
+}
+
+interface DirectoryMember {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
+
 export default function Messages() {
   const { user } = useApp();
   const { userId: selectedUserId } = useParams<{ userId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [directory, setDirectory] = useState<Record<string, DirectoryMember>>({});
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [inboxLoading, setInboxLoading] = useState(true);
+
+  // Fetch the member directory once so we can resolve names/avatars for
+  // both the inbox list and the open conversation header/bubbles.
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/members?excludeEmail=${encodeURIComponent(user.email)}`)
+      .then((res) => (res.ok ? res.json() : { members: [] }))
+      .then((data) => {
+        const map: Record<string, DirectoryMember> = {};
+        for (const m of data.members || []) map[m.id] = m;
+        setDirectory(map);
+      })
+      .catch(() => setDirectory({}));
+  }, [user.email]);
+
+  useEffect(() => {
+    if (selectedUserId || !API_URL) {
+      setInboxLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchInbox = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/messages?currentUserId=${encodeURIComponent(user.id)}`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setConversations(data.conversations || []);
+        }
+      } catch (err) {
+        console.error("Fetch inbox error:", err);
+      } finally {
+        if (!cancelled) setInboxLoading(false);
+      }
+    };
+
+    fetchInbox();
+    const pollInterval = setInterval(fetchInbox, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollInterval);
+    };
+  }, [selectedUserId, user.id]);
 
   useEffect(() => {
     if (!selectedUserId || !API_URL) return;
@@ -79,24 +149,71 @@ export default function Messages() {
     return (
       <div>
         <TopBar title="Messages" subtitle="Private conversations" icon={Mail} iconColor="#0191CE" showBack />
-        <div className="px-4 pt-8 flex flex-col items-center justify-center text-center gap-4 py-12">
-          <MessageCircle size={48} className="text-text-muted" />
-          <p className="text-sm text-text-muted">No conversations yet</p>
-          <Link
-            to="/new-message"
-            className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill px-6 py-2.5 shadow-glow"
-          >
-            <Plus size={16} />
-            Start a Conversation
-          </Link>
+        <div className="px-4 pt-4">
+          {inboxLoading ? (
+            <p className="text-xs text-text-muted text-center py-12">Loading conversations...</p>
+          ) : conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center gap-4 py-12">
+              <MessageCircle size={48} className="text-text-muted" />
+              <p className="text-sm text-text-muted">No conversations yet</p>
+              <Link
+                to="/new-message"
+                className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill px-6 py-2.5 shadow-glow"
+              >
+                <Plus size={16} />
+                Start a Conversation
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3 mb-4">
+                {conversations.map((conv) => {
+                  const member = directory[conv.user_id];
+                  const name = member?.name || "Member";
+                  return (
+                    <Link
+                      key={conv.user_id}
+                      to={`/messages/${conv.user_id}`}
+                      className="flex items-center gap-3 glass-card rounded-card p-4"
+                    >
+                      <Avatar src={member?.avatar || ""} alt={name} size={44} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-bold text-text truncate">{name}</h3>
+                          <span className="text-[11px] text-text-dim shrink-0">
+                            {timeAgo(conv.last_message_at)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-muted truncate">{conv.last_body}</p>
+                      </div>
+                      {conv.unread_count > 0 && (
+                        <div className="w-5 h-5 rounded-full gradient-brand text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {conv.unread_count}
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+              <Link
+                to="/new-message"
+                className="flex items-center justify-center gap-2 text-sm font-semibold text-brand-light border border-brand-light/30 rounded-pill py-2.5 mb-4"
+              >
+                <Plus size={16} />
+                Start a Conversation
+              </Link>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
+  const otherMember = directory[selectedUserId];
+
   return (
     <div className="flex flex-col h-screen bg-bg">
-      <TopBar title={selectedUserId || "Message"} subtitle="Conversation" showBack />
+      <TopBar title={otherMember?.name || "Message"} subtitle="Conversation" showBack />
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
         {messages.length === 0 ? (
@@ -104,7 +221,9 @@ export default function Messages() {
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className={`flex gap-2 ${msg.sender_id === user.id ? "justify-end" : ""}`}>
-              {msg.sender_id !== user.id && <Avatar src="" alt="" size={28} />}
+              {msg.sender_id !== user.id && (
+                <Avatar src={otherMember?.avatar || ""} alt={otherMember?.name || "Member"} size={28} />
+              )}
               <div
                 className={`max-w-xs rounded-card px-3 py-2 text-sm ${
                   msg.sender_id === user.id
