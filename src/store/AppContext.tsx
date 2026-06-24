@@ -103,13 +103,34 @@ function applyMemberInfo(user: User): User {
     return {
       ...user,
       ...(isFounder
-        ? { ...FOUNDER_PROFILE, isAdmin: true, avatar: user.avatar || FOUNDER_PROFILE.avatar }
+        ? {
+            isAdmin: true,
+            // Only seed the founder defaults on first sync for this email —
+            // once synced, edits made in Edit Profile are authoritative.
+            // Never force the hardcoded bio/birthday back on every load.
+            ...(isNewMember
+              ? {
+                  bio: user.bio || FOUNDER_PROFILE.bio,
+                  birthday: user.birthday || FOUNDER_PROFILE.birthday,
+                  avatar: user.avatar || FOUNDER_PROFILE.avatar,
+                }
+              : {}),
+          }
         : isNewMember
           // Only seed name/avatar/bio/birthday from the WP account on first
           // sync for this email — once synced, the user's own edits in
           // Edit Profile are authoritative and must not be overwritten on
-          // every load.
-          ? { avatar: "", bio: "", birthday: undefined, isAdmin: false, name: member.name || user.name }
+          // every load. Fall back to whatever is already in local state
+          // rather than blanking it out, so a false-positive "new member"
+          // detection (e.g. a Safari storage-partition quirk) can never
+          // destroy already-saved profile data.
+          ? {
+              avatar: user.avatar || "",
+              bio: user.bio || "",
+              birthday: user.birthday || undefined,
+              isAdmin: false,
+              name: member.name || user.name,
+            }
           : {}),
       id: memberEmail ? deriveMemberId(memberEmail) : user.id,
       email: member.email || user.email,
