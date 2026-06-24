@@ -7,7 +7,6 @@ const PHOTOS: Record<string, string[]> = {
   grain_bowl: [
     "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1543339308-d595ac3e9dab?auto=format&fit=crop&w=900&q=70",
   ],
   smoothie: [
     "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=70",
@@ -16,7 +15,6 @@ const PHOTOS: Record<string, string[]> = {
   ],
   soup: [
     "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1603105037880-880cd4f709d5?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1588566565463-180a5b2090d2?auto=format&fit=crop&w=900&q=70",
   ],
   pasta: [
@@ -37,7 +35,6 @@ const PHOTOS: Record<string, string[]> = {
   oatmeal: [
     "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&w=900&q=70",
     "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1587116861219-230ac19df100?auto=format&fit=crop&w=900&q=70",
   ],
   toast: [
     "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=70",
@@ -58,7 +55,6 @@ const PHOTOS: Record<string, string[]> = {
   ],
   roasted_vegetables: [
     "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1506484381205-f7945b742a1e?auto=format&fit=crop&w=900&q=70",
   ],
   curry: [
     "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=900&q=70",
@@ -78,7 +74,6 @@ const PHOTOS: Record<string, string[]> = {
   ],
   baked: [
     "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=70",
-    "https://images.unsplash.com/photo-1486427944544-d2c246c4df14?auto=format&fit=crop&w=900&q=70",
   ],
   dessert: [
     "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=900&q=70",
