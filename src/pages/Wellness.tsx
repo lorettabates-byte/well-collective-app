@@ -198,6 +198,38 @@ export default function Wellness() {
         </section>
 
         <section>
+          <div className="bg-gradient-to-r from-pink-500/20 to-rose-500/20 border border-pink-500/30 rounded-2xl p-4 mb-4">
+            <h2 className="flex items-center gap-1.5 text-lg font-bold text-text">
+              <Heart size={18} className="text-pink-400 drop-shadow-[0_2px_6px_rgba(244,114,182,0.55)]" />
+              Well Activity
+            </h2>
+          </div>
+          <div className="gradient-brand p-[1px] rounded-card">
+            <div className="bg-surface/95 rounded-card p-4">
+              {currentWeeklyTheme && (
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
+                  This week: {currentWeeklyTheme.title}
+                </span>
+              )}
+              <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
+              <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
+              <button
+                onClick={handleWellActivityComplete}
+                disabled={wellActivityCompleted}
+                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
+                  wellActivityCompleted
+                    ? "bg-surface-2 border border-border text-brand-light"
+                    : "gradient-brand text-white"
+                }`}
+              >
+                <CheckCircle2 size={14} />
+                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section>
           <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-text">Your Streak &amp; Badges</h2>
             <button
@@ -246,36 +278,6 @@ export default function Wellness() {
             })}
           </div>
           {!badgesExpanded && <p className="text-xs text-text-muted mt-2">Click to see all {badges.length} badges</p>}
-        </section>
-
-        <section>
-          <h2 className="flex items-center gap-1.5 text-sm font-bold text-text mb-2">
-            <Heart size={16} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
-            Well Activity
-          </h2>
-          <div className="gradient-brand p-[1px] rounded-card">
-            <div className="bg-surface/95 rounded-card p-4">
-              {currentWeeklyTheme && (
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
-                  This week: {currentWeeklyTheme.title}
-                </span>
-              )}
-              <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
-              <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
-              <button
-                onClick={handleWellActivityComplete}
-                disabled={wellActivityCompleted}
-                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
-                  wellActivityCompleted
-                    ? "bg-surface-2 border border-border text-brand-light"
-                    : "gradient-brand text-white"
-                }`}
-              >
-                <CheckCircle2 size={14} />
-                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
-              </button>
-            </div>
-          </div>
         </section>
       </div>
 

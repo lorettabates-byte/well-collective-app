@@ -13,6 +13,7 @@ import {
   SkipForward,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Song } from "../../types";
 
 const FAVORITES_KEY = "well-music-favorites";
@@ -400,48 +401,50 @@ export default function Playlist({
           mini player below — without this, those rows would be unclickable. */}
       {currentSong && <div className="h-28" aria-hidden="true" />}
 
-      {currentSong && (
-        <div className="fixed bottom-24 sm:bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
-            <button onClick={cycleRepeat} aria-label="Cycle repeat mode" className="text-text-muted shrink-0">
-              {repeatMode === "one" ? (
-                <Repeat1 size={14} className="text-brand-light" />
-              ) : (
-                <Repeat size={14} className={repeatMode === "all" ? "text-brand-light" : ""} />
-              )}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-text-dim w-9 text-right">{formatTime(progress.current)}</span>
-            <input
-              type="range"
-              min={0}
-              max={progress.duration || 0}
-              step={0.1}
-              value={progress.current}
-              onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              className="flex-1 accent-brand-blue"
-            />
-            <span className="text-[10px] text-text-dim w-9">{formatTime(progress.duration)}</span>
-          </div>
-          <div className="flex items-center justify-center gap-6">
-            <button onClick={() => handleSkip(-1)} aria-label="Previous" className="text-text">
-              <SkipBack size={18} />
-            </button>
-            <button
-              onClick={() => togglePlaySong(currentSong)}
-              aria-label={isPlaying ? "Pause" : "Play"}
-              className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center"
-            >
-              {isPlaying ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
-            </button>
-            <button onClick={() => handleSkip(1)} aria-label="Next" className="text-text">
-              <SkipForward size={18} />
-            </button>
-          </div>
-        </div>
-      )}
+      {currentSong &&
+        createPortal(
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
+              <button onClick={cycleRepeat} aria-label="Cycle repeat mode" className="text-text-muted shrink-0">
+                {repeatMode === "one" ? (
+                  <Repeat1 size={14} className="text-brand-light" />
+                ) : (
+                  <Repeat size={14} className={repeatMode === "all" ? "text-brand-light" : ""} />
+                )}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-dim w-9 text-right">{formatTime(progress.current)}</span>
+              <input
+                type="range"
+                min={0}
+                max={progress.duration || 0}
+                step={0.1}
+                value={progress.current}
+                onChange={(e) => handleSeek(parseFloat(e.target.value))}
+                className="flex-1 accent-brand-blue"
+              />
+              <span className="text-[10px] text-text-dim w-9">{formatTime(progress.duration)}</span>
+            </div>
+            <div className="flex items-center justify-center gap-6">
+              <button onClick={() => handleSkip(-1)} aria-label="Previous" className="text-text">
+                <SkipBack size={18} />
+              </button>
+              <button
+                onClick={() => togglePlaySong(currentSong)}
+                aria-label={isPlaying ? "Pause" : "Play"}
+                className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center"
+              >
+                {isPlaying ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
+              </button>
+              <button onClick={() => handleSkip(1)} aria-label="Next" className="text-text">
+                <SkipForward size={18} />
+              </button>
+            </div>
+          </div>,
+          document.getElementById("mobile-shell-frame") || document.body
+        )}
     </div>
   );
 }
