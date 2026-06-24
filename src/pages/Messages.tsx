@@ -41,6 +41,10 @@ export default function Messages() {
     };
 
     fetchMessages();
+
+    // Poll for new messages every 2 seconds while conversation is open
+    const pollInterval = setInterval(fetchMessages, 2000);
+    return () => clearInterval(pollInterval);
   }, [selectedUserId, user.id, API_URL]);
 
   const handleSend = async () => {
