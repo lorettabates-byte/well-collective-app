@@ -356,7 +356,7 @@ export default function Playlist({
       {currentSong && <div className="h-28" aria-hidden="true" />}
 
       {currentSong && (
-        <div className="fixed bottom-24 left-4 right-4 mx-auto max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
+        <div className="fixed bottom-16 sm:bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
             <button onClick={cycleRepeat} aria-label="Cycle repeat mode" className="text-text-muted shrink-0">
