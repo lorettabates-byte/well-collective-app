@@ -9,6 +9,7 @@ import {
 } from "../data/mockData";
 import { getFallbackRecipe } from "../data/nutritionLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
+import { generateRecipeImage } from "../utils/recipeImageGenerator";
 import type {
   AppNotification,
   AppNotificationType,
@@ -788,9 +789,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ? { date: today, ...todaysEntry.wellActivity }
     : { date: today, ...getFallbackWellActivity(new Date()) };
 
-  const todaysRecipe: Recipe = todaysEntry?.recipe
+  const baseRecipe = todaysEntry?.recipe
     ? { date: today, ...todaysEntry.recipe }
     : { date: today, ...getFallbackRecipe(new Date()) };
+
+  const todaysRecipe: Recipe = {
+    ...baseRecipe,
+    image: baseRecipe.image || generateRecipeImage(baseRecipe.name, baseRecipe.ingredients),
+  };
 
   const value: AppContextValue = {
     ...state,
