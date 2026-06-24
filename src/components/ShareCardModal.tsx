@@ -9,6 +9,7 @@ interface ShareCardModalProps {
   body: string;
   userAvatar?: string;
   userName?: string;
+  recipeImage?: string;
   onClose: () => void;
 }
 
@@ -21,6 +22,7 @@ export default function ShareCardModal({
   body,
   userAvatar,
   userName,
+  recipeImage,
   onClose,
 }: ShareCardModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -137,8 +139,25 @@ export default function ShareCardModal({
           background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
           color: '#fff'
         }}>
+          {/* Recipe Image (if available) */}
+          {recipeImage && (
+            <img
+              src={recipeImage}
+              alt="Recipe"
+              crossOrigin="anonymous"
+              className="w-full h-32 rounded-lg object-cover mb-2"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          )}
+
           {/* WELL Logo */}
-          <img src={LOGO_URL} alt="WELL Collective" className="h-12" crossOrigin="anonymous" />
+          <img
+            src={LOGO_URL}
+            alt="WELL Collective"
+            className="h-12"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
 
           {/* Loretta Image */}
           <img
