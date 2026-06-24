@@ -76,6 +76,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
           body={inspiration.body}
           userAvatar={user.avatar}
           userName={user.name}
+          recipeImage={inspiration.image}
           onClose={() => setShowShareCard(false)}
         />,
         document.body
