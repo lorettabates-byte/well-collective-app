@@ -119,6 +119,40 @@ export default function Playlist({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Update lock screen metadata via Media Session API
+  useEffect(() => {
+    if (!currentSong || !("mediaSession" in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentSong.title,
+      artist: currentSong.artist || "WELL Collective",
+      album: "WELL Collective Playlist",
+    });
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      if (audioRef.current) {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    });
+
+    navigator.mediaSession.setActionHandler("pause", () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    });
+
+    navigator.mediaSession.setActionHandler("nexttrack", () => handleSkip(1));
+    navigator.mediaSession.setActionHandler("previoustrack", () => handleSkip(-1));
+  }, [currentSong]);
+
+  // Update playback state on lock screen
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+  }, [isPlaying]);
+
   const orderedSongs = order.map((id) => songs.find((s) => s.id === id)).filter((s): s is Song => !!s);
   const visibleSongs = favoritesOnly ? orderedSongs.filter((s) => favorites.has(s.id)) : orderedSongs;
 
