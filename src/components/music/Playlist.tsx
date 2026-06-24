@@ -77,16 +77,27 @@ export default function Playlist({
   const repeatModeRef = useRef<RepeatMode>("off");
   repeatModeRef.current = repeatMode;
 
-  // Reconcile saved order with the current song list — keep the user's custom
-  // order, append any new songs (e.g. just uploaded) at the end.
+  // Reconcile saved order with the current song list. If the server order
+  // has changed (admin reordered), use the new server order and clear the
+  // user's custom order. Otherwise, keep user's custom order and append new songs.
   useEffect(() => {
     if (songs.length === 0) return;
-    const ids = new Set(songs.map((s) => s.id));
-    const saved = loadOrder().filter((id) => ids.has(id));
-    const missing = songs.map((s) => s.id).filter((id) => !saved.includes(id));
-    const merged = [...saved, ...missing];
-    setOrder(merged);
-    saveOrder(merged);
+    const serverOrder = songs.map((s) => s.id);
+    const saved = loadOrder();
+    const ids = new Set(serverOrder);
+    const savedFiltered = saved.filter((id) => ids.has(id));
+    const missing = serverOrder.filter((id) => !saved.includes(id));
+
+    // If server order changed (admin reordered), use server order
+    if (JSON.stringify(savedFiltered) !== JSON.stringify(serverOrder.filter((id) => saved.includes(id)))) {
+      setOrder(serverOrder);
+      saveOrder(serverOrder);
+    } else {
+      // Otherwise use user's custom order
+      const merged = [...savedFiltered, ...missing];
+      setOrder(merged);
+      saveOrder(merged);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songs]);
 
