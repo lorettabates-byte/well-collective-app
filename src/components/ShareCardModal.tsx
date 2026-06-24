@@ -31,6 +31,20 @@ export default function ShareCardModal({
 
   const renderImage = async () => {
     if (!cardRef.current) return null;
+    // Wait for all images to load before converting
+    const images = cardRef.current.querySelectorAll("img");
+    const imagePromises = Array.from(images).map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // resolve even on error so we don't hang
+          }
+        })
+    );
+    await Promise.all(imagePromises);
     return toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
   };
 

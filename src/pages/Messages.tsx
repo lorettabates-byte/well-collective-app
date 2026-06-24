@@ -1,6 +1,6 @@
-import { Mail, MessageCircle, Send } from "lucide-react";
+import { Mail, MessageCircle, Plus, Send } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { useApp } from "../store/AppContext";
@@ -79,9 +79,16 @@ export default function Messages() {
     return (
       <div>
         <TopBar title="Messages" subtitle="Private conversations" icon={Mail} iconColor="#0191CE" showBack />
-        <div className="px-4 pt-8 flex flex-col items-center justify-center text-center gap-3 py-12">
+        <div className="px-4 pt-8 flex flex-col items-center justify-center text-center gap-4 py-12">
           <MessageCircle size={48} className="text-text-muted" />
-          <p className="text-sm text-text-muted">Select a conversation to start messaging</p>
+          <p className="text-sm text-text-muted">No conversations yet</p>
+          <Link
+            to="/new-message"
+            className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill px-6 py-2.5 shadow-glow"
+          >
+            <Plus size={16} />
+            Start a Conversation
+          </Link>
         </div>
       </div>
     );
