@@ -59,6 +59,7 @@ export default function Messages() {
           senderId: user.id,
           recipientId: selectedUserId,
           body: input,
+          senderName: user.name,
         }),
       });
 
