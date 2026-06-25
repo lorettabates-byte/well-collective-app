@@ -1,7 +1,6 @@
 import { toPng } from "html-to-image";
 import { AlertCircle, Download, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { LOGO_URL } from "./layout/MobileShell";
 
 interface ShareCardModalProps {
   cadenceLabel: string;
@@ -44,11 +43,15 @@ export default function ShareCardModal({
   const cardRefVertical = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [lorrettaImageDataUrl, setLorrettaImageDataUrl] = useState<string | null>(null);
+  const [recipeImageDataUrl, setRecipeImageDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchImageAsDataUrl(LOGO_URL).then(setLogoDataUrl);
-  }, []);
+    fetchImageAsDataUrl(LORETTA_IMAGE).then(setLorrettaImageDataUrl);
+    if (recipeImage) {
+      fetchImageAsDataUrl(recipeImage).then(setRecipeImageDataUrl);
+    }
+  }, [recipeImage]);
 
   const renderImage = async (format: "square" | "vertical" = "square") => {
     const cardRef = format === "square" ? cardRefSquare : cardRefVertical;
@@ -144,32 +147,23 @@ export default function ShareCardModal({
 
   const cardContent = (
     <>
-      {recipeImage && (
+      {recipeImageDataUrl && (
         <img
-          src={recipeImage}
+          src={recipeImageDataUrl}
           alt="Recipe"
-          crossOrigin="anonymous"
           className="w-full h-32 rounded-lg object-cover mb-2"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       )}
 
-      {logoDataUrl && (
+      {lorrettaImageDataUrl && (
         <img
-          src={logoDataUrl}
-          alt="WELL Collective"
-          className="h-12"
+          src={lorrettaImageDataUrl}
+          alt="Loretta Bates"
+          className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       )}
-
-      <img
-        src={LORETTA_IMAGE}
-        alt="Loretta Bates"
-        crossOrigin="anonymous"
-        className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-      />
 
       <div>
         <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
