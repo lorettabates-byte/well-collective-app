@@ -52,7 +52,10 @@ export default function Music() {
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
-  const [tab, setTab] = useState<Tab>("playlist");
+  const [tab, setTab] = useState<Tab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get("tab") as Tab) || "playlist";
+  });
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [customSounds, setCustomSounds] = useState<CustomPeacefulSound[]>([]);

@@ -18,13 +18,24 @@ import {
   Wind,
   type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
 import { computeBadges, computeStreak } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+interface DailyBreathwork {
+  title: string;
+  description: string;
+  script: string;
+  duration: number;
+  backgroundSound?: string;
+}
 
 interface SelectedExercise {
   name: string;
@@ -42,6 +53,7 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
 
 export default function Wellness() {
   const { user, threads, currentWeeklyTheme, todaysWellActivity, logWorkoutCompletion } = useApp();
+  const navigate = useNavigate();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
@@ -53,6 +65,7 @@ export default function Wellness() {
   });
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
+  const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -66,6 +79,17 @@ export default function Wellness() {
     localStorage.setItem(key, "true");
     setWellActivityCompleted(true);
   };
+
+  // Fetch daily breathwork to align with Breathwork feature
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/breathwork/today`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setDailyBreathwork(data);
+      })
+      .catch((err) => console.error("Failed to load daily breathwork:", err));
+  }, []);
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
@@ -191,18 +215,31 @@ export default function Wellness() {
               <div className="bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/30 rounded-xl p-3 mb-3">
                 <h3 className="text-base font-bold text-text">Breathwork</h3>
               </div>
-              <div className="glass-card rounded-card p-4 flex items-start gap-3">
+              <div className="glass-card rounded-card p-4 flex items-start gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
                   <Wind size={18} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-text">{plan.breathwork.name}</h4>
-                    <span className="text-xs text-text-dim">{plan.breathwork.duration}</span>
+                    <h4 className="text-sm font-bold text-text">
+                      {dailyBreathwork?.title || plan.breathwork.name}
+                    </h4>
+                    <span className="text-xs text-text-dim">
+                      {dailyBreathwork?.duration ? `${dailyBreathwork.duration} min` : plan.breathwork.duration}
+                    </span>
                   </div>
-                  <p className="text-xs text-text-muted mt-1">{plan.breathwork.description}</p>
+                  <p className="text-xs text-text-muted mt-1">
+                    {dailyBreathwork?.description || plan.breathwork.description}
+                  </p>
                 </div>
               </div>
+              <button
+                onClick={() => navigate("/music?tab=breathwork")}
+                className="w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 gradient-brand text-white shadow-glow hover:opacity-90 transition-colors"
+              >
+                <Wind size={16} />
+                Start Guided Breathwork
+              </button>
             </section>
           </div>
 
