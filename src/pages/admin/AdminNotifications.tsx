@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -36,6 +37,29 @@ export default function AdminNotifications() {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [pushError, setPushError] = useState("");
+  const [checkingBlog, setCheckingBlog] = useState(false);
+  const [blogMessage, setBlogMessage] = useState("");
+
+  const handleCheckBlogPosts = async () => {
+    if (!API_URL) return;
+    setCheckingBlog(true);
+    setBlogMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/blog/send-blog-notification`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setBlogMessage("✓ Blog posts checked. New posts will send notifications automatically.");
+      } else {
+        setBlogMessage("Check failed. New posts will still be detected within the hour.");
+      }
+    } catch {
+      setBlogMessage("Check failed. New posts will still be detected within the hour.");
+    } finally {
+      setCheckingBlog(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +95,24 @@ export default function AdminNotifications() {
     <div>
       <TopBar title="Notifications" subtitle="Send push notifications" showBack />
       <div className="px-4 pt-4">
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
+          <h3 className="text-sm font-bold text-text">Blog & Video Notifications</h3>
+          <p className="text-xs text-text-muted">Automatically checks for new blog posts every hour. Click to force a check now.</p>
+          {blogMessage && (
+            <p className={`text-xs ${blogMessage.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>
+              {blogMessage}
+            </p>
+          )}
+          <button
+            onClick={handleCheckBlogPosts}
+            disabled={checkingBlog}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {checkingBlog ? <Loader2 size={16} className="animate-spin" /> : "📝"}
+            {checkingBlog ? "Checking…" : "Check for New Posts"}
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
           <div>
             <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Type</label>

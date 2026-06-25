@@ -1,6 +1,6 @@
 import { toPng } from "html-to-image";
 import { AlertCircle, Download, Loader2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LOGO_URL } from "./layout/MobileShell";
 
 interface ShareCardModalProps {
@@ -16,6 +16,21 @@ interface ShareCardModalProps {
 const LORETTA_IMAGE = "https://lorettabates.com/wp-content/uploads/2025/11/Loretta_Bates_Bio.jpg";
 const JOIN_URL = "https://lorettabates.com";
 
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default function ShareCardModal({
   cadenceLabel,
   title,
@@ -25,13 +40,19 @@ export default function ShareCardModal({
   recipeImage,
   onClose,
 }: ShareCardModalProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRefSquare = useRef<HTMLDivElement>(null);
+  const cardRefVertical = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
-  const renderImage = async () => {
+  useEffect(() => {
+    fetchImageAsDataUrl(LOGO_URL).then(setLogoDataUrl);
+  }, []);
+
+  const renderImage = async (format: "square" | "vertical" = "square") => {
+    const cardRef = format === "square" ? cardRefSquare : cardRefVertical;
     if (!cardRef.current) return null;
-    // Wait for all images to load before converting
     const images = cardRef.current.querySelectorAll("img");
     const imagePromises = Array.from(images).map(
       (img) =>
@@ -40,7 +61,7 @@ export default function ShareCardModal({
             resolve();
           } else {
             img.onload = () => resolve();
-            img.onerror = () => resolve(); // resolve even on error so we don't hang
+            img.onerror = () => resolve();
           }
         })
     );
@@ -48,92 +69,134 @@ export default function ShareCardModal({
     return toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
   };
 
-  // Cross-origin images (the logo, Loretta's photo) can taint the canvas and
-  // make toPng() throw — fall back to a text-only share/copy so the buttons
-  // always do something instead of silently failing.
-  const shareTextOnly = async () => {
-    const text = `${title}\n\n${body}\n\nJoin the WELL Collective: ${JOIN_URL}`;
-    if (navigator.share) {
-      await navigator.share({ title: "WELL Collective", text });
-      return;
+  const saveToPhotoLibrary = async (dataUrl: string, filename: string) => {
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], filename, { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "WELL Collective",
+          text: `${title} — join the WELL Collective. ${JOIN_URL}`,
+        });
+        return true;
+      }
+    } catch {
+      // Fall back to download
     }
-    await navigator.clipboard.writeText(text);
-    setStatus("Image couldn't be generated, so we copied the text instead — paste it into your post.");
+    return false;
+  };
+
+  const handleShare = async (platform: "instagram" | "facebook") => {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const format = platform === "instagram" ? "vertical" : "square";
+      const dataUrl = await renderImage(format);
+      if (!dataUrl) throw new Error("no image");
+
+      const filename = `well-collective-${platform}.png`;
+      const success = await saveToPhotoLibrary(dataUrl, filename);
+
+      if (success) {
+        setStatus(
+          platform === "instagram"
+            ? "Image saved to camera roll! Open Instagram to share it to your story or feed."
+            : "Image saved to camera roll! Open Facebook to share it to your profile."
+        );
+      } else {
+        // Fallback: download
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = dataUrl;
+        link.click();
+        setStatus(
+          platform === "instagram"
+            ? "Image downloaded! Open Instagram to share it to your story or feed."
+            : "Image downloaded! Open Facebook to share it to your profile."
+        );
+      }
+    } catch (err) {
+      setStatus("Couldn't generate the image right now. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleDownload = async () => {
     setBusy(true);
     setStatus(null);
     try {
-      const dataUrl = await renderImage();
+      const dataUrl = await renderImage("square");
       if (!dataUrl) throw new Error("no image");
       const link = document.createElement("a");
       link.download = "well-collective-inspiration.png";
       link.href = dataUrl;
       link.click();
+      setStatus("Image downloaded to your device!");
     } catch {
-      try {
-        await shareTextOnly();
-      } catch {
-        setStatus("Couldn't generate the image right now. Please try again.");
-      }
+      setStatus("Couldn't generate the image right now. Please try again.");
     } finally {
       setBusy(false);
     }
   };
 
-  const handleShare = async (platform: "instagram" | "facebook" | "general") => {
-    setBusy(true);
-    setStatus(null);
-    try {
-      const dataUrl = await renderImage();
-      if (!dataUrl) throw new Error("no image");
+  const cardContent = (
+    <>
+      {recipeImage && (
+        <img
+          src={recipeImage}
+          alt="Recipe"
+          crossOrigin="anonymous"
+          className="w-full h-32 rounded-lg object-cover mb-2"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
 
-      if (platform === "instagram" || platform === "facebook") {
-        // Instagram/Facebook: download and user shares manually
-        const link = document.createElement("a");
-        link.download = "well-collective-inspiration.png";
-        link.href = dataUrl;
-        link.click();
-        setStatus(
-          platform === "instagram"
-            ? "Image saved! Open Instagram and share it to your story or feed."
-            : "Image saved! Open Facebook and share it to your profile."
-        );
-      } else {
-        // General share
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], "well-collective-inspiration.png", { type: "image/png" });
+      {logoDataUrl && (
+        <img
+          src={logoDataUrl}
+          alt="WELL Collective"
+          className="h-12"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
 
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "WELL Collective",
-            text: `${title} — join the WELL Collective for inspiration like this. ${JOIN_URL}`,
-          });
-        } else if (navigator.share) {
-          await navigator.share({
-            title: "WELL Collective",
-            text: `${title}\n\n${body}\n\nJoin the WELL Collective: ${JOIN_URL}`,
-          });
-        } else {
-          await handleDownload();
-        }
-      }
-    } catch (err) {
-      // Image generation failed (likely a cross-origin image tainting the
-      // canvas) — fall back to sharing/copying the text instead.
-      try {
-        await shareTextOnly();
-      } catch {
-        if (!(err instanceof Error && err.name === "AbortError")) {
-          setStatus("Couldn't generate the image right now. Please try again.");
-        }
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
+      <img
+        src={LORETTA_IMAGE}
+        alt="Loretta Bates"
+        crossOrigin="anonymous"
+        className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
+        <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
+      </div>
+
+      <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
+
+      {userAvatar && (
+        <div className="flex flex-col items-center gap-2">
+          <img
+            src={userAvatar}
+            alt={userName}
+            crossOrigin="anonymous"
+            className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]"
+          />
+          <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
+        </div>
+      )}
+
+      <div className="w-full pt-3 border-t border-[#0191CE]/30">
+        <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
+        <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
+        <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
+      </div>
+    </>
+  );
 
   return (
     <div
@@ -149,67 +212,31 @@ export default function ShareCardModal({
           <X size={14} />
         </button>
 
-        <div ref={cardRef} className="rounded-card p-6 flex flex-col items-center text-center gap-4 w-full" style={{
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-          color: '#fff'
-        }}>
-          {/* Recipe Image (if available) */}
-          {recipeImage && (
-            <img
-              src={recipeImage}
-              alt="Recipe"
-              crossOrigin="anonymous"
-              className="w-full h-32 rounded-lg object-cover mb-2"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-          )}
+        {/* Square format (for download/facebook preview) */}
+        <div
+          ref={cardRefSquare}
+          className="rounded-card p-6 flex flex-col items-center text-center gap-4 w-full"
+          style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            color: '#fff',
+          }}
+        >
+          {cardContent}
+        </div>
 
-          {/* WELL Logo */}
-          <img
-            src={LOGO_URL}
-            alt="WELL Collective"
-            className="h-12"
-            crossOrigin="anonymous"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-
-          {/* Loretta Image */}
-          <img
-            src={LORETTA_IMAGE}
-            alt="Loretta Bates"
-            crossOrigin="anonymous"
-            className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-
-          {/* Branding */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
-            <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
-          </div>
-
-          {/* Message */}
-          <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
-
-          {/* User Avatar (if available) */}
-          {userAvatar && (
-            <div className="flex flex-col items-center gap-2">
-              <img
-                src={userAvatar}
-                alt={userName}
-                crossOrigin="anonymous"
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]"
-              />
-              <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
-            </div>
-          )}
-
-          {/* Branding Footer */}
-          <div className="w-full pt-3 border-t border-[#0191CE]/30">
-            <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
-            <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
-            <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
-          </div>
+        {/* Vertical format (hidden, used for instagram rendering) */}
+        <div
+          ref={cardRefVertical}
+          className="hidden rounded-card p-6 flex flex-col items-center text-center gap-4"
+          style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            color: '#fff',
+            width: '540px',
+            height: '960px',
+            margin: '0 auto',
+          }}
+        >
+          {cardContent}
         </div>
 
         {/* Action Buttons */}
