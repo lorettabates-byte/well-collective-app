@@ -16,13 +16,13 @@ import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
-  { to: "/inspirations", label: "Inspiration", icon: Sparkles },
-  { to: "/events", label: "Events", icon: Calendar },
-  { to: "/videos", label: "Classes", icon: Video },
   { to: "/wellness", label: "Wellness", icon: Waves },
+  { to: "/videos", label: "Classes", icon: Video },
+  { to: "/music", label: "Music", icon: Music },
+  { to: "/events", label: "Events", icon: Calendar },
+  { to: "/inspirations", label: "Inspiration", icon: Sparkles },
   { to: "/nutrition", label: "Nutrition", icon: Salad },
   { to: "/blog", label: "Blog", icon: Rss },
-  { to: "/music", label: "Music", icon: Music },
 ];
 
 export default function Home() {

@@ -1,4 +1,4 @@
-import { Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { ImagePlus, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
@@ -7,8 +7,9 @@ import type { CommunityEvent } from "../../types";
 import { formatDateLong } from "../../utils/format";
 
 const COLOR_OPTIONS = ["#01519D", "#0191CE", "#84D8FD"];
+const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 
-type EventFormValues = Pick<CommunityEvent, "title" | "description" | "date" | "time" | "location" | "color">;
+type EventFormValues = Pick<CommunityEvent, "title" | "description" | "date" | "time" | "location" | "color" | "image">;
 
 interface EventFormProps {
   initial?: EventFormValues;
@@ -26,12 +27,48 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   const [location, setLocation] = useState(initial?.location ?? "");
   const [color, setColor] = useState(initial?.color ?? COLOR_OPTIONS[0]);
   const [repeatsWeekly, setRepeatsWeekly] = useState(false);
+  const [image, setImage] = useState(initial?.image ?? "");
+  const [imageError, setImageError] = useState("");
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      setImageError("That photo is too large — please choose an image smaller than 15MB.");
+      e.target.value = "";
+      return;
+    }
+    setImageError("");
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return;
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 1200;
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setImage(reader.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setImage(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !date || !time.trim() || !location.trim()) return;
     onSubmit(
-      { title: title.trim(), description: description.trim(), date, time: time.trim(), location: location.trim(), color },
+      { title: title.trim(), description: description.trim(), date, time: time.trim(), location: location.trim(), color, image },
       repeatsWeekly ? { frequency: "weekly" } : undefined
     );
   };
@@ -82,6 +119,29 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
           onChange={(e) => setLocation(e.target.value)}
           className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
         />
+      </div>
+      <div>
+        <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Image</label>
+        {image ? (
+          <div className="relative">
+            <img src={image} alt="" className="w-full h-32 object-cover rounded-card" />
+            <button
+              type="button"
+              onClick={() => setImage("")}
+              className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+              aria-label="Remove image"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <label className="flex items-center justify-center gap-2 w-full h-20 border border-dashed border-border rounded-card text-sm text-text-muted cursor-pointer hover:border-brand-blue">
+            <ImagePlus size={16} />
+            Upload an image
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </label>
+        )}
+        {imageError && <p className="text-[11px] text-red-400 mt-1">{imageError}</p>}
       </div>
       <div>
         <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Color</label>
