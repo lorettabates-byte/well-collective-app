@@ -122,6 +122,7 @@ export interface CommunityEvent {
   url?: string;
   cost?: string;
   source?: "local" | "live";
+  recurrenceGroupId?: string;
 }
 
 export interface Song {

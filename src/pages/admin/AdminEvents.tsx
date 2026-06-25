@@ -12,23 +12,28 @@ type EventFormValues = Pick<CommunityEvent, "title" | "description" | "date" | "
 
 interface EventFormProps {
   initial?: EventFormValues;
-  onSubmit: (values: EventFormValues) => void;
+  onSubmit: (values: EventFormValues, recurrence?: { frequency: "weekly" }) => void;
   onCancel?: () => void;
   submitLabel: string;
+  allowRecurrence?: boolean;
 }
 
-function EventForm({ initial, onSubmit, onCancel, submitLabel }: EventFormProps) {
+function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }: EventFormProps) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [date, setDate] = useState(initial?.date ?? "");
   const [time, setTime] = useState(initial?.time ?? "");
   const [location, setLocation] = useState(initial?.location ?? "");
   const [color, setColor] = useState(initial?.color ?? COLOR_OPTIONS[0]);
+  const [repeatsWeekly, setRepeatsWeekly] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !date || !time.trim() || !location.trim()) return;
-    onSubmit({ title: title.trim(), description: description.trim(), date, time: time.trim(), location: location.trim(), color });
+    onSubmit(
+      { title: title.trim(), description: description.trim(), date, time: time.trim(), location: location.trim(), color },
+      repeatsWeekly ? { frequency: "weekly" } : undefined
+    );
   };
 
   return (
@@ -92,6 +97,17 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel }: EventFormProps)
           ))}
         </div>
       </div>
+      {allowRecurrence && (
+        <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+          <input
+            type="checkbox"
+            checked={repeatsWeekly}
+            onChange={(e) => setRepeatsWeekly(e.target.checked)}
+            className="w-4 h-4 accent-brand-blue"
+          />
+          Repeat weekly (e.g. every Tuesday at 9:00am) for the next 12 months
+        </label>
+      )}
       <div className="flex gap-2 mt-1">
         <button type="submit" className="flex-1 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5">
           {submitLabel}
@@ -126,9 +142,10 @@ export default function AdminEvents() {
         {showCreate ? (
           <EventForm
             submitLabel="Create Event"
+            allowRecurrence
             onCancel={() => setShowCreate(false)}
-            onSubmit={(values) => {
-              addEvent(values);
+            onSubmit={(values, recurrence) => {
+              addEvent(values, recurrence);
               setShowCreate(false);
             }}
           />
@@ -159,11 +176,16 @@ export default function AdminEvents() {
               <div key={event.id} className="flex items-center gap-3 glass-card rounded-card p-4">
                 <div className="w-2 h-12 rounded-full shrink-0" style={{ backgroundColor: event.color }} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h3 className="text-sm font-bold text-text">{event.title}</h3>
                     {event.id === featuredEventId && (
                       <span className="text-[10px] font-bold uppercase tracking-wide gradient-brand text-white rounded-pill px-2 py-0.5">
                         Featured
+                      </span>
+                    )}
+                    {event.recurrenceGroupId && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-2 border border-border text-text-muted rounded-pill px-2 py-0.5">
+                        Recurring
                       </span>
                     )}
                   </div>
@@ -187,7 +209,16 @@ export default function AdminEvents() {
                   <Pencil size={14} />
                 </button>
                 <button
-                  onClick={() => deleteEvent(event.id)}
+                  onClick={() => {
+                    if (event.recurrenceGroupId) {
+                      const deleteSeries = window.confirm(
+                        "This is a recurring event. Click OK to delete the entire series, or Cancel to delete just this occurrence."
+                      );
+                      deleteEvent(event.id, { series: deleteSeries });
+                    } else {
+                      deleteEvent(event.id);
+                    }
+                  }}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400"
                   aria-label="Delete event"
                 >

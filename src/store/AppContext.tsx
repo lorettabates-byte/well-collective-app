@@ -281,9 +281,12 @@ interface AppContextValue extends PersistedState {
   addInspiration: (inspiration: Omit<Inspiration, "id" | "likes" | "savedBy">) => void;
   deleteInspiration: (inspirationId: string) => void;
   toggleRsvp: (eventId: string) => void;
-  addEvent: (event: Omit<CommunityEvent, "id" | "rsvps">) => void;
+  addEvent: (
+    event: Omit<CommunityEvent, "id" | "rsvps" | "recurrenceGroupId">,
+    recurrence?: { frequency: "weekly" }
+  ) => void;
   updateEvent: (eventId: string, updates: Partial<Omit<CommunityEvent, "id" | "rsvps">>) => void;
-  deleteEvent: (eventId: string) => void;
+  deleteEvent: (eventId: string, options?: { series?: boolean }) => void;
   markNotificationRead: (notificationId: string) => void;
   markAllNotificationsRead: () => void;
   sendNotification: (type: AppNotificationType, title: string, body: string, link?: string) => void;
@@ -530,13 +533,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       }),
     }));
+
+    if (API_URL) {
+      fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: state.user.id }),
+      }).catch((err) => console.error("Failed to sync RSVP:", err));
+    }
   };
 
-  const addEvent: AppContextValue["addEvent"] = (event) => {
-    setState((prev) => ({
-      ...prev,
-      events: [...prev.events, { ...event, id: uid("e"), rsvps: [] }],
-    }));
+  const refreshEvents = () => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/events`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setState((prev) => ({ ...prev, events: data.events ?? prev.events }));
+      })
+      .catch(() => {
+        // offline or backend unreachable — fall back to whatever local content exists
+      });
+  };
+
+  const addEvent: AppContextValue["addEvent"] = (event, recurrence) => {
+    if (!API_URL) {
+      setState((prev) => ({
+        ...prev,
+        events: [...prev.events, { ...event, id: uid("e"), rsvps: [] }],
+      }));
+      return;
+    }
+
+    fetch(`${API_URL}/api/events`, {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ ...event, recurrence }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then(() => refreshEvents())
+      .catch((err) => console.error("Failed to create event:", err));
   };
 
   const updateEvent: AppContextValue["updateEvent"] = (eventId, updates) => {
@@ -544,13 +580,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...prev,
       events: prev.events.map((event) => (event.id === eventId ? { ...event, ...updates } : event)),
     }));
+
+    if (API_URL) {
+      const updated = state.events.find((event) => event.id === eventId);
+      if (updated) {
+        fetch(`${API_URL}/api/events/${eventId}`, {
+          method: "PUT",
+          headers: adminHeaders(),
+          body: JSON.stringify({ ...updated, ...updates }),
+        }).catch((err) => console.error("Failed to sync event update:", err));
+      }
+    }
   };
 
-  const deleteEvent: AppContextValue["deleteEvent"] = (eventId) => {
+  const deleteEvent: AppContextValue["deleteEvent"] = (eventId, options) => {
     setState((prev) => ({
       ...prev,
-      events: prev.events.filter((event) => event.id !== eventId),
+      events: prev.events.filter((event) =>
+        options?.series
+          ? !(event.id === eventId || event.recurrenceGroupId === prev.events.find((e) => e.id === eventId)?.recurrenceGroupId)
+          : event.id !== eventId
+      ),
     }));
+
+    if (API_URL) {
+      const query = options?.series ? "?series=true" : "";
+      fetch(`${API_URL}/api/events/${eventId}${query}`, {
+        method: "DELETE",
+        headers: adminHeaders(),
+      }).catch((err) => console.error("Failed to sync event deletion:", err));
+    }
   };
 
   const markNotificationRead: AppContextValue["markNotificationRead"] = (notificationId) => {
@@ -810,6 +869,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     syncForum();
     const interval = setInterval(syncForum, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Sync community events from the shared backend so an event the admin adds
+  // (including every occurrence of a recurring one) shows up for everyone,
+  // not just on the device that created it.
+  useEffect(() => {
+    if (!API_URL) return;
+
+    const syncEvents = () => {
+      fetch(`${API_URL}/api/events`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data) return;
+          setState((prev) => ({ ...prev, events: data.events ?? prev.events }));
+        })
+        .catch(() => {
+          // offline or backend unreachable — fall back to whatever local content exists
+        });
+    };
+
+    syncEvents();
+    const interval = setInterval(syncEvents, 20000);
     return () => clearInterval(interval);
   }, []);
 
