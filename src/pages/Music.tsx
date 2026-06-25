@@ -112,7 +112,7 @@ export default function Music() {
       .catch(() => setHiddenSoundIds([]));
   }, []);
 
-  // Load breathwork data when tab changes
+  // Load breathwork data when tab changes or component mounts
   useEffect(() => {
     if (tab !== "breathwork" || !API_URL) return;
 
@@ -127,7 +127,7 @@ export default function Music() {
       })
       .catch((err) => console.error("Failed to load breathwork:", err))
       .finally(() => setBreathworkLoading(false));
-  }, [tab]);
+  }, [tab, API_URL]);
 
   useEffect(() => {
     return () => {
