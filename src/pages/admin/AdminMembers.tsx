@@ -99,6 +99,11 @@ export default function AdminMembers() {
 
   const isTrialExpired = (trialEndsAt?: string) => !!trialEndsAt && trialEndsAt < new Date().toISOString().slice(0, 10);
 
+  const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
+  const sortedMembers = [...members].sort((a, b) =>
+    firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" })
+  );
+
   const toggleBadge = async (memberEmail: string, badgeId: string, currentlyGranted: boolean) => {
     if (!API_URL) return;
     setMembers((prev) =>
@@ -186,7 +191,7 @@ export default function AdminMembers() {
           <p className="text-sm text-text-muted text-center py-8">No members yet.</p>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {members.map((member) => {
+            {sortedMembers.map((member) => {
               const granted = new Set(member.grantedBadges ?? []);
               return (
                 <div key={member.email} className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">

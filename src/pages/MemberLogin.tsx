@@ -36,7 +36,7 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), email: email.trim() }),
       });
-      const data = (await res.json()) as { error?: string; trialEndsAt?: string };
+      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean };
 
       if (!res.ok || !data.trialEndsAt) {
         setError(data.error || "Failed to start trial. Please try again.");
@@ -44,7 +44,7 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
       }
 
       localStorage.setItem("memberToken", `trial_${uid("local")}`);
-      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: name.trim() }));
+      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: data.name || name.trim() }));
       localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
 
       onSuccess();
