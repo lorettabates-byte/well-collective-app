@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import BottomNav from "./BottomNav";
 
-const LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
+const LOGO_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png";
 
 export default function MobileShell({ children }: { children: ReactNode }) {
   return (

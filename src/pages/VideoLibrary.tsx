@@ -10,7 +10,7 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const FEATURED_VIDEO_DEFAULTS = {
   title: "Video Library",
   description: "Browse all WELL Collective classes, workshops, and livestreams curated by Loretta",
-  image: "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png",
+  image: "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png",
   url: "https://lorettabates.com/videolibrary.lorettabates.com/",
 };
 
