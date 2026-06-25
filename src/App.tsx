@@ -17,6 +17,7 @@ import Messages from "./pages/Messages";
 import VideoLibrary from "./pages/VideoLibrary";
 import Wellness from "./pages/Wellness";
 import Nutrition from "./pages/Nutrition";
+import Breathwork from "./pages/Breathwork";
 import Music from "./pages/Music";
 import NotificationSettings from "./pages/NotificationSettings";
 import Notifications from "./pages/Notifications";
@@ -52,6 +53,7 @@ function App() {
         <Route path="/videos" element={<VideoLibrary />} />
         <Route path="/wellness" element={<Wellness />} />
         <Route path="/nutrition" element={<Nutrition />} />
+        <Route path="/breathwork" element={<Breathwork />} />
         <Route path="/music" element={<Music />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
