@@ -1,4 +1,4 @@
-import { Clock, Music as MusicIcon, Pause, Play, Volume2, Wind } from "lucide-react";
+import { Clock, Lock, Music as MusicIcon, Pause, Play, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
@@ -221,6 +221,7 @@ export default function Music() {
   };
 
   const handleSessionPlayPause = (sessionId: number) => {
+    if (isTrialUser) return;
     if (playingSession === sessionId) {
       // Stop playing
       if (sessionAudioRef.current) {
@@ -420,9 +421,28 @@ export default function Music() {
                   </div>
                 )}
 
+                <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
+                  <Wind size={14} className="text-brand-light shrink-0" />
+                  <p className="text-[11px] text-text-muted">
+                    Prefer to breathe at your own pace without a spoken guide? Head over to{" "}
+                    <button onClick={() => setTab("sounds")} className="font-semibold text-brand-light underline">
+                      Peaceful Sounds
+                    </button>{" "}
+                    and breathe along to the ambient track on your own.
+                  </p>
+                </div>
+
                 {breathworkSessions.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-text mb-3">Deeper Sessions</h4>
+                    {isTrialUser && (
+                      <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-3">
+                        <Lock size={14} className="text-brand-light shrink-0" />
+                        <p className="text-xs text-text-muted">
+                          Deeper Sessions are available to full members — upgrade to unlock.
+                        </p>
+                      </div>
+                    )}
                     <audio
                       ref={sessionAudioRef}
                       onEnded={() => setPlayingSession(null)}
@@ -434,16 +454,27 @@ export default function Music() {
                     />
                     <div className="flex flex-col gap-2">
                       {breathworkSessions.map((session) => (
-                        <div key={session.id} className={`glass-card rounded-card p-3 ${playingSession === session.id ? "ring-2 ring-brand-light" : ""}`}>
+                        <div
+                          key={session.id}
+                          className={`glass-card rounded-card p-3 ${playingSession === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}
+                        >
                           <div className="mb-2">
                             <h5 className="text-xs font-semibold text-text">{session.title}</h5>
                             <p className="text-[11px] text-text-muted mt-0.5">{session.description}</p>
                           </div>
                           <button
                             onClick={() => handleSessionPlayPause(session.id)}
-                            className="w-full flex items-center gap-1.5 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-2 hover:opacity-90"
+                            disabled={isTrialUser}
+                            className={`w-full flex items-center gap-1.5 text-xs font-semibold rounded-pill py-2 px-2 ${
+                              isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
+                            }`}
                           >
-                            {playingSession === session.id ? (
+                            {isTrialUser ? (
+                              <>
+                                <Lock size={12} />
+                                Locked
+                              </>
+                            ) : playingSession === session.id ? (
                               <>
                                 <Pause size={12} className="fill-white" />
                                 Playing

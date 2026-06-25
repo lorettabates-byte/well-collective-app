@@ -1,6 +1,9 @@
-import { Pause, Play, Volume2 } from "lucide-react";
+import { Lock, Pause, Play, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
+import { useApp } from "../store/AppContext";
+import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -33,6 +36,11 @@ const BACKGROUND_SOUNDS = [
 ];
 
 export default function Breathwork() {
+  const { user } = useApp();
+  const navigate = useNavigate();
+  const trialStatus = getTrialStatus(user.trialEndsAt);
+  const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
+
   const [todayBreathwork, setTodayBreathwork] = useState<Breathwork | null>(null);
   const [storedSessions, setStoredSessions] = useState<StoredSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +95,7 @@ export default function Breathwork() {
   };
 
   const handleSessionPlayPause = (sessionId: number, _durationMinutes: number) => {
+    if (isTrialUser) return;
     if (sessionAudioRef.current) {
       if (playing === sessionId) {
         sessionAudioRef.current.pause();
@@ -193,8 +202,27 @@ export default function Breathwork() {
           </div>
         )}
 
+        <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-6">
+          <Wind size={14} className="text-brand-light shrink-0" />
+          <p className="text-[11px] text-text-muted">
+            Prefer to breathe at your own pace without a spoken guide? Head over to{" "}
+            <button onClick={() => navigate("/music?tab=sounds")} className="font-semibold text-brand-light underline">
+              Peaceful Sounds
+            </button>{" "}
+            and breathe along to the ambient track on your own.
+          </p>
+        </div>
+
         {/* Deeper Sessions */}
         <h3 className="text-sm font-bold text-text mb-4">Deeper Sessions</h3>
+        {isTrialUser && (
+          <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-4">
+            <Lock size={14} className="text-brand-light shrink-0" />
+            <p className="text-xs text-text-muted">
+              Deeper Sessions are available to full members — upgrade to unlock.
+            </p>
+          </div>
+        )}
 
         {/* 10 Minute Sessions */}
         {sessionsByDuration[10].length > 0 && (
@@ -202,7 +230,7 @@ export default function Breathwork() {
             <p className="text-xs font-semibold text-text-muted mb-3">10 Minutes</p>
             <div className="flex flex-col gap-3">
               {sessionsByDuration[10].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""}`}>
+                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h4 className="text-sm font-semibold text-text">{session.title}</h4>
@@ -216,9 +244,17 @@ export default function Breathwork() {
                   />
                   <button
                     onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
-                    className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
+                    disabled={isTrialUser}
+                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
+                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
+                    }`}
                   >
-                    {playing === session.id ? (
+                    {isTrialUser ? (
+                      <>
+                        <Lock size={14} />
+                        Locked
+                      </>
+                    ) : playing === session.id ? (
                       <>
                         <Pause size={14} className="fill-white" />
                         Playing
@@ -242,7 +278,7 @@ export default function Breathwork() {
             <p className="text-xs font-semibold text-text-muted mb-3">15 Minutes</p>
             <div className="flex flex-col gap-3">
               {sessionsByDuration[15].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""}`}>
+                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h4 className="text-sm font-semibold text-text">{session.title}</h4>
@@ -256,9 +292,17 @@ export default function Breathwork() {
                   />
                   <button
                     onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
-                    className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
+                    disabled={isTrialUser}
+                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
+                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
+                    }`}
                   >
-                    {playing === session.id ? (
+                    {isTrialUser ? (
+                      <>
+                        <Lock size={14} />
+                        Locked
+                      </>
+                    ) : playing === session.id ? (
                       <>
                         <Pause size={14} className="fill-white" />
                         Playing
@@ -282,7 +326,7 @@ export default function Breathwork() {
             <p className="text-xs font-semibold text-text-muted mb-3">30 Minutes</p>
             <div className="flex flex-col gap-3">
               {sessionsByDuration[30].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""}`}>
+                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h4 className="text-sm font-semibold text-text">{session.title}</h4>
@@ -296,9 +340,17 @@ export default function Breathwork() {
                   />
                   <button
                     onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
-                    className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
+                    disabled={isTrialUser}
+                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
+                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
+                    }`}
                   >
-                    {playing === session.id ? (
+                    {isTrialUser ? (
+                      <>
+                        <Lock size={14} />
+                        Locked
+                      </>
+                    ) : playing === session.id ? (
                       <>
                         <Pause size={14} className="fill-white" />
                         Playing
