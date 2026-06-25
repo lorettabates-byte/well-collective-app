@@ -252,7 +252,7 @@ export default function Wellness() {
               Well Activity
             </h2>
           </div>
-          <div className="gradient-brand p-[1px] rounded-card">
+          <div className="gradient-brand p-[1px] rounded-card mb-4">
             <div className="bg-surface/95 rounded-card p-4">
               {currentWeeklyTheme && (
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
@@ -273,22 +273,25 @@ export default function Wellness() {
                 <CheckCircle2 size={14} />
                 {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
               </button>
-              <button
-                onClick={() => {
-                  logWorkoutCompletion();
-                  confetti({ particleCount: 100, spread: 70 });
-                }}
-                disabled={completedToday}
-                className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-lg py-3 mt-3 transition-colors ${
-                  completedToday
-                    ? "bg-surface-2 border border-border text-brand-light"
-                    : "gradient-brand text-white shadow-glow"
-                }`}
-              >
-                <CheckCircle2 size={16} />
-                {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
-              </button>
             </div>
+          </div>
+
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => {
+                logWorkoutCompletion();
+                confetti({ particleCount: 100, spread: 70 });
+              }}
+              disabled={completedToday}
+              className={`flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-3 px-8 transition-colors ${
+                completedToday
+                  ? "bg-surface-2 border border-border text-brand-light"
+                  : "gradient-brand text-white shadow-glow"
+              }`}
+            >
+              <CheckCircle2 size={16} />
+              {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
+            </button>
           </div>
         </section>
 
