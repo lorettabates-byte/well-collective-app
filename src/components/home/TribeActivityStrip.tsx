@@ -2,6 +2,7 @@ import { Flame } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { TRIBE_CHEERS } from "../../data/cheers";
+import { resolveFeaturedBadge } from "../../data/badges";
 import { useApp } from "../../store/AppContext";
 import { birthdayDateForYear } from "../../utils/birthday";
 import { computeStreak } from "../../utils/streaks";
@@ -17,6 +18,9 @@ interface TribeMember {
   avatar?: string;
   birthday?: string;
   workoutLog?: string[];
+  levelBadge?: string;
+  grantedBadges?: string[];
+  featuredBadge?: string;
 }
 
 function daysUntilBirthday(birthday: string): number {
@@ -75,7 +79,7 @@ export default function TribeActivityStrip() {
 
           return (
             <div key={member.id} className="glass-card rounded-card p-3 w-40 shrink-0 flex flex-col items-center text-center gap-2">
-              <Avatar src={member.avatar || ""} alt={member.name} size={48} />
+              <Avatar src={member.avatar || ""} alt={member.name} size={48} badgeId={resolveFeaturedBadge(member)} />
               <p className="text-sm font-semibold text-text truncate w-full">{member.name}</p>
 
               <div className="flex flex-col items-center gap-1 min-h-[2.25rem]">

@@ -272,6 +272,7 @@ interface AppContextValue extends PersistedState {
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
   removeContentEntry: (date: string) => void;
   setFeaturedEvent: (eventId: string | null) => void;
+  setFeaturedBadge: (badgeId: string | null) => void;
   currentWeeklyTheme: Inspiration | undefined;
   todaysWellActivity: WellActivity;
   todaysRecipe: Recipe;
@@ -582,6 +583,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setFeaturedBadge: AppContextValue["setFeaturedBadge"] = (badgeId) => {
+    setState((prev) => ({
+      ...prev,
+      user: { ...prev.user, featuredBadge: badgeId ?? undefined },
+    }));
+    if (API_URL && state.user.email) {
+      fetch(`${API_URL}/api/members/featured-badge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: state.user.email, badgeId }),
+      }).catch((err) => console.error("Failed to sync featured badge:", err));
+    }
+  };
+
   // Process any scheduled content for "today" — adds the weekly theme / daily
   // inspiration to the feed and (if permitted) fires a local push notification.
   useEffect(() => {
@@ -861,21 +876,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         const member = data?.member;
         if (!member) return;
-        setState((prev) => {
-          const needsAvatar = !prev.user.avatar && member.avatar;
-          const needsBio = !prev.user.bio && member.bio;
-          const needsBirthday = !prev.user.birthday && member.birthday;
-          if (!needsAvatar && !needsBio && !needsBirthday) return prev;
-          return {
-            ...prev,
-            user: {
-              ...prev.user,
-              avatar: prev.user.avatar || member.avatar || prev.user.avatar,
-              bio: prev.user.bio || member.bio || prev.user.bio,
-              birthday: prev.user.birthday || member.birthday,
-            },
-          };
-        });
+        setState((prev) => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            avatar: prev.user.avatar || member.avatar || prev.user.avatar,
+            bio: prev.user.bio || member.bio || prev.user.bio,
+            birthday: prev.user.birthday || member.birthday,
+            // Always trust the server here — these are computed/granted
+            // server-side, never edited locally except via setFeaturedBadge.
+            levelBadge: member.levelBadge,
+            grantedBadges: member.grantedBadges,
+            featuredBadge: member.featuredBadge,
+          },
+        }));
       })
       .catch((err) => console.error("Failed to restore member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -935,6 +949,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     importContentSchedule,
     removeContentEntry,
     setFeaturedEvent,
+    setFeaturedBadge,
     currentWeeklyTheme,
     todaysWellActivity,
     todaysRecipe,

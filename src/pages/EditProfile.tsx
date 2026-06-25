@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { AVATAR_OPTIONS } from "../data/avatarOptions";
+import { ALL_BADGES, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
 const MONTHS = [
@@ -31,7 +32,7 @@ function daysInMonth(month: string): number {
 }
 
 export default function EditProfile() {
-  const { user, updateProfile } = useApp();
+  const { user, updateProfile, setFeaturedBadge } = useApp();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +41,10 @@ export default function EditProfile() {
   const [avatar, setAvatar] = useState(user.avatar);
   const [birthday, setBirthday] = useState(user.birthday ?? "");
   const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
+
+  const earnedBadgeIds = new Set([user.levelBadge, ...(user.grantedBadges ?? [])].filter(Boolean) as string[]);
+  const earnedBadges = ALL_BADGES.filter((b) => earnedBadgeIds.has(b.id));
+  const currentFeaturedBadge = resolveFeaturedBadge(user);
 
   const [photoError, setPhotoError] = useState("");
 
@@ -115,7 +120,7 @@ export default function EditProfile() {
       <TopBar title="Edit Profile" showBack />
       <form onSubmit={handleSubmit} className="px-4 pt-4 flex flex-col gap-5">
         <div className="flex flex-col items-center gap-3">
-          <Avatar src={avatar} alt={name} size={84} ring />
+          <Avatar src={avatar} alt={name} size={84} ring badgeId={currentFeaturedBadge} />
           <input
             ref={fileInputRef}
             type="file"
@@ -149,6 +154,32 @@ export default function EditProfile() {
             ))}
           </div>
         </div>
+
+        {earnedBadges.length > 0 && (
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-2">Featured Badge</label>
+            <p className="text-[11px] text-text-dim mb-2">
+              Choose one earned badge to show on your avatar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {earnedBadges.map((badge) => (
+                <button
+                  key={badge.id}
+                  type="button"
+                  onClick={() => setFeaturedBadge(currentFeaturedBadge === badge.id ? null : badge.id)}
+                  className={`flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3 py-2 ${
+                    currentFeaturedBadge === badge.id
+                      ? "gradient-brand text-white"
+                      : "bg-surface-2 border border-border text-text-muted"
+                  }`}
+                >
+                  <span>{badge.icon}</span>
+                  {badge.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-1.5">Name</label>

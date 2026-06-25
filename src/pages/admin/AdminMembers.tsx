@@ -2,6 +2,7 @@ import { Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import Avatar from "../../components/ui/Avatar";
 import TopBar from "../../components/layout/TopBar";
+import { SPECIAL_BADGES } from "../../data/badges";
 import { formatDateLong } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -27,6 +28,7 @@ interface AdminMember {
   trialStartedAt?: string;
   trialEndsAt?: string;
   updatedAt: string;
+  grantedBadges?: string[];
 }
 
 export default function AdminMembers() {
@@ -97,6 +99,31 @@ export default function AdminMembers() {
 
   const isTrialExpired = (trialEndsAt?: string) => !!trialEndsAt && trialEndsAt < new Date().toISOString().slice(0, 10);
 
+  const toggleBadge = async (memberEmail: string, badgeId: string, currentlyGranted: boolean) => {
+    if (!API_URL) return;
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.email !== memberEmail
+          ? m
+          : {
+              ...m,
+              grantedBadges: currentlyGranted
+                ? (m.grantedBadges ?? []).filter((b) => b !== badgeId)
+                : [...(m.grantedBadges ?? []), badgeId],
+            }
+      )
+    );
+    try {
+      await fetch(`${API_URL}/api/admin/members/${encodeURIComponent(memberEmail)}/badges`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ badgeId, grant: !currentlyGranted }),
+      });
+    } catch {
+      loadMembers();
+    }
+  };
+
   return (
     <div>
       <TopBar title="Members" subtitle="View, add, and remove members" showBack />
@@ -159,28 +186,50 @@ export default function AdminMembers() {
           <p className="text-sm text-text-muted text-center py-8">No members yet.</p>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {members.map((member) => (
-              <div key={member.email} className="glass-card rounded-card px-4 py-3 flex items-center gap-3">
-                <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text truncate">{member.name}</p>
-                  <p className="text-xs text-text-muted truncate">{member.email}</p>
-                  {member.trialEndsAt && (
-                    <p className={`text-[11px] mt-0.5 ${isTrialExpired(member.trialEndsAt) ? "text-red-400" : "text-brand-light"}`}>
-                      {isTrialExpired(member.trialEndsAt) ? "Trial expired " : "Trial ends "}
-                      {formatDateLong(member.trialEndsAt)}
-                    </p>
-                  )}
+            {members.map((member) => {
+              const granted = new Set(member.grantedBadges ?? []);
+              return (
+                <div key={member.email} className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-3">
+                    <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text truncate">{member.name}</p>
+                      <p className="text-xs text-text-muted truncate">{member.email}</p>
+                      {member.trialEndsAt && (
+                        <p className={`text-[11px] mt-0.5 ${isTrialExpired(member.trialEndsAt) ? "text-red-400" : "text-brand-light"}`}>
+                          {isTrialExpired(member.trialEndsAt) ? "Trial expired " : "Trial ends "}
+                          {formatDateLong(member.trialEndsAt)}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(member.email)}
+                      className="text-red-400 p-2 shrink-0"
+                      aria-label={`Remove ${member.name}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SPECIAL_BADGES.map((badge) => {
+                      const isGranted = granted.has(badge.id);
+                      return (
+                        <button
+                          key={badge.id}
+                          onClick={() => toggleBadge(member.email, badge.id, isGranted)}
+                          className={`flex items-center gap-1 text-[11px] font-semibold rounded-pill px-2.5 py-1 ${
+                            isGranted ? "gradient-brand text-white" : "bg-surface-2 border border-border text-text-dim"
+                          }`}
+                        >
+                          <span>{badge.icon}</span>
+                          {isGranted ? `${badge.label} ✓` : `Grant ${badge.label}`}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(member.email)}
-                  className="text-red-400 p-2 shrink-0"
-                  aria-label={`Remove ${member.name}`}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

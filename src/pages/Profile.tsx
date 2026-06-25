@@ -2,6 +2,7 @@ import { Bell, Bookmark, ChevronRight, LogOut, Music, Pencil, Rss, Salad, Shield
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
+import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
 function MenuRow({
@@ -43,6 +44,8 @@ export default function Profile() {
     0
   );
   const savedCount = inspirations.filter((i) => i.savedBy.includes(user.id)).length;
+  const featuredBadgeId = resolveFeaturedBadge(user);
+  const featuredBadge = getBadgeDef(featuredBadgeId);
 
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
@@ -59,7 +62,7 @@ export default function Profile() {
   return (
     <div className="px-4 pt-6">
       <div className="flex flex-col items-center text-center mb-6">
-        <Avatar src={user.avatar} alt={user.name} size={84} ring />
+        <Avatar src={user.avatar} alt={user.name} size={84} ring badgeId={featuredBadgeId} />
         <div className="flex items-center gap-2 mt-3">
           <h1 className="text-lg font-bold text-text">{user.name}</h1>
           {user.isAdmin && (
@@ -68,6 +71,11 @@ export default function Profile() {
             </span>
           )}
         </div>
+        {featuredBadge && (
+          <p className="text-xs font-semibold text-brand-light mt-1">
+            {featuredBadge.icon} {featuredBadge.label}
+          </p>
+        )}
         <p className="text-sm text-text-muted mt-1 max-w-xs">{user.bio}</p>
         <Link
           to="/profile/edit"

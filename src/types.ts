@@ -10,6 +10,9 @@ export interface User {
   showBirthdayOnCalendar?: boolean;
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
   trialEndsAt?: string; // ISO date when free trial expires
+  levelBadge?: string; // computed server-side from activity, e.g. "active-member"
+  grantedBadges?: string[]; // admin-granted special badges, e.g. "well-escape"
+  featuredBadge?: string; // which earned badge id to show on the avatar
 }
 
 export interface NotificationSettings {
