@@ -5,7 +5,95 @@ import { uid } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-function StartTrial({ onSuccess }: { onSuccess: () => void }) {
+function ResumeTrial({ onSuccess, onSwitchToStart }: { onSuccess: () => void; onSwitchToStart: () => void }) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleResume = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!API_URL) {
+      setError("Backend not configured");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/start-trial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean };
+
+      if (!res.ok || !data.trialEndsAt) {
+        setError(
+          data.error ||
+            "We couldn't find a free trial for that email. Try starting a new trial instead."
+        );
+        return;
+      }
+
+      localStorage.setItem("memberToken", `trial_${uid("local")}`);
+      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: data.name || "" }));
+      localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+
+      onSuccess();
+    } catch {
+      setError("Failed to log in. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleResume} className="flex flex-col gap-4">
+      {error && (
+        <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
+          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-red-400">{error}</p>
+        </div>
+      )}
+
+      <div>
+        <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="jane@example.com"
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={submitting}
+        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
+      >
+        {submitting ? "Logging in…" : "Log Back Into My Trial"}
+      </button>
+      <button
+        type="button"
+        onClick={onSwitchToStart}
+        className="text-[11px] text-text-dim text-center -mt-1 underline"
+      >
+        New here? Start a free trial instead.
+      </button>
+    </form>
+  );
+}
+
+function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; onSwitchToResume: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -98,12 +186,16 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
       <p className="text-[11px] text-text-dim text-center -mt-1">
         No credit card needed. We'll let you know if you want to become a full WELL Collective member.
       </p>
+      <button type="button" onClick={onSwitchToResume} className="text-[11px] text-text-dim text-center underline">
+        Already started a free trial? Log back in instead.
+      </button>
     </form>
   );
 }
 
 export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
   const [mode, setMode] = useState<"login" | "trial">("login");
+  const [trialView, setTrialView] = useState<"start" | "resume">("start");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -230,13 +322,21 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
                 </button>
               </form>
             </>
-          ) : (
+          ) : trialView === "start" ? (
             <>
               <h1 className="text-xl font-bold text-text mb-1">Start Your Free Trial</h1>
               <p className="text-xs text-text-muted mb-5">
                 Try WELL Collective free for 7 days — no membership account needed yet.
               </p>
-              <StartTrial onSuccess={onSuccess} />
+              <StartTrial onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold text-text mb-1">Welcome Back</h1>
+              <p className="text-xs text-text-muted mb-5">
+                Enter the email you used to start your free trial to continue where you left off.
+              </p>
+              <ResumeTrial onSuccess={onSuccess} onSwitchToStart={() => setTrialView("start")} />
             </>
           )}
         </div>
