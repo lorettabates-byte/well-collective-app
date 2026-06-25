@@ -830,6 +830,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // calendar had nothing saved server-side to restore from later.
         birthday: state.user.birthday,
         showBirthdayOnCalendar: state.user.showBirthdayOnCalendar,
+        // Lets tribe members see each other's streaks on the Home page.
+        workoutLog: state.user.workoutLog,
       }),
     }).catch((err) => console.error("Failed to sync member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -840,6 +842,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.bio,
     state.user.birthday,
     state.user.showBirthdayOnCalendar,
+    state.user.workoutLog,
   ]);
 
   // Pull this member's saved profile back from the server to fill in any

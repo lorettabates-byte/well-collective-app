@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
 import NotificationOptInModal from "../components/NotificationOptInModal";
 import EventCard from "../components/events/EventCard";
+import TribeActivityStrip from "../components/home/TribeActivityStrip";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -144,6 +145,8 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <TribeActivityStrip />
 
       <div className="mb-6">
         <SectionHeader title="From the Community" to="/community" />
