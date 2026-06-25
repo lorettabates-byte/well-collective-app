@@ -9,28 +9,28 @@ export interface BadgeDef {
   color: string; // tailwind bg-* class for the overlay circle
 }
 
-// All four tiers share a blue background (varied by shade) so the emoji
-// always reads clearly against it, rather than the low-contrast grey/purple
-// the first tier used to have.
+// A plain white background keeps every emoji's own colors clearly visible —
+// colored circles behind colored emoji (e.g. the green seedling) is what
+// made badges hard to read before.
 export const LEVEL_BADGES: BadgeDef[] = [
-  { id: "new-member", label: "New Member", description: "Just joined the WELL Collective.", icon: "🌱", color: "bg-blue-400" },
-  { id: "active-member", label: "Active Member", description: "Getting involved across the app.", icon: "🔥", color: "bg-blue-500" },
-  { id: "committed-member", label: "Committed Member", description: "Consistently showing up.", icon: "⭐", color: "bg-blue-600" },
-  { id: "well-champion", label: "WELL Champion", description: "A top engager in the community.", icon: "👑", color: "bg-blue-700" },
+  { id: "new-member", label: "New Member", description: "Just joined the WELL Collective.", icon: "🌱", color: "bg-white" },
+  { id: "active-member", label: "Active Member", description: "Getting involved across the app.", icon: "🔥", color: "bg-white" },
+  { id: "committed-member", label: "Committed Member", description: "Consistently showing up.", icon: "⭐", color: "bg-white" },
+  { id: "well-champion", label: "WELL Champion", description: "A top engager in the community.", icon: "👑", color: "bg-white" },
 ];
 
 // Earned automatically alongside (not instead of) a level badge — based on
 // tenure or encouragement activity rather than the message+workout score.
 export const BONUS_BADGES: BadgeDef[] = [
-  { id: "legacy-builder", label: "Legacy Builder", description: "Active in the WELL Collective for over a year.", icon: "🏗️", color: "bg-cyan-600" },
-  { id: "well-ambassador", label: "WELL Ambassador", description: "Encourages others through posts, comments, and cheers.", icon: "📣", color: "bg-emerald-600" },
+  { id: "legacy-builder", label: "Legacy Builder", description: "Active in the WELL Collective for over a year.", icon: "🏗️", color: "bg-white" },
+  { id: "well-ambassador", label: "WELL Ambassador", description: "Encourages others through posts, comments, and cheers.", icon: "📣", color: "bg-white" },
 ];
 
 export const SPECIAL_BADGES: BadgeDef[] = [
-  { id: "well-escape", label: "WELL Escape Attendee", description: "Attended a WELL Escape retreat.", icon: "🌴", color: "bg-teal-500" },
-  { id: "made-magnificent", label: "Made Magnificent", description: "Completed the Made Magnificent program.", icon: "✨", color: "bg-fuchsia-500" },
-  { id: "made-to-be-different", label: "Made to Be Different", description: "Completed the Made to Be Different program.", icon: "🦋", color: "bg-violet-500" },
-  { id: "founding-member", label: "Founding Member", description: "One of the original WELL Collective members.", icon: "🏛️", color: "bg-amber-600" },
+  { id: "well-escape", label: "WELL Escape Attendee", description: "Attended a WELL Escape retreat.", icon: "🌴", color: "bg-white" },
+  { id: "made-magnificent", label: "Made Magnificent", description: "Completed the Made Magnificent program.", icon: "✨", color: "bg-white" },
+  { id: "made-to-be-different", label: "Made to Be Different", description: "Completed the Made to Be Different program.", icon: "🦋", color: "bg-white" },
+  { id: "founding-member", label: "Founding Member", description: "One of the original WELL Collective members.", icon: "🏛️", color: "bg-white" },
 ];
 
 export const ALL_BADGES: BadgeDef[] = [...LEVEL_BADGES, ...BONUS_BADGES, ...SPECIAL_BADGES];

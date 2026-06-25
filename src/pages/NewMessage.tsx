@@ -5,6 +5,7 @@ import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import SectionHeader from "../components/ui/SectionHeader";
 import { CategoryIcon } from "../data/iconMap";
+import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -13,6 +14,10 @@ interface DirectoryMember {
   id: string;
   name: string;
   avatar?: string;
+  levelBadge?: string;
+  bonusBadges?: string[];
+  grantedBadges?: string[];
+  featuredBadge?: string;
 }
 
 export default function NewMessage() {
@@ -82,7 +87,7 @@ export default function NewMessage() {
                   to={`/messages/${member.id}`}
                   className="flex items-center gap-3 glass-card rounded-card p-4"
                 >
-                  <Avatar src={member.avatar || ""} alt={member.name} size={40} />
+                  <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-text">{member.name}</h3>
                   </div>

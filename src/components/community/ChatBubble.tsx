@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { resolveFeaturedBadge } from "../../data/badges";
 import { useApp } from "../../store/AppContext";
 import type { ThreadMessage } from "../../types";
 import { formatTime } from "../../utils/format";
@@ -13,12 +14,15 @@ interface ChatBubbleProps {
 }
 
 export default function ChatBubble({ message, isOwn, showAvatar, showName, threadId }: ChatBubbleProps) {
-  const { user, toggleMessageLike } = useApp();
+  const { user, toggleMessageLike, memberBadges } = useApp();
   const hasLiked = message.likes.includes(user.id);
+  const badgeId = resolveFeaturedBadge(memberBadges[message.authorId] ?? {});
 
   return (
     <div className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : ""} animate-fade-in-up`}>
-      <div className="w-7 shrink-0">{showAvatar && <Avatar src={message.authorAvatar} alt={message.authorName} size={28} />}</div>
+      <div className="w-7 shrink-0">
+        {showAvatar && <Avatar src={message.authorAvatar} alt={message.authorName} size={28} badgeId={badgeId} />}
+      </div>
       <div className={`flex flex-col max-w-[75%] ${isOwn ? "items-end" : "items-start"}`}>
         {showName && !isOwn && <span className="text-[11px] text-text-dim mb-1 px-1">{message.authorName}</span>}
         <div

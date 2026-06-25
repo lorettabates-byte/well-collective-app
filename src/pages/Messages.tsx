@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
+import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -27,6 +28,10 @@ interface DirectoryMember {
   id: string;
   name: string;
   avatar?: string;
+  levelBadge?: string;
+  bonusBadges?: string[];
+  grantedBadges?: string[];
+  featuredBadge?: string;
 }
 
 function timeAgo(iso: string): string {
@@ -176,7 +181,7 @@ export default function Messages() {
                       to={`/messages/${conv.user_id}`}
                       className="flex items-center gap-3 glass-card rounded-card p-4"
                     >
-                      <Avatar src={member?.avatar || ""} alt={name} size={44} />
+                      <Avatar src={member?.avatar || ""} alt={name} size={44} badgeId={resolveFeaturedBadge(member ?? {})} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-bold text-text truncate">{name}</h3>
@@ -222,7 +227,12 @@ export default function Messages() {
           messages.map((msg) => (
             <div key={msg.id} className={`flex gap-2 ${msg.sender_id === user.id ? "justify-end" : ""}`}>
               {msg.sender_id !== user.id && (
-                <Avatar src={otherMember?.avatar || ""} alt={otherMember?.name || "Member"} size={28} />
+                <Avatar
+                  src={otherMember?.avatar || ""}
+                  alt={otherMember?.name || "Member"}
+                  size={28}
+                  badgeId={resolveFeaturedBadge(otherMember ?? {})}
+                />
               )}
               <div
                 className={`max-w-xs rounded-card px-3 py-2 text-sm ${

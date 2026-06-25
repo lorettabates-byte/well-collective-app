@@ -10,6 +10,7 @@ import {
 import { getFallbackRecipe } from "../data/nutritionLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
+import type { BadgeHolder } from "../data/badges";
 import type {
   AppNotification,
   AppNotificationType,
@@ -276,12 +277,38 @@ interface AppContextValue extends PersistedState {
   currentWeeklyTheme: Inspiration | undefined;
   todaysWellActivity: WellActivity;
   todaysRecipe: Recipe;
+  memberBadges: Record<string, BadgeHolder>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(() => loadState());
+
+  // Lets any avatar in the app — forum posts/messages, DMs, not just the
+  // WELL Tribe pages — show that member's badge, keyed by the same id used
+  // everywhere else (deriveMemberId). Not persisted: it's a live directory,
+  // refetched fresh each session.
+  const [memberBadges, setMemberBadges] = useState<Record<string, BadgeHolder>>({});
+
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/members`)
+      .then((res) => (res.ok ? res.json() : { members: [] }))
+      .then((data) => {
+        const map: Record<string, BadgeHolder> = {};
+        for (const m of data.members || []) {
+          map[m.id] = {
+            levelBadge: m.levelBadge,
+            bonusBadges: m.bonusBadges,
+            grantedBadges: m.grantedBadges,
+            featuredBadge: m.featuredBadge,
+          };
+        }
+        setMemberBadges(map);
+      })
+      .catch((err) => console.error("Failed to fetch member badges:", err));
+  }, []);
 
   useEffect(() => {
     try {
@@ -954,6 +981,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     currentWeeklyTheme,
     todaysWellActivity,
     todaysRecipe,
+    memberBadges,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
