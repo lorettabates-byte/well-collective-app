@@ -156,8 +156,26 @@ function loadState(): PersistedState {
   }
 }
 
+// Anchored to America/New_York so "today" always matches the server's content
+// scheduler/push notification clock (server/src/scheduler.ts's todayInTimezone()) —
+// using the browser's local date or UTC here instead caused the content-schedule
+// lookup to miss the server's row for several hours every evening, which made
+// the recipe/well-activity silently fall back to yesterday's value instead of
+// today's freshly generated one.
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+// Builds a Date for the fallback rotation (getFallbackRecipe/getFallbackWellActivity)
+// that matches todayISO()'s date, anchored at noon so local-timezone offsets can't
+// push it across a day boundary.
+function todayAsDate(): Date {
+  return new Date(`${todayISO()}T12:00:00`);
 }
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -635,7 +653,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => {
       let next = { ...prev };
       const now = new Date().toISOString();
-      const isMonday = new Date().getDay() === 1;
+      const isMonday = todayAsDate().getDay() === 1;
 
       if (entry.weeklyTheme && isMonday) {
         next = {
@@ -932,11 +950,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const todaysWellActivity: WellActivity = todaysEntry?.wellActivity
     ? { date: today, ...todaysEntry.wellActivity }
-    : { date: today, ...getFallbackWellActivity(new Date()) };
+    : { date: today, ...getFallbackWellActivity(todayAsDate()) };
 
   const rawRecipe = todaysEntry?.recipe
     ? todaysEntry.recipe
-    : getFallbackRecipe(new Date());
+    : getFallbackRecipe(todayAsDate());
   const recipeCategory = (rawRecipe as Record<string, unknown>).imageCategory as string | undefined;
 
   const baseRecipe = { date: today, ...rawRecipe };
