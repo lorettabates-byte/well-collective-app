@@ -72,11 +72,14 @@ export default function Breathwork() {
         dailyAudioRef.current.pause();
         dailyMusicRef.current?.pause();
       } else {
-        dailyAudioRef.current.play();
+        dailyAudioRef.current.play().catch((err) => console.error("Daily voice play failed:", err));
         if (dailyMusicRef.current) {
           dailyMusicRef.current.loop = true;
           dailyMusicRef.current.volume = 0.25;
-          dailyMusicRef.current.play().catch(() => {});
+          dailyMusicRef.current.currentTime = 0;
+          dailyMusicRef.current.play().catch((err) => console.error("Daily background music play failed:", err));
+        } else {
+          console.warn("Daily background music ref not available - backgroundSoundUrl may be missing");
         }
       }
       setDailyPlaying(!dailyPlaying);
@@ -165,7 +168,7 @@ export default function Breathwork() {
               )}
               <audio
                 ref={sessionGuideRef}
-                src={playing ? `${API_URL}/api/breathwork/audio/session-guide` : ""}
+                src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}` : ""}
               />
 
               <div className="flex items-center gap-3">

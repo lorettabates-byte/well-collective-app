@@ -206,11 +206,14 @@ export default function Music() {
         dailyAudioRef.current.pause();
         dailyMusicRef.current?.pause();
       } else {
-        dailyAudioRef.current.play();
+        dailyAudioRef.current.play().catch((err) => console.error("Daily voice play failed:", err));
         if (dailyMusicRef.current) {
           dailyMusicRef.current.loop = true;
           dailyMusicRef.current.volume = 0.25;
-          dailyMusicRef.current.play().catch(() => {});
+          dailyMusicRef.current.currentTime = 0;
+          dailyMusicRef.current.play().catch((err) => console.error("Daily background music play failed:", err));
+        } else {
+          console.warn("Daily background music ref not available - backgroundSoundUrl may be missing");
         }
       }
       setDailyPlaying(!dailyPlaying);
@@ -427,7 +430,7 @@ export default function Music() {
                     />
                     <audio
                       ref={sessionGuideRef}
-                      src={playingSession ? `${API_URL}/api/breathwork/audio/session-guide` : ""}
+                      src={playingSession ? `${API_URL}/api/breathwork/audio/session-guide/${playingSession}` : ""}
                     />
                     <div className="flex flex-col gap-2">
                       {breathworkSessions.map((session) => (
