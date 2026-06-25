@@ -23,6 +23,7 @@ interface Breathwork {
   script: string;
   duration: number;
   backgroundSound?: string;
+  backgroundSoundUrl?: string;
 }
 
 interface StoredSession {
@@ -76,7 +77,9 @@ export default function Music() {
   const [dailyPlaying, setDailyPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const dailyAudioRef = useRef<HTMLAudioElement>(null);
+  const dailyMusicRef = useRef<HTMLAudioElement>(null);
   const sessionAudioRef = useRef<HTMLAudioElement>(null);
+  const sessionGuideRef = useRef<HTMLAudioElement>(null);
 
   const clearTimer = () => {
     if (timerRef.current) {
@@ -201,8 +204,14 @@ export default function Music() {
     if (dailyAudioRef.current) {
       if (dailyPlaying) {
         dailyAudioRef.current.pause();
+        dailyMusicRef.current?.pause();
       } else {
         dailyAudioRef.current.play();
+        if (dailyMusicRef.current) {
+          dailyMusicRef.current.loop = true;
+          dailyMusicRef.current.volume = 0.25;
+          dailyMusicRef.current.play().catch(() => {});
+        }
       }
       setDailyPlaying(!dailyPlaying);
     }
@@ -215,6 +224,10 @@ export default function Music() {
         sessionAudioRef.current.pause();
         sessionAudioRef.current.currentTime = 0;
       }
+      if (sessionGuideRef.current) {
+        sessionGuideRef.current.pause();
+        sessionGuideRef.current.currentTime = 0;
+      }
       setPlayingSession(null);
     } else {
       // Start playing new session
@@ -223,7 +236,13 @@ export default function Music() {
       setTimeout(() => {
         if (sessionAudioRef.current) {
           sessionAudioRef.current.loop = true;
+          sessionAudioRef.current.volume = 0.3;
           sessionAudioRef.current.play().catch(err => console.error("Audio play failed:", err));
+        }
+        if (sessionGuideRef.current) {
+          sessionGuideRef.current.loop = true;
+          sessionGuideRef.current.volume = 1;
+          sessionGuideRef.current.play().catch(err => console.error("Guide audio play failed:", err));
         }
       }, 100);
     }
@@ -366,10 +385,16 @@ export default function Music() {
                       <audio
                         ref={dailyAudioRef}
                         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                        onEnded={() => setDailyPlaying(false)}
+                        onEnded={() => {
+                          setDailyPlaying(false);
+                          dailyMusicRef.current?.pause();
+                        }}
                       >
                         <source src={`${API_URL}/api/breathwork/audio/daily`} type="audio/mpeg" />
                       </audio>
+                      {todayBreathwork.backgroundSoundUrl && (
+                        <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
+                      )}
 
                       <div className="flex items-center gap-2">
                         <button
@@ -399,6 +424,10 @@ export default function Music() {
                       ref={sessionAudioRef}
                       onEnded={() => setPlayingSession(null)}
                       src={playingSession ? breathworkSessions.find(s => s.id === playingSession)?.audio_url : ""}
+                    />
+                    <audio
+                      ref={sessionGuideRef}
+                      src={playingSession ? `${API_URL}/api/breathwork/audio/session-guide` : ""}
                     />
                     <div className="flex flex-col gap-2">
                       {breathworkSessions.map((session) => (

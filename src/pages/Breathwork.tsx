@@ -11,6 +11,7 @@ interface Breathwork {
   duration: number;
   audioUrl?: string;
   backgroundSound?: string;
+  backgroundSoundUrl?: string;
 }
 
 interface StoredSession {
@@ -39,7 +40,9 @@ export default function Breathwork() {
   const [dailyPlaying, setDailyPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const dailyAudioRef = useRef<HTMLAudioElement>(null);
+  const dailyMusicRef = useRef<HTMLAudioElement>(null);
   const sessionAudioRef = useRef<HTMLAudioElement>(null);
+  const sessionGuideRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (!API_URL) {
@@ -55,7 +58,7 @@ export default function Breathwork() {
         if (breathworkData) {
           const dayOfWeek = new Date().getDay();
           const bgSound = BACKGROUND_SOUNDS[dayOfWeek];
-          setTodayBreathwork({ ...breathworkData, backgroundSound: bgSound.name });
+          setTodayBreathwork({ ...breathworkData, backgroundSound: bgSound.name, backgroundSoundUrl: breathworkData.backgroundSoundUrl || bgSound.url });
         }
         if (sessionsData.sessions) setStoredSessions(sessionsData.sessions);
       })
@@ -67,8 +70,14 @@ export default function Breathwork() {
     if (dailyAudioRef.current) {
       if (dailyPlaying) {
         dailyAudioRef.current.pause();
+        dailyMusicRef.current?.pause();
       } else {
         dailyAudioRef.current.play();
+        if (dailyMusicRef.current) {
+          dailyMusicRef.current.loop = true;
+          dailyMusicRef.current.volume = 0.25;
+          dailyMusicRef.current.play().catch(() => {});
+        }
       }
       setDailyPlaying(!dailyPlaying);
     }
@@ -78,12 +87,19 @@ export default function Breathwork() {
     if (sessionAudioRef.current) {
       if (playing === sessionId) {
         sessionAudioRef.current.pause();
+        sessionGuideRef.current?.pause();
         setPlaying(null);
       } else {
         setPlaying(sessionId);
         // Set audio to loop so it fills the entire session duration
         sessionAudioRef.current.loop = true;
+        sessionAudioRef.current.volume = 0.3;
         sessionAudioRef.current.play();
+        if (sessionGuideRef.current) {
+          sessionGuideRef.current.loop = true;
+          sessionGuideRef.current.volume = 1;
+          sessionGuideRef.current.play().catch((err) => console.error("Guide audio play failed:", err));
+        }
       }
     }
   };
@@ -137,10 +153,20 @@ export default function Breathwork() {
               <audio
                 ref={dailyAudioRef}
                 onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                onEnded={() => setDailyPlaying(false)}
+                onEnded={() => {
+                  setDailyPlaying(false);
+                  dailyMusicRef.current?.pause();
+                }}
               >
                 <source src={`${API_URL}/api/breathwork/audio/daily`} type="audio/mpeg" />
               </audio>
+              {todayBreathwork.backgroundSoundUrl && (
+                <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
+              )}
+              <audio
+                ref={sessionGuideRef}
+                src={playing ? `${API_URL}/api/breathwork/audio/session-guide` : ""}
+              />
 
               <div className="flex items-center gap-3">
                 <button
