@@ -39,6 +39,8 @@ export default function AdminNotifications() {
   const [pushError, setPushError] = useState("");
   const [checkingBlog, setCheckingBlog] = useState(false);
   const [blogMessage, setBlogMessage] = useState("");
+  const [checkingVideo, setCheckingVideo] = useState(false);
+  const [videoMessage, setVideoMessage] = useState("");
 
   const handleCheckBlogPosts = async () => {
     if (!API_URL) return;
@@ -58,6 +60,27 @@ export default function AdminNotifications() {
       setBlogMessage("Check failed. New posts will still be detected within the hour.");
     } finally {
       setCheckingBlog(false);
+    }
+  };
+
+  const handleCheckVideos = async () => {
+    if (!API_URL) return;
+    setCheckingVideo(true);
+    setVideoMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/video/send-video-notification`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setVideoMessage("✓ Classes checked. New videos will send notifications automatically.");
+      } else {
+        setVideoMessage("Check failed. New classes will still be detected every 30 minutes.");
+      }
+    } catch {
+      setVideoMessage("Check failed. New classes will still be detected every 30 minutes.");
+    } finally {
+      setCheckingVideo(false);
     }
   };
 
@@ -95,9 +118,9 @@ export default function AdminNotifications() {
     <div>
       <TopBar title="Notifications" subtitle="Send push notifications" showBack />
       <div className="px-4 pt-4">
-        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
-          <h3 className="text-sm font-bold text-text">Blog & Video Notifications</h3>
-          <p className="text-xs text-text-muted">Automatically checks for new blog posts every hour. Click to force a check now.</p>
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
+          <h3 className="text-sm font-bold text-text">Blog Notifications</h3>
+          <p className="text-xs text-text-muted">Automatically checks every hour. Click to force a check now.</p>
           {blogMessage && (
             <p className={`text-xs ${blogMessage.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>
               {blogMessage}
@@ -109,7 +132,25 @@ export default function AdminNotifications() {
             className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
           >
             {checkingBlog ? <Loader2 size={16} className="animate-spin" /> : "📝"}
-            {checkingBlog ? "Checking…" : "Check for New Posts"}
+            {checkingBlog ? "Checking…" : "Check for New Blog Posts"}
+          </button>
+        </div>
+
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
+          <h3 className="text-sm font-bold text-text">Class Notifications</h3>
+          <p className="text-xs text-text-muted">Automatically checks every 30 minutes. Click to force a check now.</p>
+          {videoMessage && (
+            <p className={`text-xs ${videoMessage.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>
+              {videoMessage}
+            </p>
+          )}
+          <button
+            onClick={handleCheckVideos}
+            disabled={checkingVideo}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {checkingVideo ? <Loader2 size={16} className="animate-spin" /> : "🎥"}
+            {checkingVideo ? "Checking…" : "Check for New Classes"}
           </button>
         </div>
 
