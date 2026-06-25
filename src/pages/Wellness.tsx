@@ -100,7 +100,7 @@ export default function Wellness() {
 
   return (
     <div>
-      <TopBar title="Daily Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
+      <TopBar title="Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
       <div className="px-4 pt-4 flex flex-col gap-6">
         <section>
           <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4">
@@ -276,23 +276,21 @@ export default function Wellness() {
             </div>
           </div>
 
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => {
-                logWorkoutCompletion();
-                confetti({ particleCount: 100, spread: 70 });
-              }}
-              disabled={completedToday}
-              className={`flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-3 px-8 transition-colors ${
-                completedToday
-                  ? "bg-surface-2 border border-border text-brand-light"
-                  : "gradient-brand text-white shadow-glow"
-              }`}
-            >
-              <CheckCircle2 size={16} />
-              {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              logWorkoutCompletion();
+              confetti({ particleCount: 100, spread: 70 });
+            }}
+            disabled={completedToday}
+            className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
+              completedToday
+                ? "bg-surface-2 border border-border text-brand-light"
+                : "gradient-brand text-white shadow-glow"
+            }`}
+          >
+            <CheckCircle2 size={20} />
+            {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
+          </button>
         </section>
 
         <section>
