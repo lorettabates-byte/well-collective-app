@@ -164,8 +164,8 @@ export default function Breathwork() {
           </div>
         )}
 
-        {/* Longer Sessions */}
-        <h3 className="text-sm font-bold text-text mb-4">Longer Sessions</h3>
+        {/* Deeper Sessions */}
+        <h3 className="text-sm font-bold text-text mb-4">Deeper Sessions</h3>
 
         {/* 10 Minute Sessions */}
         {sessionsByDuration[10].length > 0 && (

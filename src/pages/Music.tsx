@@ -1,6 +1,5 @@
-import { Clock, Music as MusicIcon, Volume2, Wind } from "lucide-react";
+import { Clock, Music as MusicIcon, Pause, Play, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import { SoundIcon } from "../data/soundIconMap";
@@ -16,7 +15,23 @@ import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-type Tab = "playlist" | "sounds";
+type Tab = "playlist" | "sounds" | "breathwork";
+
+interface Breathwork {
+  title: string;
+  description: string;
+  script: string;
+  duration: number;
+  backgroundSound?: string;
+}
+
+interface StoredSession {
+  id: number;
+  duration_minutes: number;
+  title: string;
+  description: string;
+  audio_url: string;
+}
 
 interface SoundTile {
   key: string;
@@ -51,6 +66,15 @@ export default function Music() {
   const timerRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
 
+  const [todayBreathwork, setTodayBreathwork] = useState<Breathwork | null>(null);
+  const [breathworkSessions, setBreathworkSessions] = useState<StoredSession[]>([]);
+  const [breathworkLoading, setBreathworkLoading] = useState(true);
+  const [playingSession, setPlayingSession] = useState<number | null>(null);
+  const [dailyPlaying, setDailyPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const dailyAudioRef = useRef<HTMLAudioElement>(null);
+  const sessionAudioRef = useRef<HTMLAudioElement>(null);
+
   const clearTimer = () => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
@@ -84,6 +108,23 @@ export default function Music() {
       .then((data) => setHiddenSoundIds(data.hidden || []))
       .catch(() => setHiddenSoundIds([]));
   }, []);
+
+  // Load breathwork data when tab changes
+  useEffect(() => {
+    if (tab !== "breathwork" || !API_URL) return;
+
+    setBreathworkLoading(true);
+    Promise.all([
+      fetch(`${API_URL}/api/breathwork/today`).then((res) => (res.ok ? res.json() : null)),
+      fetch(`${API_URL}/api/breathwork/sessions`).then((res) => (res.ok ? res.json() : { sessions: [] })),
+    ])
+      .then(([breathworkData, sessionsData]) => {
+        if (breathworkData) setTodayBreathwork(breathworkData);
+        if (sessionsData.sessions) setBreathworkSessions(sessionsData.sessions);
+      })
+      .catch((err) => console.error("Failed to load breathwork:", err))
+      .finally(() => setBreathworkLoading(false));
+  }, [tab]);
 
   useEffect(() => {
     return () => {
@@ -153,22 +194,44 @@ export default function Music() {
     handleRef.current?.setVolume(v);
   };
 
+  const handleDailyPlayPause = () => {
+    if (dailyAudioRef.current) {
+      if (dailyPlaying) {
+        dailyAudioRef.current.pause();
+      } else {
+        dailyAudioRef.current.play();
+      }
+      setDailyPlaying(!dailyPlaying);
+    }
+  };
+
+  const handleSessionPlayPause = (sessionId: number) => {
+    if (sessionAudioRef.current) {
+      if (playingSession === sessionId) {
+        sessionAudioRef.current.pause();
+        setPlayingSession(null);
+      } else {
+        setPlayingSession(sessionId);
+        sessionAudioRef.current.loop = true;
+        sessionAudioRef.current.play();
+      }
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
   return (
     <div>
-      <TopBar title="Music" subtitle="Playlist & peaceful sounds" icon={MusicIcon} iconColor="#0191CE" showBack />
+      <TopBar title="Music" subtitle="Playlist, sounds & breathwork" icon={MusicIcon} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4">
-        <Link
-          to="/breathwork"
-          className="gradient-brand text-white text-sm font-semibold rounded-pill py-3 flex items-center justify-center gap-2 mb-4 hover:opacity-90"
-        >
-          <Wind size={16} />
-          Guided Breathwork
-        </Link>
-
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <button
             onClick={() => setTab("playlist")}
-            className={`text-sm font-semibold rounded-pill py-2.5 border ${
+            className={`text-xs font-semibold rounded-pill py-2 border ${
               tab === "playlist" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
             }`}
           >
@@ -176,11 +239,20 @@ export default function Music() {
           </button>
           <button
             onClick={() => setTab("sounds")}
-            className={`text-sm font-semibold rounded-pill py-2.5 border ${
+            className={`text-xs font-semibold rounded-pill py-2 border ${
               tab === "sounds" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
             }`}
           >
             Peaceful Sounds
+          </button>
+          <button
+            onClick={() => setTab("breathwork")}
+            className={`text-xs font-semibold rounded-pill py-2 border flex items-center justify-center gap-1 ${
+              tab === "breathwork" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+            }`}
+          >
+            <Wind size={14} />
+            Breathwork
           </button>
         </div>
 
@@ -255,6 +327,98 @@ export default function Music() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {tab === "breathwork" && (
+          <div className="flex flex-col gap-4 pb-6">
+            {breathworkLoading ? (
+              <p className="text-sm text-text-muted text-center py-8">Loading breathwork...</p>
+            ) : (
+              <>
+                {todayBreathwork && (
+                  <div className="glass-card rounded-card p-4 flex flex-col gap-3">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-brand-light">Today's 5-Min Session</span>
+                      <h3 className="text-sm font-bold text-text mt-1">{todayBreathwork.title}</h3>
+                      <p className="text-xs text-text-muted mt-1">{todayBreathwork.description}</p>
+                      {todayBreathwork.backgroundSound && (
+                        <p className="text-[11px] text-brand-light mt-2">🎵 Background: {todayBreathwork.backgroundSound}</p>
+                      )}
+                    </div>
+
+                    <div className="bg-surface rounded-card p-3">
+                      <p className="text-xs text-text-muted leading-relaxed line-clamp-2">{todayBreathwork.script}</p>
+                    </div>
+
+                    <div className="bg-surface-2 rounded-card p-3 flex flex-col gap-2">
+                      <audio
+                        ref={dailyAudioRef}
+                        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                        onEnded={() => setDailyPlaying(false)}
+                      >
+                        <source src={`${API_URL}/api/breathwork/audio/daily`} type="audio/mpeg" />
+                      </audio>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleDailyPlayPause}
+                          className="gradient-brand text-white p-2 rounded-full hover:opacity-90 flex-shrink-0"
+                        >
+                          {dailyPlaying ? <Pause size={14} className="fill-white" /> : <Play size={14} className="fill-white" />}
+                        </button>
+                        <div className="flex-1">
+                          <div className="h-1 bg-surface rounded-full overflow-hidden">
+                            <div
+                              className="h-full gradient-brand transition-all"
+                              style={{ width: `${(currentTime / (todayBreathwork.duration * 60)) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-text-muted w-7 text-right">{formatTime(currentTime)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {breathworkSessions.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold text-text mb-3">Deeper Sessions</h4>
+                    <div className="flex flex-col gap-2">
+                      {breathworkSessions.map((session) => (
+                        <div key={session.id} className={`glass-card rounded-card p-3 ${playingSession === session.id ? "ring-2 ring-brand-light" : ""}`}>
+                          <div className="mb-2">
+                            <h5 className="text-xs font-semibold text-text">{session.title}</h5>
+                            <p className="text-[11px] text-text-muted mt-0.5">{session.description}</p>
+                          </div>
+                          <audio
+                            ref={playingSession === session.id ? sessionAudioRef : undefined}
+                            onEnded={() => setPlayingSession(null)}
+                            src={session.audio_url}
+                          />
+                          <button
+                            onClick={() => handleSessionPlayPause(session.id)}
+                            className="w-full flex items-center gap-1.5 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-2 hover:opacity-90"
+                          >
+                            {playingSession === session.id ? (
+                              <>
+                                <Pause size={12} className="fill-white" />
+                                Playing
+                              </>
+                            ) : (
+                              <>
+                                <Play size={12} className="fill-white" />
+                                Play {session.duration_minutes}m
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
