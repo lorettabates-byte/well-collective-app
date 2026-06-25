@@ -74,13 +74,15 @@ export default function Breathwork() {
     }
   };
 
-  const handleSessionPlayPause = (sessionId: number) => {
+  const handleSessionPlayPause = (sessionId: number, _durationMinutes: number) => {
     if (sessionAudioRef.current) {
       if (playing === sessionId) {
         sessionAudioRef.current.pause();
         setPlaying(null);
       } else {
         setPlaying(sessionId);
+        // Set audio to loop so it fills the entire session duration
+        sessionAudioRef.current.loop = true;
         sessionAudioRef.current.play();
       }
     }
@@ -184,7 +186,7 @@ export default function Breathwork() {
                     src={session.audio_url}
                   />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id)}
+                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
                     className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
                   >
                     {playing === session.id ? (
@@ -224,7 +226,7 @@ export default function Breathwork() {
                     src={session.audio_url}
                   />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id)}
+                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
                     className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
                   >
                     {playing === session.id ? (
@@ -264,7 +266,7 @@ export default function Breathwork() {
                     src={session.audio_url}
                   />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id)}
+                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
                     className="w-full flex items-center gap-2 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-3 hover:opacity-90"
                   >
                     {playing === session.id ? (

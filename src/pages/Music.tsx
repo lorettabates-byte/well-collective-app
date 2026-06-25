@@ -1,5 +1,6 @@
-import { Clock, Music as MusicIcon, Volume2 } from "lucide-react";
+import { Clock, Music as MusicIcon, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import { SoundIcon } from "../data/soundIconMap";
@@ -156,6 +157,14 @@ export default function Music() {
     <div>
       <TopBar title="Music" subtitle="Playlist & peaceful sounds" icon={MusicIcon} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4">
+        <Link
+          to="/breathwork"
+          className="gradient-brand text-white text-sm font-semibold rounded-pill py-3 flex items-center justify-center gap-2 mb-4 hover:opacity-90"
+        >
+          <Wind size={16} />
+          Guided Breathwork
+        </Link>
+
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
             onClick={() => setTab("playlist")}
