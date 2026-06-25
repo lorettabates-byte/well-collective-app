@@ -1,5 +1,5 @@
-const LOGO_URL = "/icons/notification-icon.png";
-const BADGE_URL = "/icons/notification-badge.png";
+const LOGO_URL = "/icons/notification-icon-v2.png";
+const BADGE_URL = "/icons/notification-badge-v2.png";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
