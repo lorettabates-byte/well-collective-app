@@ -17,7 +17,7 @@ function getInitials(name: string): string {
 
 export default function Avatar({ src, alt, size = 36, ring, badgeId }: AvatarProps) {
   const badge = getBadgeDef(badgeId);
-  const badgeSize = Math.max(14, Math.round(size * 0.32));
+  const badgeSize = Math.max(10, Math.round(size * 0.32));
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
