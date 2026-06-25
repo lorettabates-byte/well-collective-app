@@ -12,6 +12,7 @@ interface DirectoryMember {
   name: string;
   avatar?: string;
   levelBadge?: string;
+  bonusBadges?: string[];
   grantedBadges?: string[];
   featuredBadge?: string;
 }

@@ -886,6 +886,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // Always trust the server here — these are computed/granted
             // server-side, never edited locally except via setFeaturedBadge.
             levelBadge: member.levelBadge,
+            bonusBadges: member.bonusBadges,
             grantedBadges: member.grantedBadges,
             featuredBadge: member.featuredBadge,
           },

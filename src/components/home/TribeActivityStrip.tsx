@@ -19,6 +19,7 @@ interface TribeMember {
   birthday?: string;
   workoutLog?: string[];
   levelBadge?: string;
+  bonusBadges?: string[];
   grantedBadges?: string[];
   featuredBadge?: string;
 }

@@ -11,6 +11,7 @@ export interface User {
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
   trialEndsAt?: string; // ISO date when free trial expires
   levelBadge?: string; // computed server-side from activity, e.g. "active-member"
+  bonusBadges?: string[]; // auto-earned from tenure/encouragement, e.g. "legacy-builder"
   grantedBadges?: string[]; // admin-granted special badges, e.g. "well-escape"
   featuredBadge?: string; // which earned badge id to show on the avatar
 }

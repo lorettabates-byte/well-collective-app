@@ -42,7 +42,9 @@ export default function EditProfile() {
   const [birthday, setBirthday] = useState(user.birthday ?? "");
   const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
 
-  const earnedBadgeIds = new Set([user.levelBadge, ...(user.grantedBadges ?? [])].filter(Boolean) as string[]);
+  const earnedBadgeIds = new Set(
+    [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
+  );
   const earnedBadges = ALL_BADGES.filter((b) => earnedBadgeIds.has(b.id));
   const currentFeaturedBadge = resolveFeaturedBadge(user);
 
