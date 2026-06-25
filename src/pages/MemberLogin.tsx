@@ -9,8 +9,9 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleStartTrial = (e: React.FormEvent) => {
+  const handleStartTrial = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -23,13 +24,35 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
       return;
     }
 
-    localStorage.setItem("memberToken", `trial_${uid("local")}`);
-    localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: name.trim() }));
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 7);
-    localStorage.setItem("memberTrialEndsAt", trialEnd.toISOString().slice(0, 10));
+    if (!API_URL) {
+      setError("Backend not configured");
+      return;
+    }
 
-    onSuccess();
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/start-trial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+      });
+      const data = (await res.json()) as { error?: string; trialEndsAt?: string };
+
+      if (!res.ok || !data.trialEndsAt) {
+        setError(data.error || "Failed to start trial. Please try again.");
+        return;
+      }
+
+      localStorage.setItem("memberToken", `trial_${uid("local")}`);
+      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: name.trim() }));
+      localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+
+      onSuccess();
+    } catch {
+      setError("Failed to start trial. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -67,9 +90,10 @@ function StartTrial({ onSuccess }: { onSuccess: () => void }) {
 
       <button
         type="submit"
-        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
+        disabled={submitting}
+        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
       >
-        Start My 7-Day Free Trial
+        {submitting ? "Starting…" : "Start My 7-Day Free Trial"}
       </button>
       <p className="text-[11px] text-text-dim text-center -mt-1">
         No credit card needed. We'll let you know if you want to become a full WELL Collective member.

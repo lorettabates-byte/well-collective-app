@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Music, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Music, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
@@ -22,7 +22,12 @@ export default function AdminMusic() {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [url, setUrl] = useState("");
+  const [lyrics, setLyrics] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const [editingLyricsId, setEditingLyricsId] = useState<number | null>(null);
+  const [editingLyricsValue, setEditingLyricsValue] = useState("");
+  const [savingLyrics, setSavingLyrics] = useState(false);
 
   const [sounds, setSounds] = useState<CustomPeacefulSound[]>([]);
   const [soundsLoading, setSoundsLoading] = useState(true);
@@ -125,6 +130,7 @@ export default function AdminMusic() {
           title: title.trim(),
           artist: artist.trim() || undefined,
           url: url.trim(),
+          lyrics: lyrics.trim() || undefined,
           sortOrder: songs.length,
         }),
       });
@@ -132,6 +138,7 @@ export default function AdminMusic() {
         setTitle("");
         setArtist("");
         setUrl("");
+        setLyrics("");
         setStatus({ type: "success", message: "Song added!" });
         fetchSongs();
       } else {
@@ -140,6 +147,35 @@ export default function AdminMusic() {
       }
     } catch {
       setStatus({ type: "error", message: "Failed to add song" });
+    }
+  };
+
+  const openLyricsEditor = (song: Song) => {
+    if (editingLyricsId === song.id) {
+      setEditingLyricsId(null);
+      return;
+    }
+    setEditingLyricsId(song.id);
+    setEditingLyricsValue(song.lyrics || "");
+  };
+
+  const handleSaveLyrics = async (id: number) => {
+    if (!API_URL) return;
+    setSavingLyrics(true);
+    try {
+      const res = await fetch(`${API_URL}/api/songs/${id}/lyrics`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ lyrics: editingLyricsValue.trim() || undefined }),
+      });
+      if (res.ok) {
+        setEditingLyricsId(null);
+        fetchSongs();
+      }
+    } catch (err) {
+      console.error("Save lyrics error:", err);
+    } finally {
+      setSavingLyrics(false);
     }
   };
 
@@ -270,6 +306,16 @@ export default function AdminMusic() {
               placeholder="Audio file URL (https://...mp3)"
               className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
             />
+            <div>
+              <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Lyrics (optional)</label>
+              <textarea
+                value={lyrics}
+                onChange={(e) => setLyrics(e.target.value)}
+                placeholder="Paste the song's lyrics here — members will be able to view them while listening."
+                rows={5}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
+              />
+            </div>
             <button
               onClick={handleAdd}
               disabled={!title.trim() || !url.trim()}
@@ -295,40 +341,79 @@ export default function AdminMusic() {
           ) : (
             <div className="flex flex-col gap-2">
               {songs.map((song, index) => (
-                <div key={song.id} className="glass-card rounded-card p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
-                      <Music size={14} />
+                <div key={song.id} className="glass-card rounded-card p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+                        <Music size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-text truncate">{song.title}</p>
+                        {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-text truncate">{song.title}</p>
-                      {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
+                    <button
+                      onClick={() => openLyricsEditor(song)}
+                      aria-label="Edit lyrics"
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border shrink-0 mr-1 ${
+                        song.lyrics
+                          ? "bg-surface-2 border-brand-light text-brand-light"
+                          : "bg-surface-2 border-border text-text-dim"
+                      }`}
+                    >
+                      <FileText size={14} />
+                    </button>
+                    <div className="flex flex-col shrink-0 mr-1">
+                      <button
+                        onClick={() => handleMove(song.id, -1)}
+                        disabled={index === 0}
+                        aria-label="Move up"
+                        className="text-text-dim disabled:opacity-25"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleMove(song.id, 1)}
+                        disabled={index === songs.length - 1}
+                        aria-label="Move down"
+                        className="text-text-dim disabled:opacity-25"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex flex-col shrink-0 mr-1">
                     <button
-                      onClick={() => handleMove(song.id, -1)}
-                      disabled={index === 0}
-                      aria-label="Move up"
-                      className="text-text-dim disabled:opacity-25"
+                      onClick={() => handleDelete(song.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400 shrink-0"
                     >
-                      <ChevronUp size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleMove(song.id, 1)}
-                      disabled={index === songs.length - 1}
-                      aria-label="Move down"
-                      className="text-text-dim disabled:opacity-25"
-                    >
-                      <ChevronDown size={14} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
-                  <button
-                    onClick={() => handleDelete(song.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400 shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {editingLyricsId === song.id && (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={editingLyricsValue}
+                        onChange={(e) => setEditingLyricsValue(e.target.value)}
+                        placeholder="Paste lyrics for this song..."
+                        rows={6}
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveLyrics(song.id)}
+                          disabled={savingLyrics}
+                          className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
+                        >
+                          Save Lyrics
+                        </button>
+                        <button
+                          onClick={() => setEditingLyricsId(null)}
+                          className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

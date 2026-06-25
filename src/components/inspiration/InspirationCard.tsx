@@ -10,14 +10,16 @@ const CADENCE_LABEL: Record<InspirationCadence, string> = {
   daily: "Daily Inspiration",
   weekly: "Weekly Focus",
   motivational: "Motivation Boost",
+  note: "Note from Loretta",
 };
 
 // Subtle per-cadence background tint so the feed isn't visually flat when all
-// three types appear together on the same page.
+// types appear together on the same page.
 const CADENCE_BG: Record<InspirationCadence, string> = {
   daily: "bg-gradient-to-br from-surface to-[#11243d]",
   weekly: "bg-gradient-to-br from-surface to-[#1a1f3d]",
   motivational: "bg-gradient-to-br from-surface to-[#2a1f30]",
+  note: "bg-gradient-to-br from-surface to-[#1f2a1d]",
 };
 
 interface InspirationCardProps {

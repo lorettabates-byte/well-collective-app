@@ -7,6 +7,7 @@ export interface VideoCategory {
   url: string;
   icon: LucideIcon;
   color: string;
+  trialLocked?: boolean;
 }
 
 export const VIDEO_CATEGORIES: VideoCategory[] = [
@@ -33,6 +34,7 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
     url: "https://lorettabates.com/videolibrary.lorettabates.com/media_category/zumbastudioclasses/",
     icon: Music,
     color: "#84D8FD",
+    trialLocked: true,
   },
   {
     id: "zumba-outdoor",
@@ -41,6 +43,7 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
     url: "https://lorettabates.com/videolibrary.lorettabates.com/media_category/zumba-outdoor-classes/",
     icon: Sun,
     color: "#0191CE",
+    trialLocked: true,
   },
   {
     id: "bellydance",
@@ -49,5 +52,6 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
     url: "https://lorettabates.com/videolibrary.lorettabates.com/media_category/fitnessbellydanceclasses/",
     icon: Waves,
     color: "#84D8FD",
+    trialLocked: true,
   },
 ];

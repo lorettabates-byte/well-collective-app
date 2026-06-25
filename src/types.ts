@@ -90,7 +90,7 @@ export interface ForumThread {
   messages: ThreadMessage[];
 }
 
-export type InspirationCadence = "daily" | "weekly" | "motivational";
+export type InspirationCadence = "daily" | "weekly" | "motivational" | "note";
 
 export interface Inspiration {
   id: string;
@@ -125,6 +125,7 @@ export interface Song {
   title: string;
   artist?: string;
   url: string;
+  lyrics?: string;
   sortOrder: number;
 }
 

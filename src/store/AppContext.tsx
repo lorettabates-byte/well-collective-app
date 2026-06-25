@@ -28,11 +28,6 @@ import type {
 const STORAGE_KEY = "well-collective-state-v1";
 
 const FOUNDER_EMAIL = "loretta@lorettabates.com";
-const FOUNDER_PROFILE = {
-  avatar: "https://i.pravatar.cc/150?img=47",
-  bio: "Founder of WELL Collective. On a mission to help women feel calm, strong, and supported. 🌿",
-  birthday: "06-14",
-};
 
 interface PersistedState {
   user: User;
@@ -105,16 +100,6 @@ function applyMemberInfo(user: User): User {
       ...(isFounder
         ? {
             isAdmin: true,
-            // Only seed the founder defaults on first sync for this email —
-            // once synced, edits made in Edit Profile are authoritative.
-            // Never force the hardcoded bio/birthday back on every load.
-            ...(isNewMember
-              ? {
-                  bio: user.bio || FOUNDER_PROFILE.bio,
-                  birthday: user.birthday || FOUNDER_PROFILE.birthday,
-                  avatar: user.avatar || FOUNDER_PROFILE.avatar,
-                }
-              : {}),
           }
         : isNewMember
           // Only seed name/avatar/bio/birthday from the WP account on first
@@ -739,24 +724,76 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Sync the Community forum (categories + threads/messages) from the shared
   // backend so posts are visible across everyone's devices, not just the one
-  // they were created on.
+  // they were created on. Polls on an interval (rather than fetching once on
+  // mount) because members often leave the app open in the background —
+  // without polling, a post made by someone else would never appear until
+  // the viewer fully reloads the app.
   useEffect(() => {
     if (!API_URL) return;
 
-    Promise.all([
-      fetch(`${API_URL}/api/forum/categories`).then((res) => (res.ok ? res.json() : null)),
-      fetch(`${API_URL}/api/forum/threads`).then((res) => (res.ok ? res.json() : null)),
-    ])
-      .then(([categoriesData, threadsData]) => {
-        setState((prev) => ({
-          ...prev,
-          categories: categoriesData?.categories ?? prev.categories,
-          threads: threadsData?.threads ?? prev.threads,
-        }));
-      })
-      .catch(() => {
-        // offline or backend unreachable — fall back to whatever local content exists
-      });
+    const syncForum = () => {
+      Promise.all([
+        fetch(`${API_URL}/api/forum/categories`).then((res) => (res.ok ? res.json() : null)),
+        fetch(`${API_URL}/api/forum/threads`).then((res) => (res.ok ? res.json() : null)),
+      ])
+        .then(([categoriesData, threadsData]) => {
+          setState((prev) => ({
+            ...prev,
+            categories: categoriesData?.categories ?? prev.categories,
+            threads: threadsData?.threads ?? prev.threads,
+          }));
+        })
+        .catch(() => {
+          // offline or backend unreachable — fall back to whatever local content exists
+        });
+    };
+
+    syncForum();
+    const interval = setInterval(syncForum, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Sync "Notes from Loretta" — the admin's instant/manual push notifications
+  // (not the scheduled daily/weekly content) — from the shared backend so
+  // they show up in everyone's Inspirations feed, not just an ephemeral push.
+  useEffect(() => {
+    if (!API_URL) return;
+
+    const syncNotes = () => {
+      fetch(`${API_URL}/api/notes`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const notes = data?.notes as { id: string; title: string; body: string; sentAt: string }[] | undefined;
+          if (!notes) return;
+          setState((prev) => {
+            const existingById = new Map(
+              prev.inspirations.filter((i) => i.cadence === "note").map((i) => [i.id, i])
+            );
+            const noteInspirations: Inspiration[] = notes.map((n) => {
+              const existing = existingById.get(n.id);
+              return {
+                id: n.id,
+                title: n.title,
+                body: n.body,
+                author: "Loretta",
+                cadence: "note",
+                sentAt: n.sentAt,
+                likes: existing?.likes ?? [],
+                savedBy: existing?.savedBy ?? [],
+              };
+            });
+            const otherInspirations = prev.inspirations.filter((i) => i.cadence !== "note");
+            return { ...prev, inspirations: [...noteInspirations, ...otherInspirations] };
+          });
+        })
+        .catch(() => {
+          // offline or backend unreachable — fall back to whatever local content exists
+        });
+    };
+
+    syncNotes();
+    const interval = setInterval(syncNotes, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   // Sync the admin's featured-event pick from the shared backend so every
@@ -786,7 +823,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         email: state.user.email,
         name: state.user.name,
         avatar: state.user.avatar,
-        birthday: state.user.showBirthdayOnCalendar ? state.user.birthday : undefined,
+        bio: state.user.bio,
+        // Always persist the birthday itself — showBirthdayOnCalendar only
+        // controls whether it's *displayed* on the shared calendar. Gating
+        // the save on that flag meant a member who never opted in to the
+        // calendar had nothing saved server-side to restore from later.
+        birthday: state.user.birthday,
         showBirthdayOnCalendar: state.user.showBirthdayOnCalendar,
       }),
     }).catch((err) => console.error("Failed to sync member profile:", err));
@@ -795,9 +837,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.email,
     state.user.name,
     state.user.avatar,
+    state.user.bio,
     state.user.birthday,
     state.user.showBirthdayOnCalendar,
   ]);
+
+  // Pull this member's saved profile back from the server to fill in any
+  // gaps in local state. This is the recovery path for when localStorage
+  // gets wiped out from under the app (Safari's tracking-prevention purge
+  // after a period of inactivity, a fresh re-login on a new browser/device,
+  // etc.) — without it, a wipe permanently strands the member with a blank
+  // avatar/bio/birthday, since the sync effect above only ever pushes local
+  // data up and never pulls saved data back down. Same "never destroy, only
+  // fill gaps" rule as applyMemberInfo: server data can only fill a field
+  // that's still empty locally, never overwrite something already present.
+  useEffect(() => {
+    if (!API_URL || !state.user.email) return;
+    fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(state.user.email)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const member = data?.member;
+        if (!member) return;
+        setState((prev) => {
+          const needsAvatar = !prev.user.avatar && member.avatar;
+          const needsBio = !prev.user.bio && member.bio;
+          const needsBirthday = !prev.user.birthday && member.birthday;
+          if (!needsAvatar && !needsBio && !needsBirthday) return prev;
+          return {
+            ...prev,
+            user: {
+              ...prev.user,
+              avatar: prev.user.avatar || member.avatar || prev.user.avatar,
+              bio: prev.user.bio || member.bio || prev.user.bio,
+              birthday: prev.user.birthday || member.birthday,
+            },
+          };
+        });
+      })
+      .catch((err) => console.error("Failed to restore member profile:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.user.email]);
 
   const today = todayISO();
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);

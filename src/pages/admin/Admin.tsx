@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Save, ShieldCheck, Sparkles } from "lucide-react";
+import { BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Save, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/layout/TopBar";
@@ -16,6 +16,7 @@ function getAuthHeaders(): HeadersInit {
 }
 
 const TILES = [
+  { to: "/admin/members", label: "Members", description: "View, add, and remove members", icon: Users },
   { to: "/admin/categories", label: "Categories", description: "Manage forum categories", icon: Layers },
   { to: "/admin/posts", label: "Posts", description: "Moderate threads & messages", icon: ShieldCheck },
   { to: "/admin/notifications", label: "Notifications", description: "Send push notifications", icon: Bell },

@@ -10,6 +10,7 @@ import NewMessage from "./pages/NewMessage";
 import Inspirations from "./pages/Inspirations";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
+import Tribe from "./pages/Tribe";
 import EditProfile from "./pages/EditProfile";
 import Blog from "./pages/Blog";
 import Messages from "./pages/Messages";
@@ -30,6 +31,7 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminMusic from "./pages/admin/AdminMusic";
+import AdminMembers from "./pages/admin/AdminMembers";
 
 function App() {
   return (
@@ -53,6 +55,7 @@ function App() {
         <Route path="/music" element={<Music />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/tribe" element={<Tribe />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/notifications" element={<NotificationSettings />} />
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -66,6 +69,7 @@ function App() {
         <Route path="/admin/events" element={<AdminRoute><AdminEvents /></AdminRoute>} />
         <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
         <Route path="/admin/music" element={<AdminRoute><AdminMusic /></AdminRoute>} />
+        <Route path="/admin/members" element={<AdminRoute><AdminMembers /></AdminRoute>} />
       </Routes>
     </MobileShell>
   );

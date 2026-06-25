@@ -2,6 +2,7 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  FileText,
   Heart,
   ListMusic,
   Lock,
@@ -11,13 +12,15 @@ import {
   Repeat1,
   SkipBack,
   SkipForward,
+  X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Song } from "../../types";
 
 const FAVORITES_KEY = "well-music-favorites";
 const ORDER_KEY = "well-music-order";
+const FREE_SONG_COUNT = 5;
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -70,7 +73,22 @@ export default function Playlist({
   const [isPlaying, setIsPlaying] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [progress, setProgress] = useState({ current: 0, duration: 0 });
-  const [lockedMessage, setLockedMessage] = useState(false);
+  const [lockedReason, setLockedReason] = useState<"play" | "download" | null>(null);
+  const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
+
+  const showLocked = (reason: "play" | "download") => {
+    setLockedReason(reason);
+    setTimeout(() => setLockedReason(null), 3000);
+  };
+
+  // Only the first FREE_SONG_COUNT songs in the admin-defined order are
+  // playable for trial members — based on the canonical `songs` order, not
+  // the user's custom reordering, so a trial member can't bypass the lock
+  // by dragging a later song to the top.
+  const lockedSongIds = useMemo(
+    () => (downloadsLocked ? new Set(songs.slice(FREE_SONG_COUNT).map((s) => s.id)) : new Set<number>()),
+    [songs, downloadsLocked]
+  );
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Song[]>([]);
@@ -156,6 +174,7 @@ export default function Playlist({
 
   const orderedSongs = order.map((id) => songs.find((s) => s.id === id)).filter((s): s is Song => !!s);
   const visibleSongs = favoritesOnly ? orderedSongs.filter((s) => favorites.has(s.id)) : orderedSongs;
+  const playableSongs = visibleSongs.filter((s) => !lockedSongIds.has(s.id));
 
   function playAt(queue: Song[], index: number) {
     if (index < 0 || index >= queue.length) return;
@@ -189,6 +208,10 @@ export default function Playlist({
   }
 
   const togglePlaySong = (song: Song) => {
+    if (lockedSongIds.has(song.id)) {
+      showLocked("play");
+      return;
+    }
     if (currentSong?.id === song.id) {
       if (isPlaying) {
         audioRef.current?.pause();
@@ -199,13 +222,13 @@ export default function Playlist({
       }
       return;
     }
-    const startIndex = visibleSongs.findIndex((s) => s.id === song.id);
-    playAt(visibleSongs, startIndex);
+    const startIndex = playableSongs.findIndex((s) => s.id === song.id);
+    playAt(playableSongs, startIndex);
   };
 
   const handlePlayAll = () => {
-    if (visibleSongs.length === 0) return;
-    playAt(visibleSongs, 0);
+    if (playableSongs.length === 0) return;
+    playAt(playableSongs, 0);
   };
 
   const handleSkip = (direction: 1 | -1) => {
@@ -264,10 +287,14 @@ export default function Playlist({
         Motivational music curated by Loretta — the WELL Collective Playlist.
       </p>
 
-      {lockedMessage && (
+      {lockedReason && (
         <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 -mt-1">
           <Lock size={14} className="text-brand-light shrink-0" />
-          <p className="text-xs text-text-muted">Downloads are available to full members — upgrade to download songs.</p>
+          <p className="text-xs text-text-muted">
+            {lockedReason === "download"
+              ? "Downloads are available to full members — upgrade to download songs."
+              : "This song is part of full membership — upgrade to unlock the full playlist."}
+          </p>
         </div>
       )}
 
@@ -315,12 +342,13 @@ export default function Playlist({
 
       {visibleSongs.map((song, index) => {
         const isCurrent = currentSong?.id === song.id;
+        const isLocked = lockedSongIds.has(song.id);
         return (
           <div
             key={song.id}
             className={`flex items-center gap-2 rounded-card px-3 py-3 ${
               isCurrent ? "gradient-brand p-[1px]" : ""
-            }`}
+            } ${isLocked ? "opacity-50" : ""}`}
           >
             <div
               className={`flex items-center gap-2 flex-1 min-w-0 ${
@@ -329,10 +357,14 @@ export default function Playlist({
             >
               <button
                 onClick={() => togglePlaySong(song)}
-                className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center shrink-0"
-                aria-label={isCurrent && isPlaying ? "Pause" : "Play"}
+                aria-label={isLocked ? "Locked for trial members" : isCurrent && isPlaying ? "Pause" : "Play"}
+                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                  isLocked ? "bg-surface-2 border border-border" : "gradient-brand"
+                }`}
               >
-                {isCurrent && isPlaying ? (
+                {isLocked ? (
+                  <Lock size={14} className="text-text-dim" />
+                ) : isCurrent && isPlaying ? (
                   <Pause size={14} className="text-white" />
                 ) : (
                   <Play size={14} className="text-white" />
@@ -349,12 +381,18 @@ export default function Playlist({
               >
                 <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
               </button>
+              {song.lyrics && (
+                <button
+                  onClick={() => setLyricsSong(song)}
+                  aria-label="View lyrics"
+                  className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
+                >
+                  <FileText size={15} />
+                </button>
+              )}
               {downloadsLocked ? (
                 <button
-                  onClick={() => {
-                    setLockedMessage(true);
-                    setTimeout(() => setLockedMessage(false), 3000);
-                  }}
+                  onClick={() => showLocked("download")}
                   aria-label="Download locked for trial members"
                   className="w-8 h-8 flex items-center justify-center shrink-0 text-text-dim"
                 >
@@ -406,6 +444,15 @@ export default function Playlist({
           <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
+              {currentSong.lyrics && (
+                <button
+                  onClick={() => setLyricsSong(currentSong)}
+                  aria-label="View lyrics"
+                  className="text-text-muted shrink-0"
+                >
+                  <FileText size={14} />
+                </button>
+              )}
               <button onClick={cycleRepeat} aria-label="Cycle repeat mode" className="text-text-muted shrink-0">
                 {repeatMode === "one" ? (
                   <Repeat1 size={14} className="text-brand-light" />
@@ -441,6 +488,31 @@ export default function Playlist({
               <button onClick={() => handleSkip(1)} aria-label="Next" className="text-text">
                 <SkipForward size={18} />
               </button>
+            </div>
+          </div>,
+          document.getElementById("mobile-shell-frame") || document.body
+        )}
+
+      {lyricsSong &&
+        createPortal(
+          <div className="absolute inset-0 z-40 bg-black/60 flex items-end sm:items-center justify-center p-4">
+            <div className="w-full max-w-sm max-h-[70%] glass-card rounded-card p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-text truncate">{lyricsSong.title}</h3>
+                  {lyricsSong.artist && <p className="text-xs text-text-muted truncate">{lyricsSong.artist}</p>}
+                </div>
+                <button
+                  onClick={() => setLyricsSong(null)}
+                  aria-label="Close lyrics"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <p className="text-sm text-text whitespace-pre-line overflow-y-auto leading-relaxed">
+                {lyricsSong.lyrics}
+              </p>
             </div>
           </div>,
           document.getElementById("mobile-shell-frame") || document.body

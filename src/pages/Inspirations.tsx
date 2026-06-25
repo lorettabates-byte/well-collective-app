@@ -3,15 +3,14 @@ import { useState } from "react";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
-import type { InspirationCadence } from "../types";
 
-type Filter = "all" | InspirationCadence | "saved";
+type Filter = "all" | "daily-motivation" | "weekly" | "note" | "saved";
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "daily", label: "Daily" },
+  { id: "daily-motivation", label: "Daily & Motivation" },
   { id: "weekly", label: "Weekly" },
-  { id: "motivational", label: "Motivation" },
+  { id: "note", label: "Notes from Loretta" },
   { id: "saved", label: "Saved" },
 ];
 
@@ -23,6 +22,7 @@ export default function Inspirations() {
     .filter((insp) => {
       if (filter === "all") return true;
       if (filter === "saved") return insp.savedBy.includes(user.id);
+      if (filter === "daily-motivation") return insp.cadence === "daily" || insp.cadence === "motivational";
       return insp.cadence === filter;
     })
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt));

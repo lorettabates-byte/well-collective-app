@@ -1,4 +1,4 @@
-import { Bell, Bookmark, ChevronRight, LogOut, Music, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Video, Waves } from "lucide-react";
+import { Bell, Bookmark, ChevronRight, LogOut, Music, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Users, Video, Waves } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
@@ -94,6 +94,7 @@ export default function Profile() {
       </div>
 
       <div className="flex flex-col gap-2.5 mb-6">
+        <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations" badge={savedCount} />

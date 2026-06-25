@@ -46,7 +46,7 @@ export default function AdminNotifications() {
       setSending(true);
       setPushError("");
       try {
-        const res = await fetch(`${API_URL}/api/send-test`, {
+        const res = await fetch(`${API_URL}/api/notes`, {
           method: "POST",
           headers: getAuthHeaders(),
           body: JSON.stringify({ title: title.trim(), body: body.trim() }),

@@ -41,7 +41,11 @@ export default function EditProfile() {
   const [birthday, setBirthday] = useState(user.birthday ?? "");
   const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
 
+  const [photoError, setPhotoError] = useState("");
+
   const [birthMonth, birthDay] = birthday ? birthday.split("-") : ["", ""];
+
+  const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 
   const handleMonthChange = (month: string) => {
     if (!month) {
@@ -59,6 +63,14 @@ export default function EditProfile() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("That photo is too large — please choose an image smaller than 15MB.");
+      e.target.value = "";
+      return;
+    }
+    setPhotoError("");
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string") return;
@@ -119,6 +131,7 @@ export default function EditProfile() {
             <Upload size={14} />
             Upload Photo
           </button>
+          {photoError && <p className="text-xs text-red-400 text-center">{photoError}</p>}
         </div>
 
         <div>
