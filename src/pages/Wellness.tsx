@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -242,19 +243,6 @@ export default function Wellness() {
               </button>
             </section>
           </div>
-
-          <button
-            onClick={logWorkoutCompletion}
-            disabled={completedToday}
-            className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 mt-4 transition-colors ${
-              completedToday
-                ? "bg-surface-2 border border-border text-brand-light"
-                : "gradient-brand text-white shadow-glow"
-            }`}
-          >
-            <CheckCircle2 size={16} />
-            {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
-          </button>
         </section>
 
         <section>
@@ -284,6 +272,21 @@ export default function Wellness() {
               >
                 <CheckCircle2 size={14} />
                 {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
+              </button>
+              <button
+                onClick={() => {
+                  logWorkoutCompletion();
+                  confetti({ particleCount: 100, spread: 70 });
+                }}
+                disabled={completedToday}
+                className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-lg py-3 mt-3 transition-colors ${
+                  completedToday
+                    ? "bg-surface-2 border border-border text-brand-light"
+                    : "gradient-brand text-white shadow-glow"
+                }`}
+              >
+                <CheckCircle2 size={16} />
+                {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
               </button>
             </div>
           </div>

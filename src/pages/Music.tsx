@@ -209,15 +209,23 @@ export default function Music() {
   };
 
   const handleSessionPlayPause = (sessionId: number) => {
-    if (sessionAudioRef.current) {
-      if (playingSession === sessionId) {
+    if (playingSession === sessionId) {
+      // Stop playing
+      if (sessionAudioRef.current) {
         sessionAudioRef.current.pause();
-        setPlayingSession(null);
-      } else {
-        setPlayingSession(sessionId);
-        sessionAudioRef.current.loop = true;
-        sessionAudioRef.current.play();
+        sessionAudioRef.current.currentTime = 0;
       }
+      setPlayingSession(null);
+    } else {
+      // Start playing new session
+      setPlayingSession(sessionId);
+      // Audio src will be set by the render, so play happens after src updates
+      setTimeout(() => {
+        if (sessionAudioRef.current) {
+          sessionAudioRef.current.loop = true;
+          sessionAudioRef.current.play().catch(err => console.error("Audio play failed:", err));
+        }
+      }, 100);
     }
   };
 
@@ -387,6 +395,11 @@ export default function Music() {
                 {breathworkSessions.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-text mb-3">Deeper Sessions</h4>
+                    <audio
+                      ref={sessionAudioRef}
+                      onEnded={() => setPlayingSession(null)}
+                      src={playingSession ? breathworkSessions.find(s => s.id === playingSession)?.audio_url : ""}
+                    />
                     <div className="flex flex-col gap-2">
                       {breathworkSessions.map((session) => (
                         <div key={session.id} className={`glass-card rounded-card p-3 ${playingSession === session.id ? "ring-2 ring-brand-light" : ""}`}>
@@ -394,11 +407,6 @@ export default function Music() {
                             <h5 className="text-xs font-semibold text-text">{session.title}</h5>
                             <p className="text-[11px] text-text-muted mt-0.5">{session.description}</p>
                           </div>
-                          <audio
-                            ref={playingSession === session.id ? sessionAudioRef : undefined}
-                            onEnded={() => setPlayingSession(null)}
-                            src={session.audio_url}
-                          />
                           <button
                             onClick={() => handleSessionPlayPause(session.id)}
                             className="w-full flex items-center gap-1.5 text-xs font-semibold text-white gradient-brand rounded-pill py-2 px-2 hover:opacity-90"
