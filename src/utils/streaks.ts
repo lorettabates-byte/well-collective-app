@@ -24,9 +24,16 @@ export function computeStreak(workoutLog: string[]): number {
   return streak;
 }
 
-export function computeBadges(workoutLog: string[], messagesPosted: number): Badge[] {
+export function computeBadges(
+  workoutLog: string[],
+  messagesPosted: number,
+  breathworkLog: string[] = [],
+  wellActivityLog: string[] = []
+): Badge[] {
   const streak = computeStreak(workoutLog);
   const totalWorkouts = workoutLog.length;
+  const breathworkStreak = computeStreak(breathworkLog);
+  const wellActivityCount = wellActivityLog.length;
 
   return [
     // Community Badges
@@ -47,10 +54,16 @@ export function computeBadges(workoutLog: string[], messagesPosted: number): Bad
     { id: "total-50", label: "50 Workouts", description: "Completed 50 total workouts.", icon: "Trophy", earned: totalWorkouts >= 50 },
     { id: "total-100", label: "100 Workouts", description: "Completed 100 total workouts — a century of strength!", icon: "Crown", earned: totalWorkouts >= 100 },
 
+    // Breathwork Streak Badges
+    { id: "breathwork-week-streak", label: "7-Day Breathwork Streak", description: "Completed breathwork every day for a full week.", icon: "Wind", earned: breathworkStreak >= 7 },
+    { id: "breathwork-two-week-streak", label: "14-Day Breathwork Streak", description: "Completed breathwork every day for 2 weeks.", icon: "Wind", earned: breathworkStreak >= 14 },
+    { id: "breathwork-month-streak", label: "30-Day Breathwork Streak", description: "Completed breathwork every day for a full month.", icon: "Wind", earned: breathworkStreak >= 30 },
+    { id: "breathwork-three-month-streak", label: "90-Day Breathwork Streak", description: "Completed breathwork every day for 3 months.", icon: "Wind", earned: breathworkStreak >= 90 },
+
     // Wellness Badges
-    { id: "wellness-starter", label: "Wellness Starter", description: "Engaged with well activities 5+ times.", icon: "Heart", earned: totalWorkouts >= 5 },
-    { id: "wellness-enthusiast", label: "Wellness Enthusiast", description: "Engaged with well activities 20+ times.", icon: "Heart", earned: totalWorkouts >= 20 },
-    { id: "self-care-champion", label: "Self-Care Champion", description: "Engaged with well activities 50+ times.", icon: "Heart", earned: totalWorkouts >= 50 },
+    { id: "wellness-starter", label: "Wellness Starter", description: "Engaged with well activities 5+ times.", icon: "Heart", earned: wellActivityCount >= 5 },
+    { id: "wellness-enthusiast", label: "Wellness Enthusiast", description: "Engaged with well activities 20+ times.", icon: "Heart", earned: wellActivityCount >= 20 },
+    { id: "self-care-champion", label: "Self-Care Champion", description: "Engaged with well activities 50+ times.", icon: "Heart", earned: wellActivityCount >= 50 },
 
     // Inspiration Badges
     { id: "inspired", label: "Inspired", description: "Saved an inspiration post.", icon: "Sparkles", earned: totalWorkouts >= 1 },

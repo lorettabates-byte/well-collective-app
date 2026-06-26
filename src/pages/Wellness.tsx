@@ -63,6 +63,7 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   Star,
   Heart,
   Video,
+  Wind,
   Balance: Scale,
 };
 
@@ -112,7 +113,7 @@ export default function Wellness() {
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
     0
   );
-  const badges = computeBadges(workoutLog, messagesPosted);
+  const badges = computeBadges(workoutLog, messagesPosted, breathworkLog, wellActivityLog);
   const profileBadgeIds = new Set(
     [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
   );
@@ -318,7 +319,7 @@ export default function Wellness() {
 
         <section>
           <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-text">Your Streak &amp; Badges</h2>
+            <h2 className="text-lg font-bold text-text">Your Streaks &amp; Badges</h2>
             <button
               onClick={() => setBadgesExpanded(!badgesExpanded)}
               className="flex items-center gap-1 text-xs text-brand-light hover:text-brand-blue transition-colors"
