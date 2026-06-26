@@ -8,7 +8,7 @@ import { timeAgo } from "../utils/format";
 
 export default function Thread() {
   const { categoryId, threadId } = useParams<{ categoryId: string; threadId: string }>();
-  const { categories, threads, user, addMessage } = useApp();
+  const { categories, threads, user, addMessage, memberBadges } = useApp();
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -20,6 +20,9 @@ export default function Thread() {
   }, [thread?.messages.length]);
 
   if (!thread || !category) return <Navigate to="/community" replace />;
+
+  const isOwnThread = thread.authorId === user.id;
+  const authorName = isOwnThread ? user.name || thread.authorName : memberBadges[thread.authorId]?.name || thread.authorName;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +36,7 @@ export default function Thread() {
       <TopBar title={thread.title} subtitle={category.name} showBack />
       <div className="px-4 pt-4 pb-2">
         <p className="text-xs text-text-dim mb-4">
-          Started by {thread.authorName} · {timeAgo(thread.createdAt)}
+          Started by {authorName} · {timeAgo(thread.createdAt)}
         </p>
         <div className="flex flex-col gap-3">
           {thread.messages.map((message, i) => {

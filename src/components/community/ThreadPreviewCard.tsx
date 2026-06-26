@@ -13,8 +13,13 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
   const category = categories.find((c) => c.id === thread.categoryId);
   const lastMessage = thread.messages[thread.messages.length - 1];
   const totalLikes = thread.messages.reduce((sum, m) => sum + m.likes.length, 0);
-  const badgeId = resolveFeaturedBadge(memberBadges[thread.authorId] ?? {});
+  const liveAuthor = memberBadges[thread.authorId];
+  const badgeId = resolveFeaturedBadge(liveAuthor ?? {});
   const isOwnThread = thread.authorId === user.id;
+  // Prefer the live directory over the avatar/name baked into the thread at
+  // post time, which goes stale the moment the author updates their profile.
+  const authorAvatar = isOwnThread ? user.avatar || thread.authorAvatar : liveAuthor?.avatar || thread.authorAvatar;
+  const authorName = isOwnThread ? user.name || thread.authorName : liveAuthor?.name || thread.authorName;
 
   return (
     <Link
@@ -23,7 +28,7 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
     >
       <div className="flex items-center gap-2 mb-2">
         {isOwnThread ? (
-          <Avatar src={thread.authorAvatar} alt={thread.authorName} size={28} badgeId={badgeId} />
+          <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
         ) : (
           <button
             type="button"
@@ -34,11 +39,11 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
             }}
             className="shrink-0"
           >
-            <Avatar src={thread.authorAvatar} alt={thread.authorName} size={28} badgeId={badgeId} />
+            <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-text truncate">{thread.authorName}</p>
+          <p className="text-sm font-semibold text-text truncate">{authorName}</p>
         </div>
         <span className="text-xs text-text-dim shrink-0">{timeAgo(thread.createdAt)}</span>
       </div>

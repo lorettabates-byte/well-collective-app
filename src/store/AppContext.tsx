@@ -11,6 +11,11 @@ import { getFallbackRecipe } from "../data/nutritionLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
 import type { BadgeHolder } from "../data/badges";
+
+interface MemberDirectoryEntry extends BadgeHolder {
+  name?: string;
+  avatar?: string;
+}
 import type {
   AppNotification,
   AppNotificationType,
@@ -115,7 +120,13 @@ function applyMemberInfo(user: User): User {
               bio: user.bio || "",
               birthday: user.birthday || undefined,
               isAdmin: false,
-              name: member.name || user.name,
+              // user.name starts as the literal "Member" placeholder
+              // (CURRENT_USER's default) until a real member overwrites it —
+              // treat that placeholder the same as blank so a stale
+              // "new member" re-detection (e.g. after logout/login resets
+              // memberProfileSyncedEmail) can't clobber a name the member
+              // has actually already customized in Edit Profile.
+              name: user.name && user.name !== CURRENT_USER.name ? user.name : member.name || user.name,
             }
           : {}),
       id: memberEmail ? deriveMemberId(memberEmail) : user.id,
@@ -298,7 +309,7 @@ interface AppContextValue extends PersistedState {
   currentWeeklyTheme: Inspiration | undefined;
   todaysWellActivity: WellActivity;
   todaysRecipe: Recipe;
-  memberBadges: Record<string, BadgeHolder>;
+  memberBadges: Record<string, MemberDirectoryEntry>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -307,19 +318,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(() => loadState());
 
   // Lets any avatar in the app — forum posts/messages, DMs, not just the
-  // WELL Tribe pages — show that member's badge, keyed by the same id used
-  // everywhere else (deriveMemberId). Not persisted: it's a live directory,
-  // refetched fresh each session.
-  const [memberBadges, setMemberBadges] = useState<Record<string, BadgeHolder>>({});
+  // WELL Tribe pages — show that member's current badge, avatar, and name,
+  // keyed by the same id used everywhere else (deriveMemberId), instead of
+  // whatever was baked into a thread/message at the moment it was posted
+  // (which goes stale the instant the member changes their photo or name).
+  // Not persisted: it's a live directory, refetched fresh each session.
+  const [memberBadges, setMemberBadges] = useState<Record<string, MemberDirectoryEntry>>({});
 
   useEffect(() => {
     if (!API_URL) return;
     fetch(`${API_URL}/api/members`)
       .then((res) => (res.ok ? res.json() : { members: [] }))
       .then((data) => {
-        const map: Record<string, BadgeHolder> = {};
+        const map: Record<string, MemberDirectoryEntry> = {};
         for (const m of data.members || []) {
           map[m.id] = {
+            name: m.name,
+            avatar: m.avatar,
             levelBadge: m.levelBadge,
             bonusBadges: m.bonusBadges,
             grantedBadges: m.grantedBadges,
@@ -1007,9 +1022,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...prev,
           user: {
             ...prev.user,
+            // Same placeholder check as applyMemberInfo: "Member" is the
+            // never-customized default, not a real saved name, so it's
+            // treated as empty and filled from the server like avatar/bio.
+            name: prev.user.name && prev.user.name !== CURRENT_USER.name ? prev.user.name : member.name || prev.user.name,
             avatar: prev.user.avatar || member.avatar || prev.user.avatar,
             bio: prev.user.bio || member.bio || prev.user.bio,
             birthday: prev.user.birthday || member.birthday,
+            // showBirthdayOnCalendar is a real boolean, not a string — `??`
+            // (not `||`) so an explicit `false` the member chose is never
+            // treated as "unset" and overwritten by the server's value.
+            showBirthdayOnCalendar: prev.user.showBirthdayOnCalendar ?? member.showBirthdayOnCalendar,
             // Always trust the server here — these are computed/granted
             // server-side, never edited locally except via setFeaturedBadge.
             levelBadge: member.levelBadge,

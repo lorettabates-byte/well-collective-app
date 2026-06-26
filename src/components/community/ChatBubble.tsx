@@ -17,22 +17,28 @@ interface ChatBubbleProps {
 export default function ChatBubble({ message, isOwn, showAvatar, showName, threadId }: ChatBubbleProps) {
   const { user, toggleMessageLike, memberBadges } = useApp();
   const hasLiked = message.likes.includes(user.id);
-  const badgeId = resolveFeaturedBadge(memberBadges[message.authorId] ?? {});
+  const liveAuthor = memberBadges[message.authorId];
+  const badgeId = resolveFeaturedBadge(liveAuthor ?? {});
+  // Prefer the live directory over the avatar/name baked into the message
+  // at post time, which goes stale the moment the author updates their
+  // profile photo or name.
+  const authorAvatar = liveAuthor?.avatar || message.authorAvatar;
+  const authorName = liveAuthor?.name || message.authorName;
 
   return (
     <div className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : ""} animate-fade-in-up`}>
       <div className="w-7 shrink-0">
         {showAvatar &&
           (isOwn ? (
-            <Avatar src={message.authorAvatar} alt={message.authorName} size={28} badgeId={badgeId} />
+            <Avatar src={user.avatar || authorAvatar} alt={user.name || authorName} size={28} badgeId={badgeId} />
           ) : (
             <Link to={`/member/${message.authorId}`}>
-              <Avatar src={message.authorAvatar} alt={message.authorName} size={28} badgeId={badgeId} />
+              <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
             </Link>
           ))}
       </div>
       <div className={`flex flex-col max-w-[75%] ${isOwn ? "items-end" : "items-start"}`}>
-        {showName && !isOwn && <span className="text-[11px] text-text-dim mb-1 px-1">{message.authorName}</span>}
+        {showName && !isOwn && <span className="text-[11px] text-text-dim mb-1 px-1">{authorName}</span>}
         <div
           className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
             isOwn
