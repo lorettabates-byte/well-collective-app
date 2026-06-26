@@ -110,26 +110,34 @@ export default function Breathwork() {
     }
   };
 
-  const handleSessionPlayPause = (sessionId: number, _durationMinutes: number) => {
-    if (isTrialUser) return;
-    if (sessionAudioRef.current) {
-      if (playing === sessionId) {
-        sessionAudioRef.current.pause();
-        sessionGuideRef.current?.pause();
-        setPlaying(null);
-      } else {
-        setPlaying(sessionId);
-        // Set audio to loop so it fills the entire session duration
-        sessionAudioRef.current.loop = true;
-        sessionAudioRef.current.volume = 0.3;
-        sessionAudioRef.current.play();
-        if (sessionGuideRef.current) {
-          sessionGuideRef.current.loop = true;
-          sessionGuideRef.current.volume = 1;
-          sessionGuideRef.current.play().catch((err) => console.error("Guide audio play failed:", err));
-        }
-      }
+  const playingSession = storedSessions.find((s) => s.id === playing) ?? null;
+
+  // Runs after React has committed the new `src` for the shared session
+  // audio elements, so .play() always targets the right session's audio
+  // instead of racing the DOM update.
+  useEffect(() => {
+    if (playing == null) {
+      sessionAudioRef.current?.pause();
+      sessionGuideRef.current?.pause();
+      return;
     }
+    if (sessionAudioRef.current) {
+      sessionAudioRef.current.loop = true;
+      sessionAudioRef.current.volume = 0.3;
+      sessionAudioRef.current.currentTime = 0;
+      sessionAudioRef.current.play().catch((err) => console.error("Session background play failed:", err));
+    }
+    if (sessionGuideRef.current) {
+      sessionGuideRef.current.loop = true;
+      sessionGuideRef.current.volume = 1;
+      sessionGuideRef.current.currentTime = 0;
+      sessionGuideRef.current.play().catch((err) => console.error("Guide audio play failed:", err));
+    }
+  }, [playing]);
+
+  const handleSessionPlayPause = (sessionId: number) => {
+    if (isTrialUser) return;
+    setPlaying((prev) => (prev === sessionId ? null : sessionId));
   };
 
   const formatTime = (seconds: number) => {
@@ -191,10 +199,6 @@ export default function Breathwork() {
               {todayBreathwork.backgroundSoundUrl && (
                 <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
               )}
-              <audio
-                ref={sessionGuideRef}
-                src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}` : ""}
-              />
 
               <div className="flex items-center gap-3">
                 <button
@@ -242,6 +246,17 @@ export default function Breathwork() {
           </p>
         </div>
 
+        {/* Shared audio elements for whichever Deeper Session is currently playing */}
+        <audio
+          ref={sessionAudioRef}
+          src={playingSession?.audio_url || ""}
+          onEnded={() => setPlaying(null)}
+        />
+        <audio
+          ref={sessionGuideRef}
+          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}` : ""}
+        />
+
         {/* Deeper Sessions */}
         <h3 className="text-sm font-bold text-text mb-4">Deeper Sessions</h3>
         {isTrialUser && (
@@ -266,13 +281,8 @@ export default function Breathwork() {
                       <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
                     </div>
                   </div>
-                  <audio
-                    ref={playing === session.id ? sessionAudioRef : undefined}
-                    onEnded={() => setPlaying(null)}
-                    src={session.audio_url}
-                  />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
+                    onClick={() => handleSessionPlayPause(session.id)}
                     disabled={isTrialUser}
                     className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
                       isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
@@ -314,13 +324,8 @@ export default function Breathwork() {
                       <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
                     </div>
                   </div>
-                  <audio
-                    ref={playing === session.id ? sessionAudioRef : undefined}
-                    onEnded={() => setPlaying(null)}
-                    src={session.audio_url}
-                  />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
+                    onClick={() => handleSessionPlayPause(session.id)}
                     disabled={isTrialUser}
                     className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
                       isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
@@ -362,13 +367,8 @@ export default function Breathwork() {
                       <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
                     </div>
                   </div>
-                  <audio
-                    ref={playing === session.id ? sessionAudioRef : undefined}
-                    onEnded={() => setPlaying(null)}
-                    src={session.audio_url}
-                  />
                   <button
-                    onClick={() => handleSessionPlayPause(session.id, session.duration_minutes)}
+                    onClick={() => handleSessionPlayPause(session.id)}
                     disabled={isTrialUser}
                     className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
                       isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
