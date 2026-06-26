@@ -1,7 +1,8 @@
-import { Calendar, ExternalLink, MapPin } from "lucide-react";
+import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
 import { formatDateLong, getDayNumber } from "../../utils/format";
+import { linkify } from "../../utils/linkify";
 import Avatar from "../ui/Avatar";
 
 const MONTHS = [
@@ -19,7 +20,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, compact }: EventCardProps) {
-  const { user, toggleRsvp } = useApp();
+  const { user, toggleRsvp, memberBadges } = useApp();
   const isGoing = event.rsvps.includes(user.id);
   const isLive = event.source === "live";
 
@@ -38,6 +39,12 @@ export default function EventCard({ event, compact }: EventCardProps) {
         </div>
         <h4 className="text-xs font-bold text-text line-clamp-2 mb-1">{event.title}</h4>
         <p className="text-[11px] text-text-dim">{event.time}</p>
+        {!isLive && event.rsvps.length > 0 && (
+          <div className="flex items-center gap-1 text-[11px] text-text-dim mt-1">
+            <Users size={11} />
+            <span>{event.rsvps.length}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -70,7 +77,7 @@ export default function EventCard({ event, compact }: EventCardProps) {
         </div>
       </div>
 
-      <p className="text-xs text-text-muted leading-relaxed mt-3">{event.description}</p>
+      <p className="text-xs text-text-muted leading-relaxed mt-3">{linkify(event.description)}</p>
 
       <div className="flex items-center justify-between mt-3">
         {isLive ? (
@@ -91,15 +98,18 @@ export default function EventCard({ event, compact }: EventCardProps) {
         ) : (
           <>
             <div className="flex items-center -space-x-2">
-              {event.rsvps.slice(0, 4).map((rsvpId) => (
-                <Avatar
-                  key={rsvpId}
-                  src={`https://i.pravatar.cc/150?img=${rsvpId === "u1" ? 47 : rsvpId === "u2" ? 12 : rsvpId === "u3" ? 32 : rsvpId === "u4" ? 45 : 24}`}
-                  alt="attendee"
-                  size={24}
-                  ring
-                />
-              ))}
+              {event.rsvps.slice(0, 4).map((rsvpId) => {
+                const attendee = rsvpId === user.id ? user : memberBadges[rsvpId];
+                return (
+                  <Avatar
+                    key={rsvpId}
+                    src={attendee?.avatar || ""}
+                    alt={attendee?.name || "Attendee"}
+                    size={24}
+                    ring
+                  />
+                );
+              })}
               {event.rsvps.length > 0 && (
                 <span className="ml-3 text-[11px] text-text-dim">
                   {event.rsvps.length} going

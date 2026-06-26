@@ -1,4 +1,4 @@
-import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, LogOut, Music, Pencil, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
@@ -112,7 +112,6 @@ export default function Profile() {
           to="/wellness?view=saved"
           badge={user.savedWorkouts?.length}
         />
-        <MenuRow icon={<Music size={16} />} label="Saved Music" to="/music?filter=favorites" />
         <MenuRow
           icon={<ChefHat size={16} />}
           label="Saved Recipes"
