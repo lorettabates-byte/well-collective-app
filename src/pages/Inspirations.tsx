@@ -38,6 +38,24 @@ export default function Inspirations() {
     <div>
       <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#0191CE" />
       <div className="px-4 pt-4">
+        <a
+          href="https://lorettabates.com/30-day-life-lift/"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mb-4"
+        >
+          <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+            <Sparkles size={16} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-text">Want more inspiration?</p>
+            <p className="text-xs text-text-muted">
+              Download Loretta's 30 Day Life Lift free using the code: <span className="font-semibold text-brand-light">LIFELIFTED</span>
+            </p>
+          </div>
+          <ArrowUpRight size={16} className="text-text-dim shrink-0" />
+        </a>
+
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 mb-4 -mx-4 px-4">
           {FILTERS.map(({ id, label }) => (
             <button
@@ -57,30 +75,12 @@ export default function Inspirations() {
             <p className="text-sm text-text-muted">Nothing here yet.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mb-6">
             {filtered.map((inspiration) => (
               <InspirationCard key={inspiration.id} inspiration={inspiration} />
             ))}
           </div>
         )}
-
-        <a
-          href="https://lorettabates.com/30-day-life-lift/"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mt-4 mb-6"
-        >
-          <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
-            <Sparkles size={16} />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-text">Want more inspiration?</p>
-            <p className="text-xs text-text-muted">
-              Download Loretta's 30 Day Life Lift free using the code: <span className="font-semibold text-brand-light">LIFELIFTED</span>
-            </p>
-          </div>
-          <ArrowUpRight size={16} className="text-text-dim shrink-0" />
-        </a>
       </div>
     </div>
   );
