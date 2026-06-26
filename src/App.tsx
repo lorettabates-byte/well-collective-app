@@ -34,8 +34,11 @@ import AdminEvents from "./pages/admin/AdminEvents";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminMusic from "./pages/admin/AdminMusic";
 import AdminMembers from "./pages/admin/AdminMembers";
+import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
 function App() {
+  useStaleVersionGuard();
+
   return (
     <MobileShell>
       <Routes>
