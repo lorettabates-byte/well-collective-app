@@ -147,10 +147,14 @@ export default function Wellness() {
                 className="flex items-center gap-3 glass-card rounded-card p-4"
               >
                 <div
-                  className="flex items-center justify-center w-11 h-11 rounded-2xl shrink-0"
+                  className="relative flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 overflow-hidden"
                   style={{ backgroundColor: `${plan.cardio.color}22` }}
                 >
-                  <CardioIcon size={20} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
+                  {plan.cardio.image ? (
+                    <img src={plan.cardio.image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <CardioIcon size={20} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-text">{plan.cardio.title}</h4>
