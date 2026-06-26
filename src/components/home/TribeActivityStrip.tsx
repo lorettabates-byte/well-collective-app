@@ -80,8 +80,10 @@ export default function TribeActivityStrip() {
 
           return (
             <div key={member.id} className="glass-card rounded-card p-3 w-40 shrink-0 flex flex-col items-center text-center gap-2">
-              <Avatar src={member.avatar || ""} alt={member.name} size={48} badgeId={resolveFeaturedBadge(member)} />
-              <p className="text-sm font-semibold text-text truncate w-full">{member.name}</p>
+              <Link to={`/member/${member.id}`} className="flex flex-col items-center gap-2 w-full">
+                <Avatar src={member.avatar || ""} alt={member.name} size={48} badgeId={resolveFeaturedBadge(member)} />
+                <p className="text-sm font-semibold text-text truncate w-full">{member.name}</p>
+              </Link>
 
               <div className="flex flex-col items-center gap-1 min-h-[2.25rem]">
                 {birthdayDays !== null && birthdayDays <= 7 && (

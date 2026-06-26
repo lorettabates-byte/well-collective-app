@@ -1,6 +1,6 @@
 import { ChevronRight, Mail, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -22,6 +22,7 @@ interface DirectoryMember {
 
 export default function NewMessage() {
   const { user, categories } = useApp();
+  const navigate = useNavigate();
   const [members, setMembers] = useState<DirectoryMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +88,17 @@ export default function NewMessage() {
                   to={`/messages/${member.id}`}
                   className="flex items-center gap-3 glass-card rounded-card p-4"
                 >
-                  <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/member/${member.id}`);
+                    }}
+                    className="shrink-0"
+                  >
+                    <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />
+                  </button>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-text">{member.name}</h3>
                   </div>

@@ -114,8 +114,10 @@ export default function Tribe() {
             ) : (
               addable.map((member) => (
                 <div key={member.id} className="flex items-center gap-3 px-1 py-1.5">
-                  <Avatar src={member.avatar || ""} alt={member.name} size={36} badgeId={resolveFeaturedBadge(member)} />
-                  <p className="flex-1 min-w-0 text-sm font-medium text-text truncate">{member.name}</p>
+                  <Link to={`/member/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar src={member.avatar || ""} alt={member.name} size={36} badgeId={resolveFeaturedBadge(member)} />
+                    <p className="flex-1 min-w-0 text-sm font-medium text-text truncate">{member.name}</p>
+                  </Link>
                   <button
                     onClick={() => handleAdd(member.id)}
                     disabled={adding === member.id}
