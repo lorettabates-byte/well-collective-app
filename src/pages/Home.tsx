@@ -30,7 +30,12 @@ export default function Home() {
   const { events: liveEvents } = useEventsFeed();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const todaysInspiration = inspirations[0];
+  // Most recent by sentAt, not just inspirations[0] — guards against the
+  // array order ever drifting out of sync with actual send time, since this
+  // card is supposed to reflect whichever came in last: today's scheduled
+  // daily send or a one-off note from Loretta, resetting the moment either
+  // arrives.
+  const todaysInspiration = [...inspirations].sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
   const allUpcomingEvents = [...events, ...liveEvents]
     .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
     .sort((a, b) => a.date.localeCompare(b.date));

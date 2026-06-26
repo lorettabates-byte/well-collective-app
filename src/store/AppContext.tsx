@@ -865,27 +865,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Sync today's server-side content (recipe, well activity, AI motivation boost,
   // etc.) into local state so every member's device — not just the admin's —
   // gets it, even if they've never visited the admin Content Schedule page.
+  // Polls (rather than fetching once on mount) because the daily send fires
+  // server-side at 7am — a member who already had the app open before then
+  // would otherwise be stuck looking at yesterday's content until they fully
+  // reload, since "today" never gets refetched on its own.
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_PUSH_API_URL as string | undefined;
     if (!apiUrl) return;
 
-    fetch(`${apiUrl}/api/content-today`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const entry = data?.today as ContentBatchEntry | undefined;
-        if (!entry) return;
-        setState((prev) => {
-          const byDate = new Map(prev.contentSchedule.map((e) => [e.date, e]));
-          byDate.set(entry.date, { ...byDate.get(entry.date), ...entry });
-          return {
-            ...prev,
-            contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
-          };
+    const syncTodayContent = () => {
+      fetch(`${apiUrl}/api/content-today`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const entry = data?.today as ContentBatchEntry | undefined;
+          if (!entry) return;
+          setState((prev) => {
+            const byDate = new Map(prev.contentSchedule.map((e) => [e.date, e]));
+            byDate.set(entry.date, { ...byDate.get(entry.date), ...entry });
+            return {
+              ...prev,
+              contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
+            };
+          });
+        })
+        .catch(() => {
+          // offline or backend unreachable — fall back to whatever local content exists
         });
-      })
-      .catch(() => {
-        // offline or backend unreachable — fall back to whatever local content exists
-      });
+    };
+
+    syncTodayContent();
+    const interval = setInterval(syncTodayContent, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Sync the Community forum (categories + threads/messages) from the shared
@@ -972,7 +982,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
               };
             });
             const otherInspirations = prev.inspirations.filter((i) => i.cadence !== "note");
-            return { ...prev, inspirations: [...noteInspirations, ...otherInspirations] };
+            // Sort by sentAt rather than just prepending notes ahead of
+            // everything else — otherwise an old note would permanently sit
+            // above a newer daily inspiration/weekly theme, and Home's
+            // "Today's Inspiration" card (which reads inspirations[0]) would
+            // keep showing yesterday's note instead of resetting to today's
+            // actual most recent content.
+            return {
+              ...prev,
+              inspirations: [...noteInspirations, ...otherInspirations].sort((a, b) =>
+                b.sentAt.localeCompare(a.sentAt)
+              ),
+            };
           });
         })
         .catch(() => {
