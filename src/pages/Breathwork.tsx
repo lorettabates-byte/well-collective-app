@@ -2,8 +2,10 @@ import { CheckCircle2, Lock, Pause, Play, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
+import StreakCelebrationModal from "../components/StreakCelebrationModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
+import { computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -43,10 +45,14 @@ export default function Breathwork() {
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const today = new Date().toISOString().slice(0, 10);
-  const completedToday = (user.breathworkLog ?? []).includes(today);
+  const breathworkLog = user.breathworkLog ?? [];
+  const completedToday = breathworkLog.includes(today);
+  const [celebration, setCelebration] = useState<number | null>(null);
 
   const handleComplete = () => {
     if (completedToday) return;
+    const milestone = getStreakMilestone(computeStreak([...breathworkLog, today]));
+    if (milestone) setCelebration(milestone);
     logBreathworkCompletion();
     confetti({ particleCount: 100, spread: 70 });
   };
@@ -397,6 +403,10 @@ export default function Breathwork() {
           </div>
         )}
       </div>
+
+      {celebration && (
+        <StreakCelebrationModal days={celebration} label="Breathwork" onClose={() => setCelebration(null)} />
+      )}
     </div>
   );
 }

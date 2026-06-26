@@ -28,11 +28,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
+import StreakCelebrationModal from "../components/StreakCelebrationModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
 import { ALL_BADGES } from "../data/badges";
-import { computeBadges, computeStreak } from "../utils/streaks";
+import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -86,6 +87,7 @@ export default function Wellness() {
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
+  const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -101,6 +103,8 @@ export default function Wellness() {
 
   const handleWellActivityComplete = () => {
     if (wellActivityCompleted) return;
+    const milestone = getStreakMilestone(computeStreak([...wellActivityLog, today]));
+    if (milestone) setCelebration({ days: milestone, label: "Well Activity" });
     logWellActivityCompletion();
     confetti({ particleCount: 100, spread: 70 });
   };
@@ -310,6 +314,9 @@ export default function Wellness() {
 
           <button
             onClick={() => {
+              if (completedToday) return;
+              const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
+              if (milestone) setCelebration({ days: milestone, label: "Workout" });
               logWorkoutCompletion();
               confetti({ particleCount: 100, spread: 70 });
             }}
@@ -435,6 +442,14 @@ export default function Wellness() {
           meta={selected.meta}
           description={selected.description}
           onClose={() => setSelected(null)}
+        />
+      )}
+
+      {celebration && (
+        <StreakCelebrationModal
+          days={celebration.days}
+          label={celebration.label}
+          onClose={() => setCelebration(null)}
         />
       )}
     </div>

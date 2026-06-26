@@ -24,6 +24,15 @@ export function computeStreak(workoutLog: string[]): number {
   return streak;
 }
 
+// Same thresholds as the streak badges in computeBadges() below. Matched by
+// exact equality (not >=) so the celebration only fires the moment a streak
+// crosses a new milestone, not on every single completion after it.
+const STREAK_MILESTONES = [7, 14, 30, 90];
+
+export function getStreakMilestone(streak: number): number | null {
+  return STREAK_MILESTONES.includes(streak) ? streak : null;
+}
+
 export function computeBadges(
   workoutLog: string[],
   messagesPosted: number,
