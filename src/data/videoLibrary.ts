@@ -36,7 +36,8 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
     title: "Zumba® Studio Classes",
     description: "High-energy dance cardio filmed in the studio.",
     url: "https://lorettabates.com/videolibrary.lorettabates.com/media_category/zumbastudioclasses/",
-    // TODO: image URL Loretta supplied 404s — waiting on a corrected link.
+    image:
+      "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2024/02/Screenshot-2025-04-09-at-3.10.19%E2%80%AFPM.png",
     icon: Music,
     color: "#84D8FD",
     trialLocked: true,
