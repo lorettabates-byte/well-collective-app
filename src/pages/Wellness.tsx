@@ -284,21 +284,20 @@ export default function Wellness() {
               )}
               <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
               <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
+              <button
+                onClick={handleWellActivityComplete}
+                disabled={wellActivityCompleted}
+                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
+                  wellActivityCompleted
+                    ? "bg-surface-2 border border-border text-brand-light"
+                    : "gradient-brand text-white"
+                }`}
+              >
+                <CheckCircle2 size={14} />
+                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
+              </button>
             </div>
           </div>
-
-          <button
-            onClick={handleWellActivityComplete}
-            disabled={wellActivityCompleted}
-            className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
-              wellActivityCompleted
-                ? "bg-surface-2 border border-border text-brand-light"
-                : "gradient-brand text-white shadow-glow"
-            }`}
-          >
-            <CheckCircle2 size={20} />
-            {wellActivityCompleted ? "Activity Complete for Today ✓" : "Mark Today's Well Activity Complete"}
-          </button>
 
           <button
             onClick={() => {

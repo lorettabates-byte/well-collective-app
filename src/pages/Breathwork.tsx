@@ -215,14 +215,14 @@ export default function Breathwork() {
         <button
           onClick={handleComplete}
           disabled={completedToday}
-          className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
+          className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mb-4 transition-colors ${
             completedToday
               ? "bg-surface-2 border border-border text-brand-light"
-              : "gradient-brand text-white shadow-glow"
+              : "gradient-brand text-white"
           }`}
         >
-          <CheckCircle2 size={20} />
-          {completedToday ? "Breathwork Complete for Today ✓" : "Mark Today's Breathwork Complete"}
+          <CheckCircle2 size={14} />
+          {completedToday ? "Breathwork Completed ✓" : "Mark Complete"}
         </button>
 
         <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-6">
