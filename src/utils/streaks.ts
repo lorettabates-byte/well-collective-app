@@ -28,10 +28,12 @@ export function computeBadges(
   workoutLog: string[],
   messagesPosted: number,
   breathworkLog: string[] = [],
-  wellActivityLog: string[] = []
+  wellActivityLog: string[] = [],
+  classLog: string[] = []
 ): Badge[] {
   const streak = computeStreak(workoutLog);
   const totalWorkouts = workoutLog.length;
+  const totalClasses = classLog.length;
   const breathworkStreak = computeStreak(breathworkLog);
   const wellActivityCount = wellActivityLog.length;
 
@@ -71,9 +73,9 @@ export function computeBadges(
     { id: "inspiration-collector", label: "Inspiration Collector", description: "Saved 30+ inspiration posts.", icon: "Sparkles", earned: totalWorkouts >= 30 },
 
     // Class Badges
-    { id: "class-starter", label: "Class Starter", description: "Completed your first class.", icon: "Video", earned: totalWorkouts >= 1 },
-    { id: "class-enthusiast", label: "Class Enthusiast", description: "Completed 15+ classes.", icon: "Video", earned: totalWorkouts >= 15 },
-    { id: "class-master", label: "Class Master", description: "Completed 50+ classes.", icon: "Video", earned: totalWorkouts >= 50 },
+    { id: "class-starter", label: "Class Starter", description: "Completed your first class.", icon: "Video", earned: totalClasses >= 1 },
+    { id: "class-enthusiast", label: "Class Enthusiast", description: "Completed 15+ classes.", icon: "Video", earned: totalClasses >= 15 },
+    { id: "class-master", label: "Class Master", description: "Completed 50+ classes.", icon: "Video", earned: totalClasses >= 50 },
 
     // Balance Badges
     { id: "balanced-life", label: "Balanced Life", description: "Maintained engagement across all app features.", icon: "Balance", earned: messagesPosted >= 5 && streak >= 7 && totalWorkouts >= 10 },

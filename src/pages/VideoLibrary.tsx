@@ -15,7 +15,7 @@ const FEATURED_VIDEO_DEFAULTS = {
 };
 
 export default function VideoLibrary() {
-  const { user } = useApp();
+  const { user, logClassCompletion } = useApp();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
@@ -123,6 +123,7 @@ export default function VideoLibrary() {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => logClassCompletion()}
                   className="flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up"
                 >
                   <div

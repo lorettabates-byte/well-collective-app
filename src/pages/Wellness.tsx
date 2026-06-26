@@ -68,8 +68,15 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
 };
 
 export default function Wellness() {
-  const { user, threads, currentWeeklyTheme, todaysWellActivity, logWorkoutCompletion, logWellActivityCompletion } =
-    useApp();
+  const {
+    user,
+    threads,
+    currentWeeklyTheme,
+    todaysWellActivity,
+    logWorkoutCompletion,
+    logWellActivityCompletion,
+    logClassCompletion,
+  } = useApp();
   const navigate = useNavigate();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
@@ -113,7 +120,7 @@ export default function Wellness() {
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
     0
   );
-  const badges = computeBadges(workoutLog, messagesPosted, breathworkLog, wellActivityLog);
+  const badges = computeBadges(workoutLog, messagesPosted, breathworkLog, wellActivityLog, user.classLog ?? []);
   const profileBadgeIds = new Set(
     [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
   );
@@ -164,6 +171,7 @@ export default function Wellness() {
                 href={plan.cardio.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => logClassCompletion()}
                 className="flex items-center gap-3 glass-card rounded-card p-4"
               >
                 <div

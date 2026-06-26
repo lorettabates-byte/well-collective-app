@@ -304,6 +304,7 @@ interface AppContextValue extends PersistedState {
   logWorkoutCompletion: () => void;
   logBreathworkCompletion: () => void;
   logWellActivityCompletion: () => void;
+  logClassCompletion: () => void;
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
   removeContentEntry: (date: string) => void;
   setFeaturedEvent: (eventId: string | null) => void;
@@ -688,6 +689,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (log.includes(today)) return prev;
       return { ...prev, user: { ...prev.user, wellActivityLog: [...log, today] } };
     });
+  };
+
+  // Unlike workout/breathwork/well-activity (one "did you do this today?" entry
+  // per day, for streaks), classLog counts each click-through distinctly —
+  // multiple classes opened the same day should each count toward "Class
+  // Enthusiast"/"Class Master", so entries are full timestamps, not deduped dates.
+  const logClassCompletion: AppContextValue["logClassCompletion"] = () => {
+    setState((prev) => ({
+      ...prev,
+      user: { ...prev.user, classLog: [...(prev.user.classLog ?? []), new Date().toISOString()] },
+    }));
   };
 
   const importContentSchedule: AppContextValue["importContentSchedule"] = (entries) => {
@@ -1119,6 +1131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logWorkoutCompletion,
     logBreathworkCompletion,
     logWellActivityCompletion,
+    logClassCompletion,
     importContentSchedule,
     removeContentEntry,
     setFeaturedEvent,

@@ -11,6 +11,7 @@ export interface User {
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
   breathworkLog?: string[]; // ISO dates of completed breathwork sessions
   wellActivityLog?: string[]; // ISO dates of completed Well Activities
+  classLog?: string[]; // ISO dates a class tile (Livestream, Zumba, etc.) was opened
   trialEndsAt?: string; // ISO date when free trial expires
   levelBadge?: string; // computed server-side from activity, e.g. "active-member"
   bonusBadges?: string[]; // auto-earned from tenure/encouragement, e.g. "legacy-builder"
