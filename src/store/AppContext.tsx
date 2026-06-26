@@ -302,6 +302,8 @@ interface AppContextValue extends PersistedState {
   markAllNotificationsRead: () => void;
   sendNotification: (type: AppNotificationType, title: string, body: string, link?: string) => void;
   logWorkoutCompletion: () => void;
+  logBreathworkCompletion: () => void;
+  logWellActivityCompletion: () => void;
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
   removeContentEntry: (date: string) => void;
   setFeaturedEvent: (eventId: string | null) => void;
@@ -667,6 +669,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const log = prev.user.workoutLog ?? [];
       if (log.includes(today)) return prev;
       return { ...prev, user: { ...prev.user, workoutLog: [...log, today] } };
+    });
+  };
+
+  const logBreathworkCompletion: AppContextValue["logBreathworkCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.breathworkLog ?? [];
+      if (log.includes(today)) return prev;
+      return { ...prev, user: { ...prev.user, breathworkLog: [...log, today] } };
+    });
+  };
+
+  const logWellActivityCompletion: AppContextValue["logWellActivityCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.wellActivityLog ?? [];
+      if (log.includes(today)) return prev;
+      return { ...prev, user: { ...prev.user, wellActivityLog: [...log, today] } };
     });
   };
 
@@ -1097,6 +1117,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAllNotificationsRead,
     sendNotification,
     logWorkoutCompletion,
+    logBreathworkCompletion,
+    logWellActivityCompletion,
     importContentSchedule,
     removeContentEntry,
     setFeaturedEvent,

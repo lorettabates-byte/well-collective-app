@@ -1,6 +1,7 @@
-import { Lock, Pause, Play, Volume2, Wind } from "lucide-react";
+import { CheckCircle2, Lock, Pause, Play, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
@@ -36,10 +37,19 @@ const BACKGROUND_SOUNDS = [
 ];
 
 export default function Breathwork() {
-  const { user } = useApp();
+  const { user, logBreathworkCompletion } = useApp();
   const navigate = useNavigate();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const completedToday = (user.breathworkLog ?? []).includes(today);
+
+  const handleComplete = () => {
+    if (completedToday) return;
+    logBreathworkCompletion();
+    confetti({ particleCount: 100, spread: 70 });
+  };
 
   const [todayBreathwork, setTodayBreathwork] = useState<Breathwork | null>(null);
   const [storedSessions, setStoredSessions] = useState<StoredSession[]>([]);
@@ -201,6 +211,19 @@ export default function Breathwork() {
             </div>
           </div>
         )}
+
+        <button
+          onClick={handleComplete}
+          disabled={completedToday}
+          className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
+            completedToday
+              ? "bg-surface-2 border border-border text-brand-light"
+              : "gradient-brand text-white shadow-glow"
+          }`}
+        >
+          <CheckCircle2 size={20} />
+          {completedToday ? "Breathwork Complete for Today ✓" : "Mark Today's Breathwork Complete"}
+        </button>
 
         <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-6">
           <Wind size={14} className="text-brand-light shrink-0" />

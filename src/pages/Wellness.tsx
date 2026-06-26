@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Crown,
   Dumbbell,
   Flame,
   Heart,
@@ -11,11 +12,16 @@ import {
   Lock,
   MessageCircle,
   RefreshCw,
+  Scale,
+  Sparkles,
+  Star,
   StretchHorizontal,
   Trophy,
   Users,
+  Video,
   Waves,
   Wind,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -25,6 +31,7 @@ import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
+import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 
@@ -50,20 +57,24 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   Flame,
   Trophy,
   Award,
+  Sparkles,
+  Crown,
+  Zap,
+  Star,
+  Heart,
+  Video,
+  Balance: Scale,
 };
 
 export default function Wellness() {
-  const { user, threads, currentWeeklyTheme, todaysWellActivity, logWorkoutCompletion } = useApp();
+  const { user, threads, currentWeeklyTheme, todaysWellActivity, logWorkoutCompletion, logWellActivityCompletion } =
+    useApp();
   const navigate = useNavigate();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout());
   const [selected, setSelected] = useState<SelectedExercise | null>(null);
-  const [wellActivityCompleted, setWellActivityCompleted] = useState(() => {
-    const key = `well-activity-${new Date().toISOString().slice(0, 10)}`;
-    return localStorage.getItem(key) === "true";
-  });
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
@@ -71,14 +82,19 @@ export default function Wellness() {
   const CardioIcon = plan.cardio.icon;
 
   const workoutLog = user.workoutLog ?? [];
+  const breathworkLog = user.breathworkLog ?? [];
+  const wellActivityLog = user.wellActivityLog ?? [];
   const today = new Date().toISOString().slice(0, 10);
   const completedToday = workoutLog.includes(today);
+  const wellActivityCompleted = wellActivityLog.includes(today);
   const streak = computeStreak(workoutLog);
+  const breathworkStreak = computeStreak(breathworkLog);
+  const wellActivityStreak = computeStreak(wellActivityLog);
 
   const handleWellActivityComplete = () => {
-    const key = `well-activity-${today}`;
-    localStorage.setItem(key, "true");
-    setWellActivityCompleted(true);
+    if (wellActivityCompleted) return;
+    logWellActivityCompletion();
+    confetti({ particleCount: 100, spread: 70 });
   };
 
   // Fetch daily breathwork to align with Breathwork feature
@@ -97,6 +113,9 @@ export default function Wellness() {
     0
   );
   const badges = computeBadges(workoutLog, messagesPosted);
+  const profileBadgeIds = new Set(
+    [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
+  );
 
   return (
     <div>
@@ -239,7 +258,7 @@ export default function Wellness() {
                 </div>
               </div>
               <button
-                onClick={() => navigate("/music?tab=breathwork")}
+                onClick={() => navigate("/breathwork")}
                 className="w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 gradient-brand text-white shadow-glow hover:opacity-90 transition-colors"
               >
                 <Wind size={16} />
@@ -265,20 +284,21 @@ export default function Wellness() {
               )}
               <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
               <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
-              <button
-                onClick={handleWellActivityComplete}
-                disabled={wellActivityCompleted}
-                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
-                  wellActivityCompleted
-                    ? "bg-surface-2 border border-border text-brand-light"
-                    : "gradient-brand text-white"
-                }`}
-              >
-                <CheckCircle2 size={14} />
-                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
-              </button>
             </div>
           </div>
+
+          <button
+            onClick={handleWellActivityComplete}
+            disabled={wellActivityCompleted}
+            className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
+              wellActivityCompleted
+                ? "bg-surface-2 border border-border text-brand-light"
+                : "gradient-brand text-white shadow-glow"
+            }`}
+          >
+            <CheckCircle2 size={20} />
+            {wellActivityCompleted ? "Activity Complete for Today ✓" : "Mark Today's Well Activity Complete"}
+          </button>
 
           <button
             onClick={() => {
@@ -320,6 +340,31 @@ export default function Wellness() {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+                <Wind size={16} className="text-brand-light" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-text leading-none">
+                  {breathworkStreak} {breathworkStreak === 1 ? "day" : "days"}
+                </p>
+                <p className="text-[11px] text-text-muted mt-0.5">Breathwork streak</p>
+              </div>
+            </div>
+            <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+                <Heart size={16} className="text-pink-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-text leading-none">
+                  {wellActivityStreak} {wellActivityStreak === 1 ? "day" : "days"}
+                </p>
+                <p className="text-[11px] text-text-muted mt-0.5">Well Activity streak</p>
+              </div>
+            </div>
+          </div>
+
           <div className={`grid gap-3 transition-all ${badgesExpanded ? "grid-cols-2" : "grid-cols-4"}`}>
             {(badgesExpanded ? badges : badges.slice(0, 4)).map((badge) => {
               const Icon = BADGE_ICONS[badge.icon] ?? Award;
@@ -346,6 +391,33 @@ export default function Wellness() {
             })}
           </div>
           {!badgesExpanded && <p className="text-xs text-text-muted mt-2">Click to see all {badges.length} badges</p>}
+
+          <h3 className="text-sm font-bold text-text mt-5 mb-3">Profile Badges</h3>
+          <p className="text-xs text-text-muted mb-3">
+            Earned through activity, tenure, or granted by Loretta — lit up once you've got them.
+          </p>
+          <div className="grid grid-cols-4 gap-3">
+            {ALL_BADGES.map((badge) => {
+              const earned = profileBadgeIds.has(badge.id);
+              return (
+                <div
+                  key={badge.id}
+                  className={`glass-card rounded-card p-3 flex flex-col items-center gap-1.5 text-center ${
+                    earned ? "" : "opacity-40"
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${
+                      earned ? "bg-white" : "bg-surface-2 border border-border"
+                    }`}
+                  >
+                    {badge.icon}
+                  </div>
+                  <p className="text-[10px] font-semibold text-text leading-tight">{badge.label}</p>
+                </div>
+              );
+            })}
+          </div>
         </section>
       </div>
 
