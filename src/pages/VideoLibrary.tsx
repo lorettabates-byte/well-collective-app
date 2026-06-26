@@ -89,7 +89,7 @@ export default function VideoLibrary() {
           )}
 
           <div className="flex flex-col gap-2">
-            {otherCategories.map(({ id, title, description, url, icon: Icon, color, trialLocked }) => {
+            {otherCategories.map(({ id, title, description, url, image, icon: Icon, color, trialLocked }) => {
               const locked = isTrialUser && trialLocked;
               if (locked) {
                 return (
@@ -102,8 +102,12 @@ export default function VideoLibrary() {
                     }}
                     className="flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up opacity-50 text-left"
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 bg-surface-2 border border-border">
-                      <Icon size={22} className="text-text-dim" />
+                    <div className="relative flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 overflow-hidden bg-surface-2 border border-border">
+                      {image ? (
+                        <img src={image} alt="" className="w-full h-full object-cover grayscale" />
+                      ) : (
+                        <Icon size={22} className="text-text-dim" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-text">{title}</h3>
@@ -122,10 +126,14 @@ export default function VideoLibrary() {
                   className="flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up"
                 >
                   <div
-                    className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
+                    className="relative flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 overflow-hidden"
                     style={{ backgroundColor: `${color}22` }}
                   >
-                    <Icon size={22} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
+                    {image ? (
+                      <img src={image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Icon size={22} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-text">{title}</h3>
