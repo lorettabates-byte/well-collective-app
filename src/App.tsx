@@ -10,6 +10,7 @@ import NewMessage from "./pages/NewMessage";
 import Inspirations from "./pages/Inspirations";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
+import MemberProfile from "./pages/MemberProfile";
 import Tribe from "./pages/Tribe";
 import EditProfile from "./pages/EditProfile";
 import Blog from "./pages/Blog";
@@ -57,6 +58,7 @@ function App() {
         <Route path="/music" element={<Music />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/member/:memberId" element={<MemberProfile />} />
         <Route path="/tribe" element={<Tribe />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/notifications" element={<NotificationSettings />} />

@@ -1,5 +1,6 @@
 import { Plus, UserMinus, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { resolveFeaturedBadge } from "../data/badges";
@@ -141,8 +142,10 @@ export default function Tribe() {
           <div className="flex flex-col gap-2.5">
             {tribe.map((member) => (
               <div key={member.id} className="glass-card rounded-card px-4 py-3 flex items-center gap-3">
-                <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />
-                <p className="flex-1 min-w-0 text-sm font-semibold text-text truncate">{member.name}</p>
+                <Link to={`/member/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />
+                  <p className="flex-1 min-w-0 text-sm font-semibold text-text truncate">{member.name}</p>
+                </Link>
                 <button
                   onClick={() => handleRemove(member.id)}
                   className="text-text-dim p-2 shrink-0"

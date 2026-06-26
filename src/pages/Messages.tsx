@@ -1,6 +1,6 @@
 import { Mail, MessageCircle, Plus, Send } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { resolveFeaturedBadge } from "../data/badges";
@@ -47,6 +47,7 @@ function timeAgo(iso: string): string {
 
 export default function Messages() {
   const { user } = useApp();
+  const navigate = useNavigate();
   const { userId: selectedUserId } = useParams<{ userId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -181,7 +182,17 @@ export default function Messages() {
                       to={`/messages/${conv.user_id}`}
                       className="flex items-center gap-3 glass-card rounded-card p-4"
                     >
-                      <Avatar src={member?.avatar || ""} alt={name} size={44} badgeId={resolveFeaturedBadge(member ?? {})} />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/member/${conv.user_id}`);
+                        }}
+                        className="shrink-0"
+                      >
+                        <Avatar src={member?.avatar || ""} alt={name} size={44} badgeId={resolveFeaturedBadge(member ?? {})} />
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-bold text-text truncate">{name}</h3>
@@ -218,7 +229,23 @@ export default function Messages() {
 
   return (
     <div className="flex flex-col h-screen bg-bg">
-      <TopBar title={otherMember?.name || "Message"} subtitle="Conversation" showBack />
+      <TopBar
+        title={otherMember?.name || "Message"}
+        subtitle="Conversation"
+        showBack
+        right={
+          otherMember && (
+            <button type="button" onClick={() => navigate(`/member/${selectedUserId}`)}>
+              <Avatar
+                src={otherMember.avatar || ""}
+                alt={otherMember.name}
+                size={32}
+                badgeId={resolveFeaturedBadge(otherMember)}
+              />
+            </button>
+          )
+        }
+      />
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
         {messages.length === 0 ? (
@@ -227,12 +254,14 @@ export default function Messages() {
           messages.map((msg) => (
             <div key={msg.id} className={`flex gap-2 ${msg.sender_id === user.id ? "justify-end" : ""}`}>
               {msg.sender_id !== user.id && (
-                <Avatar
-                  src={otherMember?.avatar || ""}
-                  alt={otherMember?.name || "Member"}
-                  size={28}
-                  badgeId={resolveFeaturedBadge(otherMember ?? {})}
-                />
+                <button type="button" onClick={() => navigate(`/member/${selectedUserId}`)} className="shrink-0">
+                  <Avatar
+                    src={otherMember?.avatar || ""}
+                    alt={otherMember?.name || "Member"}
+                    size={28}
+                    badgeId={resolveFeaturedBadge(otherMember ?? {})}
+                  />
+                </button>
               )}
               <div
                 className={`max-w-xs rounded-card px-3 py-2 text-sm ${

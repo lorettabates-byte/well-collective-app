@@ -1,5 +1,5 @@
 import { Heart, MessageCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CategoryIcon } from "../../data/iconMap";
 import { resolveFeaturedBadge } from "../../data/badges";
 import { useApp } from "../../store/AppContext";
@@ -8,11 +8,13 @@ import { timeAgo } from "../../utils/format";
 import Avatar from "../ui/Avatar";
 
 export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
-  const { categories, memberBadges } = useApp();
+  const { categories, memberBadges, user } = useApp();
+  const navigate = useNavigate();
   const category = categories.find((c) => c.id === thread.categoryId);
   const lastMessage = thread.messages[thread.messages.length - 1];
   const totalLikes = thread.messages.reduce((sum, m) => sum + m.likes.length, 0);
   const badgeId = resolveFeaturedBadge(memberBadges[thread.authorId] ?? {});
+  const isOwnThread = thread.authorId === user.id;
 
   return (
     <Link
@@ -20,7 +22,21 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
       className="block glass-card rounded-card p-4 animate-fade-in-up"
     >
       <div className="flex items-center gap-2 mb-2">
-        <Avatar src={thread.authorAvatar} alt={thread.authorName} size={28} badgeId={badgeId} />
+        {isOwnThread ? (
+          <Avatar src={thread.authorAvatar} alt={thread.authorName} size={28} badgeId={badgeId} />
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/member/${thread.authorId}`);
+            }}
+            className="shrink-0"
+          >
+            <Avatar src={thread.authorAvatar} alt={thread.authorName} size={28} badgeId={badgeId} />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-text truncate">{thread.authorName}</p>
         </div>
