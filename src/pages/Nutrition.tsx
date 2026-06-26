@@ -1,26 +1,71 @@
 import { Bookmark, ChefHat, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 
 export default function Nutrition() {
-  const { currentWeeklyTheme, todaysRecipe } = useApp();
-  const [isSaved, setIsSaved] = useState(() => {
-    const saved = localStorage.getItem("savedRecipes") ? JSON.parse(localStorage.getItem("savedRecipes")!) : [];
-    return saved.includes(todaysRecipe.name);
-  });
+  const { user, currentWeeklyTheme, todaysRecipe, toggleRecipeSave } = useApp();
+  const [searchParams] = useSearchParams();
+  const showSaved = searchParams.get("view") === "saved";
 
-  const handleSaveRecipe = () => {
-    const saved = localStorage.getItem("savedRecipes") ? JSON.parse(localStorage.getItem("savedRecipes")!) : [];
-    if (isSaved) {
-      const updated = saved.filter((name: string) => name !== todaysRecipe.name);
-      localStorage.setItem("savedRecipes", JSON.stringify(updated));
-    } else {
-      saved.push(todaysRecipe.name);
-      localStorage.setItem("savedRecipes", JSON.stringify(saved));
-    }
-    setIsSaved(!isSaved);
-  };
+  const savedRecipes = user.savedRecipes ?? [];
+  const isSaved = savedRecipes.some((r) => r.name === todaysRecipe.name);
+
+  if (showSaved) {
+    return (
+      <div>
+        <TopBar title="Saved Recipes" subtitle="Recipes you've bookmarked" icon={Bookmark} iconColor="#0191CE" showBack />
+        <div className="px-4 pt-4 flex flex-col gap-4">
+          {savedRecipes.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-12">
+              No saved recipes yet — tap "Save" on a recipe to bookmark it here.
+            </p>
+          ) : (
+            savedRecipes.map((recipe) => (
+              <div key={recipe.name} className="glass-card rounded-card overflow-hidden">
+                <img src={recipe.image} alt={recipe.name} className="w-full h-48 object-cover" />
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-bold text-text flex-1">{recipe.name}</h2>
+                    <button
+                      onClick={() => toggleRecipeSave(recipe)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-text-muted"
+                    >
+                      <Bookmark size={16} className="fill-brand-light text-brand-light" />
+                      Saved
+                    </button>
+                  </div>
+                  <p className="text-sm text-text-muted leading-relaxed mb-4">{recipe.description}</p>
+
+                  <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
+                  <ul className="flex flex-col gap-1.5 mb-4">
+                    {recipe.ingredients.map((ingredient) => (
+                      <li key={ingredient} className="flex items-start gap-2 text-sm text-text-muted">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-light mt-1.5 shrink-0" />
+                        {ingredient}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <h3 className="text-sm font-bold text-text mb-2">Steps</h3>
+                  <ol className="flex flex-col gap-2">
+                    {recipe.steps.map((step, index) => (
+                      <li key={step} className="flex items-start gap-2.5 text-sm text-text-muted">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-2 border border-border text-[11px] font-bold text-brand-light shrink-0 mt-0.5">
+                          {index + 1}
+                        </span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -54,7 +99,7 @@ export default function Nutrition() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-text flex-1">{todaysRecipe.name}</h2>
               <button
-                onClick={handleSaveRecipe}
+                onClick={() => toggleRecipeSave(todaysRecipe)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted"
               >
                 <Bookmark

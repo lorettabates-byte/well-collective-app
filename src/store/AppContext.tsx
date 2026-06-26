@@ -8,6 +8,7 @@ import {
   THREADS,
 } from "../data/mockData";
 import { getFallbackRecipe } from "../data/nutritionLibrary";
+import type { WorkoutPlan } from "../data/workoutLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
 import type { BadgeHolder } from "../data/badges";
@@ -291,6 +292,9 @@ interface AppContextValue extends PersistedState {
   toggleInspirationSave: (inspirationId: string) => void;
   addInspiration: (inspiration: Omit<Inspiration, "id" | "likes" | "savedBy">) => void;
   deleteInspiration: (inspirationId: string) => void;
+  saveWorkoutPlan: (plan: WorkoutPlan) => void;
+  removeSavedWorkout: (savedId: string) => void;
+  toggleRecipeSave: (recipe: Recipe) => void;
   toggleRsvp: (eventId: string) => void;
   addEvent: (
     event: Omit<CommunityEvent, "id" | "rsvps" | "recurrenceGroupId">,
@@ -521,6 +525,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       }),
     }));
+  };
+
+  const saveWorkoutPlan: AppContextValue["saveWorkoutPlan"] = (plan) => {
+    setState((prev) => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        savedWorkouts: [
+          {
+            id: uid("w"),
+            savedAt: new Date().toISOString(),
+            cardioId: plan.cardio.id,
+            resistance: plan.resistance,
+            stretches: plan.stretches,
+            breathwork: plan.breathwork,
+          },
+          ...(prev.user.savedWorkouts ?? []),
+        ],
+      },
+    }));
+  };
+
+  const removeSavedWorkout: AppContextValue["removeSavedWorkout"] = (savedId) => {
+    setState((prev) => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        savedWorkouts: (prev.user.savedWorkouts ?? []).filter((w) => w.id !== savedId),
+      },
+    }));
+  };
+
+  const toggleRecipeSave: AppContextValue["toggleRecipeSave"] = (recipe) => {
+    setState((prev) => {
+      const saved = prev.user.savedRecipes ?? [];
+      const isSaved = saved.some((r) => r.name === recipe.name);
+      return {
+        ...prev,
+        user: {
+          ...prev.user,
+          savedRecipes: isSaved ? saved.filter((r) => r.name !== recipe.name) : [recipe, ...saved],
+        },
+      };
+    });
   };
 
   const addInspiration: AppContextValue["addInspiration"] = (inspiration) => {
@@ -1140,6 +1188,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteMessage,
     toggleInspirationLike,
     toggleInspirationSave,
+    saveWorkoutPlan,
+    removeSavedWorkout,
+    toggleRecipeSave,
     addInspiration,
     deleteInspiration,
     toggleRsvp,

@@ -1,4 +1,4 @@
-import { Bell, Bookmark, ChevronRight, LogOut, Music, Pencil, Rss, Salad, ShieldCheck, SlidersHorizontal, Users, Video, Waves } from "lucide-react";
+import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, LogOut, Music, Pencil, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
@@ -105,12 +105,20 @@ export default function Profile() {
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
-        <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations" badge={savedCount} />
-        <MenuRow icon={<Video size={16} />} label="Classes" to="/videos" />
-        <MenuRow icon={<Waves size={16} />} label="Wellness" to="/wellness" />
-        <MenuRow icon={<Salad size={16} />} label="Nutrition" to="/nutrition" />
-        <MenuRow icon={<Music size={16} />} label="Music" to="/music" />
-        <MenuRow icon={<Rss size={16} />} label="Blog" to="/blog" />
+        <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations?filter=saved" badge={savedCount} />
+        <MenuRow
+          icon={<Dumbbell size={16} />}
+          label="Saved Workouts"
+          to="/wellness?view=saved"
+          badge={user.savedWorkouts?.length}
+        />
+        <MenuRow icon={<Music size={16} />} label="Saved Music" to="/music?filter=favorites" />
+        <MenuRow
+          icon={<ChefHat size={16} />}
+          label="Saved Recipes"
+          to="/nutrition?view=saved"
+          badge={user.savedRecipes?.length}
+        />
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
       </div>
 

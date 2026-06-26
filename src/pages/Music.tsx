@@ -42,6 +42,7 @@ export default function Music() {
     const params = new URLSearchParams(window.location.search);
     return params.get("tab") === "sounds" ? "sounds" : "playlist";
   });
+  const initialFavoritesOnly = new URLSearchParams(window.location.search).get("filter") === "favorites";
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [customSounds, setCustomSounds] = useState<CustomPeacefulSound[]>([]);
@@ -187,7 +188,14 @@ export default function Music() {
           </button>
         </div>
 
-        {tab === "playlist" && <Playlist songs={songs} loading={loading} downloadsLocked={isTrialUser} />}
+        {tab === "playlist" && (
+          <Playlist
+            songs={songs}
+            loading={loading}
+            downloadsLocked={isTrialUser}
+            initialFavoritesOnly={initialFavoritesOnly}
+          />
+        )}
 
         {tab === "sounds" && (
           <div className="flex flex-col gap-4">

@@ -1,5 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -14,9 +15,15 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "saved", label: "Saved" },
 ];
 
+const VALID_FILTERS = new Set(FILTERS.map((f) => f.id));
+
 export default function Inspirations() {
   const { user, inspirations } = useApp();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [searchParams] = useSearchParams();
+  const initialFilter = searchParams.get("filter");
+  const [filter, setFilter] = useState<Filter>(
+    initialFilter && VALID_FILTERS.has(initialFilter as Filter) ? (initialFilter as Filter) : "all"
+  );
 
   const filtered = inspirations
     .filter((insp) => {

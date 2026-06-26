@@ -171,6 +171,20 @@ export interface WorkoutPlan {
   breathwork: BreathworkExercise;
 }
 
+// A user-saved snapshot of a generated WorkoutPlan. Stores the cardio
+// category's id rather than the full object, since VIDEO_CATEGORIES entries
+// carry a LucideIcon component reference that can't round-trip through
+// localStorage/JSON — the icon/color/title are looked up again at render
+// time via cardioId.
+export interface SavedWorkoutPlan {
+  id: string;
+  savedAt: string;
+  cardioId: string;
+  resistance: ResistanceExercise[];
+  stretches: StretchExercise[];
+  breathwork: BreathworkExercise;
+}
+
 export function generateWorkout(): WorkoutPlan {
   return {
     cardio: pickRandom(CARDIO_OPTIONS, 1)[0],

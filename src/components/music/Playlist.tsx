@@ -61,14 +61,16 @@ export default function Playlist({
   songs,
   loading,
   downloadsLocked,
+  initialFavoritesOnly,
 }: {
   songs: Song[];
   loading: boolean;
   downloadsLocked?: boolean;
+  initialFavoritesOnly?: boolean;
 }) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [order, setOrder] = useState<number[]>(() => loadOrder());
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");

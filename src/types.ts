@@ -1,3 +1,7 @@
+import type { SavedWorkoutPlan } from "./data/workoutLibrary";
+
+export type { SavedWorkoutPlan };
+
 export interface User {
   id: string;
   name: string;
@@ -12,6 +16,8 @@ export interface User {
   breathworkLog?: string[]; // ISO dates of completed breathwork sessions
   wellActivityLog?: string[]; // ISO dates of completed Well Activities
   classLog?: string[]; // ISO dates a class tile (Livestream, Zumba, etc.) was opened
+  savedWorkouts?: SavedWorkoutPlan[];
+  savedRecipes?: Recipe[];
   trialEndsAt?: string; // ISO date when free trial expires
   levelBadge?: string; // computed server-side from activity, e.g. "active-member"
   bonusBadges?: string[]; // auto-earned from tenure/encouragement, e.g. "legacy-builder"

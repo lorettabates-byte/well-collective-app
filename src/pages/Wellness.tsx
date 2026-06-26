@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Award,
+  Bookmark,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Star,
   StretchHorizontal,
+  Trash2,
   Trophy,
   Users,
   Video,
@@ -25,13 +27,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import confetti from "canvas-confetti";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import StreakCelebrationModal from "../components/StreakCelebrationModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
+import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
@@ -77,8 +80,12 @@ export default function Wellness() {
     logWorkoutCompletion,
     logWellActivityCompletion,
     logClassCompletion,
+    saveWorkoutPlan,
+    removeSavedWorkout,
   } = useApp();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const showSavedWorkouts = searchParams.get("view") === "saved";
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
@@ -88,6 +95,7 @@ export default function Wellness() {
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
   const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -129,6 +137,80 @@ export default function Wellness() {
     [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
   );
 
+  const handleSaveWorkout = () => {
+    saveWorkoutPlan(plan);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  if (showSavedWorkouts) {
+    const savedWorkouts = user.savedWorkouts ?? [];
+    return (
+      <div>
+        <TopBar title="Saved Workouts" subtitle="Workouts you've bookmarked" icon={Bookmark} iconColor="#84D8FD" showBack />
+        <div className="px-4 pt-4 flex flex-col gap-4">
+          {savedWorkouts.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-12">
+              No saved workouts yet — generate one and tap "Save Workout" to bookmark it here.
+            </p>
+          ) : (
+            savedWorkouts.map((saved) => {
+              const cardio = VIDEO_CATEGORIES.find((c) => c.id === saved.cardioId);
+              return (
+                <div key={saved.id} className="glass-card rounded-card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-text-dim">
+                      Saved {new Date(saved.savedAt).toLocaleDateString()}
+                    </p>
+                    <button
+                      onClick={() => removeSavedWorkout(saved.id)}
+                      aria-label="Remove saved workout"
+                      className="text-text-dim"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  {cardio && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <Flame size={14} className="text-orange-400 shrink-0" />
+                      <p className="text-sm font-bold text-text">{cardio.title}</p>
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-text-muted mb-1.5">Resistance Training</p>
+                    <ul className="flex flex-col gap-1">
+                      {saved.resistance.map((ex) => (
+                        <li key={ex.name} className="flex items-center justify-between text-sm text-text">
+                          <span>{ex.name}</span>
+                          <span className="text-xs text-text-dim">{ex.sets}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-text-muted mb-1.5">Stretching</p>
+                    <ul className="flex flex-col gap-1">
+                      {saved.stretches.map((s) => (
+                        <li key={s.name} className="flex items-center justify-between text-sm text-text">
+                          <span>{s.name}</span>
+                          <span className="text-xs text-text-dim">{s.duration}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-muted mb-1.5">Breathwork</p>
+                    <p className="text-sm text-text">{saved.breathwork.name}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <TopBar title="Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
@@ -161,6 +243,14 @@ export default function Wellness() {
           >
             {isTrialUser ? <Lock size={16} /> : <RefreshCw size={16} />}
             GENERATE NEW WORKOUT
+          </button>
+
+          <button
+            onClick={handleSaveWorkout}
+            className="w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mb-4 bg-surface-2 border border-border text-text-muted"
+          >
+            <Bookmark size={14} className={justSaved ? "fill-brand-light text-brand-light" : ""} />
+            {justSaved ? "Saved!" : "Save Workout"}
           </button>
 
           <div className="flex flex-col gap-5">
