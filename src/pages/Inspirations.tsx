@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import InspirationCard from "../components/inspiration/InspirationCard";
@@ -63,6 +63,24 @@ export default function Inspirations() {
             ))}
           </div>
         )}
+
+        <a
+          href="https://lorettabates.com/30-day-life-lift/"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mt-4 mb-6"
+        >
+          <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+            <Sparkles size={16} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-text">Want more inspiration?</p>
+            <p className="text-xs text-text-muted">
+              Download Loretta's 30 Day Life Lift free using the code: <span className="font-semibold text-brand-light">LIFELIFTED</span>
+            </p>
+          </div>
+          <ArrowUpRight size={16} className="text-text-dim shrink-0" />
+        </a>
       </div>
     </div>
   );
