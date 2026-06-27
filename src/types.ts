@@ -90,6 +90,7 @@ export interface ThreadMessage {
   authorAvatar: string;
   text: string;
   createdAt: string;
+  editedAt?: string;
   likes: string[]; // userIds who "supported" this message
   replyToId?: string;
 }
@@ -102,6 +103,7 @@ export interface ForumThread {
   authorName: string;
   authorAvatar: string;
   createdAt: string;
+  editedAt?: string;
   messages: ThreadMessage[];
 }
 
