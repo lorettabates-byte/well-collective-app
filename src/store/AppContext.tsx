@@ -46,9 +46,10 @@ function recoverFromQuotaExceeded() {
       keys.push(localStorage.key(i));
     }
 
-    // Remove other app data (keep only our app state)
+    // Remove other app data, but preserve user preferences and flags
+    const keysToPreserve = ["memberUser", "memberProfileSyncedEmail", "well-notifications-onboarding-v1", "memberTrialEndsAt"];
     for (const key of keys) {
-      if (key && !key.startsWith("well-collective") && key !== "memberUser") {
+      if (key && !key.startsWith("well-collective") && !keysToPreserve.includes(key)) {
         try {
           localStorage.removeItem(key);
         } catch {
