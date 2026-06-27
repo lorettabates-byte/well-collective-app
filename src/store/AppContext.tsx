@@ -401,9 +401,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
-          // Save which inspirations the user has saved, so they persist across reloads
+          // Save which inspirations the user has saved/liked, so they persist across reloads
           savedInspirationIds: state.inspirations
             .filter((i) => i.savedBy.includes(state.user.id))
+            .map((i) => i.id),
+          likedInspirationIds: state.inspirations
+            .filter((i) => i.likes.includes(state.user.id))
             .map((i) => i.id),
         },
         notificationSettings: state.notificationSettings,
@@ -1007,7 +1010,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   cadence: "daily",
                   author: "WELL Collective",
                   sentAt: new Date(entry.date + "T07:00:00").toISOString(),
-                  likes: [],
+                  likes: prev.user.likedInspirationIds?.includes(`daily-${entry.date}`)
+                    ? [prev.user.id]
+                    : [],
                   savedBy: prev.user.savedInspirationIds?.includes(`daily-${entry.date}`)
                     ? [prev.user.id]
                     : [],
@@ -1104,11 +1109,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               prev.inspirations.filter((i) => i.cadence === "note").map((i) => [i.id, i])
             );
             const savedIds = new Set(prev.user.savedInspirationIds ?? []);
+            const likedIds = new Set(prev.user.likedInspirationIds ?? []);
             const syncedIds = new Set(notes.map((n) => n.id));
 
             // Sync new/updated notes from API
             const noteInspirations: Inspiration[] = notes.map((n) => {
               const existing = existingById.get(n.id);
+              const existingLikes = existing?.likes ?? [];
+              const shouldLike = likedIds.has(n.id) && !existingLikes.includes(prev.user.id);
               return {
                 id: n.id,
                 title: n.title,
@@ -1116,7 +1124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 author: "Loretta",
                 cadence: "note",
                 sentAt: n.sentAt,
-                likes: existing?.likes ?? [],
+                likes: shouldLike ? [...existingLikes, prev.user.id] : existingLikes,
                 savedBy: existing?.savedBy ?? (savedIds.has(n.id) ? [prev.user.id] : []),
               };
             });

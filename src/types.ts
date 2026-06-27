@@ -24,6 +24,7 @@ export interface User {
   grantedBadges?: string[]; // admin-granted special badges, e.g. "well-escape"
   featuredBadge?: string; // which earned badge id to show on the avatar
   savedInspirationIds?: string[]; // IDs of inspirations the user has saved
+  likedInspirationIds?: string[]; // IDs of inspirations the user has liked
 }
 
 export interface NotificationSettings {
