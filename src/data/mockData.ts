@@ -22,6 +22,14 @@ export const CURRENT_USER: User = {
   isAdmin: false,
   joinedAt: "2025-01-12",
   trialEndsAt: getTrialEndDate("2025-01-12"),
+  workoutLog: [],
+  breathworkLog: [],
+  wellActivityLog: [],
+  classLog: [],
+  savedWorkouts: [],
+  savedRecipes: [],
+  bonusBadges: [],
+  grantedBadges: [],
 };
 
 export const USERS: User[] = [

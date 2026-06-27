@@ -7,6 +7,7 @@ import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+const TRIBE_STORAGE_KEY = "well-collective-tribe";
 
 interface DirectoryMember {
   id: string;
@@ -26,12 +27,29 @@ export default function Tribe() {
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
 
+  const setTribeAndPersist = (members: DirectoryMember[]) => {
+    setTribe(members);
+    try {
+      window.localStorage.setItem(TRIBE_STORAGE_KEY, JSON.stringify(members));
+    } catch {
+      // localStorage might be full or unavailable, just skip persistence
+    }
+  };
+
   const loadTribe = () => {
     if (!API_URL || !user.email) return;
     fetch(`${API_URL}/api/tribe?email=${encodeURIComponent(user.email)}`)
       .then((res) => (res.ok ? res.json() : { tribe: [] }))
-      .then((data) => setTribe(data.tribe || []))
-      .catch(() => setTribe([]));
+      .then((data) => setTribeAndPersist(data.tribe || []))
+      .catch(() => {
+        // Fall back to localStorage if API fails
+        try {
+          const cached = window.localStorage.getItem(TRIBE_STORAGE_KEY);
+          if (cached) setTribe(JSON.parse(cached));
+        } catch {
+          setTribe([]);
+        }
+      });
   };
 
   useEffect(() => {
@@ -40,6 +58,14 @@ export default function Tribe() {
       return;
     }
     setLoading(true);
+    // Start with cached tribe data while fetching fresh data
+    try {
+      const cached = window.localStorage.getItem(TRIBE_STORAGE_KEY);
+      if (cached) setTribe(JSON.parse(cached));
+    } catch {
+      // ignore parsing errors
+    }
+
     Promise.all([
       fetch(`${API_URL}/api/tribe?email=${encodeURIComponent(user.email)}`).then((res) =>
         res.ok ? res.json() : { tribe: [] }
@@ -49,12 +75,12 @@ export default function Tribe() {
       ),
     ])
       .then(([tribeData, membersData]) => {
-        setTribe(tribeData.tribe || []);
+        const freshTribe = tribeData.tribe || [];
+        setTribeAndPersist(freshTribe);
         setAllMembers(membersData.members || []);
       })
       .catch(() => {
-        setTribe([]);
-        setAllMembers([]);
+        // API failed, keep cached data if available
       })
       .finally(() => setLoading(false));
   }, [user.email]);
