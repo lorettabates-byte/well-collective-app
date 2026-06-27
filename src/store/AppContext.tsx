@@ -186,16 +186,17 @@ function loadState(): PersistedState {
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     return {
       user: applyMemberInfo(parsed.user ?? DEFAULT_STATE.user),
-      categories: parsed.categories ?? DEFAULT_STATE.categories,
-      threads: parsed.threads ?? DEFAULT_STATE.threads,
-      inspirations: parsed.inspirations ?? DEFAULT_STATE.inspirations,
-      events: parsed.events ?? DEFAULT_STATE.events,
+      // Always load fresh from API — don't cache these collections in localStorage
+      categories: DEFAULT_STATE.categories,
+      threads: DEFAULT_STATE.threads,
+      inspirations: DEFAULT_STATE.inspirations,
+      events: DEFAULT_STATE.events,
       notifications: parsed.notifications ?? DEFAULT_STATE.notifications,
       notificationSettings: {
         ...DEFAULT_STATE.notificationSettings,
         ...parsed.notificationSettings,
       },
-      contentSchedule: parsed.contentSchedule ?? DEFAULT_STATE.contentSchedule,
+      contentSchedule: DEFAULT_STATE.contentSchedule,
       processedDates: parsed.processedDates ?? DEFAULT_STATE.processedDates,
       featuredEventId: parsed.featuredEventId ?? DEFAULT_STATE.featuredEventId,
     };
@@ -391,31 +392,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Strip out large avatar/image data and old threads to stay under localStorage quota.
-      // Avatars can be re-fetched from the API; old threads are less critical than user data.
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
-
+      // Only persist user data and preferences to stay well under localStorage quota.
+      // Threads, inspirations, and events are re-fetched from the API on page load,
+      // so we don't need to cache them — this keeps localStorage small and reliable.
       const stateToPersist = {
-        ...state,
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
         },
-        threads: state.threads
-          .filter((t) => new Date(t.createdAt) > cutoffDate)
-          .map((t) => ({
-            ...t,
-            authorAvatar: t.authorAvatar?.startsWith("data:") ? "" : t.authorAvatar,
-            messages: t.messages.map((m) => ({
-              ...m,
-              authorAvatar: m.authorAvatar?.startsWith("data:") ? "" : m.authorAvatar,
-            })),
-          })),
-        inspirations: state.inspirations.map((i) => ({
-          ...i,
-          imageUrl: "",
-        })),
+        notificationSettings: state.notificationSettings,
+        processedDates: state.processedDates,
+        featuredEventId: state.featuredEventId,
+        // Deliberately omit: threads, inspirations, events, categories
+        // These are refreshed from the API and not critical for offline use
       };
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
