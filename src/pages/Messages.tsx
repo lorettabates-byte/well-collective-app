@@ -1,10 +1,11 @@
-import { Mail, MessageCircle, Plus, Send } from "lucide-react";
+import { Mail, MessageCircle, Plus, Send, Edit2, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
+import { formatTime } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -15,6 +16,7 @@ interface Message {
   body: string;
   read: boolean;
   created_at: string;
+  edited_at?: string;
 }
 
 interface Conversation {
@@ -43,6 +45,102 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   return `${days}d`;
+}
+
+interface DirectMessageProps {
+  message: Message;
+  isOwn: boolean;
+  onEdit: (messageId: number, newBody: string) => Promise<void>;
+  otherMember: DirectoryMember | undefined;
+  selectedUserId: string;
+  navigate: ReturnType<typeof useNavigate>;
+}
+
+function DirectMessage({
+  message,
+  isOwn,
+  onEdit,
+  otherMember,
+  selectedUserId,
+  navigate,
+}: DirectMessageProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.body);
+
+  return (
+    <div className={`flex gap-2 ${isOwn ? "justify-end" : ""}`}>
+      {!isOwn && (
+        <button type="button" onClick={() => navigate(`/member/${selectedUserId}`)} className="shrink-0">
+          <Avatar
+            src={otherMember?.avatar || ""}
+            alt={otherMember?.name || "Member"}
+            size={28}
+            badgeId={resolveFeaturedBadge(otherMember ?? {})}
+          />
+        </button>
+      )}
+      <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+        {isEditing ? (
+          <div className="flex gap-2 max-w-xs">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className={`flex-1 px-3 py-2 text-sm rounded-lg resize-none focus:outline-none focus:ring-2 ${
+                isOwn
+                  ? "bg-white text-black focus:ring-brand-light"
+                  : "bg-surface-2 text-text focus:ring-brand-light"
+              }`}
+              rows={2}
+            />
+            <div className="flex gap-1 items-start pt-1.5">
+              <button
+                onClick={() => {
+                  onEdit(message.id, editText);
+                  setIsEditing(false);
+                }}
+                className="p-1 text-green-400 hover:text-green-300"
+              >
+                <Check size={16} />
+              </button>
+              <button
+                onClick={() => {
+                  setEditText(message.body);
+                  setIsEditing(false);
+                }}
+                className="p-1 text-red-400 hover:text-red-300"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              className={`max-w-xs rounded-card px-3 py-2 text-sm ${
+                isOwn ? "gradient-brand text-white" : "bg-surface-2 text-text"
+              }`}
+            >
+              {message.body}
+            </div>
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-text-dim px-1">
+              <span>
+                {formatTime(message.created_at)}
+                {message.edited_at && <span className="ml-1">(edited)</span>}
+              </span>
+              {isOwn && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-text-dim hover:text-text transition-colors p-0.5"
+                >
+                  <Edit2 size={12} />
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function Messages() {
@@ -151,6 +249,31 @@ export default function Messages() {
     }
   };
 
+  const handleEditMessage = async (messageId: number, newBody: string) => {
+    if (!API_URL || !newBody.trim()) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/messages/${messageId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          body: newBody.trim(),
+          senderId: user.id,
+        }),
+      });
+
+      if (res.ok) {
+        setMessages(messages.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, body: newBody.trim(), edited_at: new Date().toISOString() }
+            : msg
+        ));
+      }
+    } catch (err) {
+      console.error("Edit message error:", err);
+    }
+  };
+
   if (!selectedUserId) {
     return (
       <div>
@@ -252,27 +375,15 @@ export default function Messages() {
           <p className="text-xs text-text-muted text-center py-8">No messages yet. Start the conversation!</p>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-2 ${msg.sender_id === user.id ? "justify-end" : ""}`}>
-              {msg.sender_id !== user.id && (
-                <button type="button" onClick={() => navigate(`/member/${selectedUserId}`)} className="shrink-0">
-                  <Avatar
-                    src={otherMember?.avatar || ""}
-                    alt={otherMember?.name || "Member"}
-                    size={28}
-                    badgeId={resolveFeaturedBadge(otherMember ?? {})}
-                  />
-                </button>
-              )}
-              <div
-                className={`max-w-xs rounded-card px-3 py-2 text-sm ${
-                  msg.sender_id === user.id
-                    ? "gradient-brand text-white"
-                    : "bg-surface-2 text-text"
-                }`}
-              >
-                {msg.body}
-              </div>
-            </div>
+            <DirectMessage
+              key={msg.id}
+              message={msg}
+              isOwn={msg.sender_id === user.id}
+              onEdit={handleEditMessage}
+              otherMember={otherMember}
+              selectedUserId={selectedUserId}
+              navigate={navigate}
+            />
           ))
         )}
       </div>
