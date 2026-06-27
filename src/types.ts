@@ -23,6 +23,7 @@ export interface User {
   bonusBadges?: string[]; // auto-earned from tenure/encouragement, e.g. "legacy-builder"
   grantedBadges?: string[]; // admin-granted special badges, e.g. "well-escape"
   featuredBadge?: string; // which earned badge id to show on the avatar
+  savedInspirationIds?: string[]; // IDs of inspirations the user has saved
 }
 
 export interface NotificationSettings {
