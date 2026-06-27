@@ -998,13 +998,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               updatedInspirations = updatedInspirations.filter(
                 (i) => !(i.cadence === "daily" && i.sentAt.startsWith(entry.date))
               );
-              // Add the fresh daily inspiration
+              // Add the fresh daily inspiration with a recent sentAt time so it sorts first
               updatedInspirations = [
                 {
                   id: `daily-${entry.date}`,
-                  ...entry.dailyInspiration,
+                  title: entry.dailyInspiration.title,
+                  body: entry.dailyInspiration.body,
                   cadence: "daily",
-                  author: entry.dailyInspiration.author || "WELL Collective",
+                  author: "WELL Collective",
+                  sentAt: new Date(entry.date + "T07:00:00").toISOString(),
                   likes: [],
                   savedBy: prev.user.savedInspirationIds?.includes(`daily-${entry.date}`)
                     ? [prev.user.id]
