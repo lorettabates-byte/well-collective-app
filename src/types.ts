@@ -104,6 +104,7 @@ export interface ForumThread {
   authorAvatar: string;
   createdAt: string;
   editedAt?: string;
+  pinnedAt?: string;
   messages: ThreadMessage[];
 }
 

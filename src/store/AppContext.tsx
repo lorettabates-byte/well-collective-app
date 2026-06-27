@@ -329,6 +329,8 @@ interface AppContextValue extends PersistedState {
   deleteMessage: (threadId: string, messageId: string) => void;
   editThread: (threadId: string, newTitle: string) => void;
   editMessage: (threadId: string, messageId: string, newText: string) => void;
+  pinThread: (threadId: string, categoryId: string) => void;
+  unpinThread: (threadId: string) => void;
   toggleInspirationLike: (inspirationId: string) => void;
   toggleInspirationSave: (inspirationId: string) => void;
   addInspiration: (inspiration: Omit<Inspiration, "id" | "likes" | "savedBy">) => void;
@@ -597,6 +599,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ),
             }
           : thread
+      ),
+    }));
+  };
+
+  const pinThread: AppContextValue["pinThread"] = (threadId, categoryId) => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/forum/threads/${threadId}/pin?categoryId=${encodeURIComponent(categoryId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }).catch((err) => console.error("Failed to pin thread:", err));
+
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.map((thread) =>
+        thread.id === threadId ? { ...thread, pinnedAt: new Date().toISOString() } : thread
+      ),
+    }));
+  };
+
+  const unpinThread: AppContextValue["unpinThread"] = (threadId) => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/forum/threads/${threadId}/unpin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }).catch((err) => console.error("Failed to unpin thread:", err));
+
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.map((thread) =>
+        thread.id === threadId ? { ...thread, pinnedAt: undefined } : thread
       ),
     }));
   };
@@ -1336,6 +1368,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteMessage,
     editThread,
     editMessage,
+    pinThread,
+    unpinThread,
     toggleInspirationLike,
     toggleInspirationSave,
     saveWorkoutPlan,

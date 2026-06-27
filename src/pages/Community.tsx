@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, PenSquare } from "lucide-react";
+import { Mail, MessageCircle, PenSquare, Pin } from "lucide-react";
 import { Link } from "react-router-dom";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
@@ -9,12 +9,9 @@ import { useApp } from "../store/AppContext";
 export default function Community() {
   const { categories, threads } = useApp();
 
-  const trending = [...threads]
-    .sort((a, b) => {
-      const aLikes = a.messages.reduce((sum, m) => sum + m.likes.length, 0);
-      const bLikes = b.messages.reduce((sum, m) => sum + m.likes.length, 0);
-      return bLikes - aLikes;
-    })
+  const pinnedThreads = [...threads]
+    .filter((t) => t.pinnedAt)
+    .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
     .slice(0, 2);
 
   return (
@@ -38,11 +35,19 @@ export default function Community() {
           </Link>
         </div>
 
-        {trending.length > 0 && (
+        {pinnedThreads.length > 0 && (
           <div className="mb-6">
-            <SectionHeader title="🔥 Trending" />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                <Pin size={16} className="text-brand-light" />
+                Trending
+              </h2>
+              <Link to="/trending" className="text-xs text-brand-light hover:text-brand">
+                View all
+              </Link>
+            </div>
             <div className="flex flex-col gap-3">
-              {trending.map((thread) => (
+              {pinnedThreads.map((thread) => (
                 <ThreadPreviewCard key={thread.id} thread={thread} />
               ))}
             </div>

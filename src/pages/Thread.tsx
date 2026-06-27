@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { Send, Pin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import ChatBubble from "../components/community/ChatBubble";
@@ -8,7 +8,7 @@ import { timeAgo } from "../utils/format";
 
 export default function Thread() {
   const { categoryId, threadId } = useParams<{ categoryId: string; threadId: string }>();
-  const { categories, threads, user, addMessage, memberBadges } = useApp();
+  const { categories, threads, user, addMessage, memberBadges, pinThread, unpinThread } = useApp();
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -31,9 +31,33 @@ export default function Thread() {
     setText("");
   };
 
+  const handleTogglePin = () => {
+    if (thread.pinnedAt) {
+      unpinThread(thread.id);
+    } else {
+      pinThread(thread.id, categoryId!);
+    }
+  };
+
   return (
     <div>
-      <TopBar title={thread.title} subtitle={category.name} showBack />
+      <TopBar
+        title={thread.title}
+        subtitle={category.name}
+        showBack
+        right={user.isAdmin && (
+          <button
+            onClick={handleTogglePin}
+            className={`p-2 rounded-full transition-colors ${
+              thread.pinnedAt
+                ? "text-brand-light"
+                : "text-text-dim hover:text-text"
+            }`}
+          >
+            <Pin size={20} className={thread.pinnedAt ? "fill-brand-light" : ""} />
+          </button>
+        )}
+      />
       <div className="px-4 pt-4 pb-2">
         <p className="text-xs text-text-dim mb-4">
           Started by {authorName} · {timeAgo(thread.createdAt)}
