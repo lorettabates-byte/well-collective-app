@@ -132,28 +132,41 @@ export default function Tribe() {
         </button>
 
         {showAdd && (
-          <div className="glass-card rounded-card p-3 flex flex-col gap-2 mb-6 max-h-72 overflow-y-auto">
-            {addable.length === 0 ? (
-              <p className="text-xs text-text-muted text-center py-4">
-                Everyone you know is already in your WELL Tribe.
+          <div className="mb-6">
+            {addable.length > 0 && (
+              <p className="text-[11px] text-text-muted px-1 mb-1.5">
+                {addable.length} member{addable.length === 1 ? "" : "s"} available
+                {addable.length > 4 ? " — scroll for more" : ""}
               </p>
-            ) : (
-              addable.map((member) => (
-                <div key={member.id} className="flex items-center gap-3 px-1 py-1.5">
-                  <Link to={`/member/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar src={member.avatar || ""} alt={member.name} size={36} badgeId={resolveFeaturedBadge(member)} />
-                    <p className="flex-1 min-w-0 text-sm font-medium text-text truncate">{member.name}</p>
-                  </Link>
-                  <button
-                    onClick={() => handleAdd(member.id)}
-                    disabled={adding === member.id}
-                    className="text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5 disabled:opacity-50"
-                  >
-                    {adding === member.id ? "Adding…" : "Add"}
-                  </button>
-                </div>
-              ))
             )}
+            <div className="relative">
+              <div className="glass-card rounded-card p-3 flex flex-col gap-2 max-h-72 overflow-y-auto">
+                {addable.length === 0 ? (
+                  <p className="text-xs text-text-muted text-center py-4">
+                    Everyone you know is already in your WELL Tribe.
+                  </p>
+                ) : (
+                  addable.map((member) => (
+                    <div key={member.id} className="flex items-center gap-3 px-1 py-1.5">
+                      <Link to={`/member/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar src={member.avatar || ""} alt={member.name} size={36} badgeId={resolveFeaturedBadge(member)} />
+                        <p className="flex-1 min-w-0 text-sm font-medium text-text truncate">{member.name}</p>
+                      </Link>
+                      <button
+                        onClick={() => handleAdd(member.id)}
+                        disabled={adding === member.id}
+                        className="text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5 disabled:opacity-50"
+                      >
+                        {adding === member.id ? "Adding…" : "Add"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              {addable.length > 4 && (
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-card bg-gradient-to-t from-surface to-transparent" />
+              )}
+            </div>
           </div>
         )}
 
