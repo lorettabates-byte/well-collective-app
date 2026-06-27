@@ -185,22 +185,13 @@ function loadState(): PersistedState {
     if (!raw) return { ...DEFAULT_STATE, user: applyMemberInfo(DEFAULT_STATE.user) };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     const loadedUser = applyMemberInfo(parsed.user ?? DEFAULT_STATE.user);
-    const savedInspirationIds = new Set((parsed.user?.savedInspirationIds as string[]) ?? []);
-
-    // Use cached recent inspirations if available, otherwise fall back to default
-    const cachedInspirations = (parsed.inspirations as Inspiration[] | undefined) ?? [];
-    const inspirations = cachedInspirations.length > 0 ? cachedInspirations : DEFAULT_STATE.inspirations;
 
     return {
       user: loadedUser,
-      // Always load fresh from API — don't cache these collections in localStorage
+      // Always load fresh from API — don't cache collections in localStorage
       categories: DEFAULT_STATE.categories,
       threads: DEFAULT_STATE.threads,
-      // Restore saved inspiration markers from the saved IDs
-      inspirations: inspirations.map((i) => ({
-        ...i,
-        savedBy: savedInspirationIds.has(i.id) ? [...new Set([...i.savedBy, loadedUser.id])] : i.savedBy,
-      })),
+      inspirations: DEFAULT_STATE.inspirations,
       events: DEFAULT_STATE.events,
       notifications: parsed.notifications ?? DEFAULT_STATE.notifications,
       notificationSettings: {
@@ -403,31 +394,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Only persist user data and preferences to stay well under localStorage quota.
-      // Threads, inspirations, and events are re-fetched from the API on page load,
-      // so we don't need to cache them — this keeps localStorage small and reliable.
-      // Keep only recent inspirations (last 7 days) to stay under quota
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const recentInspirations = state.inspirations.filter(
-        (i) => new Date(i.sentAt) >= sevenDaysAgo
-      );
-
+      // Persist ONLY user data — everything else (threads, inspirations, events, etc.)
+      // is fetched fresh from the API on every page load anyway. This keeps localStorage
+      // under 50KB and prevents quota errors that cause data loss on PWAs.
       const stateToPersist = {
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
-          // Save which inspirations the user has saved
+          // Save which inspirations the user has saved, so they persist across reloads
           savedInspirationIds: state.inspirations
             .filter((i) => i.savedBy.includes(state.user.id))
             .map((i) => i.id),
         },
         notificationSettings: state.notificationSettings,
-        inspirations: recentInspirations,
         processedDates: state.processedDates,
         featuredEventId: state.featuredEventId,
-        // Deliberately omit: threads, events, categories
-        // These are refreshed from the API and not critical for offline use
       };
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
@@ -1095,6 +1076,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const existingById = new Map(
               prev.inspirations.filter((i) => i.cadence === "note").map((i) => [i.id, i])
             );
+            const savedIds = new Set(prev.user.savedInspirationIds ?? []);
             const noteInspirations: Inspiration[] = notes.map((n) => {
               const existing = existingById.get(n.id);
               return {
@@ -1105,7 +1087,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 cadence: "note",
                 sentAt: n.sentAt,
                 likes: existing?.likes ?? [],
-                savedBy: existing?.savedBy ?? [],
+                savedBy: existing?.savedBy ?? (savedIds.has(n.id) ? [prev.user.id] : []),
               };
             });
             const otherInspirations = prev.inspirations.filter((i) => i.cadence !== "note");
