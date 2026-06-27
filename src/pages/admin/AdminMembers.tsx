@@ -1,9 +1,19 @@
 import { Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
 import TopBar from "../../components/layout/TopBar";
 import { SPECIAL_BADGES } from "../../data/badges";
 import { formatDateLong } from "../../utils/format";
+
+function deriveMemberId(email: string): string {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = (hash << 5) - hash + email.charCodeAt(i);
+    hash |= 0;
+  }
+  return `m_${Math.abs(hash).toString(36)}`;
+}
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -196,8 +206,10 @@ export default function AdminMembers() {
               return (
                 <div key={member.email} className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">
                   <div className="flex items-center gap-3">
-                    <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
-                    <div className="flex-1 min-w-0">
+                    <Link to={`/member/${deriveMemberId(member.email)}`} className="shrink-0">
+                      <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
+                    </Link>
+                    <Link to={`/member/${deriveMemberId(member.email)}`} className="flex-1 min-w-0 hover:opacity-75 transition-opacity">
                       <p className="text-sm font-semibold text-text truncate">{member.name}</p>
                       <p className="text-xs text-text-muted truncate">{member.email}</p>
                       {member.trialEndsAt && (
@@ -206,7 +218,7 @@ export default function AdminMembers() {
                           {formatDateLong(member.trialEndsAt)}
                         </p>
                       )}
-                    </div>
+                    </Link>
                     <button
                       onClick={() => handleDelete(member.email)}
                       className="text-red-400 p-2 shrink-0"
