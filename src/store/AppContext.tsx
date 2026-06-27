@@ -390,35 +390,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Strip out large avatar/image data that can exceed localStorage quota.
-      // These can be re-fetched from the API as needed.
+      // Strip out large avatar/image data and old threads to stay under localStorage quota.
+      // Avatars can be re-fetched from the API; old threads are less critical than user data.
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+
       const stateToPersist = {
         ...state,
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
         },
-        threads: state.threads.map((t) => ({
-          ...t,
-          authorAvatar: t.authorAvatar?.startsWith("data:") ? "" : t.authorAvatar,
-          messages: t.messages.map((m) => ({
-            ...m,
-            authorAvatar: m.authorAvatar?.startsWith("data:") ? "" : m.authorAvatar,
+        threads: state.threads
+          .filter((t) => new Date(t.createdAt) > cutoffDate)
+          .map((t) => ({
+            ...t,
+            authorAvatar: t.authorAvatar?.startsWith("data:") ? "" : t.authorAvatar,
+            messages: t.messages.map((m) => ({
+              ...m,
+              authorAvatar: m.authorAvatar?.startsWith("data:") ? "" : m.authorAvatar,
+            })),
           })),
-        })),
         inspirations: state.inspirations.map((i) => ({
           ...i,
           imageUrl: "",
         })),
       };
 
-      const serialized = JSON.stringify(stateToPersist);
-      if (serialized.length > 4 * 1024 * 1024) {
-        console.warn("Persisted state exceeds 4MB, some data may be lost. Try clearing browser cache or archived old content.");
-        return;
-      }
-
-      window.localStorage.setItem(STORAGE_KEY, serialized);
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
     } catch (err) {
       if ((err as Error).name === "QuotaExceededError") {
         console.warn("localStorage quota exceeded, attempting automatic recovery...");
