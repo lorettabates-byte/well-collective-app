@@ -36,6 +36,41 @@ const STORAGE_KEY = "well-collective-state-v1";
 
 const FOUNDER_EMAIL = "loretta@lorettabates.com";
 
+// Attempt to free up localStorage quota when it's exceeded.
+// First tries clearing large items (cached threads, inspirations), then clears everything.
+function recoverFromQuotaExceeded() {
+  try {
+    // Try removing large cached content first
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      keys.push(localStorage.key(i));
+    }
+
+    // Remove other app data (keep only our app state)
+    for (const key of keys) {
+      if (key && !key.startsWith("well-collective") && key !== "memberUser") {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // If still over quota, clear and reload
+    const existing = localStorage.getItem(STORAGE_KEY);
+    if (existing && existing.length > 3 * 1024 * 1024) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem("_recovered_from_quota_error", "true");
+      window.location.reload();
+      return true;
+    }
+  } catch {
+    // If recovery fails, just return false
+  }
+  return false;
+}
+
 interface PersistedState {
   user: User;
   categories: ForumCategory[];
@@ -385,6 +420,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       window.localStorage.setItem(STORAGE_KEY, serialized);
     } catch (err) {
+      if ((err as Error).name === "QuotaExceededError") {
+        console.warn("localStorage quota exceeded, attempting automatic recovery...");
+        if (recoverFromQuotaExceeded()) {
+          return;
+        }
+      }
       console.error("Failed to persist app state to localStorage:", err);
     }
   }, [state]);
