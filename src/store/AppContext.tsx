@@ -184,12 +184,19 @@ function loadState(): PersistedState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_STATE, user: applyMemberInfo(DEFAULT_STATE.user) };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
+    const loadedUser = applyMemberInfo(parsed.user ?? DEFAULT_STATE.user);
+    const savedInspirationIds = new Set((parsed.user?.savedInspirationIds as string[]) ?? []);
+
     return {
-      user: applyMemberInfo(parsed.user ?? DEFAULT_STATE.user),
+      user: loadedUser,
       // Always load fresh from API — don't cache these collections in localStorage
       categories: DEFAULT_STATE.categories,
       threads: DEFAULT_STATE.threads,
-      inspirations: DEFAULT_STATE.inspirations,
+      // Restore saved inspiration markers from the saved IDs
+      inspirations: DEFAULT_STATE.inspirations.map((i) => ({
+        ...i,
+        savedBy: savedInspirationIds.has(i.id) ? [...new Set([...i.savedBy, loadedUser.id])] : i.savedBy,
+      })),
       events: DEFAULT_STATE.events,
       notifications: parsed.notifications ?? DEFAULT_STATE.notifications,
       notificationSettings: {
@@ -399,6 +406,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
+          // Save which inspirations the user has saved (since we don't persist the full inspirations collection)
+          savedInspirationIds: state.inspirations
+            .filter((i) => i.savedBy.includes(state.user.id))
+            .map((i) => i.id),
         },
         notificationSettings: state.notificationSettings,
         processedDates: state.processedDates,
