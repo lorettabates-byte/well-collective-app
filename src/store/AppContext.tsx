@@ -327,6 +327,8 @@ interface AppContextValue extends PersistedState {
   deleteCategory: (categoryId: string) => void;
   deleteThread: (threadId: string) => void;
   deleteMessage: (threadId: string, messageId: string) => void;
+  editThread: (threadId: string, newTitle: string) => void;
+  editMessage: (threadId: string, messageId: string, newText: string) => void;
   toggleInspirationLike: (inspirationId: string) => void;
   toggleInspirationSave: (inspirationId: string) => void;
   addInspiration: (inspiration: Omit<Inspiration, "id" | "likes" | "savedBy">) => void;
@@ -553,6 +555,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
       threads: prev.threads.map((thread) =>
         thread.id === threadId
           ? { ...thread, messages: thread.messages.filter((message) => message.id !== messageId) }
+          : thread
+      ),
+    }));
+  };
+
+  const editThread: AppContextValue["editThread"] = (threadId, newTitle) => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/forum/threads/${threadId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle, userId: state.user.id }),
+    }).catch((err) => console.error("Failed to sync thread edit:", err));
+
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.map((thread) =>
+        thread.id === threadId ? { ...thread, title: newTitle, editedAt: new Date().toISOString() } : thread
+      ),
+    }));
+  };
+
+  const editMessage: AppContextValue["editMessage"] = (threadId, messageId, newText) => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/forum/threads/${threadId}/messages/${messageId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: newText, userId: state.user.id }),
+    }).catch((err) => console.error("Failed to sync message edit:", err));
+
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.map((thread) =>
+        thread.id === threadId
+          ? {
+              ...thread,
+              messages: thread.messages.map((message) =>
+                message.id === messageId
+                  ? { ...message, text: newText, editedAt: new Date().toISOString() }
+                  : message
+              ),
+            }
           : thread
       ),
     }));
@@ -1291,6 +1334,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteCategory,
     deleteThread,
     deleteMessage,
+    editThread,
+    editMessage,
     toggleInspirationLike,
     toggleInspirationSave,
     saveWorkoutPlan,
