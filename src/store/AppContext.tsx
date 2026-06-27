@@ -1077,6 +1077,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               prev.inspirations.filter((i) => i.cadence === "note").map((i) => [i.id, i])
             );
             const savedIds = new Set(prev.user.savedInspirationIds ?? []);
+            const syncedIds = new Set(notes.map((n) => n.id));
+
+            // Sync new/updated notes from API
             const noteInspirations: Inspiration[] = notes.map((n) => {
               const existing = existingById.get(n.id);
               return {
@@ -1090,6 +1093,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 savedBy: existing?.savedBy ?? (savedIds.has(n.id) ? [prev.user.id] : []),
               };
             });
+
+            // Preserve old notes that have saves/likes, even if they're not in the API response
+            const oldNotesWithSavesOrLikes = Array.from(existingById.values()).filter(
+              (note) => !syncedIds.has(note.id) && (note.likes.length > 0 || note.savedBy.length > 0)
+            );
+
             const otherInspirations = prev.inspirations.filter((i) => i.cadence !== "note");
             // Sort by sentAt rather than just prepending notes ahead of
             // everything else — otherwise an old note would permanently sit
@@ -1099,7 +1108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // actual most recent content.
             return {
               ...prev,
-              inspirations: [...noteInspirations, ...otherInspirations].sort((a, b) =>
+              inspirations: [...noteInspirations, ...oldNotesWithSavesOrLikes, ...otherInspirations].sort((a, b) =>
                 b.sentAt.localeCompare(a.sentAt)
               ),
             };
