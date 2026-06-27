@@ -187,13 +187,17 @@ function loadState(): PersistedState {
     const loadedUser = applyMemberInfo(parsed.user ?? DEFAULT_STATE.user);
     const savedInspirationIds = new Set((parsed.user?.savedInspirationIds as string[]) ?? []);
 
+    // Use cached recent inspirations if available, otherwise fall back to default
+    const cachedInspirations = (parsed.inspirations as Inspiration[] | undefined) ?? [];
+    const inspirations = cachedInspirations.length > 0 ? cachedInspirations : DEFAULT_STATE.inspirations;
+
     return {
       user: loadedUser,
       // Always load fresh from API — don't cache these collections in localStorage
       categories: DEFAULT_STATE.categories,
       threads: DEFAULT_STATE.threads,
       // Restore saved inspiration markers from the saved IDs
-      inspirations: DEFAULT_STATE.inspirations.map((i) => ({
+      inspirations: inspirations.map((i) => ({
         ...i,
         savedBy: savedInspirationIds.has(i.id) ? [...new Set([...i.savedBy, loadedUser.id])] : i.savedBy,
       })),
@@ -402,19 +406,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Only persist user data and preferences to stay well under localStorage quota.
       // Threads, inspirations, and events are re-fetched from the API on page load,
       // so we don't need to cache them — this keeps localStorage small and reliable.
+      // Keep only recent inspirations (last 7 days) to stay under quota
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentInspirations = state.inspirations.filter(
+        (i) => new Date(i.sentAt) >= sevenDaysAgo
+      );
+
       const stateToPersist = {
         user: {
           ...state.user,
           avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
-          // Save which inspirations the user has saved (since we don't persist the full inspirations collection)
+          // Save which inspirations the user has saved
           savedInspirationIds: state.inspirations
             .filter((i) => i.savedBy.includes(state.user.id))
             .map((i) => i.id),
         },
         notificationSettings: state.notificationSettings,
+        inspirations: recentInspirations,
         processedDates: state.processedDates,
         featuredEventId: state.featuredEventId,
-        // Deliberately omit: threads, inspirations, events, categories
+        // Deliberately omit: threads, events, categories
         // These are refreshed from the API and not critical for offline use
       };
 
