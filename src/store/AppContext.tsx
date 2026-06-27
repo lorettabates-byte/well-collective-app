@@ -990,9 +990,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setState((prev) => {
             const byDate = new Map(prev.contentSchedule.map((e) => [e.date, e]));
             byDate.set(entry.date, { ...byDate.get(entry.date), ...entry });
+
+            // Add today's daily inspiration to the inspirations array if it exists
+            let updatedInspirations = prev.inspirations;
+            if (entry.dailyInspiration) {
+              // Remove any old "daily" inspiration for today so we don't have duplicates
+              updatedInspirations = updatedInspirations.filter(
+                (i) => !(i.cadence === "daily" && i.sentAt.startsWith(entry.date))
+              );
+              // Add the fresh daily inspiration
+              updatedInspirations = [
+                {
+                  id: `daily-${entry.date}`,
+                  ...entry.dailyInspiration,
+                  cadence: "daily",
+                  author: entry.dailyInspiration.author || "WELL Collective",
+                  likes: [],
+                  savedBy: prev.user.savedInspirationIds?.includes(`daily-${entry.date}`)
+                    ? [prev.user.id]
+                    : [],
+                },
+                ...updatedInspirations.filter((i) => i.cadence !== "daily"),
+              ];
+            }
+
             return {
               ...prev,
               contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
+              inspirations: updatedInspirations,
             };
           });
         })
