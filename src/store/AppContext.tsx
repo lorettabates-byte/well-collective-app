@@ -355,10 +355,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      // Strip out large avatar/image data that can exceed localStorage quota.
+      // These can be re-fetched from the API as needed.
+      const stateToPersist = {
+        ...state,
+        user: {
+          ...state.user,
+          avatar: state.user.avatar?.startsWith("data:") ? "" : state.user.avatar,
+        },
+        threads: state.threads.map((t) => ({
+          ...t,
+          authorAvatar: t.authorAvatar?.startsWith("data:") ? "" : t.authorAvatar,
+          messages: t.messages.map((m) => ({
+            ...m,
+            authorAvatar: m.authorAvatar?.startsWith("data:") ? "" : m.authorAvatar,
+          })),
+        })),
+        inspirations: state.inspirations.map((i) => ({
+          ...i,
+          imageUrl: "",
+        })),
+      };
+
+      const serialized = JSON.stringify(stateToPersist);
+      if (serialized.length > 4 * 1024 * 1024) {
+        console.warn("Persisted state exceeds 4MB, some data may be lost. Try clearing browser cache or archived old content.");
+        return;
+      }
+
+      window.localStorage.setItem(STORAGE_KEY, serialized);
     } catch (err) {
-      // Most commonly a quota-exceeded error from an oversized avatar data URL —
-      // log loudly since a silent failure here loses the whole state (profile, etc).
       console.error("Failed to persist app state to localStorage:", err);
     }
   }, [state]);
