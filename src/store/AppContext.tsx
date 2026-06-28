@@ -1249,11 +1249,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  // Push this member's profile (name/avatar/birthday/calendar opt-in) to the
-  // shared member directory so other members can see their birthday on the
-  // calendar and pick them in the new-message user list.
+  // Push this member's profile (name/avatar/birthday/calendar opt-in/saved+liked
+  // inspirations) to the shared member directory so other members can see their
+  // birthday on the calendar and so this member's saved/liked inspirations survive
+  // localStorage wipes (Safari tracking prevention, logout, device changes, etc.).
   useEffect(() => {
     if (!API_URL || !state.user.email) return;
+    const savedIds = state.inspirations
+      .filter((i) => i.savedBy.includes(state.user.id))
+      .map((i) => i.id);
+    const likedIds = state.inspirations
+      .filter((i) => i.likes.includes(state.user.id))
+      .map((i) => i.id);
     fetch(`${API_URL}/api/members/sync`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1270,6 +1277,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         showBirthdayOnCalendar: state.user.showBirthdayOnCalendar,
         // Lets tribe members see each other's streaks on the Home page.
         workoutLog: state.user.workoutLog,
+        // Persist saved and liked inspirations server-side so they survive
+        // localStorage wipes and are consistent across devices.
+        savedInspirationIds: savedIds.length > 0 ? savedIds : undefined,
+        likedInspirationIds: likedIds.length > 0 ? likedIds : undefined,
       }),
     }).catch((err) => console.error("Failed to sync member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1281,6 +1292,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.birthday,
     state.user.showBirthdayOnCalendar,
     state.user.workoutLog,
+    state.inspirations,
   ]);
 
   // Pull this member's saved profile back from the server to fill in any
@@ -1320,6 +1332,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             bonusBadges: member.bonusBadges,
             grantedBadges: member.grantedBadges,
             featuredBadge: member.featuredBadge,
+            // Restore saved/liked inspiration IDs from server (resilient to localStorage wipes)
+            savedInspirationIds: prev.user.savedInspirationIds || member.savedInspirationIds,
+            likedInspirationIds: prev.user.likedInspirationIds || member.likedInspirationIds,
           },
         }));
       })
