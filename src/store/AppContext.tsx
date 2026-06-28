@@ -1303,6 +1303,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ];
             }
 
+            // Weekly theme and motivation boost entries used to only be added
+            // once, by the processedDates-gated scheduler effect below, with a
+            // random id — since `inspirations` is never persisted to
+            // localStorage, a reload on the same day lost the entry entirely
+            // (processedDates already blocked it from being regenerated), so
+            // any like/save on it got orphaned: the id was saved server-side
+            // but no matching inspiration existed locally to show it on. Same
+            // deterministic-id + reconcile-every-poll fix as `dailyInspiration`
+            // above makes them just as resilient.
+            if (entry.weeklyTheme && new Date(entry.date + "T00:00:00").getDay() === 1) {
+              const weeklyId = `weekly-${entry.date}`;
+              const existingWeekly = updatedInspirations.find((i) => i.id === weeklyId);
+              updatedInspirations = updatedInspirations.filter(
+                (i) => !(i.cadence === "weekly" && i.sentAt.startsWith(entry.date))
+              );
+              updatedInspirations = [
+                {
+                  id: weeklyId,
+                  title: entry.weeklyTheme.title,
+                  body: entry.weeklyTheme.body,
+                  cadence: "weekly",
+                  author: "Loretta Bates",
+                  sentAt: new Date(entry.date + "T07:00:00").toISOString(),
+                  likes:
+                    existingWeekly?.likes ??
+                    (prev.user.likedInspirationIds?.includes(weeklyId) ? [prev.user.id] : []),
+                  savedBy:
+                    existingWeekly?.savedBy ??
+                    (prev.user.savedInspirationIds?.includes(weeklyId) ? [prev.user.id] : []),
+                },
+                ...updatedInspirations.filter((i) => i.cadence !== "weekly"),
+              ];
+            }
+
+            if (entry.motivationBoost) {
+              const motivationId = `motivation-${entry.date}`;
+              const existingMotivation = updatedInspirations.find((i) => i.id === motivationId);
+              updatedInspirations = updatedInspirations.filter(
+                (i) => !(i.cadence === "motivational" && i.sentAt.startsWith(entry.date))
+              );
+              updatedInspirations = [
+                {
+                  id: motivationId,
+                  title: entry.motivationBoost.title,
+                  body: entry.motivationBoost.body,
+                  cadence: "motivational",
+                  author: "Loretta Bates",
+                  sentAt: new Date(entry.date + "T07:00:00").toISOString(),
+                  likes:
+                    existingMotivation?.likes ??
+                    (prev.user.likedInspirationIds?.includes(motivationId) ? [prev.user.id] : []),
+                  savedBy:
+                    existingMotivation?.savedBy ??
+                    (prev.user.savedInspirationIds?.includes(motivationId) ? [prev.user.id] : []),
+                },
+                ...updatedInspirations.filter((i) => i.cadence !== "motivational"),
+              ];
+            }
+
             return {
               ...prev,
               contentSchedule: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
