@@ -89,6 +89,12 @@ interface PersistedState {
   contentSchedule: ContentBatchEntry[];
   processedDates: string[];
   featuredEventId: string | null;
+  // Watermark for the forum-activity-to-bell-notification reconciliation
+  // below — only posts/replies newer than this become notifications, so a
+  // device that's never seen this feature before doesn't get flooded with
+  // months of forum history the first time it polls. Null until the first
+  // poll establishes a baseline.
+  lastForumNotifiedAt: string | null;
 }
 
 const DEFAULT_STATE: PersistedState = {
@@ -112,6 +118,7 @@ const DEFAULT_STATE: PersistedState = {
   contentSchedule: [],
   processedDates: [],
   featuredEventId: null,
+  lastForumNotifiedAt: null,
 };
 
 // Every real member must have a unique, stable id derived from their email —
@@ -207,6 +214,7 @@ function loadState(): PersistedState {
       contentSchedule: DEFAULT_STATE.contentSchedule,
       processedDates: parsed.processedDates ?? DEFAULT_STATE.processedDates,
       featuredEventId: parsed.featuredEventId ?? DEFAULT_STATE.featuredEventId,
+      lastForumNotifiedAt: parsed.lastForumNotifiedAt ?? DEFAULT_STATE.lastForumNotifiedAt,
     };
   } catch {
     return DEFAULT_STATE;
@@ -494,6 +502,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         notificationSettings: state.notificationSettings,
         processedDates: state.processedDates,
         featuredEventId: state.featuredEventId,
+        lastForumNotifiedAt: state.lastForumNotifiedAt,
         // The notifications bell is entirely client-generated (weekly theme,
         // daily inspiration, profile nudges) with no server copy, so unlike
         // threads/inspirations/events it has to be persisted here or every
@@ -1398,11 +1407,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetch(`${API_URL}/api/forum/threads`).then((res) => (res.ok ? res.json() : null)),
       ])
         .then(([categoriesData, threadsData]) => {
-          setState((prev) => ({
-            ...prev,
-            categories: categoriesData?.categories ?? prev.categories,
-            threads: threadsData?.threads ?? prev.threads,
-          }));
+          setState((prev) => {
+            const newThreads: ForumThread[] = threadsData?.threads ?? prev.threads;
+
+            // Bell-notification reconciliation: turn newly-arrived posts/replies
+            // into AppNotification entries (the bell was otherwise only ever
+            // populated by weekly theme/daily inspiration — community activity
+            // never showed up there even though its push notification fired).
+            // `lastForumNotifiedAt` is a watermark, not a per-item dedupe set,
+            // so a device seeing this for the first time establishes a baseline
+            // instead of generating a notification for the entire forum history.
+            let next = { ...prev, categories: categoriesData?.categories ?? prev.categories, threads: newThreads };
+            const baseline = prev.lastForumNotifiedAt;
+            let newest = baseline ?? "";
+            const newNotifications: AppNotification[] = [];
+
+            for (const thread of newThreads) {
+              if (thread.createdAt > newest) newest = thread.createdAt;
+              const isOwn = thread.authorId === prev.user.id;
+              const postId = `n-thread-${thread.id}`;
+              if (
+                baseline &&
+                thread.createdAt > baseline &&
+                !isOwn &&
+                prev.notificationSettings.community &&
+                !prev.notifications.some((n) => n.id === postId)
+              ) {
+                newNotifications.push({
+                  id: postId,
+                  type: "post",
+                  title: `${thread.authorName} posted in ${thread.title}`,
+                  body: thread.messages[0]?.text ?? "",
+                  createdAt: thread.createdAt,
+                  read: false,
+                  link: `/community/${thread.categoryId}/${thread.id}`,
+                });
+              }
+
+              // messages[0] is the thread's own opening post (already handled
+              // above as a "post" notification) — only replies after it count.
+              for (const message of thread.messages.slice(1)) {
+                if (message.createdAt > newest) newest = message.createdAt;
+                const replyId = `n-msg-${message.id}`;
+                if (
+                  baseline &&
+                  message.createdAt > baseline &&
+                  message.authorId !== prev.user.id &&
+                  prev.notificationSettings.replies &&
+                  !prev.notifications.some((n) => n.id === replyId)
+                ) {
+                  newNotifications.push({
+                    id: replyId,
+                    type: "reply",
+                    title: `${message.authorName} replied in ${thread.title}`,
+                    body: message.text || "📷 Shared a photo",
+                    createdAt: message.createdAt,
+                    read: false,
+                    link: `/community/${thread.categoryId}/${thread.id}`,
+                  });
+                }
+              }
+            }
+
+            if (newNotifications.length > 0) {
+              next = {
+                ...next,
+                notifications: [...newNotifications, ...prev.notifications],
+              };
+            }
+            if (newest && newest !== baseline) {
+              next = { ...next, lastForumNotifiedAt: newest };
+            }
+            return next;
+          });
         })
         .catch(() => {
           // offline or backend unreachable — fall back to whatever local content exists
