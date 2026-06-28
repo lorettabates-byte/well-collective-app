@@ -1,8 +1,9 @@
-import { Loader2 } from "lucide-react";
+import { Image as ImageIcon, Loader2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 import type { AppNotificationType } from "../../types";
+import { compressImage, MAX_PHOTO_BYTES } from "../../utils/compressImage";
 import { timeAgo } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -35,6 +36,8 @@ export default function AdminNotifications() {
   const [type, setType] = useState<AppNotificationType>("general");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [image, setImage] = useState<string | undefined>();
+  const [photoError, setPhotoError] = useState("");
   const [sending, setSending] = useState(false);
   const [pushError, setPushError] = useState("");
   const [checkingBlog, setCheckingBlog] = useState(false);
@@ -84,6 +87,19 @@ export default function AdminNotifications() {
     }
   };
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("That photo is too large — please choose an image smaller than 15MB.");
+      e.target.value = "";
+      return;
+    }
+    setPhotoError("");
+    setImage(await compressImage(file, 1200, 0.85));
+    e.target.value = "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
@@ -96,7 +112,7 @@ export default function AdminNotifications() {
         const res = await fetch(`${API_URL}/api/notes`, {
           method: "POST",
           headers: getAuthHeaders(),
-          body: JSON.stringify({ title: title.trim(), body: body.trim() }),
+          body: JSON.stringify({ title: title.trim(), body: body.trim(), image }),
         });
         if (!res.ok) {
           setPushError("Saved here, but the push notification failed to send.");
@@ -110,6 +126,7 @@ export default function AdminNotifications() {
 
     setTitle("");
     setBody("");
+    setImage(undefined);
   };
 
   const recent = [...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
@@ -190,6 +207,28 @@ export default function AdminNotifications() {
               rows={3}
               className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
             />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Photo (optional)</label>
+            {image ? (
+              <div className="relative w-full">
+                <img src={image} alt="" className="w-full max-h-44 object-cover rounded-card" />
+                <button
+                  type="button"
+                  onClick={() => setImage(undefined)}
+                  className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center gap-2 w-full bg-surface-2 border border-dashed border-border rounded-card px-4 py-3 text-sm text-text-muted cursor-pointer">
+                <ImageIcon size={16} />
+                Add a photo
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
+            )}
+            {photoError && <p className="text-xs text-red-400 mt-1.5">{photoError}</p>}
           </div>
           {pushError && <p className="text-xs text-red-400">{pushError}</p>}
           <button

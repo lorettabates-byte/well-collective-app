@@ -1565,7 +1565,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetch(`${API_URL}/api/notes`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          const notes = data?.notes as { id: string; title: string; body: string; sentAt: string }[] | undefined;
+          const notes = data?.notes as
+            | { id: string; title: string; body: string; image?: string; sentAt: string }[]
+            | undefined;
           if (!notes) return;
           setState((prev) => {
             const existingById = new Map(
@@ -1584,6 +1586,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 id: n.id,
                 title: n.title,
                 body: n.body,
+                image: n.image,
                 author: "Loretta",
                 cadence: "note",
                 sentAt: n.sentAt,

@@ -43,6 +43,14 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
           <span className="text-[11px] text-text-dim">{timeAgo(inspiration.sentAt)}</span>
         </div>
         <h3 className="text-base font-bold text-text mb-1.5">{inspiration.title}</h3>
+        {inspiration.image && (
+          <img
+            src={inspiration.image}
+            alt=""
+            className="w-full rounded-card mb-3"
+            style={{ maxHeight: compact ? 140 : 220, objectFit: "cover" }}
+          />
+        )}
         {!compact && <p className="text-sm text-text-muted leading-relaxed mb-3">{inspiration.body}</p>}
         {compact && <p className="text-sm text-text-muted leading-relaxed line-clamp-2 mb-3">{inspiration.body}</p>}
 
