@@ -13,6 +13,7 @@ export interface User {
   birthday?: string; // MM-DD
   showBirthdayOnCalendar?: boolean;
   workoutLog?: string[]; // ISO dates (yyyy-mm-dd) of completed workouts
+  customWorkoutNotes?: Record<string, string>; // ISO date -> what they did, for days logged via "my own workout" instead of the assigned routine
   breathworkLog?: string[]; // ISO dates of completed breathwork sessions
   wellActivityLog?: string[]; // ISO dates of completed Well Activities
   classLog?: string[]; // ISO dates a class tile (Livestream, Zumba, etc.) was opened

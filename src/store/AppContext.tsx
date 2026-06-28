@@ -402,6 +402,7 @@ interface AppContextValue extends PersistedState {
   markAllNotificationsRead: () => void;
   sendNotification: (type: AppNotificationType, title: string, body: string, link?: string) => void;
   logWorkoutCompletion: () => void;
+  logCustomWorkout: (note: string) => void;
   logBreathworkCompletion: () => void;
   logWellActivityCompletion: () => void;
   logClassCompletion: () => void;
@@ -1075,6 +1076,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const log = prev.user.workoutLog ?? [];
       if (log.includes(today)) return prev;
       return { ...prev, user: { ...prev.user, workoutLog: [...log, today] } };
+    });
+  };
+
+  // Counts the same as the assigned routine toward the workout streak — the
+  // streak only cares whether today's date is in workoutLog, not which
+  // workout was done.
+  const logCustomWorkout: AppContextValue["logCustomWorkout"] = (note) => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.workoutLog ?? [];
+      const notes = prev.user.customWorkoutNotes ?? {};
+      return {
+        ...prev,
+        user: {
+          ...prev.user,
+          workoutLog: log.includes(today) ? log : [...log, today],
+          customWorkoutNotes: { ...notes, [today]: note },
+        },
+      };
     });
   };
 
@@ -1813,6 +1833,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAllNotificationsRead,
     sendNotification,
     logWorkoutCompletion,
+    logCustomWorkout,
     logBreathworkCompletion,
     logWellActivityCompletion,
     logClassCompletion,

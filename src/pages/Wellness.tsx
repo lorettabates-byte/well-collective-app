@@ -12,6 +12,7 @@ import {
   Info,
   Lock,
   MessageCircle,
+  PenLine,
   RefreshCw,
   Scale,
   Sparkles,
@@ -78,6 +79,7 @@ export default function Wellness() {
     currentWeeklyTheme,
     todaysWellActivity,
     logWorkoutCompletion,
+    logCustomWorkout,
     logWellActivityCompletion,
     logClassCompletion,
     saveWorkoutPlan,
@@ -96,6 +98,8 @@ export default function Wellness() {
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
   const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [customWorkoutText, setCustomWorkoutText] = useState("");
+  const [showCustomWorkoutForm, setShowCustomWorkoutForm] = useState(false);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -114,6 +118,16 @@ export default function Wellness() {
     const milestone = getStreakMilestone(computeStreak([...wellActivityLog, today]));
     if (milestone) setCelebration({ days: milestone, label: "Well Activity" });
     logWellActivityCompletion();
+    confetti({ particleCount: 100, spread: 70 });
+  };
+
+  const handleLogCustomWorkout = () => {
+    if (completedToday || !customWorkoutText.trim()) return;
+    const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
+    if (milestone) setCelebration({ days: milestone, label: "Workout" });
+    logCustomWorkout(customWorkoutText.trim());
+    setCustomWorkoutText("");
+    setShowCustomWorkoutForm(false);
     confetti({ particleCount: 100, spread: 70 });
   };
 
@@ -401,6 +415,59 @@ export default function Wellness() {
               </button>
             </div>
           </div>
+
+          {!completedToday && (
+            <div className="bg-surface-2 border border-border rounded-card p-4 mb-4">
+              {!showCustomWorkoutForm ? (
+                <button
+                  onClick={() => setShowCustomWorkoutForm(true)}
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-text-muted"
+                >
+                  <PenLine size={15} />
+                  Did your own workout today? Log it here
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <p className="text-xs font-semibold text-text-muted">What did you do?</p>
+                  <textarea
+                    value={customWorkoutText}
+                    onChange={(e) => setCustomWorkoutText(e.target.value)}
+                    placeholder="e.g. 30 min run, yoga class, hike with the dog..."
+                    rows={2}
+                    className="w-full bg-surface border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setShowCustomWorkoutForm(false);
+                        setCustomWorkoutText("");
+                      }}
+                      className="flex-1 text-xs font-semibold text-text-muted border border-border rounded-pill py-2"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleLogCustomWorkout}
+                      disabled={!customWorkoutText.trim()}
+                      className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
+                    >
+                      Log It — Counts Today
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {completedToday && user.customWorkoutNotes?.[today] && (
+            <div className="bg-surface-2 border border-border rounded-card p-3 mb-4 flex items-start gap-2">
+              <PenLine size={14} className="text-brand-light shrink-0 mt-0.5" />
+              <p className="text-xs text-text-muted">
+                <span className="font-semibold text-text">Logged on your own:</span>{" "}
+                {user.customWorkoutNotes[today]}
+              </p>
+            </div>
+          )}
 
           <button
             onClick={() => {
