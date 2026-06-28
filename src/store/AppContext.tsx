@@ -492,6 +492,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         notificationSettings: state.notificationSettings,
         processedDates: state.processedDates,
         featuredEventId: state.featuredEventId,
+        // The notifications bell is entirely client-generated (weekly theme,
+        // daily inspiration, profile nudges) with no server copy, so unlike
+        // threads/inspirations/events it has to be persisted here or every
+        // reload wipes it back to the hardcoded seed data — losing new
+        // notifications and resetting read ones back to unread. Capped to
+        // the most recent 100 to keep it from growing unbounded over time.
+        notifications: state.notifications.slice(0, 100),
       };
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
