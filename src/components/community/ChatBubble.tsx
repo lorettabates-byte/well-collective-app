@@ -77,15 +77,25 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
           </div>
         ) : (
           <>
-            <div
-              className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                isOwn
-                  ? "gradient-brand text-white rounded-bubble rounded-br-md"
-                  : "bg-surface-2 text-text rounded-bubble rounded-bl-md"
-              }`}
-            >
-              {message.text}
-            </div>
+            {message.image && (
+              <img
+                src={message.image}
+                alt=""
+                className="max-w-full rounded-bubble mb-1"
+                style={{ maxHeight: 240 }}
+              />
+            )}
+            {message.text && (
+              <div
+                className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                  isOwn
+                    ? "gradient-brand text-white rounded-bubble rounded-br-md"
+                    : "bg-surface-2 text-text rounded-bubble rounded-bl-md"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-1 px-1">
               <span className="text-[10px] text-text-dim">
                 {formatTime(message.createdAt)}

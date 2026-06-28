@@ -104,6 +104,7 @@ export interface ThreadMessage {
   editedAt?: string;
   likes: string[]; // userIds who "supported" this message
   replyToId?: string;
+  image?: string;
 }
 
 export interface ForumThread {

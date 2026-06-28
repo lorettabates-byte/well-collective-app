@@ -1,7 +1,9 @@
+import { Image as ImageIcon, X } from "lucide-react";
 import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
+import { compressImage, MAX_PHOTO_BYTES } from "../utils/compressImage";
 
 export default function NewThread() {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -11,13 +13,28 @@ export default function NewThread() {
 
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
+  const [image, setImage] = useState<string | undefined>();
+  const [photoError, setPhotoError] = useState("");
 
   if (!category || !categoryId) return <Navigate to="/community" replace />;
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("That photo is too large — please choose an image smaller than 15MB.");
+      e.target.value = "";
+      return;
+    }
+    setPhotoError("");
+    setImage(await compressImage(file, 640, 0.6));
+    e.target.value = "";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !text.trim()) return;
-    const thread = addThread(categoryId, title.trim(), text.trim());
+    const thread = addThread(categoryId, title.trim(), text.trim(), image);
     navigate(`/community/${categoryId}/${thread.id}`, { replace: true });
   };
 
@@ -43,6 +60,27 @@ export default function NewThread() {
             rows={6}
             className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
           />
+        </div>
+        <div>
+          {image ? (
+            <div className="relative w-full">
+              <img src={image} alt="" className="w-full max-h-56 object-cover rounded-card" />
+              <button
+                type="button"
+                onClick={() => setImage(undefined)}
+                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 w-full bg-surface-2 border border-dashed border-border rounded-card px-4 py-3 text-sm text-text-muted cursor-pointer">
+              <ImageIcon size={16} />
+              Add a photo (optional)
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+          )}
+          {photoError && <p className="text-xs text-red-400 mt-1.5">{photoError}</p>}
         </div>
         <button
           type="submit"
