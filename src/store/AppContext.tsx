@@ -53,7 +53,13 @@ function recoverFromQuotaExceeded() {
     }
 
     // Remove other app data, but preserve user preferences and flags
-    const keysToPreserve = ["memberUser", "memberProfileSyncedEmail", "well-notifications-onboarding-v1", "memberTrialEndsAt"];
+    const keysToPreserve = [
+      "memberUser",
+      "memberProfileSyncedEmail",
+      "well-notifications-onboarding-v1",
+      "well-feature-tour-v1",
+      "memberTrialEndsAt",
+    ];
     for (const key of keys) {
       if (key && !key.startsWith("well-collective") && !keysToPreserve.includes(key)) {
         try {

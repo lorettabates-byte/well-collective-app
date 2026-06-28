@@ -2,6 +2,7 @@ import { Bell, Calendar, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
+import FeatureTourModal from "../components/FeatureTourModal";
 import NotificationOptInModal from "../components/NotificationOptInModal";
 import EventCard from "../components/events/EventCard";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
@@ -50,6 +51,7 @@ export default function Home() {
 
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -73,6 +75,17 @@ export default function Home() {
   const handleCloseNotifOptIn = () => {
     localStorage.setItem("well-notifications-onboarding-v1", "1");
     setShowNotifOptIn(false);
+  };
+
+  useEffect(() => {
+    const key = "well-feature-tour-v1";
+    if (localStorage.getItem(key)) return;
+    setShowTour(true);
+  }, []);
+
+  const handleCloseTour = () => {
+    localStorage.setItem("well-feature-tour-v1", "1");
+    setShowTour(false);
   };
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
@@ -163,7 +176,8 @@ export default function Home() {
       </div>
 
       {showBirthday && <BirthdayModal name={user.name} email={user.email} onClose={() => setShowBirthday(false)} />}
-      {!showBirthday && showNotifOptIn && <NotificationOptInModal onClose={handleCloseNotifOptIn} />}
+      {!showBirthday && showTour && <FeatureTourModal onClose={handleCloseTour} />}
+      {!showBirthday && !showTour && showNotifOptIn && <NotificationOptInModal onClose={handleCloseNotifOptIn} />}
     </div>
   );
 }
