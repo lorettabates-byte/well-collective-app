@@ -377,6 +377,8 @@ interface AppContextValue extends PersistedState {
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
   removeContentEntry: (date: string) => void;
   setFeaturedEvent: (eventId: string | null) => void;
+  soldOutEventIds: string[];
+  toggleLiveEventSoldOut: (eventId: string) => void;
   setFeaturedBadge: (badgeId: string | null) => void;
   currentWeeklyTheme: Inspiration | undefined;
   todaysWellActivity: WellActivity;
@@ -404,6 +406,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
   const [recipeFolders, setRecipeFolders] = useState<RecipeFolder[]>([]);
 
+  // Sold-out status for live (WordPress-sourced) events, which have no row in
+  // our own `events` table to hold a column — see setting key
+  // "soldOutEventIds" on the server. Local events still use their own
+  // `soldOut` column; this list is consulted in addition to that.
+  const [soldOutEventIds, setSoldOutEventIds] = useState<string[]>([]);
+
   // Flips true once the restore-from-server fetch (below) has settled, so the
   // profile-sync push effect knows it's safe to push without risking
   // overwriting good server data with not-yet-restored local state.
@@ -429,6 +437,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMemberBadges(map);
       })
       .catch((err) => console.error("Failed to fetch member badges:", err));
+  }, []);
+
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/settings/sold-out-events`)
+      .then((res) => (res.ok ? res.json() : { ids: [] }))
+      .then((data) => setSoldOutEventIds(data.ids || []))
+      .catch((err) => console.error("Failed to fetch sold-out events:", err));
   }, []);
 
   useEffect(() => {
@@ -837,7 +853,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const res = await fetch(`${API_URL}/api/recipes/history?${params.toString()}`);
     if (!res.ok) return [];
     const data = await res.json();
-    return data.recipes || [];
+    const recipes: Recipe[] = data.recipes || [];
+    // The history endpoint returns raw content_schedule rows, which (like
+    // today's recipe before this same fallback is applied below) often have
+    // no stored image — resolve one the same way todaysRecipe does, instead
+    // of leaving the <img> src empty.
+    return recipes.map((recipe) => ({
+      ...recipe,
+      image:
+        recipe.image ||
+        (recipe.imageCategory
+          ? getRecipePhotoByCategory(recipe.imageCategory, recipe.name)
+          : getRecipePhoto(recipe.name, recipe.ingredients)),
+    }));
   };
 
   const addInspiration: AppContextValue["addInspiration"] = (inspiration) => {
@@ -1048,6 +1076,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers: adminHeaders(),
         body: JSON.stringify({ featuredEventId: eventId }),
       }).catch((err) => console.error("Failed to sync featured event:", err));
+    }
+  };
+
+  const toggleLiveEventSoldOut: AppContextValue["toggleLiveEventSoldOut"] = (eventId) => {
+    const next = soldOutEventIds.includes(eventId)
+      ? soldOutEventIds.filter((id) => id !== eventId)
+      : [...soldOutEventIds, eventId];
+    setSoldOutEventIds(next);
+    if (API_URL) {
+      fetch(`${API_URL}/api/settings/sold-out-events`, {
+        method: "PUT",
+        headers: adminHeaders(),
+        body: JSON.stringify({ ids: next }),
+      }).catch((err) => console.error("Failed to sync sold-out events:", err));
     }
   };
 
@@ -1590,6 +1632,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     importContentSchedule,
     removeContentEntry,
     setFeaturedEvent,
+    soldOutEventIds,
+    toggleLiveEventSoldOut,
     setFeaturedBadge,
     currentWeeklyTheme,
     todaysWellActivity,

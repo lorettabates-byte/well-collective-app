@@ -20,14 +20,15 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, compact }: EventCardProps) {
-  const { user, toggleRsvp, memberBadges } = useApp();
+  const { user, toggleRsvp, memberBadges, soldOutEventIds } = useApp();
   const isGoing = event.rsvps.includes(user.id);
   const isLive = event.source === "live";
+  const soldOut = !!event.soldOut || soldOutEventIds.includes(event.id);
 
   if (compact) {
     return (
       <div className="relative glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up overflow-hidden">
-        {event.soldOut && (
+        {soldOut && (
           <span className="absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wide bg-red-500 text-white rounded-pill px-2 py-0.5">
             Sold Out
           </span>
@@ -59,14 +60,14 @@ export default function EventCard({ event, compact }: EventCardProps) {
       {event.image && (
         <div className="relative -mt-4 -mx-4 mb-3" style={{ width: "calc(100% + 2rem)" }}>
           <img src={event.image} alt="" className="w-full h-40 object-cover rounded-card" />
-          {event.soldOut && (
+          {soldOut && (
             <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wide bg-red-500 text-white rounded-pill px-2.5 py-1 shadow">
               Sold Out
             </span>
           )}
         </div>
       )}
-      {!event.image && event.soldOut && (
+      {!event.image && soldOut && (
         <span className="inline-block mb-2 text-[10px] font-bold uppercase tracking-wide bg-red-500/15 text-red-400 rounded-pill px-2.5 py-1">
           Sold Out
         </span>
@@ -135,12 +136,12 @@ export default function EventCard({ event, compact }: EventCardProps) {
             </div>
             <button
               onClick={() => toggleRsvp(event.id)}
-              disabled={event.soldOut && !isGoing}
+              disabled={soldOut && !isGoing}
               className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
               }`}
             >
-              {isGoing ? "Going ✓" : event.soldOut ? "Sold Out" : "RSVP"}
+              {isGoing ? "Going ✓" : soldOut ? "Sold Out" : "RSVP"}
             </button>
           </>
         )}

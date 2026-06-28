@@ -24,6 +24,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(buildVersion),
   },
+  server: {
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
+  },
   build: {
     // Older Safari/iOS versions (pre-16.4) are still in use by some members;
     // widen the JS syntax target so the bundle parses on those devices too.

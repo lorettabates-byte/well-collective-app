@@ -205,7 +205,16 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
 }
 
 export default function AdminEvents() {
-  const { events, addEvent, updateEvent, deleteEvent, setFeaturedEvent, featuredEventId } = useApp();
+  const {
+    events,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    setFeaturedEvent,
+    featuredEventId,
+    soldOutEventIds,
+    toggleLiveEventSoldOut,
+  } = useApp();
 
   const toggleSoldOut = (event: CommunityEvent) => {
     updateEvent(event.id, { ...event, soldOut: !event.soldOut });
@@ -349,10 +358,24 @@ export default function AdminEvents() {
                       Featured
                     </span>
                   )}
+                  {soldOutEventIds.includes(event.id) && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide bg-red-500/15 text-red-400 rounded-pill px-2 py-0.5">
+                      Sold Out
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-text-muted">{formatDateLong(event.date)} · {event.time}</p>
                 <p className="text-[11px] text-text-dim mt-0.5 truncate">{event.location}</p>
               </div>
+              <button
+                onClick={() => toggleLiveEventSoldOut(event.id)}
+                className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
+                  soldOutEventIds.includes(event.id) ? "bg-red-500 text-white" : "bg-surface-2 text-text-muted"
+                }`}
+                aria-label={soldOutEventIds.includes(event.id) ? "Mark as not sold out" : "Mark as sold out"}
+              >
+                <AlertTriangle size={14} className={soldOutEventIds.includes(event.id) ? "fill-red-500" : ""} />
+              </button>
               <button
                 onClick={() => toggleFeatured(event.id)}
                 className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
