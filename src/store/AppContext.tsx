@@ -191,6 +191,21 @@ function applyMemberInfo(user: User): User {
   }
 }
 
+// One-time cleanup for devices that already persisted the old seed
+// notifications (n1/n2/n4) before the baseline was replaced with the real
+// "Just a little reminder" note and "Welcome" post. Runs harmlessly forever
+// since the legacy ids disappear after the first migration.
+const LEGACY_SEED_IDS = ["n1", "n2", "n4"];
+function migrateLegacyNotifications(notifications: AppNotification[]): AppNotification[] {
+  const hasLegacy = notifications.some((n) => LEGACY_SEED_IDS.includes(n.id));
+  if (!hasLegacy) return notifications;
+  const cleaned = notifications.filter((n) => !LEGACY_SEED_IDS.includes(n.id));
+  const baseline = NOTIFICATIONS.filter(
+    (n) => n.id !== "n3" && !cleaned.some((existing) => existing.id === n.id)
+  );
+  return [...baseline, ...cleaned];
+}
+
 function loadState(): PersistedState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
@@ -206,7 +221,7 @@ function loadState(): PersistedState {
       threads: DEFAULT_STATE.threads,
       inspirations: DEFAULT_STATE.inspirations,
       events: DEFAULT_STATE.events,
-      notifications: parsed.notifications ?? DEFAULT_STATE.notifications,
+      notifications: migrateLegacyNotifications(parsed.notifications ?? DEFAULT_STATE.notifications),
       notificationSettings: {
         ...DEFAULT_STATE.notificationSettings,
         ...parsed.notificationSettings,

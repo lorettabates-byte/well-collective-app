@@ -461,24 +461,6 @@ export const EVENTS: CommunityEvent[] = [
 
 export const NOTIFICATIONS: AppNotification[] = [
   {
-    id: "n1",
-    type: "reply",
-    title: "New reply in 'Down 10lbs and feeling stronger than ever 💪✨'",
-    body: "Jamie Carter replied: 'THIS is what it's all about. So proud of you Maria 👏👏👏'",
-    createdAt: "2026-06-13T10:02:00",
-    read: false,
-    link: "/community/success-stories/t5",
-  },
-  {
-    id: "n2",
-    type: "post",
-    title: "New post in General Chat",
-    body: "Jamie Carter started a new thread: 'What's everyone listening to / watching this week?'",
-    createdAt: "2026-06-13T11:30:00",
-    read: false,
-    link: "/community/general-chat/t6",
-  },
-  {
     id: "n3",
     type: "general",
     title: "New weekly inspiration is here 🌿",
@@ -488,12 +470,21 @@ export const NOTIFICATIONS: AppNotification[] = [
     link: "/inspirations",
   },
   {
-    id: "n4",
-    type: "mention",
-    title: "Loretta Bates mentioned the community",
-    body: "\"Adding them to this week's inspiration roundup 🌿\" in Morning journaling prompts that actually help",
-    createdAt: "2026-06-12T08:10:00",
+    id: "n-note-1",
+    type: "general",
+    title: "Just a little reminder…",
+    body: "In case you forget today, you are special⭐️",
+    createdAt: "2026-06-24T20:05:29.859Z",
     read: true,
-    link: "/community/emotional-spiritual/t4",
+    link: "/inspirations",
+  },
+  {
+    id: "n-thread-t_wuunbto4",
+    type: "post",
+    title: "Loretta Bates posted in Welcome and a few Notes✨",
+    body: "Hello everyone and welcome! Couple of things to make sure you are able to enjoy",
+    createdAt: "2026-06-27T23:21:35.115Z",
+    read: true,
+    link: "/community/introductions/t_wuunbto4",
   },
 ];
