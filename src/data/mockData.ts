@@ -466,7 +466,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "New weekly inspiration is here 🌿",
     body: "\"This week's focus: Gentle consistency\" — open Inspirations to read today's message.",
     createdAt: "2026-06-09T06:00:00",
-    read: true,
+    read: false,
     link: "/inspirations",
   },
   {
@@ -475,7 +475,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "Just a little reminder…",
     body: "In case you forget today, you are special⭐️",
     createdAt: "2026-06-24T20:05:29.859Z",
-    read: true,
+    read: false,
     link: "/inspirations",
   },
   {
@@ -484,7 +484,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: "Loretta Bates posted in Welcome and a few Notes✨",
     body: "Hello everyone and welcome! Couple of things to make sure you are able to enjoy",
     createdAt: "2026-06-27T23:21:35.115Z",
-    read: true,
+    read: false,
     link: "/community/introductions/t_wuunbto4",
   },
 ];

@@ -19,7 +19,10 @@ export default function Thread() {
   const category = categories.find((c) => c.id === categoryId);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    // block: "end" aligns the bottom of the marker with the bottom of the
+    // scrollport — the default "start" alignment was landing mid-thread on
+    // long messages, leaving the sticky input bar stranded above unread text.
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [thread?.messages.length]);
 
   if (!thread || !category) return <Navigate to="/community" replace />;
@@ -102,7 +105,7 @@ export default function Thread() {
 
       <form
         onSubmit={handleSend}
-        className="sticky bottom-16 z-30 glass-card border-t border-border px-3 py-2.5 flex flex-col gap-2 mt-4"
+        className="sticky bottom-0 z-30 glass-card border-t border-border px-3 py-2.5 flex flex-col gap-2 mt-4"
       >
         {photoError && <p className="text-xs text-red-400">{photoError}</p>}
         {image && (
