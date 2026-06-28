@@ -13,7 +13,11 @@ export default function CategoryThreads() {
 
   const categoryThreads = threads
     .filter((t) => t.categoryId === categoryId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) => {
+      if (!!a.pinnedAt !== !!b.pinnedAt) return a.pinnedAt ? -1 : 1;
+      if (a.pinnedAt && b.pinnedAt) return b.pinnedAt.localeCompare(a.pinnedAt);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
 
   return (
     <div>

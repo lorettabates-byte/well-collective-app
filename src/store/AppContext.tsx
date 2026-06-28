@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   CATEGORIES,
   CURRENT_USER,
@@ -388,6 +388,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // (which goes stale the instant the member changes their photo or name).
   // Not persisted: it's a live directory, refetched fresh each session.
   const [memberBadges, setMemberBadges] = useState<Record<string, MemberDirectoryEntry>>({});
+
+  // Flips true once the restore-from-server fetch (below) has settled, so the
+  // profile-sync push effect knows it's safe to push without risking
+  // overwriting good server data with not-yet-restored local state.
+  const hasAttemptedRestoreRef = useRef(false);
+  const [restoreGate, setRestoreGate] = useState(0);
 
   useEffect(() => {
     if (!API_URL) return;
@@ -1118,6 +1124,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // Add today's daily inspiration to the inspirations array if it exists
             let updatedInspirations = prev.inspirations;
             if (entry.dailyInspiration) {
+              const dailyId = `daily-${entry.date}`;
+              // Prefer the existing item's own likes/savedBy (already-authoritative
+              // local state) over re-deriving from user.likedInspirationIds/
+              // savedInspirationIds, which can still be empty here if this poll
+              // fires before the server-restore fetch finishes — re-deriving in
+              // that window would wipe out a real save/like, and the next sync-
+              // to-server push would then persist that empty state permanently.
+              const existingDaily = updatedInspirations.find((i) => i.id === dailyId);
               // Remove any old "daily" inspiration for today so we don't have duplicates
               updatedInspirations = updatedInspirations.filter(
                 (i) => !(i.cadence === "daily" && i.sentAt.startsWith(entry.date))
@@ -1125,18 +1139,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Add the fresh daily inspiration with a recent sentAt time so it sorts first
               updatedInspirations = [
                 {
-                  id: `daily-${entry.date}`,
+                  id: dailyId,
                   title: entry.dailyInspiration.title,
                   body: entry.dailyInspiration.body,
                   cadence: "daily",
                   author: "WELL Collective",
                   sentAt: new Date(entry.date + "T07:00:00").toISOString(),
-                  likes: prev.user.likedInspirationIds?.includes(`daily-${entry.date}`)
-                    ? [prev.user.id]
-                    : [],
-                  savedBy: prev.user.savedInspirationIds?.includes(`daily-${entry.date}`)
-                    ? [prev.user.id]
-                    : [],
+                  likes:
+                    existingDaily?.likes ??
+                    (prev.user.likedInspirationIds?.includes(dailyId) ? [prev.user.id] : []),
+                  savedBy:
+                    existingDaily?.savedBy ??
+                    (prev.user.savedInspirationIds?.includes(dailyId) ? [prev.user.id] : []),
                 },
                 ...updatedInspirations.filter((i) => i.cadence !== "daily"),
               ];
@@ -1300,7 +1314,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // birthday on the calendar and so this member's saved/liked inspirations survive
   // localStorage wipes (Safari tracking prevention, logout, device changes, etc.).
   useEffect(() => {
+    // Wait for the restore-from-server fetch below to settle at least once.
+    // Without this, a page load can push local inspirations state (still
+    // empty/incomplete because the restore hasn't landed yet) to the server
+    // before the real saved/liked data has been pulled down — permanently
+    // overwriting it with an empty list. Pushing only after restore has had
+    // its chance ensures we never write less than what the server already has.
+    if (!hasAttemptedRestoreRef.current) return;
     if (!API_URL || !state.user.email) return;
+    void restoreGate; // re-run this effect once the restore attempt settles
     const savedIds = state.inspirations
       .filter((i) => i.savedBy.includes(state.user.id))
       .map((i) => i.id);
@@ -1339,6 +1361,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.showBirthdayOnCalendar,
     state.user.workoutLog,
     state.inspirations,
+    restoreGate,
   ]);
 
   // Pull this member's saved profile back from the server to fill in any
@@ -1351,7 +1374,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // fill gaps" rule as applyMemberInfo: server data can only fill a field
   // that's still empty locally, never overwrite something already present.
   useEffect(() => {
-    if (!API_URL || !state.user.email) return;
+    if (!API_URL || !state.user.email) {
+      hasAttemptedRestoreRef.current = true;
+      setRestoreGate((n) => n + 1);
+      return;
+    }
     fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(state.user.email)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -1384,7 +1411,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           },
         }));
       })
-      .catch((err) => console.error("Failed to restore member profile:", err));
+      .catch((err) => console.error("Failed to restore member profile:", err))
+      .finally(() => {
+        hasAttemptedRestoreRef.current = true;
+        setRestoreGate((n) => n + 1);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.user.email]);
 

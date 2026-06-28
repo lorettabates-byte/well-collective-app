@@ -1,4 +1,4 @@
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Pin } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CategoryIcon } from "../../data/iconMap";
 import { resolveFeaturedBadge } from "../../data/badges";
@@ -58,7 +58,10 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
         </span>
       )}
 
-      <h3 className="text-sm font-bold text-text mb-1">{thread.title}</h3>
+      <h3 className="text-sm font-bold text-text mb-1 flex items-center gap-1.5">
+        {thread.pinnedAt && <Pin size={13} className="text-brand-light fill-brand-light shrink-0" />}
+        {thread.title}
+      </h3>
       {lastMessage && (
         <p className="text-xs text-text-muted line-clamp-2 mb-3">{lastMessage.text}</p>
       )}
