@@ -1,4 +1,4 @@
-import { Download, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, Download, Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -103,11 +103,20 @@ function buildTemplate(days: number): ContentBatchEntry[] {
   return entries;
 }
 
+interface BackfillResult {
+  date: string;
+  name: string;
+  verified: boolean;
+}
+
 export default function AdminContent() {
   const { contentSchedule, importContentSchedule, removeContentEntry } = useApp();
   const [jsonText, setJsonText] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [syncing, setSyncing] = useState(true);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResults, setBackfillResults] = useState<BackfillResult[] | null>(null);
+  const [backfillError, setBackfillError] = useState("");
 
   useEffect(() => {
     fetchContentSchedule()
@@ -164,6 +173,26 @@ export default function AdminContent() {
     deleteContentScheduleEntry(date).catch(() => {});
   };
 
+  const handleBackfillNutrition = async () => {
+    if (!API_URL) return;
+    setBackfilling(true);
+    setBackfillError("");
+    setBackfillResults(null);
+    try {
+      const res = await fetch(`${API_URL}/api/recipes/backfill-nutrition`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Backfill request failed.");
+      const data = await res.json();
+      setBackfillResults(data.results || []);
+    } catch (err) {
+      setBackfillError(err instanceof Error ? err.message : "Backfill failed.");
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   const sorted = [...contentSchedule].sort((a, b) => a.date.localeCompare(b.date));
   const todayISO = toLocalISODate(new Date());
   const todayEntry = contentSchedule.find((e) => e.date === todayISO);
@@ -211,6 +240,37 @@ export default function AdminContent() {
             <Download size={16} />
             Download 30-Day Template
           </button>
+        </div>
+
+        <div className="glass-card rounded-card p-4">
+          <h2 className="text-sm font-bold text-text mb-1.5">Backfill Recipe Nutrition</h2>
+          <p className="text-xs text-text-muted leading-relaxed">
+            One-time tool: looks up real USDA nutrition for past recipes that were generated before this
+            feature existed, using their existing ingredient list. Safe to run more than once — it skips
+            anything already verified.
+          </p>
+          <button
+            onClick={handleBackfillNutrition}
+            disabled={backfilling}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 mt-3 disabled:opacity-60"
+          >
+            {backfilling ? <Loader2 size={16} className="animate-spin" /> : <BadgeCheck size={16} />}
+            {backfilling ? "Looking up nutrition…" : "Backfill Past Recipes"}
+          </button>
+          {backfillError && <p className="text-xs text-red-400 mt-2">{backfillError}</p>}
+          {backfillResults && (
+            <div className="mt-3 flex flex-col gap-1.5">
+              {backfillResults.length === 0 ? (
+                <p className="text-xs text-text-muted">Nothing to backfill — every recipe already has verified nutrition.</p>
+              ) : (
+                backfillResults.map((r) => (
+                  <p key={r.date} className="text-xs text-text-muted">
+                    {r.verified ? "✅" : "⚠️"} {r.date} — {r.name}
+                  </p>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div className="glass-card rounded-card p-4">
