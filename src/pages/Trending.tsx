@@ -1,4 +1,4 @@
-import { ArrowLeft, Pin } from "lucide-react";
+import { Pin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
