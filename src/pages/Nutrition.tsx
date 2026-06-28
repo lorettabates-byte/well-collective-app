@@ -1,4 +1,4 @@
-import { Bookmark, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
+import { BadgeCheck, Bookmark, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -7,25 +7,35 @@ import type { Recipe, RecipeNutrition } from "../types";
 
 const HISTORY_PAGE_SIZE = 10;
 
-function NutritionInfo({ nutrition }: { nutrition: RecipeNutrition }) {
+function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; verified?: boolean }) {
   return (
-    <div className="bg-surface-2 border border-border rounded-card p-3 mb-4 grid grid-cols-4 gap-2 text-center">
-      <div>
-        <p className="text-sm font-bold text-text">{nutrition.calories}</p>
-        <p className="text-[10px] text-text-dim">Calories</p>
+    <div className="bg-surface-2 border border-border rounded-card p-3 mb-4">
+      <div className="grid grid-cols-4 gap-2 text-center mb-2">
+        <div>
+          <p className="text-sm font-bold text-text">{nutrition.calories}</p>
+          <p className="text-[10px] text-text-dim">Calories</p>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-text">{nutrition.protein}</p>
+          <p className="text-[10px] text-text-dim">Protein</p>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-text">{nutrition.carbs}</p>
+          <p className="text-[10px] text-text-dim">Carbs</p>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-text">{nutrition.fat}</p>
+          <p className="text-[10px] text-text-dim">Fat</p>
+        </div>
       </div>
-      <div>
-        <p className="text-sm font-bold text-text">{nutrition.protein}</p>
-        <p className="text-[10px] text-text-dim">Protein</p>
-      </div>
-      <div>
-        <p className="text-sm font-bold text-text">{nutrition.carbs}</p>
-        <p className="text-[10px] text-text-dim">Carbs</p>
-      </div>
-      <div>
-        <p className="text-sm font-bold text-text">{nutrition.fat}</p>
-        <p className="text-[10px] text-text-dim">Fat</p>
-      </div>
+      {verified ? (
+        <p className="flex items-center justify-center gap-1 text-[10px] text-brand-light">
+          <BadgeCheck size={11} />
+          Verified against the USDA nutrition database
+        </p>
+      ) : (
+        <p className="text-[10px] text-text-dim text-center">Estimated — not independently verified</p>
+      )}
     </div>
   );
 }
@@ -185,7 +195,7 @@ export default function Nutrition() {
 
                   <p className="text-sm text-text-muted leading-relaxed mb-4">{recipe.description}</p>
 
-                  {recipe.nutrition && <NutritionInfo nutrition={recipe.nutrition} />}
+                  {recipe.nutrition && <NutritionInfo nutrition={recipe.nutrition} verified={recipe.nutritionVerified} />}
 
                   <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
                   <ul className="flex flex-col gap-1.5 mb-4">
@@ -261,7 +271,9 @@ export default function Nutrition() {
             </div>
             <p className="text-sm text-text-muted leading-relaxed mb-4">{todaysRecipe.description}</p>
 
-            {todaysRecipe.nutrition && <NutritionInfo nutrition={todaysRecipe.nutrition} />}
+            {todaysRecipe.nutrition && (
+              <NutritionInfo nutrition={todaysRecipe.nutrition} verified={todaysRecipe.nutritionVerified} />
+            )}
 
             <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
             <ul className="flex flex-col gap-1.5 mb-4">

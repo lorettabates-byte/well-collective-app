@@ -70,6 +70,10 @@ export interface Recipe {
   image: string;
   imageCategory?: string;
   nutrition?: RecipeNutrition;
+  // True only when every ingredient resolved against the USDA FoodData
+  // Central database — false/absent means `nutrition` is the AI's own
+  // calculated estimate, not independently verified.
+  nutritionVerified?: boolean;
   saved?: boolean;
 }
 
