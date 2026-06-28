@@ -238,7 +238,17 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 function adminHeaders(): HeadersInit {
   const token = window.localStorage.getItem("adminToken");
   const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else {
+    // Most app-level admins (recognized via ADMIN_EMAILS) never go through
+    // the separate /admin/login JWT flow, so without this fallback every
+    // requireAdmin-gated request (pin/unpin, etc.) from inside the regular
+    // app 401s silently — matches the same fallback used by the dedicated
+    // admin pages (AdminMembers.tsx, AdminContent.tsx, etc.).
+    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+    if (fallbackKey) headers["x-admin-key"] = fallbackKey;
+  }
   return headers;
 }
 
@@ -609,25 +619,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const pinThread: AppContextValue["pinThread"] = (threadId, categoryId) => {
     if (!API_URL) return;
-    fetch(`${API_URL}/api/forum/threads/${threadId}/pin?categoryId=${encodeURIComponent(categoryId)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }).catch((err) => console.error("Failed to pin thread:", err));
+    const pinnedAt = new Date().toISOString();
 
+    // Optimistic update first so the UI responds immediately; rolled back
+    // below if the server rejects it (401, max-3-per-category limit, etc.)
+    // — without the rollback, a rejected pin silently disappears on the
+    // next 20s forum poll with no indication anything went wrong.
     setState((prev) => ({
       ...prev,
       threads: prev.threads.map((thread) =>
-        thread.id === threadId ? { ...thread, pinnedAt: new Date().toISOString() } : thread
+        thread.id === threadId ? { ...thread, pinnedAt } : thread
       ),
     }));
+
+    fetch(`${API_URL}/api/forum/threads/${threadId}/pin?categoryId=${encodeURIComponent(categoryId)}`, {
+      method: "POST",
+      headers: adminHeaders(),
+    })
+      .then(async (res) => {
+        if (res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        console.error("Failed to pin thread:", res.status, data.error);
+        setState((prev) => ({
+          ...prev,
+          threads: prev.threads.map((thread) =>
+            thread.id === threadId ? { ...thread, pinnedAt: undefined } : thread
+          ),
+        }));
+      })
+      .catch((err) => console.error("Failed to pin thread:", err));
   };
 
   const unpinThread: AppContextValue["unpinThread"] = (threadId) => {
     if (!API_URL) return;
-    fetch(`${API_URL}/api/forum/threads/${threadId}/unpin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }).catch((err) => console.error("Failed to unpin thread:", err));
+    const previousPinnedAt = state.threads.find((t) => t.id === threadId)?.pinnedAt;
 
     setState((prev) => ({
       ...prev,
@@ -635,6 +660,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         thread.id === threadId ? { ...thread, pinnedAt: undefined } : thread
       ),
     }));
+
+    fetch(`${API_URL}/api/forum/threads/${threadId}/unpin`, {
+      method: "POST",
+      headers: adminHeaders(),
+    })
+      .then(async (res) => {
+        if (res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        console.error("Failed to unpin thread:", res.status, data.error);
+        setState((prev) => ({
+          ...prev,
+          threads: prev.threads.map((thread) =>
+            thread.id === threadId ? { ...thread, pinnedAt: previousPinnedAt } : thread
+          ),
+        }));
+      })
+      .catch((err) => console.error("Failed to unpin thread:", err));
   };
 
   const toggleInspirationLike: AppContextValue["toggleInspirationLike"] = (inspirationId) => {
