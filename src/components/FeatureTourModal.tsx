@@ -11,7 +11,9 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const PROFILE_PHOTO_DEMO_URL = "https://lorettabates.com/wp-content/uploads/2026/06/DSC_5773.jpg";
 
 interface NavStop {
   icon: LucideIcon;
@@ -26,6 +28,9 @@ interface Slide {
   // "find it here" trail since we don't ship real in-app screenshots —
   // arrows separate steps, e.g. Profile -> WELL Tribe.
   findIt?: NavStop[];
+  // Shows the LB-initials-crossfading-into-a-photo demo instead of the
+  // static icon circle, to illustrate what adding a profile photo does.
+  avatarDemo?: boolean;
 }
 
 const SLIDES: Slide[] = [
@@ -69,6 +74,7 @@ const SLIDES: Slide[] = [
     title: "Your Profile",
     body: "Add a photo, write a short bio, and set your birthday — add it to the calendar if you'd like (we love celebrating birthdays here 🎂).",
     findIt: [{ icon: User, label: "Profile" }],
+    avatarDemo: true,
   },
   {
     icon: Users,
@@ -111,6 +117,34 @@ function NavTrail({ stops }: { stops: NavStop[] }) {
   );
 }
 
+function ProfilePhotoDemo() {
+  const [showPhoto, setShowPhoto] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setShowPhoto((v) => !v), 1800);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="relative w-14 h-14 mb-1 shadow-glow rounded-full">
+      <div
+        className={`absolute inset-0 rounded-full gradient-brand flex items-center justify-center text-white font-semibold text-lg transition-opacity duration-700 ${
+          showPhoto ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        LB
+      </div>
+      <img
+        src={PROFILE_PHOTO_DEMO_URL}
+        alt="Example profile photo"
+        className={`absolute inset-0 rounded-full object-cover w-full h-full transition-opacity duration-700 ${
+          showPhoto ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </div>
+  );
+}
+
 export default function FeatureTourModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
   const isLast = step === SLIDES.length - 1;
@@ -129,9 +163,13 @@ export default function FeatureTourModal({ onClose }: { onClose: () => void }) {
             <Heart size={14} />
           </button>
 
-          <div className="w-14 h-14 rounded-full gradient-brand shadow-glow flex items-center justify-center mb-1">
-            <Icon size={26} className="text-white" />
-          </div>
+          {slide.avatarDemo ? (
+            <ProfilePhotoDemo />
+          ) : (
+            <div className="w-14 h-14 rounded-full gradient-brand shadow-glow flex items-center justify-center mb-1">
+              <Icon size={26} className="text-white" />
+            </div>
+          )}
 
           <h2 className="text-lg font-bold text-text">{slide.title}</h2>
           <p className="text-sm text-text-muted leading-relaxed min-h-[60px]">{slide.body}</p>
