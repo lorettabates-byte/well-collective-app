@@ -34,7 +34,11 @@ import type {
 
 const STORAGE_KEY = "well-collective-state-v1";
 
-const FOUNDER_EMAIL = "loretta@lorettabates.com";
+// Emails that should have admin access to the app
+const ADMIN_EMAILS = new Set([
+  "loretta@lorettabates.com",
+  "lorettabates@gmail.com",
+]);
 
 // Attempt to free up localStorage quota when it's exceeded.
 // First tries clearing large items (cached threads, inspirations), then clears everything.
@@ -136,11 +140,11 @@ function applyMemberInfo(user: User): User {
       window.localStorage.setItem("memberProfileSyncedEmail", member.email);
     }
 
-    const isFounder = memberEmail === FOUNDER_EMAIL.toLowerCase();
+    const isAdmin = memberEmail && ADMIN_EMAILS.has(memberEmail);
 
     return {
       ...user,
-      ...(isFounder
+      ...(isAdmin
         ? {
             isAdmin: true,
           }
