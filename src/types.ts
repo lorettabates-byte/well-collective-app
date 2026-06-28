@@ -17,7 +17,6 @@ export interface User {
   wellActivityLog?: string[]; // ISO dates of completed Well Activities
   classLog?: string[]; // ISO dates a class tile (Livestream, Zumba, etc.) was opened
   savedWorkouts?: SavedWorkoutPlan[];
-  savedRecipes?: Recipe[];
   trialEndsAt?: string; // ISO date when free trial expires
   levelBadge?: string; // computed server-side from activity, e.g. "active-member"
   bonusBadges?: string[]; // auto-earned from tenure/encouragement, e.g. "legacy-builder"
@@ -63,6 +62,18 @@ export interface Recipe {
   image: string;
   imageCategory?: string;
   saved?: boolean;
+}
+
+export interface RecipeFolder {
+  id: number;
+  name: string;
+  createdAt: string;
+}
+
+export interface SavedRecipe extends Recipe {
+  id: number;
+  folderId?: number;
+  savedAt: string;
 }
 
 export interface ContentBatchEntry {
@@ -137,6 +148,7 @@ export interface CommunityEvent {
   cost?: string;
   source?: "local" | "live";
   recurrenceGroupId?: string;
+  soldOut?: boolean;
 }
 
 export interface Song {

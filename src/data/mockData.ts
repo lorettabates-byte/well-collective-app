@@ -27,7 +27,6 @@ export const CURRENT_USER: User = {
   wellActivityLog: [],
   classLog: [],
   savedWorkouts: [],
-  savedRecipes: [],
   bonusBadges: [],
   grantedBadges: [],
 };

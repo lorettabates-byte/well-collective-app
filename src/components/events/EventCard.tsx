@@ -26,7 +26,12 @@ export default function EventCard({ event, compact }: EventCardProps) {
 
   if (compact) {
     return (
-      <div className="glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up overflow-hidden">
+      <div className="relative glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up overflow-hidden">
+        {event.soldOut && (
+          <span className="absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wide bg-red-500 text-white rounded-pill px-2 py-0.5">
+            Sold Out
+          </span>
+        )}
         {event.image && (
           <img src={event.image} alt="" className="w-full h-20 object-cover rounded-lg -mt-1 mb-2" />
         )}
@@ -50,9 +55,21 @@ export default function EventCard({ event, compact }: EventCardProps) {
   }
 
   return (
-    <div className="glass-card rounded-card p-4 animate-fade-in-up overflow-hidden">
+    <div className="relative glass-card rounded-card p-4 animate-fade-in-up overflow-hidden">
       {event.image && (
-        <img src={event.image} alt="" className="w-full h-40 object-cover rounded-card -mt-4 -mx-4 mb-3" style={{ width: "calc(100% + 2rem)" }} />
+        <div className="relative -mt-4 -mx-4 mb-3" style={{ width: "calc(100% + 2rem)" }}>
+          <img src={event.image} alt="" className="w-full h-40 object-cover rounded-card" />
+          {event.soldOut && (
+            <span className="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wide bg-red-500 text-white rounded-pill px-2.5 py-1 shadow">
+              Sold Out
+            </span>
+          )}
+        </div>
+      )}
+      {!event.image && event.soldOut && (
+        <span className="inline-block mb-2 text-[10px] font-bold uppercase tracking-wide bg-red-500/15 text-red-400 rounded-pill px-2.5 py-1">
+          Sold Out
+        </span>
       )}
       <div className="flex gap-3">
         <div
@@ -118,11 +135,12 @@ export default function EventCard({ event, compact }: EventCardProps) {
             </div>
             <button
               onClick={() => toggleRsvp(event.id)}
-              className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
+              disabled={event.soldOut && !isGoing}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
               }`}
             >
-              {isGoing ? "Going ✓" : "RSVP"}
+              {isGoing ? "Going ✓" : event.soldOut ? "Sold Out" : "RSVP"}
             </button>
           </>
         )}

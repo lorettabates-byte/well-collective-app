@@ -1,4 +1,4 @@
-import { ImagePlus, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { AlertTriangle, ImagePlus, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
@@ -9,7 +9,10 @@ import { formatDateLong } from "../../utils/format";
 const COLOR_OPTIONS = ["#01519D", "#0191CE", "#84D8FD"];
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 
-type EventFormValues = Pick<CommunityEvent, "title" | "description" | "date" | "time" | "location" | "color" | "image">;
+type EventFormValues = Pick<
+  CommunityEvent,
+  "title" | "description" | "date" | "time" | "location" | "color" | "image" | "soldOut"
+>;
 
 interface EventFormProps {
   initial?: EventFormValues;
@@ -29,6 +32,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   const [repeatsWeekly, setRepeatsWeekly] = useState(false);
   const [image, setImage] = useState(initial?.image ?? "");
   const [imageError, setImageError] = useState("");
+  const [soldOut, setSoldOut] = useState(initial?.soldOut ?? false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,7 +72,16 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
     e.preventDefault();
     if (!title.trim() || !date || !time.trim() || !location.trim()) return;
     onSubmit(
-      { title: title.trim(), description: description.trim(), date, time: time.trim(), location: location.trim(), color, image },
+      {
+        title: title.trim(),
+        description: description.trim(),
+        date,
+        time: time.trim(),
+        location: location.trim(),
+        color,
+        image,
+        soldOut,
+      },
       repeatsWeekly ? { frequency: "weekly" } : undefined
     );
   };
@@ -168,6 +181,15 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
           Repeat weekly (e.g. every Tuesday at 9:00am) for the next 12 months
         </label>
       )}
+      <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+        <input
+          type="checkbox"
+          checked={soldOut}
+          onChange={(e) => setSoldOut(e.target.checked)}
+          className="w-4 h-4 accent-red-500"
+        />
+        Mark as sold out
+      </label>
       <div className="flex gap-2 mt-1">
         <button type="submit" className="flex-1 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5">
           {submitLabel}
@@ -184,6 +206,10 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
 
 export default function AdminEvents() {
   const { events, addEvent, updateEvent, deleteEvent, setFeaturedEvent, featuredEventId } = useApp();
+
+  const toggleSoldOut = (event: CommunityEvent) => {
+    updateEvent(event.id, { ...event, soldOut: !event.soldOut });
+  };
   const { events: liveEvents, loading: liveLoading } = useEventsFeed();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -248,10 +274,24 @@ export default function AdminEvents() {
                         Recurring
                       </span>
                     )}
+                    {event.soldOut && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide bg-red-500/15 text-red-400 rounded-pill px-2 py-0.5">
+                        Sold Out
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-muted">{formatDateLong(event.date)} · {event.time}</p>
                   <p className="text-[11px] text-text-dim mt-0.5">{event.rsvps.length} RSVPs</p>
                 </div>
+                <button
+                  onClick={() => toggleSoldOut(event)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${
+                    event.soldOut ? "bg-red-500 text-white" : "bg-surface-2 text-text-muted"
+                  }`}
+                  aria-label={event.soldOut ? "Mark as not sold out" : "Mark as sold out"}
+                >
+                  <AlertTriangle size={14} className={event.soldOut ? "fill-red-500" : ""} />
+                </button>
                 <button
                   onClick={() => toggleFeatured(event.id)}
                   className={`w-8 h-8 flex items-center justify-center rounded-full border border-border shrink-0 ${

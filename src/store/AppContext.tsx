@@ -27,6 +27,8 @@ import type {
   Inspiration,
   NotificationSettings,
   Recipe,
+  RecipeFolder,
+  SavedRecipe,
   ThreadMessage,
   User,
   WellActivity,
@@ -352,6 +354,12 @@ interface AppContextValue extends PersistedState {
   saveWorkoutPlan: (plan: WorkoutPlan) => void;
   removeSavedWorkout: (savedId: string) => void;
   toggleRecipeSave: (recipe: Recipe) => void;
+  savedRecipes: SavedRecipe[];
+  recipeFolders: RecipeFolder[];
+  createRecipeFolder: (name: string) => void;
+  deleteRecipeFolder: (folderId: number) => void;
+  moveRecipeToFolder: (savedRecipeId: number, folderId: number | null) => void;
+  fetchRecipeHistory: (before?: string, limit?: number) => Promise<Recipe[]>;
   toggleRsvp: (eventId: string) => void;
   addEvent: (
     event: Omit<CommunityEvent, "id" | "rsvps" | "recurrenceGroupId">,
@@ -389,6 +397,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Not persisted: it's a live directory, refetched fresh each session.
   const [memberBadges, setMemberBadges] = useState<Record<string, MemberDirectoryEntry>>({});
 
+  // Saved recipes and folders live server-side (saved_recipes / recipe_folders
+  // tables), not in localStorage — recipe content (images, steps) is too big
+  // to keep dumping into the ~50KB local quota on top of everything else.
+  // Refetched fresh each session, same as memberBadges above.
+  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
+  const [recipeFolders, setRecipeFolders] = useState<RecipeFolder[]>([]);
+
   // Flips true once the restore-from-server fetch (below) has settled, so the
   // profile-sync push effect knows it's safe to push without risking
   // overwriting good server data with not-yet-restored local state.
@@ -415,6 +430,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => console.error("Failed to fetch member badges:", err));
   }, []);
+
+  useEffect(() => {
+    if (!API_URL || !state.user.email) return;
+    const email = encodeURIComponent(state.user.email);
+    fetch(`${API_URL}/api/recipes/saved?email=${email}`)
+      .then((res) => (res.ok ? res.json() : { savedRecipes: [] }))
+      .then((data) => setSavedRecipes(data.savedRecipes || []))
+      .catch((err) => console.error("Failed to fetch saved recipes:", err));
+    fetch(`${API_URL}/api/recipes/folders?email=${email}`)
+      .then((res) => (res.ok ? res.json() : { folders: [] }))
+      .then((data) => setRecipeFolders(data.folders || []))
+      .catch((err) => console.error("Failed to fetch recipe folders:", err));
+  }, [state.user.email]);
 
   useEffect(() => {
     try {
@@ -748,17 +776,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleRecipeSave: AppContextValue["toggleRecipeSave"] = (recipe) => {
-    setState((prev) => {
-      const saved = prev.user.savedRecipes ?? [];
-      const isSaved = saved.some((r) => r.name === recipe.name);
-      return {
-        ...prev,
-        user: {
-          ...prev.user,
-          savedRecipes: isSaved ? saved.filter((r) => r.name !== recipe.name) : [recipe, ...saved],
-        },
-      };
-    });
+    const existing = savedRecipes.find((r) => r.name === recipe.name && r.date === recipe.date);
+    if (existing) {
+      setSavedRecipes((prev) => prev.filter((r) => r.id !== existing.id));
+      if (API_URL) {
+        fetch(`${API_URL}/api/recipes/saved/${existing.id}`, { method: "DELETE" }).catch((err) =>
+          console.error("Failed to unsave recipe:", err)
+        );
+      }
+      return;
+    }
+
+    if (!API_URL || !state.user.email) return;
+    fetch(`${API_URL}/api/recipes/saved`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.user.email, recipe, date: recipe.date }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to save recipe"))))
+      .then((data) => setSavedRecipes((prev) => [data.savedRecipe, ...prev]))
+      .catch((err) => console.error("Failed to save recipe:", err));
+  };
+
+  const createRecipeFolder: AppContextValue["createRecipeFolder"] = (name) => {
+    if (!API_URL || !state.user.email || !name.trim()) return;
+    fetch(`${API_URL}/api/recipes/folders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.user.email, name: name.trim() }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to create folder"))))
+      .then((data) => setRecipeFolders((prev) => [...prev, data.folder]))
+      .catch((err) => console.error("Failed to create recipe folder:", err));
+  };
+
+  const deleteRecipeFolder: AppContextValue["deleteRecipeFolder"] = (folderId) => {
+    setRecipeFolders((prev) => prev.filter((f) => f.id !== folderId));
+    setSavedRecipes((prev) => prev.map((r) => (r.folderId === folderId ? { ...r, folderId: undefined } : r)));
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/recipes/folders/${folderId}`, { method: "DELETE" }).catch((err) =>
+      console.error("Failed to delete recipe folder:", err)
+    );
+  };
+
+  const moveRecipeToFolder: AppContextValue["moveRecipeToFolder"] = (savedRecipeId, folderId) => {
+    setSavedRecipes((prev) => prev.map((r) => (r.id === savedRecipeId ? { ...r, folderId: folderId ?? undefined } : r)));
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/recipes/saved/${savedRecipeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folderId }),
+    }).catch((err) => console.error("Failed to move saved recipe:", err));
+  };
+
+  const fetchRecipeHistory: AppContextValue["fetchRecipeHistory"] = async (before, limit) => {
+    if (!API_URL) return [];
+    const params = new URLSearchParams();
+    if (before) params.set("before", before);
+    if (limit) params.set("limit", String(limit));
+    const res = await fetch(`${API_URL}/api/recipes/history?${params.toString()}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.recipes || [];
   };
 
   const addInspiration: AppContextValue["addInspiration"] = (inspiration) => {
@@ -1419,6 +1498,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.user.email]);
 
+  // One-time nudge for members with no profile photo set. Waits for the
+  // restore-from-server attempt above to settle first so it never fires for
+  // someone who actually has an avatar saved server-side but whose local
+  // state just hasn't caught up yet — that would be a false "you have no
+  // photo" prompt. Deduped per-email in localStorage so it only ever shows
+  // once, even across logout/login or re-deploys.
+  useEffect(() => {
+    if (!hasAttemptedRestoreRef.current) return;
+    if (!state.user.email || state.user.avatar) return;
+    const nudgeKey = `avatarNudgeSent:${state.user.email.toLowerCase()}`;
+    if (window.localStorage.getItem(nudgeKey)) return;
+
+    window.localStorage.setItem(nudgeKey, "1");
+    sendNotification(
+      "general",
+      "Add a profile photo",
+      "Help the community recognize you — add a profile photo in your settings.",
+      "/profile/edit"
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.user.email, state.user.avatar, restoreGate]);
+
   const today = todayISO();
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);
 
@@ -1467,6 +1568,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveWorkoutPlan,
     removeSavedWorkout,
     toggleRecipeSave,
+    savedRecipes,
+    recipeFolders,
+    createRecipeFolder,
+    deleteRecipeFolder,
+    moveRecipeToFolder,
+    fetchRecipeHistory,
     addInspiration,
     deleteInspiration,
     toggleRsvp,

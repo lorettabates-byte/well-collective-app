@@ -33,7 +33,7 @@ function MenuRow({
 }
 
 export default function Profile() {
-  const { user, threads, inspirations } = useApp();
+  const { user, threads, inspirations, savedRecipes } = useApp();
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
@@ -116,7 +116,7 @@ export default function Profile() {
           icon={<ChefHat size={16} />}
           label="Saved Recipes"
           to="/nutrition?view=saved"
-          badge={user.savedRecipes?.length}
+          badge={savedRecipes.length}
         />
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
       </div>
