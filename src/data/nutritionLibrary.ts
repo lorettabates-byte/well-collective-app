@@ -10,7 +10,10 @@ export interface RecipeSuggestion {
 }
 
 // Fallback rotation of AI-style recipe suggestions, used whenever the admin
-// hasn't uploaded a specific recipe for today.
+// hasn't uploaded a specific recipe for today. Nutrition values are
+// calculated per-ingredient from standard USDA nutrition data for the exact
+// quantities listed, then summed and rounded — not lab-tested, but not
+// guessed either.
 export const RECIPES: RecipeSuggestion[] = [
   {
     name: "Gentle Consistency Bowl",
@@ -29,7 +32,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Drizzle with tahini dressing and enjoy mindfully.",
     ],
     image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 420, protein: "16g", carbs: "48g", fat: "20g" },
+    nutrition: { calories: 640, protein: "21g", carbs: "76g", fat: "28g" },
   },
   {
     name: "Protect Your Peace Smoothie",
@@ -48,7 +51,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Pour into your favorite mug and sip slowly, screen-free.",
     ],
     image: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 290, protein: "9g", carbs: "42g", fat: "11g" },
+    nutrition: { calories: 240, protein: "6g", carbs: "31g", fat: "13g" },
   },
   {
     name: "Comeback Energy Stir-Fry",
@@ -68,7 +71,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Stir in soy sauce and serve over brown rice.",
     ],
     image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 380, protein: "12g", carbs: "58g", fat: "10g" },
+    nutrition: { calories: 370, protein: "13g", carbs: "67g", fat: "7g" },
   },
   {
     name: "Morning Reset Overnight Oats",
@@ -87,7 +90,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Top with fresh berries in the morning and enjoy.",
     ],
     image: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 340, protein: "14g", carbs: "46g", fat: "9g" },
+    nutrition: { calories: 290, protein: "16g", carbs: "43g", fat: "7g" },
   },
   {
     name: "Strong & Steady Salad",
@@ -106,7 +109,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Drizzle with olive oil and lemon juice before serving.",
     ],
     image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 360, protein: "28g", carbs: "14g", fat: "20g" },
+    nutrition: { calories: 380, protein: "39g", carbs: "6g", fat: "22g" },
   },
   {
     name: "Soft Life Soup",
@@ -126,7 +129,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Season to taste and serve warm.",
     ],
     image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=70",
-    nutrition: { calories: 240, protein: "13g", carbs: "32g", fat: "7g" },
+    nutrition: { calories: 460, protein: "21g", carbs: "61g", fat: "16g" },
   },
 ];
 
