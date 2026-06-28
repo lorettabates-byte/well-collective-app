@@ -7,15 +7,25 @@ import {
   Sparkles,
   User,
   Users,
+  Video,
   Waves,
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 
+interface NavStop {
+  icon: LucideIcon;
+  label: string;
+}
+
 interface Slide {
   icon: LucideIcon;
   title: string;
   body: string;
+  // The real nav buttons that lead to this feature, shown as a small
+  // "find it here" trail since we don't ship real in-app screenshots —
+  // arrows separate steps, e.g. Profile -> WELL Tribe.
+  findIt?: NavStop[];
 }
 
 const SLIDES: Slide[] = [
@@ -28,38 +38,78 @@ const SLIDES: Slide[] = [
     icon: MessageCircle,
     title: "Community",
     body: "Post, reply, and share photos in Community — and add people to your WELL Tribe to cheer them on with direct messages.",
+    findIt: [{ icon: MessageCircle, label: "Community" }],
   },
   {
     icon: Waves,
     title: "Classes & Wellness",
-    body: "Browse Classes for guided videos, and check Wellness for breathwork and nutrition to support you day to day.",
+    body: "Take a livestream with Loretta, or hop into Zumba® and Fitness Bellydance on demand in Classes. Check Wellness for breathwork and nutrition to support you day to day.",
+    findIt: [
+      { icon: Video, label: "Classes" },
+      { icon: Waves, label: "Wellness" },
+    ],
   },
   {
     icon: Music,
     title: "Music",
     body: "Loretta has made songs just for you and your encouragement — only available here on the WELL App.",
+    findIt: [{ icon: Music, label: "Music" }],
   },
   {
     icon: Calendar,
     title: "Inspirations & Events",
-    body: "A new inspiration lands every week, plus daily notes to keep you motivated. Don't miss upcoming Events too.",
+    body: "A new theme drops every week, with daily inspirations all year that go along with that theme. Don't miss upcoming Events too.",
+    findIt: [
+      { icon: Sparkles, label: "Inspiration" },
+      { icon: Calendar, label: "Events" },
+    ],
   },
   {
     icon: User,
     title: "Your Profile",
-    body: "Add a photo, write a short bio, and set your birthday — it helps other members get to know you (and we love celebrating birthdays here 🎂).",
+    body: "Add a photo, write a short bio, and set your birthday — add it to the calendar if you'd like (we love celebrating birthdays here 🎂).",
+    findIt: [{ icon: User, label: "Profile" }],
   },
   {
     icon: Users,
     title: "WELL Tribe",
     body: "Add fellow members to your WELL Tribe to build your circle. From their profile you can send a direct message to cheer them on, congratulate a win, or just check in.",
+    findIt: [
+      { icon: User, label: "Profile" },
+      { icon: Users, label: "WELL Tribe" },
+    ],
   },
   {
     icon: Bell,
     title: "Notifications",
     body: "The bell keeps you up to date on new posts and replies. Adjust what you get notified about anytime from your Profile.",
+    findIt: [{ icon: Bell, label: "Bell icon" }],
   },
 ];
+
+function NavTrail({ stops }: { stops: NavStop[] }) {
+  return (
+    <div className="w-full flex items-center justify-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-3">
+      <span className="text-[10px] font-semibold text-text-dim uppercase tracking-wide shrink-0">Find it</span>
+      <div className="flex items-center gap-1.5">
+        {stops.map((stop, i) => {
+          const StopIcon = stop.icon;
+          return (
+            <div key={i} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-text-dim text-xs">→</span>}
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center">
+                  <StopIcon size={15} className="text-white" />
+                </div>
+                <span className="text-[10px] text-text-muted whitespace-nowrap">{stop.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function FeatureTourModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
@@ -85,6 +135,8 @@ export default function FeatureTourModal({ onClose }: { onClose: () => void }) {
 
           <h2 className="text-lg font-bold text-text">{slide.title}</h2>
           <p className="text-sm text-text-muted leading-relaxed min-h-[60px]">{slide.body}</p>
+
+          {slide.findIt && <NavTrail stops={slide.findIt} />}
 
           <div className="flex items-center gap-1.5 my-1">
             {SLIDES.map((_, i) => (
