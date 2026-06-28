@@ -458,6 +458,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((res) => (res.ok ? res.json() : { folders: [] }))
       .then((data) => setRecipeFolders(data.folders || []))
       .catch((err) => console.error("Failed to fetch recipe folders:", err));
+
+    // One-time backfill: members who toggled categories off before this
+    // server-side enforcement shipped only had that preference saved in
+    // localStorage, which broadcastNotification/sendNotificationToUser have
+    // no way to see. Push whatever is currently set locally so it takes
+    // effect without requiring the member to re-toggle anything.
+    fetch(`${API_URL}/api/members/notification-settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.user.email, notificationSettings: state.notificationSettings }),
+    }).catch((err) => console.error("Failed to backfill notification settings:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.user.email]);
 
   useEffect(() => {
@@ -499,10 +511,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateNotificationSettings: AppContextValue["updateNotificationSettings"] = (updates) => {
-    setState((prev) => ({
-      ...prev,
-      notificationSettings: { ...prev.notificationSettings, ...updates },
-    }));
+    setState((prev) => {
+      const notificationSettings = { ...prev.notificationSettings, ...updates };
+      if (API_URL && prev.user.email) {
+        fetch(`${API_URL}/api/members/notification-settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: prev.user.email, notificationSettings }),
+        }).catch((err) => console.error("Failed to sync notification settings:", err));
+      }
+      return { ...prev, notificationSettings };
+    });
   };
 
   const addThread: AppContextValue["addThread"] = (categoryId, title, text) => {
