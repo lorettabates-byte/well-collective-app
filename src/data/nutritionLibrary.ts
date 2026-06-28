@@ -1,9 +1,12 @@
+import type { RecipeNutrition } from "../types";
+
 export interface RecipeSuggestion {
   name: string;
   description: string;
   ingredients: string[];
   steps: string[];
   image: string;
+  nutrition: RecipeNutrition;
 }
 
 // Fallback rotation of AI-style recipe suggestions, used whenever the admin
@@ -26,6 +29,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Drizzle with tahini dressing and enjoy mindfully.",
     ],
     image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 420, protein: "16g", carbs: "48g", fat: "20g" },
   },
   {
     name: "Protect Your Peace Smoothie",
@@ -44,6 +48,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Pour into your favorite mug and sip slowly, screen-free.",
     ],
     image: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 290, protein: "9g", carbs: "42g", fat: "11g" },
   },
   {
     name: "Comeback Energy Stir-Fry",
@@ -63,6 +68,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Stir in soy sauce and serve over brown rice.",
     ],
     image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 380, protein: "12g", carbs: "58g", fat: "10g" },
   },
   {
     name: "Morning Reset Overnight Oats",
@@ -81,6 +87,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Top with fresh berries in the morning and enjoy.",
     ],
     image: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 340, protein: "14g", carbs: "46g", fat: "9g" },
   },
   {
     name: "Strong & Steady Salad",
@@ -99,6 +106,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Drizzle with olive oil and lemon juice before serving.",
     ],
     image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 360, protein: "28g", carbs: "14g", fat: "20g" },
   },
   {
     name: "Soft Life Soup",
@@ -118,6 +126,7 @@ export const RECIPES: RecipeSuggestion[] = [
       "Season to taste and serve warm.",
     ],
     image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=70",
+    nutrition: { calories: 240, protein: "13g", carbs: "32g", fat: "7g" },
   },
 ];
 

@@ -78,6 +78,9 @@ const PHOTOS: Record<string, string[]> = {
     u("photo-1517673400267-0251440c45dc"),
     u("photo-1495214783159-3503fd1b572d"),
     u("photo-1497888329096-51c27beff665"),
+    u("photo-1574484284002-952d92456975"),
+    u("photo-1517093157656-b9eccef91cb1"),
+    u("photo-1517248135467-4c7edcad34c4"),
   ],
   chia_pudding: [
     u("photo-1552528352-59648b345866"),
@@ -139,6 +142,9 @@ const PHOTOS: Record<string, string[]> = {
   ],
   baked: [
     u("photo-1509440159596-0249088772ff"),
+    u("photo-1495147466023-ac5c588e2e94"),
+    u("photo-1493770348161-369560ae357d"),
+    u("photo-1607532941433-304659e8198a"),
   ],
   dessert: [
     u("photo-1565958011703-44f9829ba187"),

@@ -31,6 +31,18 @@ const TYPE_OPTIONS: { id: AppNotificationType; label: string }[] = [
   { id: "blog", label: "New Blog Post" },
 ];
 
+// Where tapping the bell entry should land — without this, notifications
+// sent from this form had no link at all, so tapping one (e.g. a "Note from
+// Loretta") just marked it read and went nowhere.
+const TYPE_LINKS: Record<AppNotificationType, string> = {
+  general: "/inspirations",
+  post: "/community",
+  reply: "/community",
+  mention: "/community",
+  event: "/events",
+  blog: "/blog",
+};
+
 export default function AdminNotifications() {
   const { notifications, sendNotification } = useApp();
   const [type, setType] = useState<AppNotificationType>("general");
@@ -103,7 +115,7 @@ export default function AdminNotifications() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
-    sendNotification(type, title.trim(), body.trim());
+    sendNotification(type, title.trim(), body.trim(), TYPE_LINKS[type]);
 
     if (API_URL) {
       setSending(true);

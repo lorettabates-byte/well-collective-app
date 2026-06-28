@@ -3,9 +3,32 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
-import type { Recipe } from "../types";
+import type { Recipe, RecipeNutrition } from "../types";
 
 const HISTORY_PAGE_SIZE = 10;
+
+function NutritionInfo({ nutrition }: { nutrition: RecipeNutrition }) {
+  return (
+    <div className="bg-surface-2 border border-border rounded-card p-3 mb-4 grid grid-cols-4 gap-2 text-center">
+      <div>
+        <p className="text-sm font-bold text-text">{nutrition.calories}</p>
+        <p className="text-[10px] text-text-dim">Calories</p>
+      </div>
+      <div>
+        <p className="text-sm font-bold text-text">{nutrition.protein}</p>
+        <p className="text-[10px] text-text-dim">Protein</p>
+      </div>
+      <div>
+        <p className="text-sm font-bold text-text">{nutrition.carbs}</p>
+        <p className="text-[10px] text-text-dim">Carbs</p>
+      </div>
+      <div>
+        <p className="text-sm font-bold text-text">{nutrition.fat}</p>
+        <p className="text-[10px] text-text-dim">Fat</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Nutrition() {
   const {
@@ -162,6 +185,8 @@ export default function Nutrition() {
 
                   <p className="text-sm text-text-muted leading-relaxed mb-4">{recipe.description}</p>
 
+                  {recipe.nutrition && <NutritionInfo nutrition={recipe.nutrition} />}
+
                   <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
                   <ul className="flex flex-col gap-1.5 mb-4">
                     {recipe.ingredients.map((ingredient) => (
@@ -235,6 +260,8 @@ export default function Nutrition() {
               </button>
             </div>
             <p className="text-sm text-text-muted leading-relaxed mb-4">{todaysRecipe.description}</p>
+
+            {todaysRecipe.nutrition && <NutritionInfo nutrition={todaysRecipe.nutrition} />}
 
             <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
             <ul className="flex flex-col gap-1.5 mb-4">

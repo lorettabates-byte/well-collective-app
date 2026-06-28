@@ -54,6 +54,13 @@ export interface WellActivity {
   completed?: boolean;
 }
 
+export interface RecipeNutrition {
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+}
+
 export interface Recipe {
   date: string; // ISO date (yyyy-mm-dd)
   name: string;
@@ -62,6 +69,7 @@ export interface Recipe {
   steps: string[];
   image: string;
   imageCategory?: string;
+  nutrition?: RecipeNutrition;
   saved?: boolean;
 }
 
