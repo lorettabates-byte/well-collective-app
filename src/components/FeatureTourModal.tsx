@@ -5,6 +5,8 @@ import {
   MessageCircle,
   Music,
   Sparkles,
+  User,
+  Users,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -43,9 +45,19 @@ const SLIDES: Slide[] = [
     body: "A new inspiration lands every week, plus daily notes to keep you motivated. Don't miss upcoming Events too.",
   },
   {
+    icon: User,
+    title: "Your Profile",
+    body: "Add a photo, write a short bio, and set your birthday — it helps other members get to know you (and we love celebrating birthdays here 🎂).",
+  },
+  {
+    icon: Users,
+    title: "WELL Tribe",
+    body: "Add fellow members to your WELL Tribe to build your circle. From their profile you can send a direct message to cheer them on, congratulate a win, or just check in.",
+  },
+  {
     icon: Bell,
-    title: "Notifications & Profile",
-    body: "The bell keeps you up to date on new posts and replies. Head to your Profile to adjust what you get notified about.",
+    title: "Notifications",
+    body: "The bell keeps you up to date on new posts and replies. Adjust what you get notified about anytime from your Profile.",
   },
 ];
 
