@@ -331,6 +331,22 @@ export default function AdminMusic() {
     setNewSongCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   };
 
+  const handleReleaseNow = async (id: number, title: string) => {
+    if (!API_URL || !confirm(`Release "${title}" right now instead of waiting for Monday?`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/songs/${id}/release-now`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        fetchSongs();
+        fetchQueue();
+      }
+    } catch (err) {
+      console.error("Release song now error:", err);
+    }
+  };
+
   const handleSaveCategories = async (songId: number) => {
     if (!API_URL) return;
     setSavingCategories(true);
@@ -470,23 +486,49 @@ export default function AdminMusic() {
           </div>
         </div>
 
+        {songs.some((s) => s.featured) && (
+          <div className="gradient-brand p-[1px] rounded-card">
+            <div className="bg-surface rounded-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-brand-light mb-1.5">
+                🎵 Current Song of the Week
+              </p>
+              {songs
+                .filter((s) => s.featured)
+                .map((s) => (
+                  <p key={s.id} className="text-sm font-bold text-text">{s.title}</p>
+                ))}
+            </div>
+          </div>
+        )}
+
         {(queueLoading || queuedSongs.length > 0) && (
           <div className="glass-card rounded-card p-4 border border-brand-light/30">
             <div className="flex items-center gap-1.5 mb-2">
               <Calendar size={14} className="text-brand-light" />
               <h2 className="text-sm font-bold text-text">Music Monday Queue</h2>
             </div>
+            <p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
             {queueLoading ? (
               <p className="text-xs text-text-muted">Loading...</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {queuedSongs.map((song) => (
-                  <div key={song.id} className="flex items-center justify-between text-xs">
-                    <span className="text-text font-semibold">{song.title}</span>
-                    <span className="text-text-dim">
+                  <div key={song.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-text font-semibold flex-1 min-w-0 truncate">{song.title}</span>
+                    <span className="text-text-dim shrink-0">
                       {song.releaseAt &&
-                        new Date(song.releaseAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        new Date(song.releaseAt).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                        })}
                     </span>
+                    <button
+                      onClick={() => handleReleaseNow(song.id, song.title)}
+                      className="shrink-0 text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-2.5 py-1"
+                    >
+                      Push Now
+                    </button>
                   </div>
                 ))}
               </div>
