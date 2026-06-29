@@ -799,12 +799,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .catch((err) => console.error("Failed to unpin thread:", err));
   };
 
+  // Likes/saves on inspirations used to be reconstructed purely from the
+  // current member's own likedInspirationIds/savedInspirationIds, so every
+  // member only ever saw their own reaction echoed back — never anyone
+  // else's "like" on the same note/inspiration. Now persisted server-side
+  // (shared across everyone) via /api/inspirations/:id/react, with the
+  // periodic sync effect below pulling the real aggregate back down.
   const toggleInspirationLike: AppContextValue["toggleInspirationLike"] = (inspirationId) => {
     setState((prev) => ({
       ...prev,
       inspirations: prev.inspirations.map((inspiration) => {
         if (inspiration.id !== inspirationId) return inspiration;
         const hasLiked = inspiration.likes.includes(prev.user.id);
+        if (API_URL && state.user.email) {
+          fetch(`${API_URL}/api/inspirations/${inspirationId}/react`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: state.user.email, reaction: "like", active: !hasLiked }),
+          }).catch((err) => console.error("Failed to sync inspiration like:", err));
+        }
         return {
           ...inspiration,
           likes: hasLiked
@@ -821,6 +834,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       inspirations: prev.inspirations.map((inspiration) => {
         if (inspiration.id !== inspirationId) return inspiration;
         const hasSaved = inspiration.savedBy.includes(prev.user.id);
+        if (API_URL && state.user.email) {
+          fetch(`${API_URL}/api/inspirations/${inspirationId}/react`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: state.user.email, reaction: "save", active: !hasSaved }),
+          }).catch((err) => console.error("Failed to sync inspiration save:", err));
+        }
         return {
           ...inspiration,
           savedBy: hasSaved
@@ -1657,6 +1677,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(syncNotes, 20000);
     return () => clearInterval(interval);
   }, []);
+
+  // Pull the real shared like/save counts for whatever inspirations are
+  // currently loaded — this is what makes someone else's reaction actually
+  // show up instead of staying invisible to everyone but them. Keyed off a
+  // joined-ids string (not the inspirations array itself) so this only
+  // re-fires when the *set* of ids changes, not every time a like toggles.
+  const inspirationIdsKey = state.inspirations.map((i) => i.id).sort().join(",");
+  useEffect(() => {
+    if (!API_URL || !inspirationIdsKey) return;
+
+    const syncReactions = () => {
+      fetch(`${API_URL}/api/inspirations/reactions?ids=${encodeURIComponent(inspirationIdsKey)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const reactions = data?.reactions as Record<string, { likes: string[]; savedBy: string[] }> | undefined;
+          if (!reactions) return;
+          setState((prev) => ({
+            ...prev,
+            inspirations: prev.inspirations.map((inspiration) => {
+              const r = reactions[inspiration.id];
+              if (!r) return inspiration;
+              return { ...inspiration, likes: r.likes, savedBy: r.savedBy };
+            }),
+          }));
+        })
+        .catch(() => {
+          // offline or backend unreachable — keep whatever local state exists
+        });
+    };
+
+    syncReactions();
+    const interval = setInterval(syncReactions, 20000);
+    return () => clearInterval(interval);
+  }, [inspirationIdsKey]);
 
   // Sync the admin's featured-event pick from the shared backend so every
   // member sees the same highlighted event, not just the admin's own device.
