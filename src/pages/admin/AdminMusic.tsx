@@ -293,6 +293,27 @@ export default function AdminMusic() {
     }
   };
 
+  const handleRenameCategory = async (id: number, currentName: string) => {
+    if (!API_URL) return;
+    const name = prompt("Rename category", currentName);
+    if (!name?.trim() || name.trim() === currentName) return;
+    try {
+      const res = await fetch(`${API_URL}/api/song-categories/${id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      if (res.ok) {
+        fetchCategories();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to rename category");
+      }
+    } catch (err) {
+      console.error("Rename category error:", err);
+    }
+  };
+
   const openCategoryEditor = (song: Song) => {
     if (editingCategoriesId === song.id) {
       setEditingCategoriesId(null);
@@ -414,7 +435,12 @@ export default function AdminMusic() {
                 className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-pill px-3 py-1.5"
               >
                 <Tag size={11} className="text-brand-light" />
-                <span className="text-xs font-semibold text-text">{category.name}</span>
+                <button
+                  onClick={() => handleRenameCategory(category.id, category.name)}
+                  className="text-xs font-semibold text-text"
+                >
+                  {category.name}
+                </button>
                 <button
                   onClick={() => handleDeleteCategory(category.id)}
                   aria-label={`Delete ${category.name}`}
