@@ -63,18 +63,19 @@ function RecipePicker({ onPick, onClose }: PickerProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={onClose}>
       <div
-        className="w-full max-w-sm bg-surface rounded-t-card max-h-[80vh] flex flex-col"
+        className="w-full max-w-sm bg-surface rounded-card flex flex-col"
+        style={{ maxHeight: "min(80dvh, 640px)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
           <h2 className="text-sm font-bold text-text">Choose a Recipe</h2>
           <button onClick={onClose} aria-label="Close">
             <X size={18} className="text-text-muted" />
           </button>
         </div>
-        <div className="flex gap-2 px-4 pb-3">
+        <div className="flex gap-2 px-4 pb-3 shrink-0">
           {TABS.map((t) => (
             <button
               key={t.id}
