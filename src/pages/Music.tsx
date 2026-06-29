@@ -5,7 +5,7 @@ import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import { SoundIcon } from "../data/soundIconMap";
 import { useApp } from "../store/AppContext";
-import type { CustomPeacefulSound, Song } from "../types";
+import type { CustomPeacefulSound, Song, SongCategory } from "../types";
 import {
   AMBIENT_SOUNDS,
   playAmbientSound,
@@ -45,6 +45,7 @@ export default function Music() {
   const initialFavoritesOnly = new URLSearchParams(window.location.search).get("filter") === "favorites";
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<SongCategory[]>([]);
   const [customSounds, setCustomSounds] = useState<CustomPeacefulSound[]>([]);
   const [hiddenSoundIds, setHiddenSoundIds] = useState<string[]>([]);
 
@@ -78,6 +79,11 @@ export default function Music() {
       .then((data) => setSongs(data.songs || []))
       .catch(() => setSongs([]))
       .finally(() => setLoading(false));
+
+    fetch(`${API_URL}/api/song-categories`)
+      .then((res) => (res.ok ? res.json() : { categories: [] }))
+      .then((data) => setCategories(data.categories || []))
+      .catch(() => setCategories([]));
 
     fetch(`${API_URL}/api/peaceful-sounds`)
       .then((res) => (res.ok ? res.json() : { sounds: [] }))
@@ -191,6 +197,7 @@ export default function Music() {
         {tab === "playlist" && (
           <Playlist
             songs={songs}
+            categories={categories}
             loading={loading}
             downloadsLocked={isTrialUser}
             initialFavoritesOnly={initialFavoritesOnly}

@@ -120,6 +120,7 @@ const DEFAULT_STATE: PersistedState = {
     dailyInspiration: true,
     newEvents: true,
     newBlogs: true,
+    newSongs: true,
     pushEnabled: false,
   },
   contentSchedule: [],

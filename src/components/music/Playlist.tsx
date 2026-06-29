@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Song } from "../../types";
+import type { Song, SongCategory } from "../../types";
 
 const FAVORITES_KEY = "well-music-favorites";
 const ORDER_KEY = "well-music-order";
@@ -59,16 +59,19 @@ function formatTime(seconds: number): string {
 
 export default function Playlist({
   songs,
+  categories = [],
   loading,
   downloadsLocked,
   initialFavoritesOnly,
 }: {
   songs: Song[];
+  categories?: SongCategory[];
   loading: boolean;
   downloadsLocked?: boolean;
   initialFavoritesOnly?: boolean;
 }) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
@@ -175,8 +178,12 @@ export default function Playlist({
   }, [isPlaying]);
 
   const orderedSongs = order.map((id) => songs.find((s) => s.id === id)).filter((s): s is Song => !!s);
-  const visibleSongs = favoritesOnly ? orderedSongs.filter((s) => favorites.has(s.id)) : orderedSongs;
+  const categoryFiltered = activeCategoryId
+    ? orderedSongs.filter((s) => s.categoryIds?.includes(activeCategoryId))
+    : orderedSongs;
+  const visibleSongs = favoritesOnly ? categoryFiltered.filter((s) => favorites.has(s.id)) : categoryFiltered;
   const playableSongs = visibleSongs.filter((s) => !lockedSongIds.has(s.id));
+  const featuredSong = orderedSongs.find((s) => s.featured);
 
   function playAt(queue: Song[], index: number) {
     if (index < 0 || index >= queue.length) return;
@@ -337,6 +344,57 @@ export default function Playlist({
           Favorites ({favorites.size})
         </button>
       </div>
+
+      {categories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          <button
+            onClick={() => setActiveCategoryId(null)}
+            className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+              activeCategoryId === null
+                ? "gradient-brand text-white border-transparent"
+                : "border-border text-text-muted"
+            }`}
+          >
+            All Categories
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategoryId(category.id)}
+              className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                activeCategoryId === category.id
+                  ? "gradient-brand text-white border-transparent"
+                  : "border-border text-text-muted"
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {featuredSong && !favoritesOnly && !activeCategoryId && (
+        <div className="gradient-brand p-[1px] rounded-card">
+          <button
+            onClick={() => togglePlaySong(featuredSong)}
+            className="w-full bg-surface rounded-card px-3 py-2.5 flex items-center gap-2.5 text-left"
+          >
+            <div className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
+              {currentSong?.id === featuredSong.id && isPlaying ? (
+                <Pause size={14} className="text-white" />
+              ) : (
+                <Play size={14} className="text-white" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-brand-light">
+                🎵 New This Week — Music Monday
+              </span>
+              <p className="text-sm font-semibold text-text truncate">{featuredSong.title}</p>
+            </div>
+          </button>
+        </div>
+      )}
 
       {favoritesOnly && visibleSongs.length === 0 && (
         <p className="text-sm text-text-muted text-center py-8">No favorites yet — tap the heart on a song.</p>

@@ -46,6 +46,11 @@ const TOGGLES: { key: keyof NotificationSettingsType; label: string; description
     label: "New Blog Posts",
     description: "When a new post is published to the blog",
   },
+  {
+    key: "newSongs",
+    label: "New Songs",
+    description: "When a new song drops on Music Monday",
+  },
 ];
 
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {

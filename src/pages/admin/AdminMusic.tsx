@@ -1,8 +1,8 @@
-import { ChevronDown, ChevronUp, FileText, Music, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, FileText, Music, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
-import type { CustomPeacefulSound, Song } from "../../types";
+import type { CustomPeacefulSound, Song, SongCategory } from "../../types";
 import { AMBIENT_SOUNDS } from "../../utils/ambientSounds";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -28,6 +28,16 @@ export default function AdminMusic() {
   const [editingLyricsId, setEditingLyricsId] = useState<number | null>(null);
   const [editingLyricsValue, setEditingLyricsValue] = useState("");
   const [savingLyrics, setSavingLyrics] = useState(false);
+
+  const [categories, setCategories] = useState<SongCategory[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newSongCategoryIds, setNewSongCategoryIds] = useState<number[]>([]);
+  const [editingCategoriesId, setEditingCategoriesId] = useState<number | null>(null);
+  const [editingCategoryIds, setEditingCategoryIds] = useState<number[]>([]);
+  const [savingCategories, setSavingCategories] = useState(false);
+
+  const [queuedSongs, setQueuedSongs] = useState<Song[]>([]);
+  const [queueLoading, setQueueLoading] = useState(true);
 
   const [sounds, setSounds] = useState<CustomPeacefulSound[]>([]);
   const [soundsLoading, setSoundsLoading] = useState(true);
@@ -99,6 +109,34 @@ export default function AdminMusic() {
     }
   };
 
+  const fetchCategories = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/song-categories`);
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data.categories || []);
+      }
+    } catch (err) {
+      console.error("Fetch song categories error:", err);
+    }
+  };
+
+  const fetchQueue = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/songs/queue`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setQueuedSongs(data.songs || []);
+      }
+    } catch (err) {
+      console.error("Fetch song queue error:", err);
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
   const fetchSounds = async () => {
     if (!API_URL) return;
     try {
@@ -118,6 +156,8 @@ export default function AdminMusic() {
     fetchSongs();
     fetchSounds();
     fetchHiddenBuiltins();
+    fetchCategories();
+    fetchQueue();
   }, []);
 
   const handleAdd = async () => {
@@ -132,15 +172,27 @@ export default function AdminMusic() {
           url: url.trim(),
           lyrics: lyrics.trim() || undefined,
           sortOrder: songs.length,
+          categoryIds: newSongCategoryIds,
         }),
       });
       if (res.ok) {
+        const data = await res.json();
+        const releaseDate = data.song?.releaseAt
+          ? new Date(data.song.releaseAt).toLocaleDateString(undefined, { month: "long", day: "numeric" })
+          : null;
         setTitle("");
         setArtist("");
         setUrl("");
         setLyrics("");
-        setStatus({ type: "success", message: "Song added!" });
+        setNewSongCategoryIds([]);
+        setStatus({
+          type: "success",
+          message: releaseDate
+            ? `Queued! Goes live on Music Monday, ${releaseDate}.`
+            : "Song added!",
+        });
         fetchSongs();
+        fetchQueue();
       } else {
         const err = await res.json();
         setStatus({ type: "error", message: err.error || "Failed to add song" });
@@ -207,6 +259,74 @@ export default function AdminMusic() {
     } catch (err) {
       console.error("Reorder songs error:", err);
       fetchSongs();
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim() || !API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/song-categories`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      if (res.ok) {
+        setNewCategoryName("");
+        fetchCategories();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to create category");
+      }
+    } catch (err) {
+      console.error("Create category error:", err);
+    }
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    if (!API_URL || !confirm("Delete this category? Songs tagged with it will lose that tag.")) return;
+    try {
+      await fetch(`${API_URL}/api/song-categories/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+      fetchCategories();
+      fetchSongs();
+    } catch (err) {
+      console.error("Delete category error:", err);
+    }
+  };
+
+  const openCategoryEditor = (song: Song) => {
+    if (editingCategoriesId === song.id) {
+      setEditingCategoriesId(null);
+      return;
+    }
+    setEditingCategoriesId(song.id);
+    setEditingCategoryIds(song.categoryIds || []);
+  };
+
+  const toggleEditingCategory = (id: number) => {
+    setEditingCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  };
+
+  const toggleNewSongCategory = (id: number) => {
+    setNewSongCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  };
+
+  const handleSaveCategories = async (songId: number) => {
+    if (!API_URL) return;
+    setSavingCategories(true);
+    try {
+      const res = await fetch(`${API_URL}/api/songs/${songId}/categories`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ categoryIds: editingCategoryIds }),
+      });
+      if (res.ok) {
+        setEditingCategoriesId(null);
+        fetchSongs();
+      }
+    } catch (err) {
+      console.error("Save song categories error:", err);
+    } finally {
+      setSavingCategories(false);
     }
   };
 
@@ -277,10 +397,76 @@ export default function AdminMusic() {
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
           <p className="text-xs text-text-muted leading-relaxed">
             Upload each song's audio file to your WordPress media library (WP Admin → Media → Add New)
-            or Bunny.net, then paste the file's URL here. Songs appear in the app's Music → Playlist tab
-            in the order you add them — members can favorite, reorder, and download songs from there too.
+            or Bunny.net, then paste the file's URL here. Every new song you add automatically queues for
+            the next Music Monday and goes live on its own — no extra step needed. Tag it with one or more
+            categories below so members can browse by theme.
           </p>
         </div>
+
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-text">Song Categories</h2>
+          </div>
+          <div className="flex gap-2 flex-wrap mb-3">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-pill px-3 py-1.5"
+              >
+                <Tag size={11} className="text-brand-light" />
+                <span className="text-xs font-semibold text-text">{category.name}</span>
+                <button
+                  onClick={() => handleDeleteCategory(category.id)}
+                  aria-label={`Delete ${category.name}`}
+                  className="text-text-dim"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="New category name"
+              className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+            />
+            <button
+              onClick={handleCreateCategory}
+              disabled={!newCategoryName.trim()}
+              className="flex items-center gap-1.5 text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-2 disabled:opacity-50"
+            >
+              <Plus size={14} />
+              Add
+            </button>
+          </div>
+        </div>
+
+        {(queueLoading || queuedSongs.length > 0) && (
+          <div className="glass-card rounded-card p-4 border border-brand-light/30">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Calendar size={14} className="text-brand-light" />
+              <h2 className="text-sm font-bold text-text">Music Monday Queue</h2>
+            </div>
+            {queueLoading ? (
+              <p className="text-xs text-text-muted">Loading...</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {queuedSongs.map((song) => (
+                  <div key={song.id} className="flex items-center justify-between text-xs">
+                    <span className="text-text font-semibold">{song.title}</span>
+                    <span className="text-text-dim">
+                      {song.releaseAt &&
+                        new Date(song.releaseAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-3">Add a Song</h2>
@@ -316,6 +502,25 @@ export default function AdminMusic() {
                 className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
               />
             </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Categories</label>
+              <div className="flex gap-2 flex-wrap">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => toggleNewSongCategory(category.id)}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                      newSongCategoryIds.includes(category.id)
+                        ? "gradient-brand text-white border-transparent"
+                        : "border-border text-text-muted"
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               onClick={handleAdd}
               disabled={!title.trim() || !url.trim()}
@@ -350,8 +555,27 @@ export default function AdminMusic() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-text truncate">{song.title}</p>
                         {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
+                        {song.categoryIds.length > 0 && (
+                          <p className="text-[10px] text-brand-light truncate mt-0.5">
+                            {song.categoryIds
+                              .map((id) => categories.find((c) => c.id === id)?.name)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        )}
                       </div>
                     </div>
+                    <button
+                      onClick={() => openCategoryEditor(song)}
+                      aria-label="Edit categories"
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border shrink-0 mr-1 ${
+                        song.categoryIds.length > 0
+                          ? "bg-surface-2 border-brand-light text-brand-light"
+                          : "bg-surface-2 border-border text-text-dim"
+                      }`}
+                    >
+                      <Tag size={14} />
+                    </button>
                     <button
                       onClick={() => openLyricsEditor(song)}
                       aria-label="Edit lyrics"
@@ -388,6 +612,41 @@ export default function AdminMusic() {
                       <Trash2 size={14} />
                     </button>
                   </div>
+                  {editingCategoriesId === song.id && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        {categories.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => toggleEditingCategory(category.id)}
+                            className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                              editingCategoryIds.includes(category.id)
+                                ? "gradient-brand text-white border-transparent"
+                                : "border-border text-text-muted"
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveCategories(song.id)}
+                          disabled={savingCategories}
+                          className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
+                        >
+                          Save Categories
+                        </button>
+                        <button
+                          onClick={() => setEditingCategoriesId(null)}
+                          className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {editingLyricsId === song.id && (
                     <div className="flex flex-col gap-2">
                       <textarea

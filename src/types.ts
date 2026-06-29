@@ -36,6 +36,7 @@ export interface NotificationSettings {
   dailyInspiration: boolean;
   newEvents: boolean;
   newBlogs: boolean;
+  newSongs: boolean;
   pushEnabled: boolean;
 }
 
@@ -177,6 +178,18 @@ export interface Song {
   artist?: string;
   url: string;
   lyrics?: string;
+  sortOrder: number;
+  categoryIds: number[];
+  // Set only while still queued for a future Music Monday (admin queue view).
+  releaseAt?: string;
+  // True for the song whose release_at fell within the last 7 days — shown
+  // as "New This Week" at the top of the playlist.
+  featured?: boolean;
+}
+
+export interface SongCategory {
+  id: number;
+  name: string;
   sortOrder: number;
 }
 
