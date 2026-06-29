@@ -62,9 +62,13 @@ export default function Events() {
     [sortedEvents, featuredEventId, todayStr]
   );
 
+  // The featured event intentionally also appears here in its natural date
+  // slot, not just in the featured banner above — it's still a real
+  // upcoming event, so hiding it from the list made it look like it had
+  // disappeared from the calendar/list once "featured."
   const upcomingEvents = useMemo(
-    () => sortedEvents.filter((e) => e.date >= todayStr && e.id !== featuredEvent?.id),
-    [sortedEvents, todayStr, featuredEvent]
+    () => sortedEvents.filter((e) => e.date >= todayStr),
+    [sortedEvents, todayStr]
   );
 
   const selectedDateEvents = selectedDate

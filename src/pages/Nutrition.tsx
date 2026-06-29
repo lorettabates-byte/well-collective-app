@@ -1,4 +1,4 @@
-import { BadgeCheck, Bookmark, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Bookmark, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -61,6 +61,7 @@ export default function Nutrition() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyExhausted, setHistoryExhausted] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedHistoryRecipe, setSelectedHistoryRecipe] = useState<Recipe | null>(null);
 
   const isSaved = savedRecipes.some((r) => r.name === todaysRecipe.name && r.date === todaysRecipe.date);
 
@@ -321,7 +322,82 @@ export default function Nutrition() {
           </button>
         </div>
 
-        {historyOpen && (
+        {historyOpen && selectedHistoryRecipe && (
+          <div className="glass-card rounded-card overflow-hidden">
+            <img
+              src={selectedHistoryRecipe.image}
+              alt={selectedHistoryRecipe.name}
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-4">
+              <button
+                onClick={() => setSelectedHistoryRecipe(null)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-text-muted mb-3"
+              >
+                <ArrowLeft size={14} />
+                Back to Past Recipes
+              </button>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] text-text-dim">{selectedHistoryRecipe.date}</p>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-text flex-1">{selectedHistoryRecipe.name}</h2>
+                <button
+                  onClick={() => toggleRecipeSave(selectedHistoryRecipe)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-text-muted"
+                >
+                  <Bookmark
+                    size={16}
+                    className={
+                      savedRecipes.some(
+                        (r) => r.name === selectedHistoryRecipe.name && r.date === selectedHistoryRecipe.date
+                      )
+                        ? "fill-brand-light text-brand-light"
+                        : ""
+                    }
+                  />
+                  {savedRecipes.some(
+                    (r) => r.name === selectedHistoryRecipe.name && r.date === selectedHistoryRecipe.date
+                  )
+                    ? "Saved"
+                    : "Save"}
+                </button>
+              </div>
+              <p className="text-sm text-text-muted leading-relaxed mb-4">{selectedHistoryRecipe.description}</p>
+
+              {selectedHistoryRecipe.nutrition && (
+                <NutritionInfo
+                  nutrition={selectedHistoryRecipe.nutrition}
+                  verified={selectedHistoryRecipe.nutritionVerified}
+                />
+              )}
+
+              <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
+              <ul className="flex flex-col gap-1.5 mb-4">
+                {selectedHistoryRecipe.ingredients.map((ingredient) => (
+                  <li key={ingredient} className="flex items-start gap-2 text-sm text-text-muted">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-light mt-1.5 shrink-0" />
+                    {ingredient}
+                  </li>
+                ))}
+              </ul>
+
+              <h3 className="text-sm font-bold text-text mb-2">Steps</h3>
+              <ol className="flex flex-col gap-2">
+                {selectedHistoryRecipe.steps.map((step, index) => (
+                  <li key={step} className="flex items-start gap-2.5 text-sm text-text-muted">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-2 border border-border text-[11px] font-bold text-brand-light shrink-0 mt-0.5">
+                      {index + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        )}
+
+        {historyOpen && !selectedHistoryRecipe && (
           <div className="glass-card rounded-card p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-text">Past Recipes</h3>
@@ -333,12 +409,20 @@ export default function Nutrition() {
               {history.map((recipe) => {
                 const recipeSaved = savedRecipes.some((r) => r.name === recipe.name && r.date === recipe.date);
                 return (
-                  <div key={`${recipe.date}-${recipe.name}`} className="flex items-center gap-3 border-b border-border pb-3 last:border-none last:pb-0">
-                    <img src={recipe.image} alt={recipe.name} className="w-14 h-14 rounded-card object-cover shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-text-dim">{recipe.date}</p>
-                      <h4 className="text-sm font-semibold text-text truncate">{recipe.name}</h4>
-                    </div>
+                  <div
+                    key={`${recipe.date}-${recipe.name}`}
+                    className="flex items-center gap-3 border-b border-border pb-3 last:border-none last:pb-0"
+                  >
+                    <button
+                      onClick={() => setSelectedHistoryRecipe(recipe)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    >
+                      <img src={recipe.image} alt={recipe.name} className="w-14 h-14 rounded-card object-cover shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-text-dim">{recipe.date}</p>
+                        <h4 className="text-sm font-semibold text-text truncate">{recipe.name}</h4>
+                      </div>
+                    </button>
                     <button
                       onClick={() => toggleRecipeSave(recipe)}
                       className="shrink-0"
