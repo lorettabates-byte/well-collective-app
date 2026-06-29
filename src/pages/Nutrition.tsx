@@ -1,4 +1,4 @@
-import { ArrowLeft, BadgeCheck, Bookmark, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -321,6 +321,14 @@ export default function Nutrition() {
             Past Recipes
           </button>
         </div>
+
+        <a
+          href="/nutrition/meal-plan"
+          className="flex items-center justify-center gap-1.5 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
+        >
+          <Calendar size={15} />
+          Plan This Week's Meals
+        </a>
 
         {historyOpen && selectedHistoryRecipe && (
           <div className="glass-card rounded-card overflow-hidden">

@@ -25,6 +25,7 @@ import type {
   ForumCategory,
   ForumThread,
   Inspiration,
+  MealPlanEntry,
   NotificationSettings,
   Recipe,
   RecipeFolder,
@@ -391,6 +392,9 @@ interface AppContextValue extends PersistedState {
   deleteRecipeFolder: (folderId: number) => void;
   moveRecipeToFolder: (savedRecipeId: number, folderId: number | null) => void;
   fetchRecipeHistory: (before?: string, limit?: number) => Promise<Recipe[]>;
+  mealPlan: MealPlanEntry[];
+  setMealPlanRecipe: (planDate: string, recipe: Recipe) => void;
+  removeMealPlanEntry: (entryId: number) => void;
   toggleRsvp: (eventId: string) => void;
   addEvent: (
     event: Omit<CommunityEvent, "id" | "rsvps" | "recurrenceGroupId">,
@@ -437,6 +441,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Refetched fresh each session, same as memberBadges above.
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
   const [recipeFolders, setRecipeFolders] = useState<RecipeFolder[]>([]);
+  const [mealPlan, setMealPlan] = useState<MealPlanEntry[]>([]);
 
   // Sold-out status for live (WordPress-sourced) events, which have no row in
   // our own `events` table to hold a column — see setting key
@@ -486,6 +491,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((res) => (res.ok ? res.json() : { savedRecipes: [] }))
       .then((data) => setSavedRecipes(data.savedRecipes || []))
       .catch((err) => console.error("Failed to fetch saved recipes:", err));
+    fetch(`${API_URL}/api/meal-plan?email=${email}`)
+      .then((res) => (res.ok ? res.json() : { entries: [] }))
+      .then((data) => setMealPlan(data.entries || []))
+      .catch((err) => console.error("Failed to fetch meal plan:", err));
     fetch(`${API_URL}/api/recipes/folders?email=${email}`)
       .then((res) => (res.ok ? res.json() : { folders: [] }))
       .then((data) => setRecipeFolders(data.folders || []))
@@ -927,6 +936,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? getRecipePhotoByCategory(recipe.imageCategory, recipe.name)
           : getRecipePhoto(recipe.name, recipe.ingredients)),
     }));
+  };
+
+  const setMealPlanRecipe: AppContextValue["setMealPlanRecipe"] = (planDate, recipe) => {
+    if (!API_URL || !state.user.email) return;
+    fetch(`${API_URL}/api/meal-plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.user.email, planDate, recipe }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to set meal plan entry"))))
+      .then((data) =>
+        setMealPlan((prev) => [...prev.filter((e) => e.planDate !== planDate), data.entry].sort((a, b) =>
+          a.planDate.localeCompare(b.planDate)
+        ))
+      )
+      .catch((err) => console.error("Failed to set meal plan entry:", err));
+  };
+
+  const removeMealPlanEntry: AppContextValue["removeMealPlanEntry"] = (entryId) => {
+    setMealPlan((prev) => prev.filter((e) => e.id !== entryId));
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/meal-plan/${entryId}`, { method: "DELETE" }).catch((err) =>
+      console.error("Failed to remove meal plan entry:", err)
+    );
   };
 
   const addInspiration: AppContextValue["addInspiration"] = (inspiration) => {
@@ -1826,6 +1859,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteRecipeFolder,
     moveRecipeToFolder,
     fetchRecipeHistory,
+    mealPlan,
+    setMealPlanRecipe,
+    removeMealPlanEntry,
     addInspiration,
     deleteInspiration,
     toggleRsvp,

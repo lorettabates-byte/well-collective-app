@@ -89,6 +89,12 @@ export interface SavedRecipe extends Recipe {
   savedAt: string;
 }
 
+export interface MealPlanEntry {
+  id: number;
+  planDate: string; // ISO date (yyyy-mm-dd)
+  recipe: Recipe;
+}
+
 export interface ContentBatchEntry {
   date: string; // ISO date (yyyy-mm-dd)
   weeklyTheme?: { title: string; body: string };
