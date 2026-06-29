@@ -1,4 +1,4 @@
-import { BadgeCheck, Download, Loader2, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, Download, ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -109,6 +109,12 @@ interface BackfillResult {
   verified: boolean;
 }
 
+interface DiversifyResult {
+  date: string;
+  name: string;
+  image: string;
+}
+
 export default function AdminContent() {
   const { contentSchedule, importContentSchedule, removeContentEntry } = useApp();
   const [jsonText, setJsonText] = useState("");
@@ -117,6 +123,9 @@ export default function AdminContent() {
   const [backfilling, setBackfilling] = useState(false);
   const [backfillResults, setBackfillResults] = useState<BackfillResult[] | null>(null);
   const [backfillError, setBackfillError] = useState("");
+  const [diversifying, setDiversifying] = useState(false);
+  const [diversifyResults, setDiversifyResults] = useState<DiversifyResult[] | null>(null);
+  const [diversifyError, setDiversifyError] = useState("");
 
   useEffect(() => {
     fetchContentSchedule()
@@ -193,6 +202,26 @@ export default function AdminContent() {
     }
   };
 
+  const handleDiversifyPhotos = async () => {
+    if (!API_URL) return;
+    setDiversifying(true);
+    setDiversifyError("");
+    setDiversifyResults(null);
+    try {
+      const res = await fetch(`${API_URL}/api/recipes/diversify-photos`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Diversify request failed.");
+      const data = await res.json();
+      setDiversifyResults(data.results || []);
+    } catch (err) {
+      setDiversifyError(err instanceof Error ? err.message : "Diversify failed.");
+    } finally {
+      setDiversifying(false);
+    }
+  };
+
   const sorted = [...contentSchedule].sort((a, b) => a.date.localeCompare(b.date));
   const todayISO = toLocalISODate(new Date());
   const todayEntry = contentSchedule.find((e) => e.date === todayISO);
@@ -266,6 +295,37 @@ export default function AdminContent() {
                 backfillResults.map((r) => (
                   <p key={r.date} className="text-xs text-text-muted">
                     {r.verified ? "✅" : "⚠️"} {r.date} — {r.name}
+                  </p>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card rounded-card p-4">
+          <h2 className="text-sm font-bold text-text mb-1.5">Diversify Recipe Photos</h2>
+          <p className="text-xs text-text-muted leading-relaxed">
+            One-time tool: past recipes pick a photo by hashing their name within a category, so two
+            recipes with the same name (or just bad luck) can land on the identical photo. Assigns each
+            recent recipe a distinct photo, newest first.
+          </p>
+          <button
+            onClick={handleDiversifyPhotos}
+            disabled={diversifying}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 mt-3 disabled:opacity-60"
+          >
+            {diversifying ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+            {diversifying ? "Assigning photos…" : "Diversify Past Recipe Photos"}
+          </button>
+          {diversifyError && <p className="text-xs text-red-400 mt-2">{diversifyError}</p>}
+          {diversifyResults && (
+            <div className="mt-3 flex flex-col gap-1.5">
+              {diversifyResults.length === 0 ? (
+                <p className="text-xs text-text-muted">No recipes found to update.</p>
+              ) : (
+                diversifyResults.map((r) => (
+                  <p key={r.date} className="text-xs text-text-muted">
+                    ✅ {r.date} — {r.name}
                   </p>
                 ))
               )}
