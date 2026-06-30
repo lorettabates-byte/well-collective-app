@@ -185,9 +185,18 @@ export interface SavedWorkoutPlan {
   breathwork: BreathworkExercise;
 }
 
-export function generateWorkout(): WorkoutPlan {
+export function generateWorkout(date?: Date): WorkoutPlan {
+  // On Tuesdays, always use livestream
+  let cardioOption = pickRandom(CARDIO_OPTIONS, 1)[0];
+  if (date) {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 2) { // Tuesday
+      cardioOption = CARDIO_OPTIONS.find((c) => c.id === "livestream") || cardioOption;
+    }
+  }
+
   return {
-    cardio: pickRandom(CARDIO_OPTIONS, 1)[0],
+    cardio: cardioOption,
     resistance: pickRandom(RESISTANCE_EXERCISES, 5),
     stretches: pickRandom(STRETCHES, 4),
     breathwork: pickRandom(BREATHWORK, 1)[0],

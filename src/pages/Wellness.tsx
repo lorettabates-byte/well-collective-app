@@ -91,7 +91,7 @@ export default function Wellness() {
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
-  const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout());
+  const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout(new Date()));
   const [selected, setSelected] = useState<SelectedExercise | null>(null);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
@@ -249,7 +249,7 @@ export default function Wellness() {
                 setTimeout(() => setWorkoutLockedMessage(false), 3000);
                 return;
               }
-              setPlan(generateWorkout());
+              setPlan(generateWorkout(new Date()));
             }}
             className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 mb-4 ${
               isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "gradient-brand text-white shadow-glow"
