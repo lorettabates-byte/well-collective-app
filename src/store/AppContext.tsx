@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   CATEGORIES,
   CURRENT_USER,
@@ -1724,39 +1724,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // committed server-side, stomping the optimistic update with stale
   // data — this is why saves looked like they "didn't stick." Reading
   // the current ids from a ref instead means the effect only ever runs
-  // once on mount, eliminating the pile-up entirely.
+  // once on mount, eliminating the pile-up entirely. However, we also need
+  // to sync immediately when major inspirations batches are added (via
+  // syncTodayContent) to avoid showing stale 0-likes until the next interval.
   const inspirationsRef = useRef(state.inspirations);
   inspirationsRef.current = state.inspirations;
+  const lastSyncedCountRef = useRef(0);
+
+  const syncReactions = useCallback(() => {
+    const ids = inspirationsRef.current.map((i) => i.id);
+    if (ids.length === 0) return;
+    fetch(`${API_URL}/api/inspirations/reactions?ids=${encodeURIComponent(ids.join(","))}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const reactions = data?.reactions as Record<string, { likes: string[]; savedBy: string[] }> | undefined;
+        if (!reactions) return;
+        setState((prev) => ({
+          ...prev,
+          inspirations: prev.inspirations.map((inspiration) => {
+            const r = reactions[inspiration.id];
+            if (!r) return inspiration;
+            return { ...inspiration, likes: r.likes, savedBy: r.savedBy };
+          }),
+        }));
+      })
+      .catch(() => {
+        // offline or backend unreachable — keep whatever local state exists
+      });
+  }, [API_URL]);
 
   useEffect(() => {
     if (!API_URL) return;
 
-    const syncReactions = () => {
-      const ids = inspirationsRef.current.map((i) => i.id);
-      if (ids.length === 0) return;
-      fetch(`${API_URL}/api/inspirations/reactions?ids=${encodeURIComponent(ids.join(","))}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          const reactions = data?.reactions as Record<string, { likes: string[]; savedBy: string[] }> | undefined;
-          if (!reactions) return;
-          setState((prev) => ({
-            ...prev,
-            inspirations: prev.inspirations.map((inspiration) => {
-              const r = reactions[inspiration.id];
-              if (!r) return inspiration;
-              return { ...inspiration, likes: r.likes, savedBy: r.savedBy };
-            }),
-          }));
-        })
-        .catch(() => {
-          // offline or backend unreachable — keep whatever local state exists
-        });
-    };
+    // Sync on mount and whenever a significant new batch of inspirations is
+    // added (e.g., after syncTodayContent fetches daily/weekly/motivation
+    // content). Track the count so we re-sync only when new inspirations
+    // appear, avoiding unnecessary fetches from local like/save changes.
+    if (
+      state.inspirations.length > 0 &&
+      state.inspirations.length !== lastSyncedCountRef.current
+    ) {
+      lastSyncedCountRef.current = state.inspirations.length;
+      syncReactions();
+    }
 
-    syncReactions();
-    const interval = setInterval(syncReactions, 20000);
+    const interval = setInterval(() => {
+      // Periodic re-sync as a fallback in case the user is offline or a
+      // sync missed something, even if the count hasn't changed.
+      syncReactions();
+    }, 20000);
     return () => clearInterval(interval);
-  }, []);
+  }, [state.inspirations.length, syncReactions, API_URL]);
 
   // Sync the admin's featured-event pick from the shared backend so every
   // member sees the same highlighted event, not just the admin's own device.
