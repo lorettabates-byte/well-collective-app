@@ -806,19 +806,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // else's "like" on the same note/inspiration. Now persisted server-side
   // (shared across everyone) via /api/inspirations/:id/react, with the
   // periodic sync effect below pulling the real aggregate back down.
+  // Reconciles local state with the server's authoritative likes/savedBy
+  // once the POST resolves — the optimistic update above is just for instant
+  // UI feedback. Without this, a failed request (network error, validation
+  // error, anything) would leave the UI claiming a like/save "stuck" that
+  // never actually persisted, with no visible sign anything went wrong.
+  function syncInspirationReaction(
+    inspirationId: string,
+    reaction: "like" | "save",
+    active: boolean
+  ) {
+    if (!API_URL || !state.user.email) return;
+    fetch(`${API_URL}/api/inspirations/${inspirationId}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.user.email, reaction, active }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data: { likes: string[]; savedBy: string[] }) => {
+        setState((prev) => ({
+          ...prev,
+          inspirations: prev.inspirations.map((inspiration) =>
+            inspiration.id === inspirationId
+              ? { ...inspiration, likes: data.likes, savedBy: data.savedBy }
+              : inspiration
+          ),
+        }));
+      })
+      .catch((err) => console.error(`Failed to sync inspiration ${reaction}:`, err));
+  }
+
   const toggleInspirationLike: AppContextValue["toggleInspirationLike"] = (inspirationId) => {
     setState((prev) => ({
       ...prev,
       inspirations: prev.inspirations.map((inspiration) => {
         if (inspiration.id !== inspirationId) return inspiration;
         const hasLiked = inspiration.likes.includes(prev.user.id);
-        if (API_URL && state.user.email) {
-          fetch(`${API_URL}/api/inspirations/${inspirationId}/react`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: state.user.email, reaction: "like", active: !hasLiked }),
-          }).catch((err) => console.error("Failed to sync inspiration like:", err));
-        }
+        syncInspirationReaction(inspirationId, "like", !hasLiked);
         return {
           ...inspiration,
           likes: hasLiked
@@ -835,13 +859,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       inspirations: prev.inspirations.map((inspiration) => {
         if (inspiration.id !== inspirationId) return inspiration;
         const hasSaved = inspiration.savedBy.includes(prev.user.id);
-        if (API_URL && state.user.email) {
-          fetch(`${API_URL}/api/inspirations/${inspirationId}/react`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: state.user.email, reaction: "save", active: !hasSaved }),
-          }).catch((err) => console.error("Failed to sync inspiration save:", err));
-        }
+        syncInspirationReaction(inspirationId, "save", !hasSaved);
         return {
           ...inspiration,
           savedBy: hasSaved
@@ -1255,6 +1273,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const isMonday = todayAsDate().getDay() === 1;
 
       if (entry.weeklyTheme && isMonday) {
+        // Deterministic id + dedup check, same pattern as the forum bell
+        // reconciliation — without it, this effect re-running for any
+        // reason (it's gated by processedDates, but a second, newer
+        // reconciliation effect below creates the matching inspiration
+        // with its own logic) created a *second* unread notification with
+        // a fresh random id for content already marked read, which is
+        // exactly what looked like "my read notification came back".
+        const weeklyNotifId = `weekly-notif-${today}`;
         next = {
           ...next,
           inspirations: [
@@ -1270,18 +1296,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
             },
             ...next.inspirations,
           ],
-          notifications: [
-            {
-              id: uid("n"),
-              type: "general",
-              title: `This week's focus: ${entry.weeklyTheme.title}`,
-              body: entry.weeklyTheme.body,
-              createdAt: now,
-              read: false,
-              link: "/inspirations",
-            },
-            ...next.notifications,
-          ],
+          notifications: next.notifications.some((n) => n.id === weeklyNotifId)
+            ? next.notifications
+            : [
+                {
+                  id: weeklyNotifId,
+                  type: "general",
+                  title: `This week's focus: ${entry.weeklyTheme.title}`,
+                  body: entry.weeklyTheme.body,
+                  createdAt: now,
+                  read: false,
+                  link: "/inspirations",
+                },
+                ...next.notifications,
+              ],
         };
         if (
           prev.notificationSettings.pushEnabled &&
@@ -1313,6 +1341,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (entry.dailyInspiration) {
+        const dailyNotifId = `daily-notif-${today}`;
         next = {
           ...next,
           inspirations: [
@@ -1328,18 +1357,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
             },
             ...next.inspirations,
           ],
-          notifications: [
-            {
-              id: uid("n"),
-              type: "general",
-              title: entry.dailyInspiration.title,
-              body: entry.dailyInspiration.body,
-              createdAt: now,
-              read: false,
-              link: "/inspirations",
-            },
-            ...next.notifications,
-          ],
+          notifications: next.notifications.some((n) => n.id === dailyNotifId)
+            ? next.notifications
+            : [
+                {
+                  id: dailyNotifId,
+                  type: "general",
+                  title: entry.dailyInspiration.title,
+                  body: entry.dailyInspiration.body,
+                  createdAt: now,
+                  read: false,
+                  link: "/inspirations",
+                },
+                ...next.notifications,
+              ],
         };
         if (
           prev.notificationSettings.pushEnabled &&
@@ -1681,15 +1712,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Pull the real shared like/save counts for whatever inspirations are
   // currently loaded — this is what makes someone else's reaction actually
-  // show up instead of staying invisible to everyone but them. Keyed off a
-  // joined-ids string (not the inspirations array itself) so this only
-  // re-fires when the *set* of ids changes, not every time a like toggles.
-  const inspirationIdsKey = state.inspirations.map((i) => i.id).sort().join(",");
+  // show up instead of staying invisible to everyone but them.
+  //
+  // This used to depend on a joined-ids string recomputed every render,
+  // intended to only re-fire when the *set* of ids changed — but during
+  // initial load, several other effects (notes sync, daily-content sync,
+  // forum sync) each mutate `inspirations` as their own fetches resolve,
+  // so the id-set kept shifting and retriggered this effect dozens of
+  // times within milliseconds of each other. Each of those overlapping
+  // polls could land *after* a save/like POST fired but before it
+  // committed server-side, stomping the optimistic update with stale
+  // data — this is why saves looked like they "didn't stick." Reading
+  // the current ids from a ref instead means the effect only ever runs
+  // once on mount, eliminating the pile-up entirely.
+  const inspirationsRef = useRef(state.inspirations);
+  inspirationsRef.current = state.inspirations;
+
   useEffect(() => {
-    if (!API_URL || !inspirationIdsKey) return;
+    if (!API_URL) return;
 
     const syncReactions = () => {
-      fetch(`${API_URL}/api/inspirations/reactions?ids=${encodeURIComponent(inspirationIdsKey)}`)
+      const ids = inspirationsRef.current.map((i) => i.id);
+      if (ids.length === 0) return;
+      fetch(`${API_URL}/api/inspirations/reactions?ids=${encodeURIComponent(ids.join(","))}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           const reactions = data?.reactions as Record<string, { likes: string[]; savedBy: string[] }> | undefined;
@@ -1711,7 +1756,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     syncReactions();
     const interval = setInterval(syncReactions, 20000);
     return () => clearInterval(interval);
-  }, [inspirationIdsKey]);
+  }, []);
 
   // Sync the admin's featured-event pick from the shared backend so every
   // member sees the same highlighted event, not just the admin's own device.
