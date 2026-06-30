@@ -143,6 +143,11 @@ export default function AdminMembers() {
     <div>
       <TopBar title="Members" subtitle="View, add, and remove members" showBack />
       <div className="px-4 pt-4">
+        <div className="glass-card rounded-card px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-sm font-semibold text-text">Total Members</p>
+          <p className="text-lg font-bold text-brand-light">{loading ? "…" : members.length}</p>
+        </div>
+
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="flex items-center justify-center gap-2 text-sm font-semibold gradient-brand text-white rounded-pill py-2.5 w-full mb-4"
