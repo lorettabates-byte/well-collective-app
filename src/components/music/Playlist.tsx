@@ -86,14 +86,24 @@ export default function Playlist({
     setTimeout(() => setLockedReason(null), 3000);
   };
 
-  // Only the first FREE_SONG_COUNT songs in the admin-defined order are
-  // playable for trial members — based on the canonical `songs` order, not
-  // the user's custom reordering, so a trial member can't bypass the lock
+  // Trial members get access to the first FREE_SONG_COUNT songs plus the
+  // newest Monday release (featured song). Based on the canonical `songs`
+  // order, not the user's custom reordering, so they can't bypass the lock
   // by dragging a later song to the top.
-  const lockedSongIds = useMemo(
-    () => (downloadsLocked ? new Set(songs.slice(FREE_SONG_COUNT).map((s) => s.id)) : new Set<number>()),
-    [songs, downloadsLocked]
-  );
+  const lockedSongIds = useMemo(() => {
+    if (!downloadsLocked) return new Set<number>();
+
+    // All songs after the first FREE_SONG_COUNT are locked by default
+    const locked = new Set(songs.slice(FREE_SONG_COUNT).map((s) => s.id));
+
+    // Except: the newest Monday release (featured) is also accessible
+    const featuredSong = songs.find((s) => s.featured);
+    if (featuredSong) {
+      locked.delete(featuredSong.id);
+    }
+
+    return locked;
+  }, [songs, downloadsLocked]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Song[]>([]);

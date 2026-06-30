@@ -4,6 +4,7 @@ import {
   Heart,
   MessageCircle,
   Music,
+  ShoppingCart,
   Sparkles,
   User,
   Users,
@@ -52,6 +53,15 @@ const SLIDES: Slide[] = [
     findIt: [
       { icon: Video, label: "Classes" },
       { icon: Waves, label: "Wellness" },
+    ],
+  },
+  {
+    icon: ShoppingCart,
+    title: "Meal Plan & Shopping List",
+    body: "Plan your whole week with AI-generated recipes, then auto-generate a shopping list from all the week's ingredients. Check off items as you shop — the list even shows you which items you need multiple times.",
+    findIt: [
+      { icon: Waves, label: "Wellness" },
+      { icon: ShoppingCart, label: "Meal Plan" },
     ],
   },
   {
