@@ -39,6 +39,7 @@ import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
+import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -106,7 +107,7 @@ export default function Wellness() {
   const workoutLog = user.workoutLog ?? [];
   const breathworkLog = user.breathworkLog ?? [];
   const wellActivityLog = user.wellActivityLog ?? [];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const completedToday = workoutLog.includes(today);
   const wellActivityCompleted = wellActivityLog.includes(today);
   const streak = computeStreak(workoutLog);

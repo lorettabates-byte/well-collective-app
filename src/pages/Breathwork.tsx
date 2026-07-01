@@ -7,6 +7,7 @@ import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
+import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -44,7 +45,7 @@ export default function Breathwork() {
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const breathworkLog = user.breathworkLog ?? [];
   const completedToday = breathworkLog.includes(today);
   const [celebration, setCelebration] = useState<number | null>(null);

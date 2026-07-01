@@ -37,3 +37,12 @@ export function getDayNumber(dateStr: string): number {
 export function getMonthKey(dateStr: string): string {
   return dateStr.slice(0, 7); // yyyy-mm
 }
+
+export function todayISO(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
