@@ -1,6 +1,6 @@
 import { Send, Pin, Image as ImageIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import ChatBubble from "../components/community/ChatBubble";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -9,22 +9,46 @@ import { timeAgo } from "../utils/format";
 
 export default function Thread() {
   const { categoryId, threadId } = useParams<{ categoryId: string; threadId: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightMessageId = searchParams.get("message") ?? undefined;
+
   const { categories, threads, user, addMessage, memberBadges, pinThread, unpinThread } = useApp();
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | undefined>();
   const [photoError, setPhotoError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+  const [highlighted, setHighlighted] = useState<string | undefined>(highlightMessageId);
 
   const thread = threads.find((t) => t.id === threadId);
   const category = categories.find((c) => c.id === categoryId);
 
   useEffect(() => {
-    // block: "end" aligns the bottom of the marker with the bottom of the
-    // scrollport — the default "start" alignment was landing mid-thread on
-    // long messages, leaving the sticky input bar stranded above unread text.
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (highlightMessageId) {
+      // Give the DOM a tick to render all messages before scrolling
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`msg-${highlightMessageId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          // Message not rendered yet (thread still loading) — fall back to bottom
+          endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+        // Remove the highlight ring after 2.5s
+        setTimeout(() => setHighlighted(undefined), 2500);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      // No specific message targeted — scroll to bottom as usual
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread?.messages.length]);
 
+  // Don't redirect immediately — threads load from the server, so if the user
+  // taps a push notification while the app is cold, the thread may not be in
+  // local state yet. Render nothing while state is still empty, then redirect
+  // only once threads have actually loaded and the thread still isn't found.
+  if (threads.length === 0) return null;
   if (!thread || !category) return <Navigate to="/community" replace />;
 
   const isOwnThread = thread.authorId === user.id;
@@ -88,15 +112,23 @@ export default function Thread() {
             const next = thread.messages[i + 1];
             const showName = !prev || prev.authorId !== message.authorId;
             const showAvatar = !next || next.authorId !== message.authorId;
+            const isHighlighted = highlighted === message.id;
             return (
-              <ChatBubble
+              <div
                 key={message.id}
-                message={message}
-                isOwn={message.authorId === user.id}
-                showAvatar={showAvatar}
-                showName={showName}
-                threadId={thread.id}
-              />
+                id={`msg-${message.id}`}
+                className={`rounded-xl transition-all duration-700 ${
+                  isHighlighted ? "ring-2 ring-brand-light ring-offset-2 ring-offset-transparent" : ""
+                }`}
+              >
+                <ChatBubble
+                  message={message}
+                  isOwn={message.authorId === user.id}
+                  showAvatar={showAvatar}
+                  showName={showName}
+                  threadId={thread.id}
+                />
+              </div>
             );
           })}
           <div ref={endRef} />
