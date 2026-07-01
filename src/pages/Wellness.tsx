@@ -93,6 +93,7 @@ export default function Wellness() {
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout(new Date()));
+  const [planDate, setPlanDate] = useState(() => todayISO());
   const [selected, setSelected] = useState<SelectedExercise | null>(null);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
@@ -108,6 +109,16 @@ export default function Wellness() {
   const breathworkLog = user.breathworkLog ?? [];
   const wellActivityLog = user.wellActivityLog ?? [];
   const today = todayISO();
+
+  // Auto-regenerate the workout plan when the ET date rolls over, so
+  // resistance training, stretches, and cardio always reflect the current day
+  // without needing a manual page reload or app restart.
+  useEffect(() => {
+    if (today !== planDate) {
+      setPlan(generateWorkout(new Date()));
+      setPlanDate(today);
+    }
+  }, [today, planDate]);
   const completedToday = workoutLog.includes(today);
   const wellActivityCompleted = wellActivityLog.includes(today);
   const streak = computeStreak(workoutLog);
@@ -132,7 +143,8 @@ export default function Wellness() {
     confetti({ particleCount: 100, spread: 70 });
   };
 
-  // Fetch daily breathwork to align with Breathwork feature
+  // Re-fetch breathwork when the ET date changes so the description and
+  // background sound update at the same time as the rest of the daily content.
   useEffect(() => {
     if (!API_URL) return;
     fetch(`${API_URL}/api/breathwork/today`)
@@ -141,7 +153,7 @@ export default function Wellness() {
         if (data) setDailyBreathwork(data);
       })
       .catch((err) => console.error("Failed to load daily breathwork:", err));
-  }, []);
+  }, [today]);
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
