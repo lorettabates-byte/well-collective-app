@@ -331,6 +331,25 @@ export default function AdminMusic() {
     setNewSongCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   };
 
+  const handleReorderQueue = async (fromIndex: number, direction: 1 | -1) => {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= queuedSongs.length) return;
+    const reordered = [...queuedSongs];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
+    setQueuedSongs(reordered);
+    try {
+      await fetch(`${API_URL}/api/songs/queue/reorder`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ids: reordered.map((s) => s.id) }),
+      });
+      fetchQueue();
+    } catch (err) {
+      console.error("Reorder queue error:", err);
+      fetchQueue();
+    }
+  };
+
   const handleReleaseNow = async (id: number, title: string) => {
     if (!API_URL || !confirm(`Release "${title}" right now instead of waiting for Monday?`)) return;
     try {
@@ -512,15 +531,32 @@ export default function AdminMusic() {
               <p className="text-xs text-text-muted">Loading...</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {queuedSongs.map((song) => (
-                  <div key={song.id} className="flex items-center justify-between gap-2 text-xs">
+                {queuedSongs.map((song, index) => (
+                  <div key={song.id} className="flex items-center gap-2 text-xs">
+                    <div className="flex flex-col shrink-0">
+                      <button
+                        onClick={() => handleReorderQueue(index, -1)}
+                        disabled={index === 0}
+                        aria-label="Move earlier"
+                        className="text-text-dim disabled:opacity-25"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleReorderQueue(index, 1)}
+                        disabled={index === queuedSongs.length - 1}
+                        aria-label="Move later"
+                        className="text-text-dim disabled:opacity-25"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
                     <span className="text-text font-semibold flex-1 min-w-0 truncate">{song.title}</span>
-                    <span className="text-text-dim shrink-0">
+                    <span className="text-brand-light shrink-0 font-semibold">
                       {song.releaseAt &&
-                        new Date(song.releaseAt).toLocaleString(undefined, {
+                        new Date(song.releaseAt).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
-                          hour: "numeric",
                         })}
                     </span>
                     <button
