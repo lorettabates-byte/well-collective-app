@@ -33,6 +33,7 @@ export default function AdminMusic() {
   const [editingTitle, setEditingTitle] = useState("");
   const [editingArtist, setEditingArtist] = useState("");
   const [editingUrl, setEditingUrl] = useState("");
+  const [editingLyricsInline, setEditingLyricsInline] = useState("");
   const [savingSong, setSavingSong] = useState(false);
 
   const [categories, setCategories] = useState<SongCategory[]>([]);
@@ -217,6 +218,7 @@ export default function AdminMusic() {
     setEditingTitle(song.title);
     setEditingArtist(song.artist || "");
     setEditingUrl(song.url);
+    setEditingLyricsInline(song.lyrics || "");
     setEditingLyricsId(null);
     setEditingCategoriesId(null);
   };
@@ -232,7 +234,7 @@ export default function AdminMusic() {
           title: editingTitle.trim(),
           artist: editingArtist.trim() || undefined,
           url: editingUrl.trim(),
-          lyrics: song.lyrics,
+          lyrics: editingLyricsInline.trim() || undefined,
           sortOrder: song.sortOrder,
         }),
       });
@@ -646,6 +648,13 @@ export default function AdminMusic() {
                           placeholder="Audio file URL"
                           className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                         />
+                        <textarea
+                          value={editingLyricsInline}
+                          onChange={(e) => setEditingLyricsInline(e.target.value)}
+                          placeholder="Lyrics (optional)"
+                          rows={5}
+                          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
+                        />
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleSaveSong(song)}
@@ -844,6 +853,13 @@ export default function AdminMusic() {
                         onChange={(e) => setEditingUrl(e.target.value)}
                         placeholder="Audio file URL"
                         className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                      <textarea
+                        value={editingLyricsInline}
+                        onChange={(e) => setEditingLyricsInline(e.target.value)}
+                        placeholder="Lyrics (optional)"
+                        rows={5}
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
                       />
                       <div className="flex gap-2">
                         <button
