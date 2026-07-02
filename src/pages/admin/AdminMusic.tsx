@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, FileText, Music, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, FileText, Music, Pencil, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
@@ -28,6 +28,12 @@ export default function AdminMusic() {
   const [editingLyricsId, setEditingLyricsId] = useState<number | null>(null);
   const [editingLyricsValue, setEditingLyricsValue] = useState("");
   const [savingLyrics, setSavingLyrics] = useState(false);
+
+  const [editingSongId, setEditingSongId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingArtist, setEditingArtist] = useState("");
+  const [editingUrl, setEditingUrl] = useState("");
+  const [savingSong, setSavingSong] = useState(false);
 
   const [categories, setCategories] = useState<SongCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -199,6 +205,45 @@ export default function AdminMusic() {
       }
     } catch {
       setStatus({ type: "error", message: "Failed to add song" });
+    }
+  };
+
+  const openSongEditor = (song: Song) => {
+    if (editingSongId === song.id) {
+      setEditingSongId(null);
+      return;
+    }
+    setEditingSongId(song.id);
+    setEditingTitle(song.title);
+    setEditingArtist(song.artist || "");
+    setEditingUrl(song.url);
+    setEditingLyricsId(null);
+    setEditingCategoriesId(null);
+  };
+
+  const handleSaveSong = async (song: Song) => {
+    if (!API_URL || !editingTitle.trim() || !editingUrl.trim()) return;
+    setSavingSong(true);
+    try {
+      const res = await fetch(`${API_URL}/api/songs/${song.id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          title: editingTitle.trim(),
+          artist: editingArtist.trim() || undefined,
+          url: editingUrl.trim(),
+          lyrics: song.lyrics,
+          sortOrder: song.sortOrder,
+        }),
+      });
+      if (res.ok) {
+        setEditingSongId(null);
+        fetchSongs();
+      }
+    } catch (err) {
+      console.error("Save song error:", err);
+    } finally {
+      setSavingSong(false);
     }
   };
 
@@ -670,6 +715,17 @@ export default function AdminMusic() {
                       </div>
                     </div>
                     <button
+                      onClick={() => openSongEditor(song)}
+                      aria-label="Edit song"
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border shrink-0 mr-1 ${
+                        editingSongId === song.id
+                          ? "bg-surface-2 border-brand-light text-brand-light"
+                          : "bg-surface-2 border-border text-text-dim"
+                      }`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
                       onClick={() => openCategoryEditor(song)}
                       aria-label="Edit categories"
                       className={`w-8 h-8 flex items-center justify-center rounded-full border shrink-0 mr-1 ${
@@ -716,6 +772,43 @@ export default function AdminMusic() {
                       <Trash2 size={14} />
                     </button>
                   </div>
+                  {editingSongId === song.id && (
+                    <div className="flex flex-col gap-2 pt-1 border-t border-border">
+                      <input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        placeholder="Song title"
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                      <input
+                        value={editingArtist}
+                        onChange={(e) => setEditingArtist(e.target.value)}
+                        placeholder="Artist (optional)"
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                      <input
+                        value={editingUrl}
+                        onChange={(e) => setEditingUrl(e.target.value)}
+                        placeholder="Audio file URL"
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveSong(song)}
+                          disabled={savingSong || !editingTitle.trim() || !editingUrl.trim()}
+                          className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          onClick={() => setEditingSongId(null)}
+                          className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {editingCategoriesId === song.id && (
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-2 flex-wrap">
