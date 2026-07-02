@@ -219,6 +219,7 @@ export default function AdminMusic() {
     setEditingArtist(song.artist || "");
     setEditingUrl(song.url);
     setEditingLyricsInline(song.lyrics || "");
+    setEditingCategoryIds(song.categoryIds || []);
     setEditingLyricsId(null);
     setEditingCategoriesId(null);
   };
@@ -227,20 +228,28 @@ export default function AdminMusic() {
     if (!API_URL || !editingTitle.trim() || !editingUrl.trim()) return;
     setSavingSong(true);
     try {
-      const res = await fetch(`${API_URL}/api/songs/${song.id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          title: editingTitle.trim(),
-          artist: editingArtist.trim() || undefined,
-          url: editingUrl.trim(),
-          lyrics: editingLyricsInline.trim() || undefined,
-          sortOrder: song.sortOrder,
+      const [res] = await Promise.all([
+        fetch(`${API_URL}/api/songs/${song.id}`, {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            title: editingTitle.trim(),
+            artist: editingArtist.trim() || undefined,
+            url: editingUrl.trim(),
+            lyrics: editingLyricsInline.trim() || undefined,
+            sortOrder: song.sortOrder,
+          }),
         }),
-      });
+        fetch(`${API_URL}/api/songs/${song.id}/categories`, {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ categoryIds: editingCategoryIds }),
+        }),
+      ]);
       if (res.ok) {
         setEditingSongId(null);
         fetchSongs();
+        fetchQueue();
       }
     } catch (err) {
       console.error("Save song error:", err);
@@ -655,6 +664,24 @@ export default function AdminMusic() {
                           rows={5}
                           className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
                         />
+                        {categories.length > 0 && (
+                          <div className="flex gap-2 flex-wrap">
+                            {categories.map((category) => (
+                              <button
+                                key={category.id}
+                                type="button"
+                                onClick={() => toggleEditingCategory(category.id)}
+                                className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                                  editingCategoryIds.includes(category.id)
+                                    ? "gradient-brand text-white border-transparent"
+                                    : "border-border text-text-muted"
+                                }`}
+                              >
+                                {category.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleSaveSong(song)}
@@ -861,6 +888,24 @@ export default function AdminMusic() {
                         rows={5}
                         className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
                       />
+                      {categories.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {categories.map((category) => (
+                            <button
+                              key={category.id}
+                              type="button"
+                              onClick={() => toggleEditingCategory(category.id)}
+                              className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                                editingCategoryIds.includes(category.id)
+                                  ? "gradient-brand text-white border-transparent"
+                                  : "border-border text-text-muted"
+                              }`}
+                            >
+                              {category.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleSaveSong(song)}
