@@ -219,7 +219,7 @@ export default function AdminMusic() {
     setEditingArtist(song.artist || "");
     setEditingUrl(song.url);
     setEditingLyricsInline(song.lyrics || "");
-    setEditingCategoryIds(song.categoryIds || []);
+    setEditingCategoryIds((song.categoryIds || []).map(Number));
     setEditingLyricsId(null);
     setEditingCategoriesId(null);
   };
@@ -376,7 +376,7 @@ export default function AdminMusic() {
       return;
     }
     setEditingCategoriesId(song.id);
-    setEditingCategoryIds(song.categoryIds || []);
+    setEditingCategoryIds((song.categoryIds || []).map(Number));
   };
 
   const toggleEditingCategory = (id: number) => {
@@ -672,7 +672,7 @@ export default function AdminMusic() {
                                 type="button"
                                 onClick={() => toggleEditingCategory(category.id)}
                                 className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
-                                  editingCategoryIds.includes(category.id)
+                                  editingCategoryIds.map(Number).includes(Number(category.id))
                                     ? "gradient-brand text-white border-transparent"
                                     : "border-border text-text-muted"
                                 }`}
@@ -896,7 +896,7 @@ export default function AdminMusic() {
                               type="button"
                               onClick={() => toggleEditingCategory(category.id)}
                               className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
-                                editingCategoryIds.includes(category.id)
+                                editingCategoryIds.map(Number).includes(Number(category.id))
                                   ? "gradient-brand text-white border-transparent"
                                   : "border-border text-text-muted"
                               }`}
@@ -932,7 +932,7 @@ export default function AdminMusic() {
                             type="button"
                             onClick={() => toggleEditingCategory(category.id)}
                             className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
-                              editingCategoryIds.includes(category.id)
+                              editingCategoryIds.map(Number).includes(Number(category.id))
                                 ? "gradient-brand text-white border-transparent"
                                 : "border-border text-text-muted"
                             }`}
