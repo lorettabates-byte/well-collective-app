@@ -1,5 +1,5 @@
-import { Calendar, ChevronDown, ChevronUp, FileText, Music, Pencil, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar, ChevronDown, ChevronUp, FileText, Music, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song, SongCategory } from "../../types";
@@ -55,6 +55,10 @@ export default function AdminMusic() {
 
   const [hiddenBuiltins, setHiddenBuiltins] = useState<string[]>([]);
   const [hiddenLoading, setHiddenLoading] = useState(true);
+
+  const [playingSongId, setPlayingSongId] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const fetchHiddenBuiltins = async () => {
     if (!API_URL) return;
@@ -501,10 +505,36 @@ export default function AdminMusic() {
     }
   };
 
+  const togglePlay = (song: Song) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playingSongId === song.id) {
+      if (isPlaying) {
+        audio.pause();
+      } else {
+        audio.play();
+      }
+    } else {
+      audio.src = song.url;
+      audio.currentTime = 0;
+      audio.play();
+      setPlayingSongId(song.id);
+    }
+  };
+
+  const stopPlayer = () => {
+    audioRef.current?.pause();
+    setPlayingSongId(null);
+    setIsPlaying(false);
+  };
+
+  const allSongs = [...songs, ...queuedSongs];
+  const playingSong = allSongs.find((s) => s.id === playingSongId) ?? null;
+
   return (
     <div>
       <TopBar title="Music" subtitle="Manage the WELL Collective Playlist" showBack />
-      <div className="px-4 pt-4 flex flex-col gap-4">
+      <div className={`px-4 pt-4 flex flex-col gap-4 ${playingSong ? "pb-24" : "pb-4"}`}>
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
           <p className="text-xs text-text-muted leading-relaxed">
@@ -619,6 +649,17 @@ export default function AdminMusic() {
                             day: "numeric",
                           })}
                       </span>
+                      <button
+                        onClick={() => togglePlay(song)}
+                        aria-label={playingSongId === song.id && isPlaying ? "Pause" : "Play"}
+                        className={`w-7 h-7 flex items-center justify-center rounded-full shrink-0 ${
+                          playingSongId === song.id
+                            ? "gradient-brand text-white"
+                            : "border border-border text-text-dim"
+                        }`}
+                      >
+                        {playingSongId === song.id && isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                      </button>
                       <button
                         onClick={() => openSongEditor(song)}
                         aria-label="Edit song"
@@ -787,9 +828,17 @@ export default function AdminMusic() {
                 <div key={song.id} className="glass-card rounded-card p-3 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
-                        <Music size={14} />
-                      </div>
+                      <button
+                        onClick={() => togglePlay(song)}
+                        aria-label={playingSongId === song.id && isPlaying ? "Pause" : "Play"}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                          playingSongId === song.id
+                            ? "gradient-brand text-white"
+                            : "bg-surface-2 border border-border text-brand-light"
+                        }`}
+                      >
+                        {playingSongId === song.id && isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-text truncate">{song.title}</p>
                         {song.artist && <p className="text-xs text-text-muted truncate">{song.artist}</p>}
@@ -1140,6 +1189,34 @@ export default function AdminMusic() {
           )}
         </div>
       </div>
+
+      {/* Single audio element — always mounted so audioRef is never null */}
+      <audio
+        ref={audioRef}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
+
+      {/* Sticky mini-player */}
+      {playingSong && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => togglePlay(playingSong)}
+            className="w-10 h-10 flex items-center justify-center rounded-full gradient-brand text-white shrink-0"
+          >
+            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text truncate">{playingSong.title}</p>
+            {playingSong.artist && <p className="text-xs text-text-dim truncate">{playingSong.artist}</p>}
+          </div>
+          <button onClick={stopPlayer} aria-label="Close player" className="text-text-dim shrink-0 p-1">
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
