@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, FileText, Music, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, FileText, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
