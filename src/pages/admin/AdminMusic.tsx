@@ -577,39 +577,92 @@ export default function AdminMusic() {
             ) : (
               <div className="flex flex-col gap-2">
                 {queuedSongs.map((song, index) => (
-                  <div key={song.id} className="flex items-center gap-2 text-xs">
-                    <div className="flex flex-col shrink-0">
+                  <div key={song.id} className="glass-card rounded-card p-2.5 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex flex-col shrink-0">
+                        <button
+                          onClick={() => handleReorderQueue(index, -1)}
+                          disabled={index === 0}
+                          aria-label="Move earlier"
+                          className="text-text-dim disabled:opacity-25"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleReorderQueue(index, 1)}
+                          disabled={index === queuedSongs.length - 1}
+                          aria-label="Move later"
+                          className="text-text-dim disabled:opacity-25"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-text font-semibold truncate">{song.title}</p>
+                        {song.artist && <p className="text-text-dim truncate">{song.artist}</p>}
+                      </div>
+                      <span className="text-brand-light shrink-0 font-semibold">
+                        {song.releaseAt &&
+                          new Date(song.releaseAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                      </span>
                       <button
-                        onClick={() => handleReorderQueue(index, -1)}
-                        disabled={index === 0}
-                        aria-label="Move earlier"
-                        className="text-text-dim disabled:opacity-25"
+                        onClick={() => openSongEditor(song)}
+                        aria-label="Edit song"
+                        className={`w-7 h-7 flex items-center justify-center rounded-full border shrink-0 ${
+                          editingSongId === song.id
+                            ? "border-brand-light text-brand-light"
+                            : "border-border text-text-dim"
+                        }`}
                       >
-                        <ChevronUp size={14} />
+                        <Pencil size={12} />
                       </button>
                       <button
-                        onClick={() => handleReorderQueue(index, 1)}
-                        disabled={index === queuedSongs.length - 1}
-                        aria-label="Move later"
-                        className="text-text-dim disabled:opacity-25"
+                        onClick={() => handleReleaseNow(song.id, song.title)}
+                        className="shrink-0 text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-2.5 py-1"
                       >
-                        <ChevronDown size={14} />
+                        Push Now
                       </button>
                     </div>
-                    <span className="text-text font-semibold flex-1 min-w-0 truncate">{song.title}</span>
-                    <span className="text-brand-light shrink-0 font-semibold">
-                      {song.releaseAt &&
-                        new Date(song.releaseAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                    </span>
-                    <button
-                      onClick={() => handleReleaseNow(song.id, song.title)}
-                      className="shrink-0 text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-2.5 py-1"
-                    >
-                      Push Now
-                    </button>
+                    {editingSongId === song.id && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                        <input
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          placeholder="Song title"
+                          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                        />
+                        <input
+                          value={editingArtist}
+                          onChange={(e) => setEditingArtist(e.target.value)}
+                          placeholder="Artist (optional)"
+                          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                        />
+                        <input
+                          value={editingUrl}
+                          onChange={(e) => setEditingUrl(e.target.value)}
+                          placeholder="Audio file URL"
+                          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveSong(song)}
+                            disabled={savingSong || !editingTitle.trim() || !editingUrl.trim()}
+                            className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
+                          >
+                            Save Changes
+                          </button>
+                          <button
+                            onClick={() => setEditingSongId(null)}
+                            className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
