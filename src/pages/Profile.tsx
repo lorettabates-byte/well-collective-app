@@ -1,9 +1,13 @@
-import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, Eye, EyeOff, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Trophy, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
+import DailyWellCheck from "../components/DailyWellCheck";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 function MenuRow({
   icon,
@@ -34,6 +38,27 @@ function MenuRow({
 
 export default function Profile() {
   const { user, threads, inspirations, savedRecipes } = useApp();
+
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.member?.showOnLeaderboard !== undefined) setShowOnLeaderboard(d.member.showOnLeaderboard); })
+      .catch(() => {});
+  }, [user.email]);
+
+  const toggleLeaderboard = async () => {
+    const next = !showOnLeaderboard;
+    setShowOnLeaderboard(next);
+    if (!API_URL || !user.email) return;
+    await fetch(`${API_URL}/api/members/leaderboard-visibility`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, showOnLeaderboard: next }),
+    }).catch(() => {});
+  };
 
   const messagesPosted = threads.reduce(
     (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
@@ -101,6 +126,8 @@ export default function Profile() {
         </div>
       </div>
 
+      {user.email && <DailyWellCheck email={user.email} />}
+
       <div className="flex flex-col gap-2.5 mb-6">
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
@@ -120,6 +147,21 @@ export default function Profile() {
         />
         {user.isAdmin && <MenuRow icon={<ShieldCheck size={16} />} label="Admin Panel" to="/admin" />}
       </div>
+
+      {/* WELL CUP leaderboard visibility */}
+      <button
+        onClick={toggleLeaderboard}
+        className="w-full flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3"
+      >
+        <Trophy size={16} className="text-yellow-400 shrink-0" />
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-semibold text-text">WELL Cup Leaderboard</p>
+          <p className="text-xs text-text-muted">{showOnLeaderboard ? "You're visible to the community" : "You're hidden from the leaderboard"}</p>
+        </div>
+        {showOnLeaderboard
+          ? <Eye size={16} className="text-brand-light shrink-0" />
+          : <EyeOff size={16} className="text-text-dim shrink-0" />}
+      </button>
 
       <button
         onClick={handleLogout}

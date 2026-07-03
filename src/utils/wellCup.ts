@@ -41,12 +41,12 @@ export interface LeaderboardEntry {
   points: number;
 }
 
-export async function fetchLeaderboard(): Promise<{
+export async function fetchLeaderboard(limit: number | "all" = 10): Promise<{
   leaderboard: LeaderboardEntry[];
   resetAt: string;
 }> {
   if (!API_URL) return { leaderboard: [], resetAt: "" };
-  const res = await fetch(`${API_URL}/api/leaderboard`);
+  const res = await fetch(`${API_URL}/api/leaderboard?limit=${limit}`);
   if (!res.ok) return { leaderboard: [], resetAt: "" };
   return res.json();
 }
