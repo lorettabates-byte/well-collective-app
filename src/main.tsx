@@ -1,4 +1,5 @@
-import { StrictMode } from "react";
+import { Component, StrictMode } from "react";
+import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
@@ -6,15 +7,40 @@ import App from "./App.tsx";
 import AuthGate from "./components/AuthGate";
 import { AppProvider } from "./store/AppContext";
 
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, color: "#fff", background: "#0a0e1a", minHeight: "100vh", fontFamily: "monospace", fontSize: 13 }}>
+          <p style={{ color: "#f87171", fontWeight: "bold", marginBottom: 8 }}>App crashed — error details:</p>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all", color: "#fca5a5" }}>
+            {this.state.error.message}{"\n\n"}{this.state.error.stack}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthGate>
-        <AppProvider>
-          <App />
-        </AppProvider>
-      </AuthGate>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthGate>
+          <AppProvider>
+            <App />
+          </AppProvider>
+        </AuthGate>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>
 );
 
