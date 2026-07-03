@@ -4,6 +4,7 @@ import TopBar from "../components/layout/TopBar";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
+import { logActivity } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -123,7 +124,7 @@ export default function VideoLibrary() {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => logClassCompletion()}
+                  onClick={() => { logClassCompletion(); if (user.email) logActivity(user.email, "class_watch"); }}
                   className="flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up"
                 >
                   <div

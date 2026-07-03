@@ -1,9 +1,27 @@
-import { ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Folder, FolderPlus, History, Sparkles, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Folder, FolderPlus, History, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import type { Recipe, RecipeNutrition } from "../types";
+import { logActivity } from "../utils/wellCup";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+interface MealEntry {
+  id: number;
+  meal_type: string;
+  had_protein: boolean;
+  had_vegetable: boolean;
+  had_water: boolean;
+  had_fruit: boolean;
+  had_whole_foods: boolean;
+  notes: string | null;
+  logged_at: string;
+}
+
+const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"] as const;
+type MealType = (typeof MEAL_TYPES)[number];
 
 const HISTORY_PAGE_SIZE = 10;
 
@@ -51,9 +69,62 @@ export default function Nutrition() {
     deleteRecipeFolder,
     moveRecipeToFolder,
     fetchRecipeHistory,
+    user,
   } = useApp();
   const [searchParams] = useSearchParams();
   const showSaved = searchParams.get("view") === "saved";
+
+  // ── Meal logging ──────────────────────────────────────────────────────────
+  const [todaysMeals, setTodaysMeals] = useState<MealEntry[]>([]);
+  const [showMealForm, setShowMealForm] = useState(false);
+  const [mealType, setMealType] = useState<MealType>("Breakfast");
+  const [hadProtein, setHadProtein] = useState(false);
+  const [hadVegetable, setHadVegetable] = useState(false);
+  const [hadWater, setHadWater] = useState(false);
+  const [hadFruit, setHadFruit] = useState(false);
+  const [hadWholeFoods, setHadWholeFoods] = useState(false);
+  const [mealNotes, setMealNotes] = useState("");
+  const [savingMeal, setSavingMeal] = useState(false);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { meals: [] }))
+      .then((d) => setTodaysMeals(d.meals || []))
+      .catch(() => {});
+  }, [user.email]);
+
+  const handleLogMeal = async () => {
+    if (!API_URL || !user.email || savingMeal) return;
+    setSavingMeal(true);
+    try {
+      const res = await fetch(`${API_URL}/api/meals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberEmail: user.email,
+          mealType,
+          hadProtein,
+          hadVegetable,
+          hadWater,
+          hadFruit,
+          hadWholeFoods,
+          notes: mealNotes.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTodaysMeals((prev) => [...prev, data.meal]);
+        logActivity(user.email!, "meal_log", { mealType });
+        setShowMealForm(false);
+        setHadProtein(false); setHadVegetable(false);
+        setHadWater(false); setHadFruit(false);
+        setHadWholeFoods(false); setMealNotes("");
+      }
+    } catch { /* silent */ } finally {
+      setSavingMeal(false);
+    }
+  };
 
   const [activeFolderId, setActiveFolderId] = useState<number | "all" | "unsorted">("all");
   const [newFolderName, setNewFolderName] = useState("");
@@ -247,6 +318,123 @@ export default function Nutrition() {
             </div>
           </div>
         )}
+
+        {/* Daily Meal Log */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-bold text-text">Today's Meals</h2>
+              <p className="text-[11px] text-text-muted">Log what you ate — earn 10 pts per meal</p>
+            </div>
+            <button
+              onClick={() => setShowMealForm((v) => !v)}
+              className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"
+            >
+              <Plus size={12} />
+              Log Meal
+            </button>
+          </div>
+
+          {showMealForm && (
+            <div className="flex flex-col gap-3 border-t border-border pt-3 mb-3">
+              {/* Meal type selector */}
+              <div className="flex gap-2 flex-wrap">
+                {MEAL_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setMealType(t)}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-pill border ${
+                      mealType === t ? "gradient-brand text-white border-transparent" : "border-border text-text-muted"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              {/* Wellness questions */}
+              <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">What did you include?</p>
+              {(
+                [
+                  { key: "protein", label: "💪 Protein", val: hadProtein, set: setHadProtein },
+                  { key: "vegetable", label: "🥦 Vegetable", val: hadVegetable, set: setHadVegetable },
+                  { key: "water", label: "💧 Water / hydration", val: hadWater, set: setHadWater },
+                  { key: "fruit", label: "🍓 Fruit", val: hadFruit, set: setHadFruit },
+                  { key: "whole_foods", label: "🌾 Whole / fresh foods", val: hadWholeFoods, set: setHadWholeFoods },
+                ] as const
+              ).map(({ key, label, val, set }) => (
+                <button
+                  key={key}
+                  onClick={() => set(!val)}
+                  className={`flex items-center gap-3 p-3 rounded-card border text-left ${
+                    val ? "border-brand-light bg-brand/10" : "border-border"
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    val ? "border-brand-light bg-brand-light" : "border-border"
+                  }`}>
+                    {val && <span className="text-white text-[10px] font-bold">✓</span>}
+                  </div>
+                  <span className="text-sm text-text">{label}</span>
+                </button>
+              ))}
+
+              <textarea
+                value={mealNotes}
+                onChange={(e) => setMealNotes(e.target.value)}
+                placeholder="Anything else? (optional)"
+                rows={2}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
+              />
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleLogMeal}
+                  disabled={savingMeal}
+                  className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2.5 disabled:opacity-50"
+                >
+                  {savingMeal ? "Saving…" : "Save Meal (+10 pts)"}
+                </button>
+                <button
+                  onClick={() => setShowMealForm(false)}
+                  className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2.5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {todaysMeals.length === 0 ? (
+            <p className="text-xs text-text-muted text-center py-2">No meals logged today yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {todaysMeals.map((meal) => {
+                const checks = [
+                  meal.had_protein && "Protein",
+                  meal.had_vegetable && "Vegetable",
+                  meal.had_water && "Water",
+                  meal.had_fruit && "Fruit",
+                  meal.had_whole_foods && "Whole foods",
+                ].filter(Boolean);
+                return (
+                  <div key={meal.id} className="flex items-start gap-3 p-2.5 bg-surface-2 rounded-card border border-border">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-text">{meal.meal_type}</p>
+                      {checks.length > 0 && (
+                        <p className="text-[11px] text-brand-light mt-0.5">{checks.join(" · ")}</p>
+                      )}
+                      {meal.notes && <p className="text-[11px] text-text-muted mt-0.5">{meal.notes}</p>}
+                    </div>
+                    <span className="text-[10px] text-text-dim shrink-0">
+                      {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="glass-card rounded-card overflow-hidden">
           <img src={todaysRecipe.image} alt={todaysRecipe.name} className="w-full h-48 object-cover" />

@@ -285,7 +285,7 @@ function adminHeaders(): HeadersInit {
   return headers;
 }
 
-function syncForumThread(thread: ForumThread) {
+function syncForumThread(thread: ForumThread, authorEmail?: string) {
   if (!API_URL) return;
   fetch(`${API_URL}/api/forum/threads`, {
     method: "POST",
@@ -297,6 +297,7 @@ function syncForumThread(thread: ForumThread) {
       authorId: thread.authorId,
       authorName: thread.authorName,
       authorAvatar: thread.authorAvatar,
+      authorEmail: authorEmail ?? undefined,
       text: thread.messages[0].text,
       messageId: thread.messages[0].id,
       image: thread.messages[0].image,
@@ -304,7 +305,7 @@ function syncForumThread(thread: ForumThread) {
   }).catch((err) => console.error("Failed to sync new thread:", err));
 }
 
-function syncForumMessage(threadId: string, message: ThreadMessage) {
+function syncForumMessage(threadId: string, message: ThreadMessage, authorEmail?: string) {
   if (!API_URL) return;
   fetch(`${API_URL}/api/forum/threads/${threadId}/messages`, {
     method: "POST",
@@ -314,6 +315,7 @@ function syncForumMessage(threadId: string, message: ThreadMessage) {
       authorId: message.authorId,
       authorName: message.authorName,
       authorAvatar: message.authorAvatar,
+      authorEmail: authorEmail ?? undefined,
       text: message.text,
       replyToId: message.replyToId,
       image: message.image,
@@ -487,6 +489,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!API_URL || !state.user.email) return;
+
+    // Award points for opening the app today (capped at 1 per UTC day server-side).
+    fetch(`${API_URL}/api/activity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberEmail: state.user.email, type: "app_open" }),
+    }).catch(() => {});
+
     const email = encodeURIComponent(state.user.email);
     fetch(`${API_URL}/api/recipes/saved?email=${email}`)
       .then((res) => (res.ok ? res.json() : { savedRecipes: [] }))
@@ -598,7 +608,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ],
     };
     setState((prev) => ({ ...prev, threads: [thread, ...prev.threads] }));
-    syncForumThread(thread);
+    syncForumThread(thread, state.user.email);
     return thread;
   };
 
@@ -620,7 +630,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         thread.id === threadId ? { ...thread, messages: [...thread.messages, message] } : thread
       ),
     }));
-    syncForumMessage(threadId, message);
+    syncForumMessage(threadId, message, state.user.email);
   };
 
   const toggleMessageLike: AppContextValue["toggleMessageLike"] = (threadId, messageId) => {

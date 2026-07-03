@@ -201,6 +201,7 @@ export default function Music() {
             loading={loading}
             downloadsLocked={isTrialUser}
             initialFavoritesOnly={initialFavoritesOnly}
+            userEmail={user.email}
           />
         )}
 

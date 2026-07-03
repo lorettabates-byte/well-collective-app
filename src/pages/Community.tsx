@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
+import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useApp } from "../store/AppContext";
 
@@ -62,6 +63,8 @@ export default function Community() {
             ))}
           </div>
         </div>
+
+        <WellCupLeaderboard />
       </div>
     </div>
   );

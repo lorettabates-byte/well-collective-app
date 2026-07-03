@@ -17,6 +17,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Song, SongCategory } from "../../types";
+import { logActivity } from "../../utils/wellCup";
 
 const FAVORITES_KEY = "well-music-favorites";
 const ORDER_KEY = "well-music-order";
@@ -63,12 +64,14 @@ export default function Playlist({
   loading,
   downloadsLocked,
   initialFavoritesOnly,
+  userEmail,
 }: {
   songs: Song[];
   categories?: SongCategory[];
   loading: boolean;
   downloadsLocked?: boolean;
   initialFavoritesOnly?: boolean;
+  userEmail?: string;
 }) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
@@ -205,6 +208,7 @@ export default function Playlist({
     audio.play();
     setCurrentSong(song);
     setIsPlaying(true);
+    if (userEmail) logActivity(userEmail, "song_play", { songId: song.id, title: song.title });
   }
 
   function handleEnded() {

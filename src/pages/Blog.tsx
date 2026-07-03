@@ -1,10 +1,18 @@
 import { ArrowUpRight, Rss } from "lucide-react";
+import { useEffect } from "react";
 import BlogPostCard from "../components/blog/BlogPostCard";
 import TopBar from "../components/layout/TopBar";
 import { BLOG_URL, useBlogFeed } from "../hooks/useBlogFeed";
+import { useApp } from "../store/AppContext";
+import { logActivity } from "../utils/wellCup";
 
 export default function Blog() {
   const { posts, loading, error } = useBlogFeed();
+  const { user } = useApp();
+
+  useEffect(() => {
+    if (user.email) logActivity(user.email, "blog_open");
+  }, [user.email]);
 
   return (
     <div>
