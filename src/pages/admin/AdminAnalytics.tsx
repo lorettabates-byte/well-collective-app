@@ -127,15 +127,29 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
       <div className="glass-card rounded-card p-4">
         <p className="text-xs font-bold text-text mb-3">Activity by Category</p>
-        <div className="flex flex-col gap-3">
-          {categoryActivity.map(({ category, messages }) => (
-            <div key={category.id} className="flex items-center gap-3">
-              <span className="text-sm w-5 shrink-0">{category.icon}</span>
-              <span className="text-xs text-text w-28 shrink-0 truncate">{category.name}</span>
-              <MiniBar value={messages} max={maxMsgs} />
-              <span className="text-xs text-text-dim w-8 text-right shrink-0">{messages}</span>
-            </div>
-          ))}
+        <div className="flex items-end gap-1.5 h-28">
+          {categoryActivity.map(({ category, messages }) => {
+            const pct = maxMsgs > 0 ? Math.round((messages / maxMsgs) * 100) : 0;
+            return (
+              <div key={category.id} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                {messages > 0 && (
+                  <span className="text-[9px] text-text-dim leading-none">{messages}</span>
+                )}
+                <div className="w-full flex flex-col justify-end" style={{ height: 72 }}>
+                  <div
+                    className="w-full gradient-brand rounded-sm"
+                    style={{ height: `${pct}%`, minHeight: messages > 0 ? 3 : 0 }}
+                  />
+                </div>
+                <span
+                  className="text-[8px] text-text-muted text-center leading-tight w-full truncate"
+                  title={category.name}
+                >
+                  {category.name.split(" ")[0]}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
