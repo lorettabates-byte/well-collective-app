@@ -7,7 +7,10 @@ export type AnalyticsEventType =
   | "session_end"
   | "tutorial_step"
   | "tutorial_skip"
-  | "tutorial_complete";
+  | "tutorial_complete"
+  | "event_rsvp"
+  | "forum_post"
+  | "forum_comment";
 
 export function logEvent(
   email: string,

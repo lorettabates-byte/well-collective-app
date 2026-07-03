@@ -7,6 +7,7 @@ import {
   NOTIFICATIONS,
   THREADS,
 } from "../data/mockData";
+import { logEvent } from "../utils/analytics";
 import { getFallbackRecipe } from "../data/nutritionLibrary";
 import type { WorkoutPlan } from "../data/workoutLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
@@ -624,6 +625,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     setState((prev) => ({ ...prev, threads: [thread, ...prev.threads] }));
     syncForumThread(thread, state.user.email);
+    if (state.user.email) logEvent(state.user.email, "forum_post", { categoryId, threadId: thread.id, title });
     return thread;
   };
 
@@ -646,6 +648,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ),
     }));
     syncForumMessage(threadId, message, state.user.email);
+    const thread = state.threads.find((t) => t.id === threadId);
+    if (state.user.email) logEvent(state.user.email, "forum_comment", { threadId, categoryId: thread?.categoryId });
   };
 
   const toggleMessageLike: AppContextValue["toggleMessageLike"] = (threadId, messageId) => {
@@ -1049,19 +1053,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleRsvp: AppContextValue["toggleRsvp"] = (eventId) => {
+    const event = state.events.find((e) => e.id === eventId);
+    const wasRsvped = event?.rsvps.includes(state.user.id) ?? false;
+
     setState((prev) => ({
       ...prev,
-      events: prev.events.map((event) => {
-        if (event.id !== eventId) return event;
-        const hasRsvped = event.rsvps.includes(prev.user.id);
+      events: prev.events.map((ev) => {
+        if (ev.id !== eventId) return ev;
+        const hasRsvped = ev.rsvps.includes(prev.user.id);
         return {
-          ...event,
+          ...ev,
           rsvps: hasRsvped
-            ? event.rsvps.filter((id) => id !== prev.user.id)
-            : [...event.rsvps, prev.user.id],
+            ? ev.rsvps.filter((id) => id !== prev.user.id)
+            : [...ev.rsvps, prev.user.id],
         };
       }),
     }));
+
+    if (state.user.email) logEvent(state.user.email, "event_rsvp", {
+      eventId,
+      eventTitle: event?.title,
+      action: wasRsvped ? "cancel" : "rsvp",
+    });
 
     if (API_URL) {
       fetch(`${API_URL}/api/events/${eventId}/rsvp`, {

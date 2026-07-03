@@ -22,20 +22,28 @@ export type ActivityType =
   | "notifications_enabled"
   | "add_to_homescreen";
 
+export interface ActivityResult {
+  awarded: boolean;
+  points: number;
+  streak: { streak: number; bonus: number; longestStreak: number } | null;
+}
+
 export async function logActivity(
   memberEmail: string,
   type: ActivityType,
   metadata?: Record<string, unknown>
-): Promise<void> {
-  if (!API_URL || !memberEmail) return;
+): Promise<ActivityResult> {
+  if (!API_URL || !memberEmail) return { awarded: false, points: 0, streak: null };
   try {
-    await fetch(`${API_URL}/api/activity`, {
+    const res = await fetch(`${API_URL}/api/activity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberEmail, type, metadata }),
     });
+    if (!res.ok) return { awarded: false, points: 0, streak: null };
+    return await res.json() as ActivityResult;
   } catch {
-    // Fire-and-forget — points are best-effort
+    return { awarded: false, points: 0, streak: null };
   }
 }
 

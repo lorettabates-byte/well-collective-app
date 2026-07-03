@@ -60,6 +60,7 @@ export default function Home() {
   const [showTour, setShowTour] = useState(false);
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
   const [showWinShare, setShowWinShare] = useState(false);
+  const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -91,10 +92,18 @@ export default function Home() {
     setShowTour(true);
   }, []);
 
-  // Track app open + start session timer
+  // Track app open, award WELL Cup points, check login streak
   useEffect(() => {
     if (!user.email) return;
     logEvent(user.email, "app_open");
+    logActivity(user.email, "app_open").then((result) => {
+      if (result.awarded && result.streak && result.streak.streak > 1) {
+        const key = `well-streak-banner-${todayISO()}`;
+        if (!localStorage.getItem(key)) {
+          setStreakBanner({ streak: result.streak.streak, bonus: result.streak.bonus });
+        }
+      }
+    }).catch(() => {});
     return startSessionTracking(user.email);
   }, [user.email]);
 
@@ -158,6 +167,33 @@ export default function Home() {
               <p className="text-xs font-bold text-text">Free Trial Active</p>
               <p className="text-[11px] text-text-muted">{trialStatus.daysRemaining} day{trialStatus.daysRemaining !== 1 ? "s" : ""} remaining</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login streak banner */}
+      {streakBanner && (
+        <div className="rounded-card mb-4 border border-orange-400/40 overflow-hidden" style={{ background: "rgba(251,146,60,0.07)" }}>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-xl shrink-0">🔥</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-orange-300">{streakBanner.streak}-Day Login Streak!</p>
+              <p className="text-xs text-orange-400/70">
+                {streakBanner.bonus > 0
+                  ? `+${streakBanner.bonus} bonus pts earned — keep it up!`
+                  : "You're on a roll — keep coming back every day!"}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem(`well-streak-banner-${todayISO()}`, "1");
+                setStreakBanner(null);
+              }}
+              className="shrink-0 text-text-dim p-1"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
           </div>
         </div>
       )}
