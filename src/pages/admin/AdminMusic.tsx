@@ -43,6 +43,11 @@ export default function AdminMusic() {
   const [editingCategoryIds, setEditingCategoryIds] = useState<number[]>([]);
   const [savingCategories, setSavingCategories] = useState(false);
 
+  const [queueExpanded, setQueueExpanded] = useState(true);
+  const [playlistExpanded, setPlaylistExpanded] = useState(true);
+  const [renamingCategoryId, setRenamingCategoryId] = useState<number | null>(null);
+  const [renamingCategoryValue, setRenamingCategoryValue] = useState("");
+
   const [queuedSongs, setQueuedSongs] = useState<Song[]>([]);
   const [queueLoading, setQueueLoading] = useState(true);
 
@@ -345,25 +350,35 @@ export default function AdminMusic() {
   const handleDeleteCategory = async (id: number) => {
     if (!API_URL || !confirm("Delete this category? Songs tagged with it will lose that tag.")) return;
     try {
-      await fetch(`${API_URL}/api/song-categories/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+      const res = await fetch(`${API_URL}/api/song-categories/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Failed to delete category — it may still be in use.");
+        return;
+      }
       fetchCategories();
       fetchSongs();
     } catch (err) {
       console.error("Delete category error:", err);
+      alert("Failed to delete category. Please try again.");
     }
   };
 
-  const handleRenameCategory = async (id: number, currentName: string) => {
-    if (!API_URL) return;
-    const name = prompt("Rename category", currentName);
-    if (!name?.trim() || name.trim() === currentName) return;
+  const startRenamingCategory = (id: number, currentName: string) => {
+    setRenamingCategoryId(id);
+    setRenamingCategoryValue(currentName);
+  };
+
+  const handleRenameCategory = async (id: number) => {
+    if (!API_URL || !renamingCategoryValue.trim()) return;
     try {
       const res = await fetch(`${API_URL}/api/song-categories/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: renamingCategoryValue.trim() }),
       });
       if (res.ok) {
+        setRenamingCategoryId(null);
         fetchCategories();
       } else {
         const err = await res.json();
@@ -551,24 +566,40 @@ export default function AdminMusic() {
           </div>
           <div className="flex gap-2 flex-wrap mb-3">
             {categories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-pill px-3 py-1.5"
-              >
-                <Tag size={11} className="text-brand-light" />
-                <button
-                  onClick={() => handleRenameCategory(category.id, category.name)}
-                  className="text-xs font-semibold text-text"
-                >
-                  {category.name}
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(category.id)}
-                  aria-label={`Delete ${category.name}`}
-                  className="text-text-dim"
-                >
-                  <X size={12} />
-                </button>
+              <div key={category.id} className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-pill px-3 py-1.5">
+                {renamingCategoryId === category.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={renamingCategoryValue}
+                      onChange={(e) => setRenamingCategoryValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleRenameCategory(category.id);
+                        if (e.key === "Escape") setRenamingCategoryId(null);
+                      }}
+                      className="text-xs text-text bg-transparent outline-none w-24"
+                    />
+                    <button onClick={() => handleRenameCategory(category.id)} className="text-brand-light text-[10px] font-bold">Save</button>
+                    <button onClick={() => setRenamingCategoryId(null)} className="text-text-dim"><X size={12} /></button>
+                  </>
+                ) : (
+                  <>
+                    <Tag size={11} className="text-brand-light" />
+                    <button
+                      onClick={() => startRenamingCategory(category.id, category.name)}
+                      className="text-xs font-semibold text-text"
+                    >
+                      {category.name}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCategory(category.id)}
+                      aria-label={`Delete ${category.name}`}
+                      className="text-text-dim"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -608,11 +639,14 @@ export default function AdminMusic() {
 
         {(queueLoading || queuedSongs.length > 0) && (
           <div className="glass-card rounded-card p-4 border border-brand-light/30">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Calendar size={14} className="text-brand-light" />
-              <h2 className="text-sm font-bold text-text">Music Monday Queue</h2>
-            </div>
-            <p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
+            <button onClick={() => setQueueExpanded((v) => !v)} className="w-full flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-brand-light" />
+                <h2 className="text-sm font-bold text-text">Music Monday Queue</h2>
+              </div>
+              {queueExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+            </button>
+            {queueExpanded && <><p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
             {queueLoading ? (
               <p className="text-xs text-text-muted">Loading...</p>
             ) : (
@@ -743,7 +777,7 @@ export default function AdminMusic() {
                   </div>
                 ))}
               </div>
-            )}
+            )}</>}
           </div>
         )}
 
@@ -817,8 +851,11 @@ export default function AdminMusic() {
         </div>
 
         <div>
-          <h2 className="text-sm font-bold text-text mb-3">WELL Collective Playlist ({songs.length})</h2>
-          {loading ? (
+          <button onClick={() => setPlaylistExpanded((v) => !v)} className="w-full flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-text">WELL Collective Playlist ({songs.length})</h2>
+            {playlistExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+          </button>
+          {playlistExpanded && (loading ? (
             <p className="text-sm text-text-muted">Loading...</p>
           ) : songs.length === 0 ? (
             <p className="text-sm text-text-muted">No songs added yet.</p>
@@ -1036,7 +1073,7 @@ export default function AdminMusic() {
                 </div>
               ))}
             </div>
-          )}
+          ))}
         </div>
 
         <div className="glass-card rounded-card p-4">

@@ -497,6 +497,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ memberEmail: state.user.email, type: "app_open" }),
     }).catch(() => {});
 
+    // One-time founding member badge claim for all full members during the
+    // first 6 months after launch. The server checks eligibility and is idempotent.
+    const foundingKey = `well-founding-badge-v1-${state.user.email}`;
+    if (!localStorage.getItem(foundingKey)) {
+      fetch(`${API_URL}/api/members/claim-founding-badge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: state.user.email }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => { if (d?.granted || d?.reason === "on_trial") localStorage.setItem(foundingKey, "1"); })
+        .catch(() => {});
+    }
+
     const email = encodeURIComponent(state.user.email);
     fetch(`${API_URL}/api/recipes/saved?email=${email}`)
       .then((res) => (res.ok ? res.json() : { savedRecipes: [] }))
@@ -1044,7 +1058,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: state.user.id }),
+        body: JSON.stringify({ memberId: state.user.id, memberEmail: state.user.email }),
       }).catch((err) => console.error("Failed to sync RSVP:", err));
     }
   };

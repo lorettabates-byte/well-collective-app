@@ -1,4 +1,4 @@
-import { AlertTriangle, ImagePlus, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, ImagePlus, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
@@ -222,6 +222,7 @@ export default function AdminEvents() {
   const { events: liveEvents, loading: liveLoading } = useEventsFeed();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [eventsExpanded, setEventsExpanded] = useState(true);
 
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const sortedLive = [...liveEvents].sort((a, b) => a.date.localeCompare(b.date));
@@ -254,7 +255,15 @@ export default function AdminEvents() {
           </button>
         )}
 
-        <div className="flex flex-col gap-3">
+        <button
+          onClick={() => setEventsExpanded((v) => !v)}
+          className="flex items-center justify-between w-full text-sm font-bold text-text mb-3"
+        >
+          <span>Current Events ({sorted.length})</span>
+          {eventsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {eventsExpanded && <div className="flex flex-col gap-3">
           {sorted.map((event) =>
             editingId === event.id ? (
               <EventForm
@@ -336,7 +345,7 @@ export default function AdminEvents() {
               </div>
             )
           )}
-        </div>
+        </div>}
 
         <h2 className="text-sm font-bold text-text mt-6 mb-3">From lorettabates.com</h2>
         <p className="text-xs text-text-muted mb-3">

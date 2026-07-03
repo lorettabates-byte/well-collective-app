@@ -1,4 +1,5 @@
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
+import { useState } from "react";
 import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
 import { formatDateLong, getDayNumber } from "../../utils/format";
@@ -24,6 +25,15 @@ export default function EventCard({ event, compact }: EventCardProps) {
   const isGoing = event.rsvps.includes(user.id);
   const isLive = event.source === "live";
   const soldOut = !!event.soldOut || soldOutEventIds.includes(event.id);
+
+  const liveGoingKey = `well-event-going-${event.id}`;
+  const [liveGoing, setLiveGoing] = useState(() => !!localStorage.getItem(liveGoingKey));
+  const toggleLiveGoing = () => {
+    const next = !liveGoing;
+    if (next) localStorage.setItem(liveGoingKey, "1");
+    else localStorage.removeItem(liveGoingKey);
+    setLiveGoing(next);
+  };
 
   if (compact) {
     return (
@@ -103,15 +113,25 @@ export default function EventCard({ event, compact }: EventCardProps) {
             <div className="flex-1 min-w-0">
               {event.cost && <span className="text-[11px] font-semibold text-brand-light">{event.cost}</span>}
             </div>
-            <a
-              href={event.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-pill gradient-brand text-white"
-            >
-              Find Out More
-              <ExternalLink size={12} />
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleLiveGoing}
+                className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
+                  liveGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "bg-surface-2 text-text-muted border border-border"
+                }`}
+              >
+                {liveGoing ? "Going ✓" : "Going"}
+              </button>
+              <a
+                href={event.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-pill gradient-brand text-white"
+              >
+                Info
+                <ExternalLink size={12} />
+              </a>
+            </div>
           </>
         ) : (
           <>
@@ -141,7 +161,7 @@ export default function EventCard({ event, compact }: EventCardProps) {
                 isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
               }`}
             >
-              {isGoing ? "Going ✓" : soldOut ? "Sold Out" : "RSVP"}
+              {isGoing ? "Going ✓" : soldOut ? "Sold Out" : "Going"}
             </button>
           </>
         )}

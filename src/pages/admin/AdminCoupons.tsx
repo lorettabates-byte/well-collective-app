@@ -1,4 +1,4 @@
-import { Copy, Download, Gift, Plus, Trash2, Upload } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Download, Gift, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { BIRTHDAY_STOREWIDE_POOL, BIRTHDAY_WELL_ESCAPE_POOL } from "../../constants/birthdayCoupons";
@@ -146,6 +146,10 @@ export default function AdminCoupons() {
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
 
   // Restrict generated codes to a specific product or product category (e.g. "Well Escape")
+  const [bulkExpanded, setBulkExpanded] = useState(true);
+  const [singleExpanded, setSingleExpanded] = useState(false);
+  const [activeCouponsExpanded, setActiveCouponsExpanded] = useState(true);
+
   const [genRestrictType, setGenRestrictType] = useState<"" | "product" | "category">("");
   const [genRestrictValue, setGenRestrictValue] = useState("");
   const [restrictMatches, setRestrictMatches] = useState<{ id: number; name: string }[]>([]);
@@ -431,11 +435,14 @@ export default function AdminCoupons() {
       <div className="px-4 pt-4 flex flex-col gap-4">
         {/* Generate Bulk Codes (e.g. birthday gifts) */}
         <div className="glass-card rounded-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Gift size={16} className="text-brand-light" />
-            <h2 className="text-sm font-bold text-text">Generate Bulk Codes</h2>
-          </div>
-          <p className="text-xs text-text-muted mb-3">
+          <button onClick={() => setBulkExpanded((v) => !v)} className="w-full flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Gift size={16} className="text-brand-light" />
+              <h2 className="text-sm font-bold text-text">Generate Bulk Codes</h2>
+            </div>
+            {bulkExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+          </button>
+          {bulkExpanded && <><p className="text-xs text-text-muted mb-3">
             Create a batch of unique one-time codes that all share the same discount — perfect for birthday gifts.
           </p>
           <div className="flex flex-col gap-3">
@@ -640,13 +647,16 @@ export default function AdminCoupons() {
                 </button>
               </div>
             </div>
-          )}
+          )}</>}
         </div>
 
         {/* Create Single Coupon */}
         <div className="glass-card rounded-card p-4">
-          <h2 className="text-sm font-bold text-text mb-3">Create Single Coupon</h2>
-          <div className="flex flex-col gap-3">
+          <button onClick={() => setSingleExpanded((v) => !v)} className="w-full flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-text">Create Single Coupon</h2>
+            {singleExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+          </button>
+          {singleExpanded && <div className="flex flex-col gap-3">
             <input
               type="text"
               value={code}
@@ -699,7 +709,7 @@ export default function AdminCoupons() {
               <Plus size={16} />
               Create Coupon
             </button>
-          </div>
+          </div>}
         </div>
 
         {/* CSV Import from Advanced Coupons */}
@@ -770,8 +780,11 @@ export default function AdminCoupons() {
 
         {/* Coupons List */}
         <div>
-          <h2 className="text-sm font-bold text-text mb-3">Active Coupons ({coupons.length})</h2>
-          <div className="flex flex-col gap-2">
+          <button onClick={() => setActiveCouponsExpanded((v) => !v)} className="w-full flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-text">Active Coupons ({coupons.length})</h2>
+            {activeCouponsExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+          </button>
+          {activeCouponsExpanded && <div className="flex flex-col gap-2">
             {coupons.length === 0 ? (
               <p className="text-xs text-text-muted">No coupons yet</p>
             ) : (
@@ -798,7 +811,7 @@ export default function AdminCoupons() {
                 </div>
               ))
             )}
-          </div>
+          </div>}
         </div>
       </div>
     </div>

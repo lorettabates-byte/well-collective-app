@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Calendar, Image as ImageIcon, Loader2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -43,6 +43,8 @@ const TYPE_LINKS: Record<AppNotificationType, string> = {
   blog: "/blog",
 };
 
+import { useEffect } from "react";
+
 export default function AdminNotifications() {
   const { notifications, sendNotification } = useApp();
   const [type, setType] = useState<AppNotificationType>("general");
@@ -56,6 +58,62 @@ export default function AdminNotifications() {
   const [blogMessage, setBlogMessage] = useState("");
   const [checkingVideo, setCheckingVideo] = useState(false);
   const [videoMessage, setVideoMessage] = useState("");
+
+  const [schedTitle, setSchedTitle] = useState("");
+  const [schedBody, setSchedBody] = useState("");
+  const [schedAt, setSchedAt] = useState("");
+  const [scheduledItems, setScheduledItems] = useState<{ id: number; title: string; body: string; send_at: string }[]>([]);
+  const [schedSaving, setSchedSaving] = useState(false);
+  const [schedMessage, setSchedMessage] = useState("");
+
+  useEffect(() => { loadScheduled(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadScheduled = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/notifications/scheduled`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setScheduledItems(data.scheduled || []);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleScheduleNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schedTitle.trim() || !schedBody.trim() || !schedAt || !API_URL) return;
+    setSchedSaving(true);
+    setSchedMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/notifications/scheduled`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title: schedTitle.trim(), body: schedBody.trim(), sendAt: schedAt }),
+      });
+      if (res.ok) {
+        setSchedTitle("");
+        setSchedBody("");
+        setSchedAt("");
+        setSchedMessage("Notification scheduled!");
+        loadScheduled();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setSchedMessage(err.error || "Failed to schedule");
+      }
+    } catch {
+      setSchedMessage("Failed to schedule");
+    } finally {
+      setSchedSaving(false);
+    }
+  };
+
+  const handleDeleteScheduled = async (id: number) => {
+    if (!API_URL) return;
+    try {
+      await fetch(`${API_URL}/api/notifications/scheduled/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+      loadScheduled();
+    } catch { /* ignore */ }
+  };
 
   const handleCheckBlogPosts = async () => {
     if (!API_URL) return;
@@ -250,6 +308,64 @@ export default function AdminNotifications() {
           >
             {sending ? "Sending…" : "Send Notification"}
           </button>
+        </form>
+
+        {/* Schedule a future notification */}
+        <form onSubmit={handleScheduleNotification} className="glass-card rounded-card p-4 flex flex-col gap-3 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar size={16} className="text-brand-light" />
+            <h3 className="text-sm font-bold text-text">Schedule a Notification</h3>
+          </div>
+          <p className="text-xs text-text-muted -mt-1">Set a date &amp; time and it will send automatically.</p>
+          <input
+            value={schedTitle}
+            onChange={(e) => setSchedTitle(e.target.value)}
+            placeholder="Notification title"
+            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+          />
+          <textarea
+            value={schedBody}
+            onChange={(e) => setSchedBody(e.target.value)}
+            placeholder="Notification message"
+            rows={2}
+            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+          />
+          <div>
+            <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Send at (your local time)</label>
+            <input
+              type="datetime-local"
+              value={schedAt}
+              onChange={(e) => setSchedAt(e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+            />
+          </div>
+          {schedMessage && (
+            <p className={`text-xs ${schedMessage.includes("scheduled") ? "text-green-400" : "text-red-400"}`}>{schedMessage}</p>
+          )}
+          <button
+            type="submit"
+            disabled={!schedTitle.trim() || !schedBody.trim() || !schedAt || schedSaving}
+            className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
+          >
+            {schedSaving ? "Scheduling…" : "Schedule Notification"}
+          </button>
+          {scheduledItems.length > 0 && (
+            <div className="flex flex-col gap-2 border-t border-border pt-3 mt-1">
+              <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">Upcoming Scheduled</p>
+              {scheduledItems.map((item) => (
+                <div key={item.id} className="flex items-start justify-between gap-2 bg-surface-2 rounded-card px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text truncate">{item.title}</p>
+                    <p className="text-[11px] text-text-muted truncate">{item.body}</p>
+                    <p className="text-[11px] text-brand-light mt-0.5">{new Date(item.send_at).toLocaleString()}</p>
+                  </div>
+                  <button onClick={() => handleDeleteScheduled(item.id)} className="text-red-400 shrink-0 p-1">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </form>
 
         <h2 className="text-sm font-bold text-text mb-3">Recently Sent</h2>

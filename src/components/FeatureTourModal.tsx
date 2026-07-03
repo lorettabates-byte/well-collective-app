@@ -4,8 +4,9 @@ import {
   Heart,
   MessageCircle,
   Music,
-  ShoppingCart,
+  Salad,
   Sparkles,
+  Trophy,
   User,
   Users,
   Video,
@@ -49,25 +50,28 @@ const SLIDES: Slide[] = [
   {
     icon: Waves,
     title: "Classes & Wellness",
-    body: "Take a livestream with Loretta, or hop into Zumba® and Fitness Bellydance on demand in Classes. Check Wellness for breathwork and nutrition to support you day to day.",
+    body: "Take a livestream with Loretta, or hop into Zumba® and Fitness Bellydance on demand in Classes. Check Wellness for breathwork, workout plans, and daily well-being activities.",
     findIt: [
       { icon: Video, label: "Classes" },
       { icon: Waves, label: "Wellness" },
     ],
   },
   {
-    icon: ShoppingCart,
-    title: "Meal Plan & Shopping List",
-    body: "Plan your whole week with AI-generated recipes, then auto-generate a shopping list from all the week's ingredients. Check off items as you shop — the list even shows you which items you need multiple times.",
-    findIt: [
-      { icon: Waves, label: "Wellness" },
-      { icon: ShoppingCart, label: "Meal Plan" },
-    ],
+    icon: Salad,
+    title: "Nutrition",
+    body: "Explore a daily recipe, plan your meals on a weekly calendar, and auto-generate a shopping list from your chosen recipes. Log meals, track nutrition info, and check off shopping items as you go.",
+    findIt: [{ icon: Salad, label: "Nutrition" }],
+  },
+  {
+    icon: Trophy,
+    title: "WELL Cup 🏆",
+    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, attending events, and more. The top point-earner each day wins the WELL Cup!",
+    findIt: [{ icon: Trophy, label: "Well Cup" }],
   },
   {
     icon: Music,
     title: "Music",
-    body: "Loretta has made songs just for you and your encouragement — only available here on the WELL App.",
+    body: "Loretta has made songs just for you — only available here on the WELL App. Sort by category to find the right vibe, or tap the heart to save songs to your own Favorites playlist.",
     findIt: [{ icon: Music, label: "Music" }],
   },
   {

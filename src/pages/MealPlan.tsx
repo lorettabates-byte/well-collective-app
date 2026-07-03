@@ -5,6 +5,7 @@ import { useApp } from "../store/AppContext";
 import type { Recipe } from "../types";
 
 const CHECKED_ITEMS_KEY = "well-shopping-list-checked";
+const MANUAL_ITEMS_KEY = "well-shopping-list-manual";
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function toLocalISODate(date: Date): string {
@@ -34,6 +35,15 @@ function loadCheckedItems(): Set<string> {
     return new Set(raw ? JSON.parse(raw) : []);
   } catch {
     return new Set();
+  }
+}
+
+function loadManualItems(): string[] {
+  try {
+    const raw = localStorage.getItem(MANUAL_ITEMS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -146,6 +156,8 @@ export default function MealPlan() {
   const { mealPlan, setMealPlanRecipe, removeMealPlanEntry } = useApp();
   const [pickerForDate, setPickerForDate] = useState<string | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(() => loadCheckedItems());
+  const [manualItems, setManualItems] = useState<string[]>(() => loadManualItems());
+  const [manualInput, setManualInput] = useState("");
 
   const weekDates = useMemo(getThisWeekDates, []);
   const todayStr = useMemo(() => toLocalISODate(new Date()), []);
@@ -181,6 +193,21 @@ export default function MealPlan() {
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [weekEntries]);
+
+  const addManualItem = () => {
+    const trimmed = manualInput.trim();
+    if (!trimmed) return;
+    const next = [...manualItems, trimmed];
+    setManualItems(next);
+    setManualInput("");
+    try { localStorage.setItem(MANUAL_ITEMS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  const removeManualItem = (index: number) => {
+    const next = manualItems.filter((_, i) => i !== index);
+    setManualItems(next);
+    try { localStorage.setItem(MANUAL_ITEMS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
 
   const toggleChecked = (key: string) => {
     setCheckedItems((prev) => {
@@ -252,10 +279,29 @@ export default function MealPlan() {
             <ShoppingCart size={16} className="text-brand-light" />
             <h2 className="text-sm font-bold text-text">Shopping List</h2>
           </div>
-          {shoppingList.length === 0 ? (
-            <p className="text-sm text-text-muted text-center py-6 flex items-center justify-center gap-1.5">
+
+          {/* Manual item entry */}
+          <div className="flex gap-2 mb-3">
+            <input
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addManualItem()}
+              placeholder="Add an item…"
+              className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+            />
+            <button
+              onClick={addManualItem}
+              disabled={!manualInput.trim()}
+              className="w-9 h-9 flex items-center justify-center gradient-brand text-white rounded-card disabled:opacity-40"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+
+          {shoppingList.length === 0 && manualItems.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-4 flex items-center justify-center gap-1.5">
               <Sparkles size={14} />
-              Add recipes to the week above to build your list.
+              Add recipes above or type items manually.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -282,6 +328,32 @@ export default function MealPlan() {
                           ×{item.count}
                         </span>
                       )}
+                    </button>
+                  </li>
+                );
+              })}
+              {manualItems.map((item, i) => {
+                const key = `manual-${i}-${item}`;
+                const checked = checkedItems.has(key);
+                return (
+                  <li key={key} className="flex items-center gap-2.5">
+                    <button
+                      onClick={() => toggleChecked(key)}
+                      className="flex items-center gap-2.5 flex-1 text-left"
+                    >
+                      <span
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+                          checked ? "bg-brand-light border-brand-light" : "border-border"
+                        }`}
+                      >
+                        {checked && <Check size={13} className="text-white" />}
+                      </span>
+                      <span className={`text-sm flex-1 ${checked ? "text-text-dim line-through" : "text-text"}`}>
+                        {item}
+                      </span>
+                    </button>
+                    <button onClick={() => removeManualItem(i)} className="text-text-dim shrink-0 p-1">
+                      <X size={14} />
                     </button>
                   </li>
                 );

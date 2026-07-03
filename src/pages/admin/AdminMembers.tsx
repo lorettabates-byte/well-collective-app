@@ -1,4 +1,4 @@
-import { Plus, Trash2, UserPlus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
@@ -39,6 +39,63 @@ interface AdminMember {
   trialEndsAt?: string;
   updatedAt: string;
   grantedBadges?: string[];
+}
+
+function MemberCard({
+  member,
+  onDelete,
+  onToggleBadge,
+  isTrialExpired,
+}: {
+  member: AdminMember;
+  onDelete: (email: string) => void;
+  onToggleBadge: (email: string, badgeId: string, currentlyGranted: boolean) => void;
+  isTrialExpired: (trialEndsAt?: string) => boolean;
+}) {
+  const granted = new Set(member.grantedBadges ?? []);
+  return (
+    <div className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">
+      <div className="flex items-center gap-3">
+        <Link to={`/member/${deriveMemberId(member.email)}`} className="shrink-0">
+          <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
+        </Link>
+        <Link to={`/member/${deriveMemberId(member.email)}`} className="flex-1 min-w-0 hover:opacity-75 transition-opacity">
+          <p className="text-sm font-semibold text-text truncate">{member.name}</p>
+          <p className="text-xs text-text-muted truncate">{member.email}</p>
+          {member.trialEndsAt && (
+            <p className={`text-[11px] mt-0.5 ${isTrialExpired(member.trialEndsAt) ? "text-red-400" : "text-brand-light"}`}>
+              {isTrialExpired(member.trialEndsAt) ? "Trial expired " : "Trial ends "}
+              {formatDateLong(member.trialEndsAt)}
+            </p>
+          )}
+        </Link>
+        <button
+          onClick={() => onDelete(member.email)}
+          className="text-red-400 p-2 shrink-0"
+          aria-label={`Remove ${member.name}`}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {SPECIAL_BADGES.map((badge) => {
+          const isGranted = granted.has(badge.id);
+          return (
+            <button
+              key={badge.id}
+              onClick={() => onToggleBadge(member.email, badge.id, isGranted)}
+              className={`flex items-center gap-1 text-[11px] font-semibold rounded-pill px-2.5 py-1 ${
+                isGranted ? "gradient-brand text-white" : "bg-surface-2 border border-border text-text-dim"
+              }`}
+            >
+              <span>{badge.icon}</span>
+              {isGranted ? `${badge.label} ✓` : `Grant ${badge.label}`}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminMembers() {
@@ -107,12 +164,19 @@ export default function AdminMembers() {
     }
   };
 
+  const [fullMembersExpanded, setFullMembersExpanded] = useState(true);
+  const [trialMembersExpanded, setTrialMembersExpanded] = useState(true);
+
   const isTrialExpired = (trialEndsAt?: string) => !!trialEndsAt && trialEndsAt < new Date().toISOString().slice(0, 10);
+  const isActiveTrial = (trialEndsAt?: string) => !!trialEndsAt && !isTrialExpired(trialEndsAt);
 
   const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
   const sortedMembers = [...members].sort((a, b) =>
     firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" })
   );
+
+  const fullMembers = sortedMembers.filter((m) => !isActiveTrial(m.trialEndsAt));
+  const trialMembers = sortedMembers.filter((m) => isActiveTrial(m.trialEndsAt));
 
   const toggleBadge = async (memberEmail: string, badgeId: string, currentlyGranted: boolean) => {
     if (!API_URL) return;
@@ -205,53 +269,49 @@ export default function AdminMembers() {
         ) : members.length === 0 ? (
           <p className="text-sm text-text-muted text-center py-8">No members yet.</p>
         ) : (
-          <div className="flex flex-col gap-2.5">
-            {sortedMembers.map((member) => {
-              const granted = new Set(member.grantedBadges ?? []);
-              return (
-                <div key={member.email} className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">
-                  <div className="flex items-center gap-3">
-                    <Link to={`/member/${deriveMemberId(member.email)}`} className="shrink-0">
-                      <Avatar src={member.avatar ?? ""} alt={member.name} size={40} />
-                    </Link>
-                    <Link to={`/member/${deriveMemberId(member.email)}`} className="flex-1 min-w-0 hover:opacity-75 transition-opacity">
-                      <p className="text-sm font-semibold text-text truncate">{member.name}</p>
-                      <p className="text-xs text-text-muted truncate">{member.email}</p>
-                      {member.trialEndsAt && (
-                        <p className={`text-[11px] mt-0.5 ${isTrialExpired(member.trialEndsAt) ? "text-red-400" : "text-brand-light"}`}>
-                          {isTrialExpired(member.trialEndsAt) ? "Trial expired " : "Trial ends "}
-                          {formatDateLong(member.trialEndsAt)}
-                        </p>
-                      )}
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(member.email)}
-                      className="text-red-400 p-2 shrink-0"
-                      aria-label={`Remove ${member.name}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SPECIAL_BADGES.map((badge) => {
-                      const isGranted = granted.has(badge.id);
-                      return (
-                        <button
-                          key={badge.id}
-                          onClick={() => toggleBadge(member.email, badge.id, isGranted)}
-                          className={`flex items-center gap-1 text-[11px] font-semibold rounded-pill px-2.5 py-1 ${
-                            isGranted ? "gradient-brand text-white" : "bg-surface-2 border border-border text-text-dim"
-                          }`}
-                        >
-                          <span>{badge.icon}</span>
-                          {isGranted ? `${badge.label} ✓` : `Grant ${badge.label}`}
-                        </button>
-                      );
-                    })}
-                  </div>
+          <div className="flex flex-col gap-4">
+
+            {/* WELL Collective Members */}
+            <div>
+              <button
+                onClick={() => setFullMembersExpanded((v) => !v)}
+                className="w-full flex items-center justify-between glass-card rounded-card px-4 py-3 mb-2"
+              >
+                <div>
+                  <p className="text-sm font-bold text-text text-left">WELL Collective Members</p>
+                  <p className="text-xs text-text-muted text-left">Full members — {fullMembers.length} total</p>
                 </div>
-              );
-            })}
+                {fullMembersExpanded ? <ChevronUp size={16} className="text-text-dim shrink-0" /> : <ChevronDown size={16} className="text-text-dim shrink-0" />}
+              </button>
+              {fullMembersExpanded && (
+                <div className="flex flex-col gap-2.5">
+                  {fullMembers.length === 0 ? (
+                    <p className="text-xs text-text-muted text-center py-4">No full members yet.</p>
+                  ) : fullMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                </div>
+              )}
+            </div>
+
+            {/* Free Trial Members */}
+            {trialMembers.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setTrialMembersExpanded((v) => !v)}
+                  className="w-full flex items-center justify-between glass-card rounded-card px-4 py-3 mb-2"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-text text-left">Free Trial Members</p>
+                    <p className="text-xs text-text-muted text-left">Active trials — {trialMembers.length} total</p>
+                  </div>
+                  {trialMembersExpanded ? <ChevronUp size={16} className="text-text-dim shrink-0" /> : <ChevronDown size={16} className="text-text-dim shrink-0" />}
+                </button>
+                {trialMembersExpanded && (
+                  <div className="flex flex-col gap-2.5">
+                    {trialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
