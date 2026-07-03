@@ -6,8 +6,10 @@ import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 
 export default function Community() {
+  useSectionTracking("community");
   const { categories, threads } = useApp();
 
   const pinnedThreads = [...threads]

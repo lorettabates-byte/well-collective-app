@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 
 type Filter = "all" | "daily-motivation" | "weekly" | "note" | "saved";
 
@@ -19,6 +20,7 @@ const FILTERS: { id: Filter; label: string }[] = [
 const VALID_FILTERS = new Set(FILTERS.map((f) => f.id));
 
 export default function Inspirations() {
+  useSectionTracking("inspiration");
   const { user, inspirations } = useApp();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("filter");

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { logActivity } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -160,6 +161,7 @@ function pickChallenges(doneTypes: Set<string>, poorSleep: boolean): Challenge[]
 }
 
 export default function WellCheck() {
+  useSectionTracking("well-check");
   const { user } = useApp();
   const today = todayISO();
 

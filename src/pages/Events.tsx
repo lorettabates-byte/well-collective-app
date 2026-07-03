@@ -7,6 +7,7 @@ import EventCard from "../components/events/EventCard";
 import TopBar from "../components/layout/TopBar";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 import { birthdayDateForYear, nextBirthdayDate } from "../utils/birthday";
 import { formatDateLong } from "../utils/format";
 
@@ -19,6 +20,7 @@ interface MemberBirthday {
 }
 
 export default function Events() {
+  useSectionTracking("events");
   const { user, events, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const [view, setView] = useState<"calendar" | "list">("calendar");

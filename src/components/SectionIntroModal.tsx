@@ -14,6 +14,7 @@ import {
   Edit,
   Globe,
   Heart,
+  HelpCircle,
   LayoutList,
   Lightbulb,
   MessageCircle,
@@ -178,14 +179,16 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
 export default function SectionIntroModal({ sectionKey }: { sectionKey: string }) {
   const storageKey = `well-section-intro-${sectionKey}-v2`;
   const [show, setShow] = useState(false);
+  const [everShown, setEverShown] = useState(false);
 
   useEffect(() => {
     if (!localStorage.getItem(storageKey)) {
       setShow(true);
+      setEverShown(true);
+    } else {
+      setEverShown(true);
     }
   }, [storageKey]);
-
-  if (!show) return null;
 
   const config = SECTION_CONTENT[sectionKey];
   if (!config) return null;
@@ -195,7 +198,22 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
     setShow(false);
   };
 
+  const reopen = () => setShow(true);
+
   return (
+    <>
+      {/* Floating help button — visible after first dismissal so the guide is always accessible */}
+      {everShown && !show && (
+        <button
+          onClick={reopen}
+          className="fixed right-4 bottom-[72px] z-40 w-10 h-10 rounded-full gradient-brand shadow-glow flex items-center justify-center"
+          aria-label="Show page guide"
+        >
+          <HelpCircle size={16} className="text-white" />
+        </button>
+      )}
+
+    {show && (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
       onClick={dismiss}
@@ -242,5 +260,7 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
         </div>
       </div>
     </div>
+    )}
+    </>
   );
 }

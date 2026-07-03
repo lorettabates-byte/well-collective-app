@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { logActivity } from "../utils/wellCup";
+import { logEvent } from "../utils/analytics";
 
 const PROFILE_PHOTO_DEMO_URL = "https://lorettabates.com/wp-content/uploads/2026/06/DSC_5773.jpg";
 
@@ -233,11 +234,33 @@ export default function FeatureTourModal({
 
   const handleNext = () => {
     if (isLast) {
-      if (userEmail) logActivity(userEmail, "tutorial_complete").catch(() => {});
+      if (userEmail) {
+        logActivity(userEmail, "tutorial_complete").catch(() => {});
+        logEvent(userEmail, "tutorial_complete", { total_steps: SLIDES.length });
+      }
       onClose(true);
     } else {
-      setStep((s) => s + 1);
+      const nextStep = step + 1;
+      if (userEmail) {
+        logEvent(userEmail, "tutorial_step", {
+          step: nextStep,
+          slide_title: SLIDES[nextStep].title,
+          from_step: step,
+        });
+      }
+      setStep(nextStep);
     }
+  };
+
+  const handleSkip = () => {
+    if (userEmail) {
+      logEvent(userEmail, "tutorial_skip", {
+        at_step: step,
+        slide_title: slide.title,
+        completed_steps: step,
+      });
+    }
+    onClose(false);
   };
 
   return (
@@ -245,7 +268,7 @@ export default function FeatureTourModal({
       <div className="relative w-full max-w-sm gradient-brand p-[1px] rounded-card">
         <div className="bg-surface rounded-card p-6 flex flex-col items-center text-center gap-3 animate-pop-in">
           <button
-            onClick={() => onClose(false)}
+            onClick={handleSkip}
             className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted"
             aria-label="Skip"
           >
@@ -354,7 +377,7 @@ export default function FeatureTourModal({
           </div>
 
           {!isLast && (
-            <button onClick={() => onClose(false)} className="text-xs text-text-dim mt-1">
+            <button onClick={handleSkip} className="text-xs text-text-dim mt-1">
               Skip tour
             </button>
           )}

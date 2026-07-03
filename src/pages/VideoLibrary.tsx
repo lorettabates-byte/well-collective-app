@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { logActivity } from "../utils/wellCup";
 
@@ -17,6 +18,7 @@ const FEATURED_VIDEO_DEFAULTS = {
 };
 
 export default function VideoLibrary() {
+  useSectionTracking("classes");
   const { user, logClassCompletion } = useApp();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;

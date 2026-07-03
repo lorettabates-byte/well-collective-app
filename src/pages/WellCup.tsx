@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -113,6 +114,7 @@ const POINTS_GUIDE = [
 ];
 
 export default function WellCup() {
+  useSectionTracking("well-cup");
   const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
   const [resetAt, setResetAt] = useState("");
   const [yesterday, setYesterday] = useState<WinnerInfo | null>(null);

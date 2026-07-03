@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 import type { Recipe, RecipeNutrition } from "../types";
 import { logActivity } from "../utils/wellCup";
 
@@ -60,6 +61,7 @@ function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; ve
 }
 
 export default function Nutrition() {
+  useSectionTracking("nutrition");
   const {
     currentWeeklyTheme,
     todaysRecipe,

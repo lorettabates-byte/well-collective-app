@@ -5,6 +5,7 @@ import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const TRIBE_STORAGE_KEY = "well-collective-tribe";
@@ -20,6 +21,7 @@ interface DirectoryMember {
 }
 
 export default function Tribe() {
+  useSectionTracking("tribe");
   const { user } = useApp();
   const [tribe, setTribe] = useState<DirectoryMember[]>([]);
   const [allMembers, setAllMembers] = useState<DirectoryMember[]>([]);

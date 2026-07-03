@@ -7,6 +7,7 @@ import Avatar from "../components/ui/Avatar";
 import TopBar from "../components/layout/TopBar";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -38,6 +39,7 @@ function MenuRow({
 }
 
 export default function Profile() {
+  useSectionTracking("profile");
   const { user, inspirations, savedRecipes } = useApp();
 
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);

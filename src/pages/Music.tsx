@@ -6,6 +6,7 @@ import Playlist from "../components/music/Playlist";
 import TopBar from "../components/layout/TopBar";
 import { SoundIcon } from "../data/soundIconMap";
 import { useApp } from "../store/AppContext";
+import { useSectionTracking } from "../hooks/useSectionTracking";
 import type { CustomPeacefulSound, Song, SongCategory } from "../types";
 import {
   AMBIENT_SOUNDS,
@@ -34,6 +35,7 @@ const TIMER_OPTIONS: { label: string; minutes: number | null }[] = [
 ];
 
 export default function Music() {
+  useSectionTracking("music");
   const { user } = useApp();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;

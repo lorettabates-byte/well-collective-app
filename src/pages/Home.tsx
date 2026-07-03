@@ -1,5 +1,6 @@
 import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
+import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
 import { Link, useNavigate } from "react-router-dom";
@@ -89,6 +90,13 @@ export default function Home() {
     if (localStorage.getItem(key)) return;
     setShowTour(true);
   }, []);
+
+  // Track app open + start session timer
+  useEffect(() => {
+    if (!user.email) return;
+    logEvent(user.email, "app_open");
+    return startSessionTracking(user.email);
+  }, [user.email]);
 
   const handleCloseTour = (_completed: boolean) => {
     localStorage.setItem("well-feature-tour-v2", "1");
