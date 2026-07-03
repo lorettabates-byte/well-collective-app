@@ -269,6 +269,11 @@ export default function Home() {
         Contact Loretta
       </a>
 
+      <div className="mb-6">
+        <SectionHeader title="WELL Cup" to="/well-cup" />
+        <WellCupLeaderboard />
+      </div>
+
       {todaysInspiration && (
         <div className="mb-6">
           <SectionHeader title="Today's Inspiration" to="/inspirations" />
@@ -288,11 +293,6 @@ export default function Home() {
       )}
 
       <TribeActivityStrip />
-
-      <div className="mb-6">
-        <SectionHeader title="WELL Cup" to="/well-cup" />
-        <WellCupLeaderboard />
-      </div>
 
       <div className="mb-6">
         <SectionHeader title="From the Community" to="/community" />
