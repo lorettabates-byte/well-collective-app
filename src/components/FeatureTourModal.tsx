@@ -46,7 +46,7 @@ const SLIDES: Slide[] = [
   {
     icon: Trophy,
     title: "WELL Cup 🏆",
-    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins!",
+    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins! 🥇 Monthly winner gets a FREE month • 🌴 Yearly winner wins a FREE WELL Escape!",
     findIt: [{ icon: Trophy, label: "Well Cup" }],
   },
   {
