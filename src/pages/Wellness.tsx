@@ -26,7 +26,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import confetti from "canvas-confetti";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
@@ -102,12 +102,17 @@ export default function Wellness() {
   const [justSaved, setJustSaved] = useState(false);
   const [customWorkoutText, setCustomWorkoutText] = useState("");
   const [showCustomWorkoutForm, setShowCustomWorkoutForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"workout" | "activities" | "streaks">("workout");
+  const initialTab = (["workout", "activities", "streaks"].includes(searchParams.get("tab") ?? "") ? searchParams.get("tab") : "workout") as "workout" | "activities" | "streaks";
+  const [activeTab, setActiveTab] = useState<"workout" | "activities" | "streaks">(initialTab);
 
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
   const [breathworkMarked, setBreathworkMarked] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
   const [sleepLogged, setSleepLogged] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+  const [sleepHours, setSleepHours] = useState(7);
+  const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "needed_more" | "">("");
+  const [sleepSubmitting, setSleepSubmitting] = useState(false);
+  const autoWorkoutFiredRef = useRef(false);
 
   const CardioIcon = plan.cardio.icon;
 
@@ -194,11 +199,38 @@ export default function Wellness() {
     if (user.email) logActivity(user.email, "breathwork").catch(() => {});
   };
 
-  const handleSleepLog = () => {
-    localStorage.setItem(`well-sleep-${today}`, "1");
-    setSleepLogged(true);
-    if (user.email) logActivity(user.email, "sleep_log").catch(() => {});
+  const handleSleepLog = async () => {
+    if (!sleepQuality || sleepSubmitting) return;
+    setSleepSubmitting(true);
+    try {
+      if (API_URL && user.email) {
+        await fetch(`${API_URL}/api/sleep`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberEmail: user.email, hours: sleepHours, quality: sleepQuality }),
+        });
+      }
+      localStorage.setItem(`well-sleep-${today}`, "1");
+      localStorage.setItem(`well-sleep-data-${today}`, JSON.stringify({ hours: sleepHours, quality: sleepQuality }));
+      setSleepLogged(true);
+    } finally {
+      setSleepSubmitting(false);
+    }
   };
+
+  // Auto-complete workout when all 3 individual items are marked done
+  useEffect(() => {
+    if (autoWorkoutFiredRef.current || completedToday) return;
+    const bwDone = breathworkMarked || breathworkLog.includes(today);
+    if (resistanceDone && stretchingDone && bwDone) {
+      autoWorkoutFiredRef.current = true;
+      const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
+      if (milestone) setCelebration({ days: milestone, label: "Workout" });
+      logWorkoutCompletion();
+      confetti({ particleCount: 100, spread: 70 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resistanceDone, stretchingDone, breathworkMarked]);
 
   if (showSavedWorkouts) {
     const savedWorkouts = user.savedWorkouts ?? [];
@@ -500,22 +532,51 @@ export default function Wellness() {
             <p className="text-xs text-text-muted"><span className="font-semibold text-text">Logged on your own:</span> {user.customWorkoutNotes[today]}</p>
           </div>
         )}
-        <button
-          onClick={() => {
+        {(() => {
+          const bwAlreadyDone = breathworkMarked || breathworkLog.includes(today);
+          const potentialPts = (!resistanceDone ? 20 : 0) + (!stretchingDone ? 15 : 0) + (!bwAlreadyDone ? 15 : 0);
+
+          const handleMarkAllWorkout = () => {
             if (completedToday) return;
+            if (!resistanceDone) {
+              localStorage.setItem(`well-resistance-${today}`, "1");
+              setResistanceDone(true);
+              if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
+            }
+            if (!stretchingDone) {
+              localStorage.setItem(`well-stretching-${today}`, "1");
+              setStretchingDone(true);
+              if (user.email) logActivity(user.email, "stretching").catch(() => {});
+            }
+            if (!bwAlreadyDone) {
+              localStorage.setItem(`well-breathwork-marked-${today}`, "1");
+              setBreathworkMarked(true);
+              if (user.email) logActivity(user.email, "breathwork").catch(() => {});
+            }
+            autoWorkoutFiredRef.current = true;
             const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
             if (milestone) setCelebration({ days: milestone, label: "Workout" });
             logWorkoutCompletion();
-            confetti({ particleCount: 100, spread: 70 });
-          }}
-          disabled={completedToday}
-          className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 transition-colors ${
-            completedToday ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
-          }`}
-        >
-          <CheckCircle2 size={20} />
-          {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
-        </button>
+            confetti({ particleCount: 120, spread: 90 });
+          };
+
+          return (
+            <button
+              onClick={handleMarkAllWorkout}
+              disabled={completedToday}
+              className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 transition-colors ${
+                completedToday ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
+              }`}
+            >
+              <CheckCircle2 size={20} />
+              {completedToday
+                ? "Workout Complete for Today ✓"
+                : potentialPts > 0
+                ? `Mark Today's Workout Complete · +${potentialPts} pts`
+                : "Mark Today's Workout Complete"}
+            </button>
+          );
+        })()}
       </>}
 
       {/* ── ACTIVITIES TAB ──────────────────────────────────── */}
@@ -548,23 +609,65 @@ export default function Wellness() {
         </div>
 
         {/* Sleep */}
-        <div className="glass-card rounded-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
-            <Moon size={18} className="text-indigo-400" />
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+            <Moon size={15} className="text-indigo-400 shrink-0" />
+            <h3 className="text-sm font-bold text-text">Sleep</h3>
+            {sleepLogged && <span className="ml-auto text-xs font-semibold text-brand-light">Logged ✓</span>}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-text">Sleep</p>
-            <p className="text-xs text-text-muted mt-0.5">Log last night's rest for WELL Cup points</p>
-          </div>
-          <button
-            onClick={handleSleepLog}
-            disabled={sleepLogged}
-            className={`shrink-0 text-xs font-semibold rounded-pill px-3 py-1.5 transition-colors ${
-              sleepLogged ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
-            }`}
-          >
-            {sleepLogged ? "Logged ✓" : "+10 pts"}
-          </button>
+          {sleepLogged ? (
+            <p className="text-xs text-text-muted text-center py-1">Sleep logged for today. Rest well tonight!</p>
+          ) : (
+            <>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs text-text-muted">Hours of sleep last night</p>
+                  <span className="text-sm font-bold text-brand-light">{sleepHours}h</span>
+                </div>
+                <input
+                  type="range"
+                  min={2}
+                  max={12}
+                  step={0.5}
+                  value={sleepHours}
+                  onChange={(e) => setSleepHours(Number(e.target.value))}
+                  className="w-full accent-brand-light"
+                />
+                <div className="flex justify-between text-[10px] text-text-dim mt-0.5">
+                  <span>2h</span><span>12h</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-muted mb-2">How did you feel when you woke up?</p>
+              <div className="flex flex-col gap-2 mb-4">
+                {([
+                  { id: "not_enough" as const, label: "Didn't get enough" },
+                  { id: "enough" as const,     label: "Got enough" },
+                  { id: "needed_more" as const, label: "Needed more" },
+                ] as const).map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setSleepQuality(q.id)}
+                    className={`w-full text-xs font-semibold rounded-pill py-2 border transition-colors ${
+                      sleepQuality === q.id
+                        ? "gradient-brand text-white border-transparent"
+                        : "border-border text-text-muted bg-surface-2"
+                    }`}
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleSleepLog}
+                disabled={!sleepQuality || sleepSubmitting}
+                className="w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2.5 disabled:opacity-40 transition-opacity"
+              >
+                {sleepSubmitting ? "Logging…" : "Log Sleep · +10 pts"}
+              </button>
+            </>
+          )}
         </div>
       </>}
 

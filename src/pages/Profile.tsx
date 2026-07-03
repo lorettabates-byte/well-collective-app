@@ -37,15 +37,24 @@ function MenuRow({
 }
 
 export default function Profile() {
-  const { user, threads, inspirations, savedRecipes } = useApp();
+  const { user, inspirations, savedRecipes } = useApp();
 
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
+  const [tribeConnections, setTribeConnections] = useState<number | null>(null);
+  const [addedByCount, setAddedByCount] = useState<number | null>(null);
+  const [allTimePoints, setAllTimePoints] = useState<number | null>(null);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
     fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(user.email)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.member?.showOnLeaderboard !== undefined) setShowOnLeaderboard(d.member.showOnLeaderboard); })
+      .then((d) => {
+        if (!d?.member) return;
+        if (d.member.showOnLeaderboard !== undefined) setShowOnLeaderboard(d.member.showOnLeaderboard);
+        if (d.member.tribeConnections !== undefined) setTribeConnections(d.member.tribeConnections);
+        if (d.member.addedByCount !== undefined) setAddedByCount(d.member.addedByCount);
+        if (d.member.allTimePoints !== undefined) setAllTimePoints(d.member.allTimePoints);
+      })
       .catch(() => {});
   }, [user.email]);
 
@@ -60,14 +69,6 @@ export default function Profile() {
     }).catch(() => {});
   };
 
-  const messagesPosted = threads.reduce(
-    (sum, t) => sum + t.messages.filter((m) => m.authorId === user.id).length,
-    0
-  );
-  const supportGiven = threads.reduce(
-    (sum, t) => sum + t.messages.filter((m) => m.likes.includes(user.id)).length,
-    0
-  );
   const savedCount = inspirations.filter((i) => i.savedBy.includes(user.id)).length;
   const featuredBadgeId = resolveFeaturedBadge(user);
   const featuredBadge = getBadgeDef(featuredBadgeId);
@@ -113,16 +114,16 @@ export default function Profile() {
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{messagesPosted}</p>
-          <p className="text-[11px] text-text-muted">Messages</p>
+          <p className="text-lg font-bold text-text">{tribeConnections ?? "—"}</p>
+          <p className="text-[11px] text-text-muted leading-tight">Tribe Connections</p>
         </div>
         <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{supportGiven}</p>
-          <p className="text-[11px] text-text-muted">Support Given</p>
+          <p className="text-lg font-bold text-text">{addedByCount ?? "—"}</p>
+          <p className="text-[11px] text-text-muted leading-tight">Added By</p>
         </div>
         <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{savedCount}</p>
-          <p className="text-[11px] text-text-muted">Saved</p>
+          <p className="text-lg font-bold text-text">{allTimePoints !== null ? allTimePoints.toLocaleString() : "—"}</p>
+          <p className="text-[11px] text-text-muted leading-tight">Total Points</p>
         </div>
       </div>
 

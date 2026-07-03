@@ -1,7 +1,7 @@
 import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
 import { logActivity } from "../utils/wellCup";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
 import FeatureTourModal from "../components/FeatureTourModal";
 import NotificationOptInModal from "../components/NotificationOptInModal";
@@ -29,6 +29,7 @@ const QUICK_LINKS = [
 ];
 
 export default function Home() {
+  const navigate = useNavigate();
   const { user, threads, inspirations, events, notifications, featuredEventId, logWorkoutCompletion, logWellActivityCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -105,7 +106,7 @@ export default function Home() {
   const handleResistance = () => { localStorage.setItem(`well-resistance-${today}`, "1"); setResistanceDone(true); if (user.email) logActivity(user.email, "resistance_training").catch(() => {}); };
   const handleStretching = () => { localStorage.setItem(`well-stretching-${today}`, "1"); setStretchingDone(true); if (user.email) logActivity(user.email, "stretching").catch(() => {}); };
   const handleBreathwork = () => { localStorage.setItem(`well-breathwork-marked-${today}`, "1"); setBreathworkDone(true); if (user.email) logActivity(user.email, "breathwork").catch(() => {}); };
-  const handleSleep = () => { localStorage.setItem(`well-sleep-${today}`, "1"); setSleepDone(true); if (user.email) logActivity(user.email, "sleep_log").catch(() => {}); };
+  const handleSleep = () => navigate("/wellness?tab=activities");
 
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
