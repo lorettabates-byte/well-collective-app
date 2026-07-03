@@ -42,6 +42,10 @@ export default function EditProfile() {
   const [avatar, setAvatar] = useState(user.avatar);
   const [birthday, setBirthday] = useState(user.birthday ?? "");
   const [showBirthdayOnCalendar, setShowBirthdayOnCalendar] = useState(user.showBirthdayOnCalendar ?? false);
+  const [heightCm, setHeightCm] = useState(user.heightCm?.toString() ?? "");
+  const [weightKg, setWeightKg] = useState(user.weightKg?.toString() ?? "");
+  const [age, setAge] = useState(user.age?.toString() ?? "");
+  const [gender, setGender] = useState<"female" | "male" | "other" | "">(user.gender ?? "");
 
   const earnedBadgeIds = new Set(
     [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
@@ -116,6 +120,10 @@ export default function EditProfile() {
       avatar,
       birthday: birthday || undefined,
       showBirthdayOnCalendar: birthday ? showBirthdayOnCalendar : false,
+      heightCm: heightCm ? parseFloat(heightCm) : undefined,
+      weightKg: weightKg ? parseFloat(weightKg) : undefined,
+      age: age ? parseInt(age, 10) : undefined,
+      gender: (gender as "female" | "male" | "other") || undefined,
     });
     if (addedAvatar && user.email) {
       logActivity(user.email, "well_activity", { reason: "profile_photo" }).catch(() => {});
@@ -257,6 +265,66 @@ export default function EditProfile() {
               </span>
             </label>
           )}
+        </div>
+
+        {/* Body metrics — used for energy balance in WELL Check */}
+        <div>
+          <label className="block text-xs font-semibold text-text-muted mb-1.5">Body Metrics <span className="font-normal text-text-dim">(optional — for energy balance)</span></label>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <p className="text-[10px] text-text-dim mb-1">Height (cm)</p>
+              <input
+                type="number"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                placeholder="e.g. 165"
+                min={100}
+                max={250}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] text-text-dim mb-1">Weight (kg)</p>
+              <input
+                type="number"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                placeholder="e.g. 65"
+                min={30}
+                max={300}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] text-text-dim mb-1">Age</p>
+              <input
+                type="number"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="e.g. 32"
+                min={13}
+                max={120}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {(["female", "male", "other"] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGender(gender === g ? "" : g)}
+                className={`py-2 text-xs font-semibold rounded-card border transition-colors capitalize ${
+                  gender === g
+                    ? "gradient-brand text-white border-transparent"
+                    : "bg-surface-2 text-text-muted border-border"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-text-dim mt-1.5">Used only to estimate energy expenditure in your daily WELL Check.</p>
         </div>
 
         <button type="submit" className="gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow">

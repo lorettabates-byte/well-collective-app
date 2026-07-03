@@ -369,7 +369,7 @@ export function uid(prefix: string): string {
 }
 
 interface AppContextValue extends PersistedState {
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
   addMessage: (threadId: string, text: string, image?: string) => void;
@@ -1877,6 +1877,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // localStorage wipes and are consistent across devices.
         savedInspirationIds: savedIds.length > 0 ? savedIds : undefined,
         likedInspirationIds: likedIds.length > 0 ? likedIds : undefined,
+        heightCm: state.user.heightCm,
+        weightKg: state.user.weightKg,
+        age: state.user.age,
+        gender: state.user.gender,
       }),
     }).catch((err) => console.error("Failed to sync member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1888,6 +1892,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.birthday,
     state.user.showBirthdayOnCalendar,
     state.user.workoutLog,
+    state.user.heightCm,
+    state.user.weightKg,
+    state.user.age,
+    state.user.gender,
     state.inspirations,
     restoreGate,
   ]);
@@ -1936,6 +1944,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // Restore saved/liked inspiration IDs from server (resilient to localStorage wipes)
             savedInspirationIds: prev.user.savedInspirationIds || member.savedInspirationIds,
             likedInspirationIds: prev.user.likedInspirationIds || member.likedInspirationIds,
+            heightCm: prev.user.heightCm ?? member.heightCm,
+            weightKg: prev.user.weightKg ?? member.weightKg,
+            age: prev.user.age ?? member.age,
+            gender: prev.user.gender ?? member.gender,
           },
         }));
       })

@@ -25,6 +25,10 @@ export interface User {
   featuredBadge?: string; // which earned badge id to show on the avatar
   savedInspirationIds?: string[]; // IDs of inspirations the user has saved
   likedInspirationIds?: string[]; // IDs of inspirations the user has liked
+  heightCm?: number;
+  weightKg?: number;
+  age?: number;
+  gender?: "female" | "male" | "other";
 }
 
 export interface NotificationSettings {

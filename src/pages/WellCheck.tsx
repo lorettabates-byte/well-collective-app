@@ -1,5 +1,5 @@
 import {
-  Activity, BookOpen, Calendar, CheckCircle2, Dumbbell, MapPin,
+  Activity, BookOpen, Calendar, CheckCircle2, Dumbbell, Flame, Footprints, MapPin,
   MessageSquare, Moon, Music, PenLine, Salad, Smartphone, Sparkles,
   Star, Target, TrendingUp, UserPlus, Video, Wind, X, Zap,
 } from "lucide-react";
@@ -36,6 +36,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   well_escape: "Attended a WELL Escape",
   tribe_add: "Added a tribe member",
   daily_challenge_accept: "Accepted a challenge",
+  steps: "Logged daily steps",
 };
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
@@ -55,6 +56,7 @@ const ACTIVITY_ICON: Record<string, LucideIcon> = {
   well_escape: MapPin,
   tribe_add: UserPlus,
   daily_challenge_accept: Target,
+  steps: Footprints,
 };
 
 // 6 fixed wellness categories shown in the check-in grid
@@ -169,6 +171,16 @@ export default function WellCheck() {
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Steps
+  const [stepsInput, setStepsInput] = useState("");
+  const [todaySteps, setTodaySteps] = useState<{ steps: number; points: number } | null>(null);
+  const [stepsSubmitting, setStepsSubmitting] = useState(false);
+  const [stepsLoading, setStepsLoading] = useState(true);
+
+  // Energy balance — today's meal calorie total
+  const [todayCalories, setTodayCalories] = useState(0);
+  const [caloriesLoading, setCaloriesLoading] = useState(true);
+
   const sleepDataRaw = localStorage.getItem(`well-sleep-data-${today}`);
   const sleepData = sleepDataRaw ? (() => { try { return JSON.parse(sleepDataRaw) as { hours: number; quality: string }; } catch { return null; } })() : null;
   const poorSleep = !!(sleepData && (sleepData.quality === "not_enough" || sleepData.hours < 6));
@@ -189,6 +201,29 @@ export default function WellCheck() {
       .finally(() => setLoading(false));
   }, [user.email]);
 
+  useEffect(() => {
+    if (!API_URL || !user.email) { setStepsLoading(false); return; }
+    fetch(`${API_URL}/api/steps/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.steps) setTodaySteps({ steps: d.steps, points: d.points ?? 0 }); })
+      .catch(() => {})
+      .finally(() => setStepsLoading(false));
+  }, [user.email]);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) { setCaloriesLoading(false); return; }
+    fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { meals: [] }))
+      .then((d) => {
+        const total = (d.meals as { estimated_calories?: number }[]).reduce(
+          (sum, m) => sum + (m.estimated_calories ?? 0), 0
+        );
+        setTodayCalories(total);
+      })
+      .catch(() => {})
+      .finally(() => setCaloriesLoading(false));
+  }, [user.email]);
+
   const doneTypes = new Set(activities.map((a) => a.type));
   const challenges = pickChallenges(doneTypes, poorSleep);
 
@@ -204,6 +239,34 @@ export default function WellCheck() {
     setChallengeStates(next);
     localStorage.setItem(`well-check-challenges-${today}`, JSON.stringify(next));
   };
+
+  const handleStepsSubmit = async () => {
+    if (!API_URL || !user.email || !stepsInput || stepsSubmitting) return;
+    const steps = parseInt(stepsInput, 10);
+    if (isNaN(steps) || steps < 0) return;
+    setStepsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/steps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberEmail: user.email, steps }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { points?: number };
+        setTodaySteps({ steps, points: data.points ?? 0 });
+        setStepsInput("");
+      }
+    } catch { /* silent */ } finally {
+      setStepsSubmitting(false);
+    }
+  };
+
+  // Mifflin-St Jeor BMR → TDEE (lightly active ×1.375)
+  const tdee = (user.heightCm && user.weightKg && user.age) ? (() => {
+    const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
+    const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
+    return Math.round(bmr * 1.375);
+  })() : null;
 
   // Count how many of the 6 grid categories are done
   const gridDoneCount = CHECKIN_GRID.filter((item) =>
@@ -294,6 +357,99 @@ export default function WellCheck() {
           {!loading && activities.length === 0 && (
             <p className="text-xs text-text-dim text-center mt-3">
               Complete activities throughout the day — they'll show up here.
+            </p>
+          )}
+        </div>
+
+        {/* Step Tracker */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Footprints size={14} className="text-brand-light shrink-0" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Today's Steps</p>
+          </div>
+          {!stepsLoading && todaySteps && (
+            <div className="flex items-center justify-between mb-3 rounded-card px-3 py-2"
+              style={{ background: "rgba(42,109,217,0.1)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-brand-light shrink-0" />
+                <span className="text-sm font-bold text-text">{todaySteps.steps.toLocaleString()} steps logged</span>
+              </div>
+              {todaySteps.points > 0 && (
+                <span className="text-xs font-bold text-yellow-400 flex items-center gap-0.5">
+                  <Star size={11} className="fill-yellow-400" />
+                  +{todaySteps.points} pts
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={stepsInput}
+              onChange={(e) => setStepsInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleStepsSubmit()}
+              placeholder={todaySteps ? "Update today's steps…" : "Enter today's step count…"}
+              min={0}
+              max={100000}
+              className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+            />
+            <button
+              onClick={handleStepsSubmit}
+              disabled={!stepsInput || stepsSubmitting}
+              className="gradient-brand text-white text-xs font-bold rounded-pill px-4 py-2.5 disabled:opacity-40"
+            >
+              {stepsSubmitting ? "Saving…" : todaySteps ? "Update" : "Log"}
+            </button>
+          </div>
+          <p className="text-[11px] text-text-dim mt-2">1 pt per 1,000 steps — up to 15 pts per day.</p>
+        </div>
+
+        {/* Nourishment Balance */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Flame size={14} className="text-orange-400 shrink-0" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Nourishment Balance</p>
+          </div>
+          {tdee !== null ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="rounded-card px-3 py-3 text-center"
+                  style={{ background: "rgba(251,146,60,0.08)", border: "0.5px solid rgba(251,146,60,0.2)" }}>
+                  <p className="text-[10px] text-text-dim font-semibold mb-1">Energy Out</p>
+                  <p className="text-lg font-bold text-orange-300">{tdee.toLocaleString()}</p>
+                  <p className="text-[10px] text-text-dim">kcal estimated</p>
+                </div>
+                <div className="rounded-card px-3 py-3 text-center"
+                  style={{ background: "rgba(42,109,217,0.1)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
+                  <p className="text-[10px] text-text-dim font-semibold mb-1">Energy In</p>
+                  {caloriesLoading ? (
+                    <p className="text-lg font-bold text-brand-light">—</p>
+                  ) : todayCalories > 0 ? (
+                    <p className="text-lg font-bold text-brand-light">{todayCalories.toLocaleString()}</p>
+                  ) : (
+                    <p className="text-sm font-semibold text-text-dim pt-2">Not tracked</p>
+                  )}
+                  <p className="text-[10px] text-text-dim">kcal logged</p>
+                </div>
+              </div>
+              {!caloriesLoading && todayCalories > 0 && (
+                <div className="rounded-card px-3 py-2 mb-2" style={{ background: "rgba(42,109,217,0.07)" }}>
+                  <p className="text-xs text-text-muted text-center">
+                    {Math.abs(tdee - todayCalories) < 150
+                      ? "Beautifully balanced energy today 🌿"
+                      : todayCalories < tdee
+                      ? `${(tdee - todayCalories).toLocaleString()} kcal below output — make sure you're fueling enough`
+                      : `${(todayCalories - tdee).toLocaleString()} kcal above estimated output — listen to your body`}
+                  </p>
+                </div>
+              )}
+              <p className="text-[11px] text-text-dim leading-relaxed">
+                Energy out uses Mifflin-St Jeor (lightly active). Log meals with calorie estimates in Nutrition to track intake.
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-text-muted leading-relaxed">
+              Add your height, weight, and age in <strong className="text-text">Edit Profile</strong> to unlock your personalized energy balance.
             </p>
           )}
         </div>

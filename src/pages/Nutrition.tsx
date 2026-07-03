@@ -87,6 +87,7 @@ export default function Nutrition() {
   const [hadFruit, setHadFruit] = useState(false);
   const [hadWholeFoods, setHadWholeFoods] = useState(false);
   const [mealNotes, setMealNotes] = useState("");
+  const [estimatedCalories, setEstimatedCalories] = useState("");
   const [savingMeal, setSavingMeal] = useState(false);
 
   useEffect(() => {
@@ -113,6 +114,7 @@ export default function Nutrition() {
           hadFruit,
           hadWholeFoods,
           notes: mealNotes.trim() || undefined,
+          estimatedCalories: estimatedCalories ? parseInt(estimatedCalories, 10) : undefined,
         }),
       });
       if (res.ok) {
@@ -122,7 +124,7 @@ export default function Nutrition() {
         setShowMealForm(false);
         setHadProtein(false); setHadVegetable(false);
         setHadWater(false); setHadFruit(false);
-        setHadWholeFoods(false); setMealNotes("");
+        setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
       }
     } catch { /* silent */ } finally {
       setSavingMeal(false);
@@ -381,6 +383,16 @@ export default function Nutrition() {
                   <span className="text-sm text-text">{text}</span>
                 </button>
               ))}
+
+              <input
+                type="number"
+                value={estimatedCalories}
+                onChange={(e) => setEstimatedCalories(e.target.value)}
+                placeholder="Estimated calories (optional)"
+                min={0}
+                max={5000}
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
 
               <textarea
                 value={mealNotes}

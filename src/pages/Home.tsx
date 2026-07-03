@@ -92,19 +92,30 @@ export default function Home() {
     setShowTour(true);
   }, []);
 
-  // Track app open, award WELL Cup points, check login streak
+  // Track app open + start session timer
   useEffect(() => {
     if (!user.email) return;
     logEvent(user.email, "app_open");
-    logActivity(user.email, "app_open").then((result) => {
-      if (result.awarded && result.streak && result.streak.streak > 1) {
-        const key = `well-streak-banner-${todayISO()}`;
-        if (!localStorage.getItem(key)) {
-          setStreakBanner({ streak: result.streak.streak, bonus: result.streak.bonus });
-        }
-      }
-    }).catch(() => {});
     return startSessionTracking(user.email);
+  }, [user.email]);
+
+  // Show login streak banner once per day (read after a short delay so streak update lands first)
+  useEffect(() => {
+    if (!user.email || !API_URL) return;
+    const key = `well-streak-banner-${todayISO()}`;
+    if (localStorage.getItem(key)) return;
+    const timer = setTimeout(() => {
+      fetch(`${API_URL}/api/streak?email=${encodeURIComponent(user.email!)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          const s = data?.streak;
+          if (s && s.current_streak > 1) {
+            setStreakBanner({ streak: s.current_streak, bonus: s.todays_bonus });
+          }
+        })
+        .catch(() => {});
+    }, 2000); // wait 2s for the app_open/streak update to settle
+    return () => clearTimeout(timer);
   }, [user.email]);
 
   const handleCloseTour = (_completed: boolean) => {

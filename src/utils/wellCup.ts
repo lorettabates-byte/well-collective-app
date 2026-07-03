@@ -20,7 +20,8 @@ export type ActivityType =
   | "daily_challenge_accept"
   | "tutorial_complete"
   | "notifications_enabled"
-  | "add_to_homescreen";
+  | "add_to_homescreen"
+  | "steps";
 
 export interface ActivityResult {
   awarded: boolean;
