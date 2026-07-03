@@ -12,6 +12,7 @@ import {
   Info,
   Lock,
   MessageCircle,
+  Moon,
   PenLine,
   RefreshCw,
   Scale,
@@ -35,6 +36,7 @@ import StreakCelebrationModal from "../components/StreakCelebrationModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
+import { logActivity } from "../utils/wellCup";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
@@ -103,6 +105,11 @@ export default function Wellness() {
   const [customWorkoutText, setCustomWorkoutText] = useState("");
   const [showCustomWorkoutForm, setShowCustomWorkoutForm] = useState(false);
 
+  const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
+  const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
+  const [breathworkMarked, setBreathworkMarked] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
+  const [sleepLogged, setSleepLogged] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+
   const CardioIcon = plan.cardio.icon;
 
   const workoutLog = user.workoutLog ?? [];
@@ -168,6 +175,30 @@ export default function Wellness() {
     saveWorkoutPlan(plan);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const handleResistanceComplete = () => {
+    localStorage.setItem(`well-resistance-${today}`, "1");
+    setResistanceDone(true);
+    if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
+  };
+
+  const handleStretchingComplete = () => {
+    localStorage.setItem(`well-stretching-${today}`, "1");
+    setStretchingDone(true);
+    if (user.email) logActivity(user.email, "stretching").catch(() => {});
+  };
+
+  const handleBreathworkMark = () => {
+    localStorage.setItem(`well-breathwork-marked-${today}`, "1");
+    setBreathworkMarked(true);
+    if (user.email) logActivity(user.email, "breathwork").catch(() => {});
+  };
+
+  const handleSleepLog = () => {
+    localStorage.setItem(`well-sleep-${today}`, "1");
+    setSleepLogged(true);
+    if (user.email) logActivity(user.email, "sleep_log").catch(() => {});
   };
 
   if (showSavedWorkouts) {
@@ -336,6 +367,16 @@ export default function Wellness() {
                     <span className="text-xs text-text-dim shrink-0">{exercise.sets}</span>
                   </button>
                 ))}
+                <button
+                  onClick={handleResistanceComplete}
+                  disabled={resistanceDone}
+                  className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-1 transition-colors ${
+                    resistanceDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                  }`}
+                >
+                  <CheckCircle2 size={13} />
+                  {resistanceDone ? "Completed · +20 pts ✓" : "Mark Complete · +20 pts"}
+                </button>
               </div>
             </section>
 
@@ -362,6 +403,16 @@ export default function Wellness() {
                     <span className="text-xs text-text-dim shrink-0">{stretch.duration}</span>
                   </button>
                 ))}
+                <button
+                  onClick={handleStretchingComplete}
+                  disabled={stretchingDone}
+                  className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-1 transition-colors ${
+                    stretchingDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                  }`}
+                >
+                  <CheckCircle2 size={13} />
+                  {stretchingDone ? "Completed · +15 pts ✓" : "Mark Complete · +15 pts"}
+                </button>
               </div>
             </section>
 
@@ -387,13 +438,27 @@ export default function Wellness() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => navigate("/breathwork")}
-                className="w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 gradient-brand text-white shadow-glow hover:opacity-90 transition-colors"
-              >
-                <Wind size={16} />
-                Start Guided Breathwork
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => navigate("/breathwork")}
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 gradient-brand text-white shadow-glow hover:opacity-90 transition-colors"
+                >
+                  <Wind size={16} />
+                  Start Guided Breathwork
+                </button>
+                <button
+                  onClick={handleBreathworkMark}
+                  disabled={breathworkMarked || breathworkLog.includes(today)}
+                  className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 transition-colors ${
+                    breathworkMarked || breathworkLog.includes(today)
+                      ? "bg-surface-2 border border-border text-brand-light"
+                      : "bg-surface-2 border border-border text-text-muted"
+                  }`}
+                >
+                  <CheckCircle2 size={13} />
+                  {breathworkMarked || breathworkLog.includes(today) ? "Breathwork Logged · +15 pts ✓" : "Did your own breathwork? Mark Complete · +15 pts"}
+                </button>
+              </div>
             </section>
           </div>
         </section>
@@ -499,6 +564,32 @@ export default function Wellness() {
           >
             <CheckCircle2 size={20} />
             {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
+          </button>
+        </section>
+
+        <section>
+          <div className="bg-gradient-to-r from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 rounded-2xl p-4 mb-4">
+            <h2 className="text-lg font-bold text-text">Sleep</h2>
+            <p className="text-xs text-text-muted mt-1">Rest and recovery are part of your wellness practice</p>
+          </div>
+          <div className="glass-card rounded-card p-4 flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+              <Moon size={18} className="text-indigo-400" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-text">Log Last Night's Sleep</h4>
+              <p className="text-xs text-text-muted mt-1">Quality sleep fuels everything else you do. Log it to earn WELL Cup points.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSleepLog}
+            disabled={sleepLogged}
+            className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 mb-2 transition-colors ${
+              sleepLogged ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
+            }`}
+          >
+            <CheckCircle2 size={16} />
+            {sleepLogged ? "Sleep Logged for Today ✓" : "Mark Sleep Complete · +10 pts"}
           </button>
         </section>
 

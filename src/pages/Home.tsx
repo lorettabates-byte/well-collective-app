@@ -1,4 +1,4 @@
-import { Bell, Calendar, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
@@ -14,6 +14,7 @@ import { LOGO_URL } from "../components/layout/MobileShell";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
+import { todayISO } from "../utils/format";
 
 const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
@@ -126,6 +127,45 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>
         <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
       </div>
+
+      {/* Morning wellness progress dashboard */}
+      {(() => {
+        const today = todayISO();
+        const workoutLog = user.workoutLog ?? [];
+        const breathworkLog = user.breathworkLog ?? [];
+        const wellActivityLog = user.wellActivityLog ?? [];
+        const items = [
+          { key: "workout", label: "Workout", emoji: "💪", done: workoutLog.includes(today) },
+          { key: "breathwork", label: "Breathwork", emoji: "🌬️", done: breathworkLog.includes(today) || localStorage.getItem(`well-breathwork-marked-${today}`) === "1" },
+          { key: "well-activity", label: "Well Activity", emoji: "❤️", done: wellActivityLog.includes(today) },
+          { key: "resistance", label: "Resistance", emoji: "🏋️", done: localStorage.getItem(`well-resistance-${today}`) === "1" },
+          { key: "stretching", label: "Stretching", emoji: "🧘", done: localStorage.getItem(`well-stretching-${today}`) === "1" },
+          { key: "sleep", label: "Sleep", emoji: "😴", done: localStorage.getItem(`well-sleep-${today}`) === "1" },
+        ];
+        const doneCount = items.filter((i) => i.done).length;
+        return (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Today's Progress</p>
+              <p className="text-xs font-bold text-brand-light">{doneCount} / {items.length}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {items.map((item) => (
+                <div
+                  key={item.key}
+                  className={`glass-card rounded-card px-3 py-2.5 flex items-center gap-2 ${item.done ? "border-brand-light/40" : ""}`}
+                >
+                  <span className="text-sm shrink-0">{item.emoji}</span>
+                  <span className="text-[11px] font-semibold text-text flex-1 min-w-0 truncate">{item.label}</span>
+                  {item.done
+                    ? <CheckCircle2 size={13} className="text-brand-light shrink-0" />
+                    : <div className="w-3 h-3 rounded-full border border-border shrink-0" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-4 gap-3 mb-6">
         {QUICK_LINKS.map(({ to, label, icon: Icon }) => (
