@@ -165,7 +165,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
     title: "Welcome to Your Profile",
     tagline: "Make it yours — your space in the WELL community.",
     bullets: [
-      { Icon: Camera, text: "Add a profile photo — earn 15 bonus points when you do!" },
+      { Icon: Camera, text: "Add a profile photo — earn 15 bonus points when you do!", highlight: true },
       { Icon: Edit, text: "Write a short bio so your community knows who you are" },
       { Icon: Cake, text: "Set your birthday to get a special celebration on your day" },
       { Icon: Award, text: "Earn badges for hitting milestones — pick one to feature on your avatar" },

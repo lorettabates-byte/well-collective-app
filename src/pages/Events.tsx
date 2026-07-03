@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, List, Star } from "lucide-react";
+import { Calendar, CalendarDays, List, Star, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useMemo, useState } from "react";
 import BirthdayCard from "../components/events/BirthdayCard";
@@ -22,6 +22,7 @@ export default function Events() {
   const { user, events, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Other members' birthdays, synced from the shared member directory so
   // everyone's opted-in birthday shows on everyone's calendar — not just
@@ -147,16 +148,29 @@ export default function Events() {
       />
 
       <SectionIntroModal sectionKey="events" />
-      <div className="mx-4 mt-4 flex flex-col gap-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-card px-3 py-2.5">
-        <div className="flex items-start gap-2">
-          <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-yellow-300 font-medium">Attending an event earns you <strong>25 WELL Cup points!</strong></p>
+      {!bannerDismissed && (
+        <div className="mx-4 mt-4 flex flex-col gap-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-card px-3 py-2.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <div className="flex items-start gap-2">
+                <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-300 font-medium">Attending an event earns you <strong>25 WELL Cup points!</strong></p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-300 font-medium">WELL Escape retreats earn <strong>100 WELL Cup points!</strong> Be sure to register ahead of time here on the app!</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="w-5 h-5 flex items-center justify-center text-yellow-500/60 hover:text-yellow-400 shrink-0 mt-0.5"
+              aria-label="Dismiss"
+            >
+              <X size={13} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-start gap-2">
-          <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-yellow-300 font-medium">WELL Escape retreats earn <strong>100 WELL Cup points!</strong> Be sure to register ahead of time here on the app!</p>
-        </div>
-      </div>
+      )}
 
       <div className="px-4 pt-4 flex flex-col gap-4">
         {view === "calendar" ? (
