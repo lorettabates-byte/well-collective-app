@@ -123,6 +123,7 @@ export default function Events() {
         subtitle="Workshops, classes, and meetups"
         icon={Calendar}
         iconColor="#0191CE"
+        showBack
         right={
           <div className="flex items-center gap-1 bg-surface-2 border border-border rounded-pill p-1">
             <button
