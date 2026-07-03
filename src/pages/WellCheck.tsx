@@ -222,9 +222,12 @@ export default function WellCheck() {
                   </div>
 
                   {state === "accepted" ? (
-                    <div className="flex items-center gap-2 text-xs font-semibold text-brand-light">
-                      <CheckCircle2 size={14} />
-                      Challenge accepted! See you tomorrow.
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-brand-light">
+                        <CheckCircle2 size={14} />
+                        Challenge accepted! See you tomorrow.
+                      </div>
+                      <span className="text-xs font-bold text-yellow-400 shrink-0">+10 pts earned</span>
                     </div>
                   ) : state === "skipped" ? (
                     <p className="text-xs text-text-dim">Skipped — maybe next time!</p>

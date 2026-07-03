@@ -15,6 +15,8 @@ export type ActivityType =
   | "well_activity"
   | "event_attend"
   | "well_escape"
+  | "tribe_add"
+  | "cardio"
   | "daily_challenge_accept";
 
 export async function logActivity(

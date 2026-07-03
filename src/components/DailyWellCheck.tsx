@@ -26,6 +26,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   event_attend: "Attended an event",
   well_escape: "Attended a WELL Escape",
   tribe_add: "Added a tribe member",
+  cardio: "Completed cardio",
   daily_challenge_accept: "Accepted a daily challenge",
 };
 
@@ -45,6 +46,7 @@ const ACTIVITY_EMOJI: Record<string, string> = {
   event_attend: "📅",
   well_escape: "🌟",
   tribe_add: "🤝",
+  cardio: "🏃",
   daily_challenge_accept: "🎯",
 };
 
@@ -53,6 +55,7 @@ const POINTS_GUIDE = [
   { emoji: "✍️", label: "Post in community", pts: 10 },
   { emoji: "💬", label: "Comment in community", pts: 5 },
   { emoji: "🎥", label: "Watch a class", pts: 20 },
+  { emoji: "🏃", label: "Complete cardio", pts: 20 },
   { emoji: "🎵", label: "Listen to music", pts: 5 },
   { emoji: "📖", label: "Read the blog", pts: 5 },
   { emoji: "🥗", label: "Log a meal", pts: 10 },
@@ -63,6 +66,7 @@ const POINTS_GUIDE = [
   { emoji: "⭐", label: "Well Activity", pts: 15 },
   { emoji: "📅", label: "Attend an event", pts: 25 },
   { emoji: "🤝", label: "Add a tribe member", pts: 5 },
+  { emoji: "🎯", label: "Accept a daily challenge", pts: 10 },
   { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
 ];
 

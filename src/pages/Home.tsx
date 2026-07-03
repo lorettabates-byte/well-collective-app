@@ -232,9 +232,12 @@ export default function Home() {
 
       <TribeActivityStrip />
 
-      <WellCupLeaderboard />
+      <div className="mb-6">
+        <SectionHeader title="WELL Cup" to="/well-cup" />
+        <WellCupLeaderboard />
+      </div>
 
-      <div className="mb-6 mt-6">
+      <div className="mb-6">
         <SectionHeader title="From the Community" to="/community" />
         <div className="flex flex-col gap-3">
           {latestThreads.map((thread) => (

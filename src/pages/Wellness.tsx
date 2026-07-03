@@ -108,6 +108,7 @@ export default function Wellness() {
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
   const [breathworkMarked, setBreathworkMarked] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
+  const [cardioDone, setCardioDone] = useState(() => localStorage.getItem(`well-cardio-${todayISO()}`) === "1");
   const [sleepLogged, setSleepLogged] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
   const [sleepHours, setSleepHours] = useState(7);
   const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "needed_more" | "">("");
@@ -179,6 +180,12 @@ export default function Wellness() {
     saveWorkoutPlan(plan);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const handleCardioComplete = () => {
+    localStorage.setItem(`well-cardio-${today}`, "1");
+    setCardioDone(true);
+    if (user.email) logActivity(user.email, "cardio").catch(() => {});
   };
 
   const handleResistanceComplete = () => {
@@ -389,6 +396,16 @@ export default function Wellness() {
                 </div>
                 <ArrowUpRight size={18} className="text-text-dim shrink-0" />
               </a>
+              <button
+                onClick={handleCardioComplete}
+                disabled={cardioDone}
+                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-2 transition-colors ${
+                  cardioDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                }`}
+              >
+                <CheckCircle2 size={13} />
+                {cardioDone ? "Cardio Logged · +20 pts ✓" : "I Did Cardio Today · +20 pts"}
+              </button>
             </section>
 
           <section>
@@ -534,7 +551,7 @@ export default function Wellness() {
         )}
         {(() => {
           const bwAlreadyDone = breathworkMarked || breathworkLog.includes(today);
-          const potentialPts = (!resistanceDone ? 20 : 0) + (!stretchingDone ? 15 : 0) + (!bwAlreadyDone ? 15 : 0);
+          const potentialPts = (!resistanceDone ? 20 : 0) + (!stretchingDone ? 15 : 0) + (!bwAlreadyDone ? 15 : 0) + (!cardioDone ? 20 : 0);
 
           const handleMarkAllWorkout = () => {
             if (completedToday) return;
@@ -552,6 +569,11 @@ export default function Wellness() {
               localStorage.setItem(`well-breathwork-marked-${today}`, "1");
               setBreathworkMarked(true);
               if (user.email) logActivity(user.email, "breathwork").catch(() => {});
+            }
+            if (!cardioDone) {
+              localStorage.setItem(`well-cardio-${today}`, "1");
+              setCardioDone(true);
+              if (user.email) logActivity(user.email, "cardio").catch(() => {});
             }
             autoWorkoutFiredRef.current = true;
             const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));

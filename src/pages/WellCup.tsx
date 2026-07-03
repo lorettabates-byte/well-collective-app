@@ -1,4 +1,4 @@
-import { ChevronDown, Trophy } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
@@ -70,6 +70,26 @@ function Countdown({ resetAt }: { resetAt: string }) {
   return <span className="text-[10px] text-text-dim">{timeLeft}</span>;
 }
 
+const POINTS_GUIDE = [
+  { emoji: "📱", label: "Open the app", pts: 5 },
+  { emoji: "✍️", label: "Post in community", pts: 10 },
+  { emoji: "💬", label: "Comment in community", pts: 5 },
+  { emoji: "🎥", label: "Watch a class", pts: 20 },
+  { emoji: "🏃", label: "Complete cardio", pts: 20 },
+  { emoji: "🎵", label: "Listen to music", pts: 5 },
+  { emoji: "📖", label: "Read the blog", pts: 5 },
+  { emoji: "🥗", label: "Log a meal", pts: 10 },
+  { emoji: "😴", label: "Log sleep", pts: 10 },
+  { emoji: "🌬️", label: "Breathwork", pts: 15 },
+  { emoji: "🧘", label: "Stretching", pts: 15 },
+  { emoji: "💪", label: "Resistance training", pts: 20 },
+  { emoji: "⭐", label: "Well Activity", pts: 15 },
+  { emoji: "📅", label: "Attend an event", pts: 25 },
+  { emoji: "🤝", label: "Add a tribe member", pts: 5 },
+  { emoji: "🎯", label: "Accept a daily challenge", pts: 10 },
+  { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
+];
+
 export default function WellCup() {
   const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
   const [resetAt, setResetAt] = useState("");
@@ -79,6 +99,7 @@ export default function WellCup() {
   const [view, setView] = useState<"top10" | "all">("top10");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [guideExpanded, setGuideExpanded] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -216,6 +237,31 @@ export default function WellCup() {
             </div>
           )}
         </div>
+        {/* Points guide */}
+        <div className="glass-card rounded-card p-4">
+          <button
+            onClick={() => setGuideExpanded((v) => !v)}
+            className="w-full flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2">
+              <Info size={14} className="text-brand-light shrink-0" />
+              <span className="text-sm font-bold text-text">How are points earned?</span>
+            </div>
+            {guideExpanded ? <ChevronUp size={16} className="text-text-dim shrink-0" /> : <ChevronDown size={16} className="text-text-dim shrink-0" />}
+          </button>
+          {guideExpanded && (
+            <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
+              {POINTS_GUIDE.map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <span className="text-base w-6 text-center shrink-0">{item.emoji}</span>
+                  <span className="text-xs text-text-muted flex-1">{item.label}</span>
+                  <span className="text-xs font-bold text-brand-light shrink-0">+{item.pts}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
