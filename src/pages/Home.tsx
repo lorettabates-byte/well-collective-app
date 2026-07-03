@@ -135,31 +135,36 @@ export default function Home() {
         const breathworkLog = user.breathworkLog ?? [];
         const wellActivityLog = user.wellActivityLog ?? [];
         const items = [
-          { key: "workout", label: "Workout", emoji: "💪", done: workoutLog.includes(today) },
-          { key: "breathwork", label: "Breathwork", emoji: "🌬️", done: breathworkLog.includes(today) || localStorage.getItem(`well-breathwork-marked-${today}`) === "1" },
-          { key: "well-activity", label: "Well Activity", emoji: "❤️", done: wellActivityLog.includes(today) },
-          { key: "resistance", label: "Resistance", emoji: "🏋️", done: localStorage.getItem(`well-resistance-${today}`) === "1" },
-          { key: "stretching", label: "Stretching", emoji: "🧘", done: localStorage.getItem(`well-stretching-${today}`) === "1" },
-          { key: "sleep", label: "Sleep", emoji: "😴", done: localStorage.getItem(`well-sleep-${today}`) === "1" },
+          { key: "workout", label: "Workout", done: workoutLog.includes(today) },
+          { key: "breathwork", label: "Breathwork", done: breathworkLog.includes(today) || localStorage.getItem(`well-breathwork-marked-${today}`) === "1" },
+          { key: "well-activity", label: "Well Activity", done: wellActivityLog.includes(today) },
+          { key: "resistance", label: "Resistance", done: localStorage.getItem(`well-resistance-${today}`) === "1" },
+          { key: "stretching", label: "Stretching", done: localStorage.getItem(`well-stretching-${today}`) === "1" },
+          { key: "sleep", label: "Sleep", done: localStorage.getItem(`well-sleep-${today}`) === "1" },
         ];
         const doneCount = items.filter((i) => i.done).length;
+        const pct = Math.round((doneCount / items.length) * 100);
         return (
-          <div className="mb-6">
+          <div className="mb-6 rounded-2xl border border-brand-light/20 p-5" style={{ background: "linear-gradient(135deg, rgba(8,18,48,0.92) 0%, rgba(12,32,72,0.88) 100%)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Today's Progress</p>
-              <p className="text-xs font-bold text-brand-light">{doneCount} / {items.length}</p>
+              <p className="text-sm font-bold text-white tracking-wide">Today's Progress</p>
+              <span className="text-xs font-semibold text-brand-light">{doneCount} of {items.length}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="h-[3px] rounded-full mb-4" style={{ background: "rgba(255,255,255,0.1)" }}>
+              <div
+                className="h-[3px] rounded-full gradient-brand transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               {items.map((item) => (
-                <div
-                  key={item.key}
-                  className={`glass-card rounded-card px-3 py-2.5 flex items-center gap-2 ${item.done ? "border-brand-light/40" : ""}`}
-                >
-                  <span className="text-sm shrink-0">{item.emoji}</span>
-                  <span className="text-[11px] font-semibold text-text flex-1 min-w-0 truncate">{item.label}</span>
+                <div key={item.key} className="flex items-center gap-2">
                   {item.done
                     ? <CheckCircle2 size={13} className="text-brand-light shrink-0" />
-                    : <div className="w-3 h-3 rounded-full border border-border shrink-0" />}
+                    : <div className="w-3 h-3 rounded-full border border-white/25 shrink-0" />}
+                  <span className={`text-xs font-semibold truncate ${item.done ? "text-white" : "text-white/40"}`}>
+                    {item.label}
+                  </span>
                 </div>
               ))}
             </div>
