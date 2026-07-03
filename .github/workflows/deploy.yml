@@ -36,3 +36,4 @@ jobs:
           protocol: ftps
           local-dir: ./dist/
           server-dir: ./
+          state-name: .ftp-state-v2.json
