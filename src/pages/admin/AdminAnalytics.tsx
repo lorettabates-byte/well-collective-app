@@ -17,7 +17,7 @@ interface DashboardData {
   };
   dau: { day: string; users: number }[];
   logins: { day: string; logins: number }[];
-  sessions: { avg_seconds: number; max_seconds: number; count: number };
+  sessions: { avg_seconds: number | null; max_seconds: number | null; count: number } | null;
   sectionVisits: { section: string; visits: number; unique_users: number }[];
   tutorialSteps: { step: number; slide_title: string; users: number }[];
   tutorialOutcomes: { outcome: string; count: number }[];
@@ -107,10 +107,10 @@ function OverviewTab({ data }: { data: DashboardData }) {
         <StatCard label="Logins (total)" value={data.summary.total_logins.toLocaleString()} />
         <StatCard
           label="Avg Session"
-          value={formatSeconds(data.sessions.avg_seconds)}
-          sub={`Max: ${formatSeconds(data.sessions.max_seconds)}`}
+          value={formatSeconds(data.sessions?.avg_seconds ?? 0)}
+          sub={`Max: ${formatSeconds(data.sessions?.max_seconds ?? 0)}`}
         />
-        <StatCard label="Sessions Tracked" value={data.sessions.count.toLocaleString()} />
+        <StatCard label="Sessions Tracked" value={(data.sessions?.count ?? 0).toLocaleString()} />
       </div>
 
       <DAUChart data={data.dau} />
