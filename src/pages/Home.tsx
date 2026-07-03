@@ -1,4 +1,5 @@
 import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
+import { logActivity } from "../utils/wellCup";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BirthdayModal from "../components/BirthdayModal";
@@ -28,7 +29,7 @@ const QUICK_LINKS = [
 ];
 
 export default function Home() {
-  const { user, threads, inspirations, events, notifications, featuredEventId } = useApp();
+  const { user, threads, inspirations, events, notifications, featuredEventId, logWorkoutCompletion, logWellActivityCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -92,6 +93,20 @@ export default function Home() {
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
+  const today = todayISO();
+  const workoutLog = user.workoutLog ?? [];
+  const breathworkLog = user.breathworkLog ?? [];
+  const wellActivityLog = user.wellActivityLog ?? [];
+  const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
+  const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
+  const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
+  const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+
+  const handleResistance = () => { localStorage.setItem(`well-resistance-${today}`, "1"); setResistanceDone(true); if (user.email) logActivity(user.email, "resistance_training").catch(() => {}); };
+  const handleStretching = () => { localStorage.setItem(`well-stretching-${today}`, "1"); setStretchingDone(true); if (user.email) logActivity(user.email, "stretching").catch(() => {}); };
+  const handleBreathwork = () => { localStorage.setItem(`well-breathwork-marked-${today}`, "1"); setBreathworkDone(true); if (user.email) logActivity(user.email, "breathwork").catch(() => {}); };
+  const handleSleep = () => { localStorage.setItem(`well-sleep-${today}`, "1"); setSleepDone(true); if (user.email) logActivity(user.email, "sleep_log").catch(() => {}); };
+
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
       <div className="flex items-center justify-between mb-6">
@@ -128,19 +143,18 @@ export default function Home() {
         <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
       </div>
 
-      {/* Morning wellness progress dashboard */}
+      {/* Morning wellness progress — tappable chips */}
       {(() => {
-        const today = todayISO();
-        const workoutLog = user.workoutLog ?? [];
-        const breathworkLog = user.breathworkLog ?? [];
-        const wellActivityLog = user.wellActivityLog ?? [];
-        const items = [
-          { key: "workout", label: "Workout", done: workoutLog.includes(today) },
-          { key: "breathwork", label: "Breathwork", done: breathworkLog.includes(today) || localStorage.getItem(`well-breathwork-marked-${today}`) === "1" },
-          { key: "well-activity", label: "Well Activity", done: wellActivityLog.includes(today) },
-          { key: "resistance", label: "Resistance", done: localStorage.getItem(`well-resistance-${today}`) === "1" },
-          { key: "stretching", label: "Stretching", done: localStorage.getItem(`well-stretching-${today}`) === "1" },
-          { key: "sleep", label: "Sleep", done: localStorage.getItem(`well-sleep-${today}`) === "1" },
+        const workoutDone = workoutLog.includes(today);
+        const wellActDone = wellActivityLog.includes(today);
+        const bwDone = breathworkLog.includes(today) || breathworkDone;
+        const items: { key: string; label: string; done: boolean; onTap?: () => void }[] = [
+          { key: "workout",      label: "Workout",      done: workoutDone,  onTap: workoutDone   ? undefined : () => logWorkoutCompletion() },
+          { key: "breathwork",   label: "Breathwork",   done: bwDone,       onTap: bwDone        ? undefined : handleBreathwork },
+          { key: "well-activity",label: "Well Activity",done: wellActDone,  onTap: wellActDone   ? undefined : () => logWellActivityCompletion() },
+          { key: "resistance",   label: "Resistance",   done: resistanceDone,onTap: resistanceDone? undefined : handleResistance },
+          { key: "stretching",   label: "Stretching",   done: stretchingDone,onTap: stretchingDone? undefined : handleStretching },
+          { key: "sleep",        label: "Sleep",        done: sleepDone,    onTap: sleepDone     ? undefined : handleSleep },
         ];
         const doneCount = items.filter((i) => i.done).length;
         const pct = Math.round((doneCount / items.length) * 100);
@@ -151,23 +165,28 @@ export default function Home() {
               <span className="text-xs font-semibold text-brand-light">{doneCount} of {items.length}</span>
             </div>
             <div className="h-[3px] rounded-full mb-4" style={{ background: "rgba(255,255,255,0.1)" }}>
-              <div
-                className="h-[3px] rounded-full gradient-brand transition-all duration-500"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               {items.map((item) => (
-                <div key={item.key} className="flex items-center gap-2">
+                <button
+                  key={item.key}
+                  onClick={item.onTap}
+                  disabled={item.done || !item.onTap}
+                  className="flex items-center gap-2 text-left disabled:cursor-default"
+                >
                   {item.done
                     ? <CheckCircle2 size={13} className="text-brand-light shrink-0" />
-                    : <div className="w-3 h-3 rounded-full border border-white/25 shrink-0" />}
-                  <span className={`text-xs font-semibold truncate ${item.done ? "text-white" : "text-white/40"}`}>
+                    : <div className="w-3 h-3 rounded-full border border-white/30 shrink-0" />}
+                  <span className={`text-xs font-semibold truncate ${item.done ? "text-white" : "text-white/50"}`}>
                     {item.label}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
+            {doneCount < items.length && (
+              <p className="text-[10px] text-white/30 text-center mt-3">Tap any item to mark it done</p>
+            )}
           </div>
         );
       })()}

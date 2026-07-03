@@ -1,4 +1,4 @@
-import { ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Folder, FolderPlus, History, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Plus, Sparkles, Trash2, Wheat, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -354,15 +354,13 @@ export default function Nutrition() {
 
               {/* Wellness questions */}
               <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">What did you include?</p>
-              {(
-                [
-                  { key: "protein", label: "💪 Protein", val: hadProtein, set: setHadProtein },
-                  { key: "vegetable", label: "🥦 Vegetable", val: hadVegetable, set: setHadVegetable },
-                  { key: "water", label: "💧 Water / hydration", val: hadWater, set: setHadWater },
-                  { key: "fruit", label: "🍓 Fruit", val: hadFruit, set: setHadFruit },
-                  { key: "whole_foods", label: "🌾 Whole / fresh foods", val: hadWholeFoods, set: setHadWholeFoods },
-                ] as const
-              ).map(({ key, label, val, set }) => (
+              {([
+                  { key: "protein",     Icon: Dumbbell, text: "Protein",          val: hadProtein,    set: setHadProtein },
+                  { key: "vegetable",   Icon: Leaf,     text: "Vegetables",        val: hadVegetable,  set: setHadVegetable },
+                  { key: "water",       Icon: Droplets, text: "Water",             val: hadWater,      set: setHadWater },
+                  { key: "fruit",       Icon: Apple,    text: "Fruit",             val: hadFruit,      set: setHadFruit },
+                  { key: "whole_foods", Icon: Wheat,    text: "Whole foods",       val: hadWholeFoods, set: setHadWholeFoods },
+                ]).map(({ key, Icon, text, val, set }) => (
                 <button
                   key={key}
                   onClick={() => set(!val)}
@@ -375,7 +373,8 @@ export default function Nutrition() {
                   }`}>
                     {val && <span className="text-white text-[10px] font-bold">✓</span>}
                   </div>
-                  <span className="text-sm text-text">{label}</span>
+                  <Icon size={15} className={val ? "text-brand-light shrink-0" : "text-text-dim shrink-0"} />
+                  <span className="text-sm text-text">{text}</span>
                 </button>
               ))}
 

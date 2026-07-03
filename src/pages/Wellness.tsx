@@ -3,8 +3,6 @@ import {
   Award,
   Bookmark,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Crown,
   Dumbbell,
   Flame,
@@ -104,6 +102,7 @@ export default function Wellness() {
   const [justSaved, setJustSaved] = useState(false);
   const [customWorkoutText, setCustomWorkoutText] = useState("");
   const [showCustomWorkoutForm, setShowCustomWorkoutForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<"workout" | "activities" | "streaks">("workout");
 
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
@@ -269,56 +268,72 @@ export default function Wellness() {
     );
   }
 
+  const TABS = [
+    { id: "workout" as const,    label: "Workout" },
+    { id: "activities" as const, label: "Activities" },
+    { id: "streaks" as const,    label: "Streaks" },
+  ];
+
   return (
     <div>
       <TopBar title="Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
-      <div className="px-4 pt-4 flex flex-col gap-6">
-        <section>
-          <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4">
-            <h2 className="text-lg font-bold text-text">Daily Workout</h2>
-            <p className="text-xs text-text-muted mt-1">Generate and complete your personalized routine</p>
+
+      {/* Tab bar */}
+      <div className="flex gap-2 px-4 pt-4 pb-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 text-xs font-semibold rounded-pill py-2 transition-colors ${
+              activeTab === tab.id
+                ? "gradient-brand text-white shadow-glow"
+                : "bg-surface-2 border border-border text-text-muted"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 pt-2 pb-6 flex flex-col gap-5">
+
+      {/* ── WORKOUT TAB ───────────────────────────────────── */}
+      {activeTab === "workout" && <>
+        {workoutLockedMessage && (
+          <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
+            <Lock size={14} className="text-brand-light shrink-0" />
+            <p className="text-xs text-text-muted">The workout generator is available to full members — upgrade to unlock.</p>
           </div>
-          {workoutLockedMessage && (
-            <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-3">
-              <Lock size={14} className="text-brand-light shrink-0" />
-              <p className="text-xs text-text-muted">
-                The workout generator is available to full members — upgrade to unlock.
-              </p>
-            </div>
-          )}
+        )}
+
+        <div className="flex gap-2">
           <button
             onClick={() => {
-              if (isTrialUser) {
-                setWorkoutLockedMessage(true);
-                setTimeout(() => setWorkoutLockedMessage(false), 3000);
-                return;
-              }
+              if (isTrialUser) { setWorkoutLockedMessage(true); setTimeout(() => setWorkoutLockedMessage(false), 3000); return; }
               setPlan(generateWorkout(new Date()));
             }}
-            className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 mb-4 ${
+            className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 ${
               isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "gradient-brand text-white shadow-glow"
             }`}
           >
-            {isTrialUser ? <Lock size={16} /> : <RefreshCw size={16} />}
-            GENERATE NEW WORKOUT
+            {isTrialUser ? <Lock size={15} /> : <RefreshCw size={15} />}
+            New Workout
           </button>
-
           <button
             onClick={handleSaveWorkout}
-            className="w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mb-4 bg-surface-2 border border-border text-text-muted"
+            className="flex items-center gap-1.5 text-xs font-semibold rounded-pill px-4 py-2.5 bg-surface-2 border border-border text-text-muted"
           >
-            <Bookmark size={14} className={justSaved ? "fill-brand-light text-brand-light" : ""} />
-            {justSaved ? "Saved!" : "Save Workout"}
+            <Bookmark size={13} className={justSaved ? "fill-brand-light text-brand-light" : ""} />
+            {justSaved ? "Saved!" : "Save"}
           </button>
+        </div>
 
-          <div className="flex flex-col gap-5">
-            <section>
-              <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-3 mb-3">
-                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
-                  <Flame size={18} className="text-orange-400 drop-shadow-[0_2px_6px_rgba(251,146,60,0.55)]" />
-                  Cardio
-                </h3>
-              </div>
+        <div className="flex flex-col gap-5">
+          <section>
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+              <Flame size={15} className="text-orange-400 shrink-0" />
+              <h3 className="text-sm font-bold text-text">Cardio</h3>
+            </div>
               <a
                 href={plan.cardio.url}
                 target="_blank"
@@ -344,13 +359,11 @@ export default function Wellness() {
               </a>
             </section>
 
-            <section>
-              <div className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-3 mb-3">
-                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
-                  <Dumbbell size={18} className="text-blue-400 drop-shadow-[0_2px_6px_rgba(59,130,246,0.55)]" />
-                  Resistance Training
-                </h3>
-              </div>
+          <section>
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+              <Dumbbell size={15} className="text-blue-400 shrink-0" />
+              <h3 className="text-sm font-bold text-text">Resistance Training</h3>
+            </div>
               <div className="glass-card rounded-card p-4 flex flex-col gap-3">
                 {plan.resistance.map((exercise) => (
                   <button
@@ -380,13 +393,11 @@ export default function Wellness() {
               </div>
             </section>
 
-            <section>
-              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-3 mb-3">
-                <h3 className="flex items-center gap-1.5 text-base font-bold text-text">
-                  <StretchHorizontal size={18} className="text-purple-400 drop-shadow-[0_2px_6px_rgba(168,85,247,0.55)]" />
-                  Stretching
-                </h3>
-              </div>
+          <section>
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+              <StretchHorizontal size={15} className="text-purple-400 shrink-0" />
+              <h3 className="text-sm font-bold text-text">Stretching</h3>
+            </div>
               <div className="glass-card rounded-card p-4 flex flex-col gap-3">
                 {plan.stretches.map((stretch) => (
                   <button
@@ -416,10 +427,11 @@ export default function Wellness() {
               </div>
             </section>
 
-            <section>
-              <div className="bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/30 rounded-xl p-3 mb-3">
-                <h3 className="text-base font-bold text-text">Breathwork</h3>
-              </div>
+          <section>
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+              <Wind size={15} className="text-teal-400 shrink-0" />
+              <h3 className="text-sm font-bold text-text">Breathwork</h3>
+            </div>
               <div className="glass-card rounded-card p-4 flex items-start gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
                   <Wind size={18} className="text-brand-light drop-shadow-[0_2px_6px_rgba(132,216,253,0.55)]" />
@@ -460,200 +472,148 @@ export default function Wellness() {
                 </button>
               </div>
             </section>
-          </div>
-        </section>
+        </div>
 
-        <section>
-          <div className="bg-gradient-to-r from-pink-500/20 to-rose-500/20 border border-pink-500/30 rounded-2xl p-4 mb-4">
-            <h2 className="flex items-center gap-1.5 text-lg font-bold text-text">
-              <Heart size={18} className="text-pink-400 drop-shadow-[0_2px_6px_rgba(244,114,182,0.55)]" />
-              Well Activity
-            </h2>
-          </div>
-          <div className="gradient-brand p-[1px] rounded-card mb-4">
-            <div className="bg-surface/95 rounded-card p-4">
-              {currentWeeklyTheme && (
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
-                  This week: {currentWeeklyTheme.title}
-                </span>
-              )}
-              <h3 className="text-base font-bold text-text mt-1.5 mb-1.5">{todaysWellActivity.title}</h3>
-              <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
-              <button
-                onClick={handleWellActivityComplete}
-                disabled={wellActivityCompleted}
-                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
-                  wellActivityCompleted
-                    ? "bg-surface-2 border border-border text-brand-light"
-                    : "gradient-brand text-white"
-                }`}
-              >
-                <CheckCircle2 size={14} />
-                {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete"}
+        {/* Custom workout + big complete button at bottom of workout tab */}
+        {!completedToday && (
+          <div className="bg-surface-2 border border-border rounded-card p-4">
+            {!showCustomWorkoutForm ? (
+              <button onClick={() => setShowCustomWorkoutForm(true)} className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-text-muted">
+                <PenLine size={15} />
+                Did your own workout? Log it here
               </button>
-            </div>
-          </div>
-
-          {!completedToday && (
-            <div className="bg-surface-2 border border-border rounded-card p-4 mb-4">
-              {!showCustomWorkoutForm ? (
-                <button
-                  onClick={() => setShowCustomWorkoutForm(true)}
-                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-text-muted"
-                >
-                  <PenLine size={15} />
-                  Did your own workout today? Log it here
-                </button>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  <p className="text-xs font-semibold text-text-muted">What did you do?</p>
-                  <textarea
-                    value={customWorkoutText}
-                    onChange={(e) => setCustomWorkoutText(e.target.value)}
-                    placeholder="e.g. 30 min run, yoga class, hike with the dog..."
-                    rows={2}
-                    className="w-full bg-surface border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setShowCustomWorkoutForm(false);
-                        setCustomWorkoutText("");
-                      }}
-                      className="flex-1 text-xs font-semibold text-text-muted border border-border rounded-pill py-2"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleLogCustomWorkout}
-                      disabled={!customWorkoutText.trim()}
-                      className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
-                    >
-                      Log It — Counts Today
-                    </button>
-                  </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-xs font-semibold text-text-muted">What did you do?</p>
+                <textarea value={customWorkoutText} onChange={(e) => setCustomWorkoutText(e.target.value)} placeholder="e.g. 30 min run, yoga class, hike with the dog..." rows={2} className="w-full bg-surface border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowCustomWorkoutForm(false); setCustomWorkoutText(""); }} className="flex-1 text-xs font-semibold text-text-muted border border-border rounded-pill py-2">Cancel</button>
+                  <button onClick={handleLogCustomWorkout} disabled={!customWorkoutText.trim()} className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50">Log It</button>
                 </div>
-              )}
-            </div>
-          )}
-
-          {completedToday && user.customWorkoutNotes?.[today] && (
-            <div className="bg-surface-2 border border-border rounded-card p-3 mb-4 flex items-start gap-2">
-              <PenLine size={14} className="text-brand-light shrink-0 mt-0.5" />
-              <p className="text-xs text-text-muted">
-                <span className="font-semibold text-text">Logged on your own:</span>{" "}
-                {user.customWorkoutNotes[today]}
-              </p>
-            </div>
-          )}
-
-          <button
-            onClick={() => {
-              if (completedToday) return;
-              const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
-              if (milestone) setCelebration({ days: milestone, label: "Workout" });
-              logWorkoutCompletion();
-              confetti({ particleCount: 100, spread: 70 });
-            }}
-            disabled={completedToday}
-            className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 mb-4 transition-colors ${
-              completedToday
-                ? "bg-surface-2 border border-border text-brand-light"
-                : "gradient-brand text-white shadow-glow"
-            }`}
-          >
-            <CheckCircle2 size={20} />
-            {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
-          </button>
-        </section>
-
-        <section>
-          <div className="bg-gradient-to-r from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 rounded-2xl p-4 mb-4">
-            <h2 className="text-lg font-bold text-text">Sleep</h2>
-            <p className="text-xs text-text-muted mt-1">Rest and recovery are part of your wellness practice</p>
+              </div>
+            )}
           </div>
-          <div className="glass-card rounded-card p-4 flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
-              <Moon size={18} className="text-indigo-400" />
+        )}
+        {completedToday && user.customWorkoutNotes?.[today] && (
+          <div className="bg-surface-2 border border-border rounded-card p-3 flex items-start gap-2">
+            <PenLine size={14} className="text-brand-light shrink-0 mt-0.5" />
+            <p className="text-xs text-text-muted"><span className="font-semibold text-text">Logged on your own:</span> {user.customWorkoutNotes[today]}</p>
+          </div>
+        )}
+        <button
+          onClick={() => {
+            if (completedToday) return;
+            const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
+            if (milestone) setCelebration({ days: milestone, label: "Workout" });
+            logWorkoutCompletion();
+            confetti({ particleCount: 100, spread: 70 });
+          }}
+          disabled={completedToday}
+          className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 transition-colors ${
+            completedToday ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
+          }`}
+        >
+          <CheckCircle2 size={20} />
+          {completedToday ? "Workout Complete for Today ✓" : "Mark Today's Workout Complete"}
+        </button>
+      </>}
+
+      {/* ── ACTIVITIES TAB ──────────────────────────────────── */}
+      {activeTab === "activities" && <>
+        {/* Well Activity */}
+        <div className="gradient-brand p-[1px] rounded-card">
+          <div className="bg-surface/95 rounded-card p-4">
+            {currentWeeklyTheme && (
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
+                This week: {currentWeeklyTheme.title}
+              </span>
+            )}
+            <div className="flex items-center gap-2 mt-1 mb-1.5">
+              <Heart size={14} className="text-pink-400 shrink-0" />
+              <h3 className="text-sm font-bold text-text">Today's Well Activity</h3>
             </div>
-            <div className="flex-1">
-              <h4 className="text-sm font-bold text-text">Log Last Night's Sleep</h4>
-              <p className="text-xs text-text-muted mt-1">Quality sleep fuels everything else you do. Log it to earn WELL Cup points.</p>
-            </div>
+            <p className="text-xs font-bold text-text mb-1">{todaysWellActivity.title}</p>
+            <p className="text-sm text-text-muted leading-relaxed">{todaysWellActivity.description}</p>
+            <button
+              onClick={handleWellActivityComplete}
+              disabled={wellActivityCompleted}
+              className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-3 transition-colors ${
+                wellActivityCompleted ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+              }`}
+            >
+              <CheckCircle2 size={14} />
+              {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete · +15 pts"}
+            </button>
+          </div>
+        </div>
+
+        {/* Sleep */}
+        <div className="glass-card rounded-card p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+            <Moon size={18} className="text-indigo-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-text">Sleep</p>
+            <p className="text-xs text-text-muted mt-0.5">Log last night's rest for WELL Cup points</p>
           </div>
           <button
             onClick={handleSleepLog}
             disabled={sleepLogged}
-            className={`w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 mb-2 transition-colors ${
-              sleepLogged ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
+            className={`shrink-0 text-xs font-semibold rounded-pill px-3 py-1.5 transition-colors ${
+              sleepLogged ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
             }`}
           >
-            <CheckCircle2 size={16} />
-            {sleepLogged ? "Sleep Logged for Today ✓" : "Mark Sleep Complete · +10 pts"}
+            {sleepLogged ? "Logged ✓" : "+10 pts"}
           </button>
-        </section>
+        </div>
+      </>}
 
-        <section>
-          <div className="bg-gradient-to-r from-brand-blue/20 to-brand-light/20 border border-brand-light/30 rounded-2xl p-4 mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-text">Your Streaks &amp; Badges</h2>
-            <button
-              onClick={() => setBadgesExpanded(!badgesExpanded)}
-              className="flex items-center gap-1 text-xs text-brand-light hover:text-brand-blue transition-colors"
-            >
-              {badgesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      {/* ── STREAKS TAB ─────────────────────────────────────── */}
+      {activeTab === "streaks" && <>
+        <div className="glass-card rounded-card p-4 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
+            <Flame size={22} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-2xl font-bold text-text leading-none">{streak} {streak === 1 ? "day" : "days"}</p>
+            <p className="text-xs text-text-muted mt-1">Current workout streak</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+              <Wind size={16} className="text-brand-light" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-text leading-none">{breathworkStreak} {breathworkStreak === 1 ? "day" : "days"}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">Breathwork streak</p>
+            </div>
+          </div>
+          <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+              <Heart size={16} className="text-pink-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-text leading-none">{wellActivityStreak} {wellActivityStreak === 1 ? "day" : "days"}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">Well Activity streak</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-text">Activity Badges</h3>
+            <button onClick={() => setBadgesExpanded(!badgesExpanded)} className="text-xs text-brand-light">
+              {badgesExpanded ? "Show less" : `See all ${badges.length}`}
             </button>
           </div>
-
-          <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
-              <Flame size={22} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-2xl font-bold text-text leading-none">
-                {streak} {streak === 1 ? "day" : "days"}
-              </p>
-              <p className="text-xs text-text-muted mt-1">Current workout streak — keep it going!</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
-                <Wind size={16} className="text-brand-light" />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-text leading-none">
-                  {breathworkStreak} {breathworkStreak === 1 ? "day" : "days"}
-                </p>
-                <p className="text-[11px] text-text-muted mt-0.5">Breathwork streak</p>
-              </div>
-            </div>
-            <div className="glass-card rounded-card p-3 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
-                <Heart size={16} className="text-pink-400" />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-text leading-none">
-                  {wellActivityStreak} {wellActivityStreak === 1 ? "day" : "days"}
-                </p>
-                <p className="text-[11px] text-text-muted mt-0.5">Well Activity streak</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={`grid gap-3 transition-all ${badgesExpanded ? "grid-cols-2" : "grid-cols-4"}`}>
+          <div className={`grid gap-3 ${badgesExpanded ? "grid-cols-2" : "grid-cols-4"}`}>
             {(badgesExpanded ? badges : badges.slice(0, 4)).map((badge) => {
               const Icon = BADGE_ICONS[badge.icon] ?? Award;
               return (
-                <div
-                  key={badge.id}
-                  className={`glass-card rounded-card p-3 flex flex-col gap-1.5 ${badge.earned ? "" : "opacity-40"}`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                      badge.earned ? "gradient-brand" : "bg-surface-2 border border-border"
-                    }`}
-                  >
+                <div key={badge.id} className={`glass-card rounded-card p-3 flex flex-col gap-1.5 ${badge.earned ? "" : "opacity-40"}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${badge.earned ? "gradient-brand" : "bg-surface-2 border border-border"}`}>
                     <Icon size={16} className={badge.earned ? "text-white" : "text-text-dim"} />
                   </div>
                   {badgesExpanded && (
@@ -666,27 +626,17 @@ export default function Wellness() {
               );
             })}
           </div>
-          {!badgesExpanded && <p className="text-xs text-text-muted mt-2">Click to see all {badges.length} badges</p>}
+        </div>
 
-          <h3 className="text-sm font-bold text-text mt-5 mb-3">Profile Badges</h3>
-          <p className="text-xs text-text-muted mb-3">
-            Earned through activity, tenure, or granted by Loretta — lit up once you've got them.
-          </p>
+        <div>
+          <h3 className="text-sm font-bold text-text mb-1">Profile Badges</h3>
+          <p className="text-xs text-text-muted mb-3">Earned through activity, tenure, or granted by Loretta.</p>
           <div className="grid grid-cols-4 gap-3">
             {ALL_BADGES.map((badge) => {
               const earned = profileBadgeIds.has(badge.id);
               return (
-                <div
-                  key={badge.id}
-                  className={`glass-card rounded-card p-3 flex flex-col items-center gap-1.5 text-center ${
-                    earned ? "" : "opacity-40"
-                  }`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${
-                      earned ? "bg-white" : "bg-surface-2 border border-border"
-                    }`}
-                  >
+                <div key={badge.id} className={`glass-card rounded-card p-3 flex flex-col items-center gap-1.5 text-center ${earned ? "" : "opacity-40"}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${earned ? "bg-white" : "bg-surface-2 border border-border"}`}>
                     {badge.icon}
                   </div>
                   <p className="text-[10px] font-semibold text-text leading-tight">{badge.label}</p>
@@ -694,7 +644,9 @@ export default function Wellness() {
               );
             })}
           </div>
-        </section>
+        </div>
+      </>}
+
       </div>
 
       {selected && (

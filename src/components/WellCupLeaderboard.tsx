@@ -65,7 +65,6 @@ export default function WellCupLeaderboard() {
   };
 
   if (loading) return null;
-  if (allEntries.length === 0 && !yesterday) return null;
 
   const displayed = view === "top5" ? allEntries.slice(0, 5)
     : view === "top10" ? allEntries.slice(0, 10)
@@ -95,7 +94,10 @@ export default function WellCupLeaderboard() {
       )}
 
       {allEntries.length === 0 ? (
-        <p className="text-xs text-text-muted text-center py-2">No activity yet today — be the first!</p>
+        <div className="py-3 text-center">
+          <p className="text-xs font-semibold text-text mb-1">No points logged yet today</p>
+          <p className="text-[11px] text-text-muted">Open the app, log a meal, watch a class — every action earns points. Be the first on the board!</p>
+        </div>
       ) : (
         <>
           <div className="flex flex-col gap-2">
