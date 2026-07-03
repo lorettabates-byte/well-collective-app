@@ -1,19 +1,13 @@
 import { ArrowUpRight, Rss } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
-import { useEffect } from "react";
 import BlogPostCard from "../components/blog/BlogPostCard";
 import TopBar from "../components/layout/TopBar";
 import { BLOG_URL, useBlogFeed } from "../hooks/useBlogFeed";
 import { useApp } from "../store/AppContext";
-import { logActivity } from "../utils/wellCup";
 
 export default function Blog() {
   const { posts, loading, error } = useBlogFeed();
   const { user } = useApp();
-
-  useEffect(() => {
-    if (user.email) logActivity(user.email, "blog_open");
-  }, [user.email]);
 
   return (
     <div>
@@ -48,7 +42,7 @@ export default function Blog() {
         {!loading && !error && (
           <div className="flex flex-col gap-4">
             {posts.map((post) => (
-              <BlogPostCard key={post.link} post={post} />
+              <BlogPostCard key={post.link} post={post} userEmail={user.email} />
             ))}
           </div>
         )}

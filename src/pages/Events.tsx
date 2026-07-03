@@ -147,9 +147,15 @@ export default function Events() {
       />
 
       <SectionIntroModal sectionKey="events" />
-      <div className="mx-4 mt-4 flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-card px-3 py-2.5">
-        <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0" />
-        <p className="text-xs text-yellow-300 font-medium">Attending an event earns you <strong>25 WELL Cup points!</strong></p>
+      <div className="mx-4 mt-4 flex flex-col gap-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-card px-3 py-2.5">
+        <div className="flex items-start gap-2">
+          <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-yellow-300 font-medium">Attending an event earns you <strong>25 WELL Cup points!</strong></p>
+        </div>
+        <div className="flex items-start gap-2">
+          <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-yellow-300 font-medium">WELL Escape retreats earn <strong>100 WELL Cup points!</strong> Be sure to register ahead of time here on the app!</p>
+        </div>
       </div>
 
       <div className="px-4 pt-4 flex flex-col gap-4">

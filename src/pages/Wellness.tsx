@@ -1,9 +1,11 @@
 import SectionIntroModal from "../components/SectionIntroModal";
 import {
+  Activity,
   ArrowUpRight,
   Award,
   Bookmark,
   CheckCircle2,
+  ChevronRight,
   Crown,
   Dumbbell,
   Flame,
@@ -28,7 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import confetti from "canvas-confetti";
 import ExerciseInfoModal from "../components/ExerciseInfoModal";
 import StreakCelebrationModal from "../components/StreakCelebrationModal";
@@ -318,6 +320,24 @@ export default function Wellness() {
     <div>
       <TopBar title="Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
       <SectionIntroModal sectionKey="wellness" />
+
+      <div className="px-4 pt-4">
+        <Link
+          to="/well-check"
+          className="flex items-center gap-3 gradient-brand p-[1px] rounded-card shadow-glow mb-0"
+        >
+          <div className="flex items-center gap-3 bg-surface/95 rounded-card px-4 py-3 w-full">
+            <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center shrink-0">
+              <Activity size={16} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">Daily WELL Check</p>
+              <p className="text-xs text-text-muted">Log activities &amp; earn points</p>
+            </div>
+            <ChevronRight size={16} className="text-text-dim shrink-0" />
+          </div>
+        </Link>
+      </div>
 
       {/* Tab bar */}
       <div className="flex gap-2 px-4 pt-4 pb-2">

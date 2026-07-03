@@ -1,16 +1,22 @@
 import { ArrowUpRight } from "lucide-react";
 import type { BlogPost } from "../../hooks/useBlogFeed";
+import { logActivity } from "../../utils/wellCup";
 
-export default function BlogPostCard({ post, compact }: { post: BlogPost; compact?: boolean }) {
+export default function BlogPostCard({ post, compact, userEmail }: { post: BlogPost; compact?: boolean; userEmail?: string }) {
   const date = post.pubDate
     ? new Date(post.pubDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "";
+
+  const handleClick = () => {
+    if (userEmail) logActivity(userEmail, "blog_open").catch(() => {});
+  };
 
   return (
     <a
       href={post.link}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleClick}
       className={`block glass-card rounded-card overflow-hidden animate-fade-in-up ${compact ? "w-60 shrink-0" : ""}`}
     >
       {post.thumbnail && (
