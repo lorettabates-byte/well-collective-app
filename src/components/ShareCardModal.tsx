@@ -13,6 +13,7 @@ interface ShareCardModalProps {
 }
 
 const LORETTA_IMAGE = "https://lorettabates.com/wp-content/uploads/2025/11/Loretta_Bates_Bio.jpg";
+const WELL_LOGO = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
 const JOIN_URL = "https://lorettabates.com";
 
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
@@ -44,10 +45,12 @@ export default function ShareCardModal({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [lorrettaImageDataUrl, setLorrettaImageDataUrl] = useState<string | null>(null);
+  const [wellLogoDataUrl, setWellLogoDataUrl] = useState<string | null>(null);
   const [recipeImageDataUrl, setRecipeImageDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchImageAsDataUrl(LORETTA_IMAGE).then(setLorrettaImageDataUrl);
+    fetchImageAsDataUrl(WELL_LOGO).then(setWellLogoDataUrl);
     if (recipeImage) {
       fetchImageAsDataUrl(recipeImage).then(setRecipeImageDataUrl);
     }
@@ -147,6 +150,15 @@ export default function ShareCardModal({
 
   const cardContent = (
     <>
+      {wellLogoDataUrl && (
+        <img
+          src={wellLogoDataUrl}
+          alt="WELL Collective"
+          className="w-36 h-auto object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
+
       {recipeImageDataUrl && (
         <img
           src={recipeImageDataUrl}

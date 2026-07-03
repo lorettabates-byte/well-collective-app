@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -21,7 +21,7 @@ function getAuthHeaders(): HeadersInit {
 }
 
 export default function AdminInspirations() {
-  const { user, inspirations, addInspiration, deleteInspiration } = useApp();
+  const { user, inspirations, addInspiration, deleteInspiration, updateInspiration } = useApp();
   const [cadence, setCadence] = useState<InspirationCadence>("daily");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -109,7 +109,26 @@ export default function AdminInspirations() {
     }
   };
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+
+  const startEdit = (id: string, title: string, body: string) => {
+    setEditingId(id);
+    setEditTitle(title);
+    setEditBody(body);
+  };
+
+  const saveEdit = (id: string) => {
+    if (editTitle.trim() && editBody.trim()) {
+      updateInspiration(id, { title: editTitle.trim(), body: editBody.trim() });
+    }
+    setEditingId(null);
+  };
+
   const sorted = [...inspirations].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+  const upcoming = sorted.filter((i) => new Date(i.sentAt) > new Date());
+  const past = sorted.filter((i) => new Date(i.sentAt) <= new Date());
 
   return (
     <div>
@@ -299,25 +318,104 @@ export default function AdminInspirations() {
           </button>
         </form>
 
-        <h2 className="text-sm font-bold text-text mb-3">All Inspirations</h2>
-        <div className="flex flex-col gap-2.5">
-          {sorted.map((inspiration) => (
-            <div key={inspiration.id} className="glass-card rounded-card px-4 py-3 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">{inspiration.cadence}</span>
-                  <span className="text-[11px] text-text-dim">{timeAgo(inspiration.sentAt)}</span>
+        {upcoming.length > 0 && (
+          <>
+            <h2 className="text-sm font-bold text-text mb-3">📅 Upcoming ({upcoming.length})</h2>
+            <div className="flex flex-col gap-2.5 mb-6">
+              {upcoming.map((inspiration) => (
+                <div key={inspiration.id} className="glass-card rounded-card px-4 py-3 border border-brand-blue/30">
+                  {editingId === inspiration.id ? (
+                    <div className="flex flex-col gap-2">
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-blue"
+                      />
+                      <textarea
+                        value={editBody}
+                        onChange={(e) => setEditBody(e.target.value)}
+                        rows={3}
+                        className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-blue resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(inspiration.id)} className="flex items-center gap-1 text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5">
+                          <Check size={12} /> Save
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="text-xs text-text-muted border border-border rounded-pill px-3 py-1.5">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">{inspiration.cadence}</span>
+                          <span className="text-[11px] text-text-dim">{new Date(inspiration.sentAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                        </div>
+                        <p className="text-sm font-semibold text-text">{inspiration.title}</p>
+                        <p className="text-xs text-text-muted">{inspiration.body}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => startEdit(inspiration.id, inspiration.title, inspiration.body)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light" aria-label="Edit">
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => deleteInspiration(inspiration.id)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400" aria-label="Delete">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm font-semibold text-text">{inspiration.title}</p>
-                <p className="text-xs text-text-muted line-clamp-2">{inspiration.body}</p>
-              </div>
-              <button
-                onClick={() => deleteInspiration(inspiration.id)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400"
-                aria-label="Delete inspiration"
-              >
-                <Trash2 size={14} />
-              </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <h2 className="text-sm font-bold text-text mb-3">All Inspirations ({past.length})</h2>
+        <div className="flex flex-col gap-2.5">
+          {past.map((inspiration) => (
+            <div key={inspiration.id} className="glass-card rounded-card px-4 py-3 flex items-start gap-3">
+              {editingId === inspiration.id ? (
+                <div className="flex flex-col gap-2 w-full">
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-blue"
+                  />
+                  <textarea
+                    value={editBody}
+                    onChange={(e) => setEditBody(e.target.value)}
+                    rows={3}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-blue resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => saveEdit(inspiration.id)} className="flex items-center gap-1 text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5">
+                      <Check size={12} /> Save
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-xs text-text-muted border border-border rounded-pill px-3 py-1.5">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">{inspiration.cadence}</span>
+                      <span className="text-[11px] text-text-dim">{timeAgo(inspiration.sentAt)}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-text">{inspiration.title}</p>
+                    <p className="text-xs text-text-muted line-clamp-2">{inspiration.body}</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEdit(inspiration.id, inspiration.title, inspiration.body)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light" aria-label="Edit">
+                      <Pencil size={13} />
+                    </button>
+                    <button onClick={() => deleteInspiration(inspiration.id)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400" aria-label="Delete">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

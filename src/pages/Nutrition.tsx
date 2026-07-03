@@ -1,4 +1,5 @@
 import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Plus, Sparkles, Trash2, Wheat, X } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -302,6 +303,7 @@ export default function Nutrition() {
   return (
     <div>
       <TopBar title="Nutrition" subtitle="Recipes inspired by this week's theme" icon={ChefHat} iconColor="#0191CE" showBack />
+      <SectionIntroModal sectionKey="nutrition" />
       <div className="px-4 pt-4 flex flex-col gap-4">
         {currentWeeklyTheme && (
           <div className="gradient-brand p-[1px] rounded-card">

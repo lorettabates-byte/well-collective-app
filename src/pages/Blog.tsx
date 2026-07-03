@@ -1,4 +1,5 @@
 import { ArrowUpRight, Rss } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect } from "react";
 import BlogPostCard from "../components/blog/BlogPostCard";
 import TopBar from "../components/layout/TopBar";
@@ -17,6 +18,7 @@ export default function Blog() {
   return (
     <div>
       <TopBar title="Blog" subtitle="Fresh reads from Loretta" icon={Rss} iconColor="#0191CE" showBack />
+      <SectionIntroModal sectionKey="blog" />
       <div className="px-4 pt-4">
         {loading && (
           <div className="flex flex-col items-center py-16 gap-3">

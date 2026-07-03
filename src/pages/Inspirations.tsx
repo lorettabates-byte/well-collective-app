@@ -1,4 +1,5 @@
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import InspirationCard from "../components/inspiration/InspirationCard";
@@ -36,7 +37,8 @@ export default function Inspirations() {
 
   return (
     <div>
-      <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#0191CE" />
+      <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#0191CE" showBack />
+      <SectionIntroModal sectionKey="inspiration" />
       <div className="px-4 pt-4">
         <a
           href="https://lorettabates.com/30-day-life-lift/"

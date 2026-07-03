@@ -1,4 +1,5 @@
 import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, Eye, EyeOff, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Trophy, Users } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -86,6 +87,7 @@ export default function Profile() {
 
   return (
     <div className="px-4 pt-6">
+      <SectionIntroModal sectionKey="profile" />
       <div className="flex flex-col items-center text-center mb-6">
         <Avatar src={user.avatar} alt={user.name} size={84} ring badgeId={featuredBadgeId} />
         <div className="flex items-center gap-2 mt-3">

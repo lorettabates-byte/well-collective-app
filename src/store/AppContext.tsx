@@ -386,6 +386,7 @@ interface AppContextValue extends PersistedState {
   toggleInspirationSave: (inspirationId: string) => void;
   addInspiration: (inspiration: Omit<Inspiration, "id" | "likes" | "savedBy">) => void;
   deleteInspiration: (inspirationId: string) => void;
+  updateInspiration: (inspirationId: string, updates: Partial<Pick<Inspiration, "title" | "body" | "cadence">>) => void;
   saveWorkoutPlan: (plan: WorkoutPlan) => void;
   removeSavedWorkout: (savedId: string) => void;
   toggleRecipeSave: (recipe: Recipe) => void;
@@ -1037,6 +1038,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       inspirations: prev.inspirations.filter((inspiration) => inspiration.id !== inspirationId),
+    }));
+  };
+
+  const updateInspiration: AppContextValue["updateInspiration"] = (inspirationId, updates) => {
+    setState((prev) => ({
+      ...prev,
+      inspirations: prev.inspirations.map((i) => i.id === inspirationId ? { ...i, ...updates } : i),
     }));
   };
 
@@ -2007,6 +2015,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     removeMealPlanEntry,
     addInspiration,
     deleteInspiration,
+    updateInspiration,
     toggleRsvp,
     addEvent,
     updateEvent,

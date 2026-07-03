@@ -1,3 +1,4 @@
+import SectionIntroModal from "../components/SectionIntroModal";
 import {
   ArrowUpRight,
   Award,
@@ -316,6 +317,7 @@ export default function Wellness() {
   return (
     <div>
       <TopBar title="Wellness" subtitle="Workouts, streaks & mindful activities" icon={Waves} iconColor="#84D8FD" showBack />
+      <SectionIntroModal sectionKey="wellness" />
 
       {/* Tab bar */}
       <div className="flex gap-2 px-4 pt-4 pb-2">

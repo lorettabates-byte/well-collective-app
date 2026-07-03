@@ -1,4 +1,4 @@
-import { Plus, UserMinus, Users, X } from "lucide-react";
+import { Plus, Search, UserMinus, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -26,6 +26,8 @@ export default function Tribe() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
+  const [addSearch, setAddSearch] = useState("");
+  const [tribeSearch, setTribeSearch] = useState("");
 
   const setTribeAndPersist = (members: DirectoryMember[]) => {
     setTribe(members);
@@ -86,7 +88,12 @@ export default function Tribe() {
   }, [user.email]);
 
   const tribeIds = new Set(tribe.map((m) => m.id));
-  const addable = allMembers.filter((m) => !tribeIds.has(m.id));
+  const addable = allMembers
+    .filter((m) => !tribeIds.has(m.id))
+    .filter((m) => !addSearch || m.name.toLowerCase().includes(addSearch.toLowerCase()));
+  const filteredTribe = tribe.filter(
+    (m) => !tribeSearch || m.name.toLowerCase().includes(tribeSearch.toLowerCase())
+  );
 
   const handleAdd = async (memberId: string) => {
     if (!API_URL || !user.email) return;
@@ -133,12 +140,15 @@ export default function Tribe() {
 
         {showAdd && (
           <div className="mb-6">
-            {addable.length > 0 && (
-              <p className="text-[11px] text-text-muted px-1 mb-1.5">
-                {addable.length} member{addable.length === 1 ? "" : "s"} available
-                {addable.length > 4 ? " — scroll for more" : ""}
-              </p>
-            )}
+            <div className="relative mb-2">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+              <input
+                value={addSearch}
+                onChange={(e) => setAddSearch(e.target.value)}
+                placeholder="Search members…"
+                className="w-full bg-surface-2 border border-border rounded-pill pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+              />
+            </div>
             <div className="relative">
               <div className="glass-card rounded-card p-3 flex flex-col gap-2 max-h-72 overflow-y-auto">
                 {addable.length === 0 ? (
@@ -170,6 +180,18 @@ export default function Tribe() {
           </div>
         )}
 
+        {!loading && tribe.length > 0 && (
+          <div className="relative mb-3">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+            <input
+              value={tribeSearch}
+              onChange={(e) => setTribeSearch(e.target.value)}
+              placeholder="Search your tribe…"
+              className="w-full bg-surface-2 border border-border rounded-pill pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+            />
+          </div>
+        )}
+
         {loading ? (
           <p className="text-sm text-text-muted text-center py-8">Loading your WELL Tribe…</p>
         ) : tribe.length === 0 ? (
@@ -181,7 +203,7 @@ export default function Tribe() {
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {tribe.map((member) => (
+            {filteredTribe.map((member) => (
               <div key={member.id} className="glass-card rounded-card px-4 py-3 flex items-center gap-3">
                 <Link to={`/member/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar src={member.avatar || ""} alt={member.name} size={40} badgeId={resolveFeaturedBadge(member)} />

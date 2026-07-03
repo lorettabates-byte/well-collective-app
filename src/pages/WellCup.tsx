@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp, Info, Share2, Trophy } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
@@ -155,6 +156,7 @@ export default function WellCup() {
   return (
     <div>
       <TopBar title="WELL Cup" subtitle="Today's leaderboard & all-time champions" icon={Trophy} iconColor="#FACC15" showBack />
+      <SectionIntroModal sectionKey="well-cup" />
 
       <div className="px-4 pt-4 pb-8 flex flex-col gap-4">
 

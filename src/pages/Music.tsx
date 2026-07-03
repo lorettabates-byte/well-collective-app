@@ -1,4 +1,5 @@
 import { Clock, Music as MusicIcon, Volume2, Wind } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Playlist from "../components/music/Playlist";
@@ -167,6 +168,7 @@ export default function Music() {
   return (
     <div>
       <TopBar title="Music" subtitle="Playlist, sounds & breathwork" icon={MusicIcon} iconColor="#0191CE" showBack />
+      <SectionIntroModal sectionKey="music" />
       <div className="px-4 pt-4">
         <div className="grid grid-cols-3 gap-2 mb-4">
           <button

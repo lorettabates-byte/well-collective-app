@@ -1,4 +1,5 @@
 import { Calendar, CalendarDays, List, Star } from "lucide-react";
+import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useMemo, useState } from "react";
 import BirthdayCard from "../components/events/BirthdayCard";
 import CalendarMonth from "../components/events/CalendarMonth";
@@ -144,6 +145,12 @@ export default function Events() {
           </div>
         }
       />
+
+      <SectionIntroModal sectionKey="events" />
+      <div className="mx-4 mt-4 flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-card px-3 py-2.5">
+        <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0" />
+        <p className="text-xs text-yellow-300 font-medium">Attending an event earns you <strong>25 WELL Cup points!</strong></p>
+      </div>
 
       <div className="px-4 pt-4 flex flex-col gap-4">
         {view === "calendar" ? (
