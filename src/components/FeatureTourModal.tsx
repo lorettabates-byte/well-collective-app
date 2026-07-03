@@ -33,13 +33,28 @@ interface Slide {
   findIt?: NavStop[];
   avatarDemo?: boolean;
   interactive?: "notifications" | "homescreen";
+  introPoints?: boolean;
 }
 
 const SLIDES: Slide[] = [
   {
     icon: Sparkles,
     title: "Welcome to WELL Collective 💙",
-    body: "This is your home base for community, classes, and daily inspiration. Complete this tour and earn 50 bonus points to jump-start your WELL Cup journey! 🏆",
+    body: "This is your home base for community, classes, and daily inspiration. Let's take a quick look around!",
+    introPoints: true,
+  },
+  {
+    icon: Trophy,
+    title: "WELL Cup 🏆",
+    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins!",
+    findIt: [{ icon: Trophy, label: "Well Cup" }],
+  },
+  {
+    icon: User,
+    title: "Your Profile",
+    body: "Add a profile photo, write a short bio, and set your birthday. Adding a photo earns you 15 bonus points — and we love celebrating birthdays here 🎂",
+    findIt: [{ icon: User, label: "Profile" }],
+    avatarDemo: true,
   },
   {
     icon: MessageCircle,
@@ -63,12 +78,6 @@ const SLIDES: Slide[] = [
     findIt: [{ icon: Salad, label: "Nutrition" }],
   },
   {
-    icon: Trophy,
-    title: "WELL Cup 🏆",
-    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins!",
-    findIt: [{ icon: Trophy, label: "Well Cup" }],
-  },
-  {
     icon: Music,
     title: "Music",
     body: "Loretta has made songs just for you — only available here. Sort by category to find the right vibe, or tap the heart to save songs to your Favorites playlist.",
@@ -82,13 +91,6 @@ const SLIDES: Slide[] = [
       { icon: Sparkles, label: "Inspiration" },
       { icon: Calendar, label: "Events" },
     ],
-  },
-  {
-    icon: User,
-    title: "Your Profile",
-    body: "Add a photo, write a short bio, and set your birthday — add it to the calendar if you'd like (we love celebrating birthdays here 🎂).",
-    findIt: [{ icon: User, label: "Profile" }],
-    avatarDemo: true,
   },
   {
     icon: Users,
@@ -261,13 +263,29 @@ export default function FeatureTourModal({
           <h2 className="text-lg font-bold text-text">{slide.title}</h2>
           <p className="text-sm text-text-muted leading-relaxed min-h-[60px]">{slide.body}</p>
 
+          {/* Intro slide: big points call-out */}
+          {slide.introPoints && (
+            <div className="w-full rounded-card bg-yellow-500/10 border border-yellow-500/30 px-4 py-3 flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Star size={18} className="text-yellow-400 fill-yellow-400" />
+                <Star size={22} className="text-yellow-400 fill-yellow-400" />
+                <Star size={18} className="text-yellow-400 fill-yellow-400" />
+              </div>
+              <p className="text-sm font-bold text-yellow-300">Complete this tour and earn</p>
+              <p className="text-3xl font-extrabold text-yellow-400 leading-tight">50 WELL Cup Points!</p>
+              <p className="text-xs text-yellow-300/70">Plus bonus points along the way</p>
+            </div>
+          )}
+
           {/* Interactive: Notifications */}
           {slide.interactive === "notifications" && (
             <div className="w-full flex flex-col items-center gap-2">
               {notifDone ? (
                 <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
                   <CheckCircle2 size={16} className="text-green-400" />
-                  {Notification.permission === "granted" ? "Notifications enabled!" : "Got it — you can change this anytime in Profile."}
+                  {typeof Notification !== "undefined" && Notification.permission === "granted"
+                    ? "Notifications enabled!"
+                    : "Got it — you can change this anytime in Profile."}
                 </div>
               ) : (
                 <button
@@ -305,10 +323,8 @@ export default function FeatureTourModal({
             </div>
           )}
 
-          {/* Nav trail for info slides */}
           {slide.findIt && <NavTrail stops={slide.findIt} />}
 
-          {/* Step dots */}
           <div className="flex items-center gap-1.5 my-1">
             {SLIDES.map((_, i) => (
               <div

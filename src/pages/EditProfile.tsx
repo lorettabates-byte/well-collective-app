@@ -6,6 +6,7 @@ import Avatar from "../components/ui/Avatar";
 import { AVATAR_OPTIONS } from "../data/avatarOptions";
 import { ALL_BADGES, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
+import { logActivity } from "../utils/wellCup";
 
 const MONTHS = [
   { value: "01", label: "January" },
@@ -107,6 +108,8 @@ export default function EditProfile() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const hadAvatar = !!user.avatar;
+    const addedAvatar = !hadAvatar && !!avatar;
     updateProfile({
       name: name.trim() || user.name,
       bio: bio.trim(),
@@ -114,6 +117,9 @@ export default function EditProfile() {
       birthday: birthday || undefined,
       showBirthdayOnCalendar: birthday ? showBirthdayOnCalendar : false,
     });
+    if (addedAvatar && user.email) {
+      logActivity(user.email, "well_activity", { reason: "profile_photo" }).catch(() => {});
+    }
     navigate("/profile");
   };
 

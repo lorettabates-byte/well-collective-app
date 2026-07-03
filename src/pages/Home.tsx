@@ -85,13 +85,13 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const key = "well-feature-tour-v1";
+    const key = "well-feature-tour-v2";
     if (localStorage.getItem(key)) return;
     setShowTour(true);
   }, []);
 
   const handleCloseTour = (_completed: boolean) => {
-    localStorage.setItem("well-feature-tour-v1", "1");
+    localStorage.setItem("well-feature-tour-v2", "1");
     setShowTour(false);
   };
 
