@@ -17,6 +17,8 @@ import EditProfile from "./pages/EditProfile";
 import Blog from "./pages/Blog";
 import Messages from "./pages/Messages";
 import VideoLibrary from "./pages/VideoLibrary";
+import WellCup from "./pages/WellCup";
+import WellCheck from "./pages/WellCheck";
 import Wellness from "./pages/Wellness";
 import Nutrition from "./pages/Nutrition";
 import MealPlan from "./pages/MealPlan";
@@ -58,6 +60,8 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:userId" element={<Messages />} />
         <Route path="/videos" element={<VideoLibrary />} />
+        <Route path="/well-cup" element={<WellCup />} />
+        <Route path="/well-check" element={<WellCheck />} />
         <Route path="/wellness" element={<Wellness />} />
         <Route path="/nutrition" element={<Nutrition />} />
         <Route path="/nutrition/meal-plan" element={<MealPlan />} />

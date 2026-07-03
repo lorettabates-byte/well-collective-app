@@ -1,9 +1,8 @@
-import { Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, Eye, EyeOff, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Trophy, Users } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, Eye, EyeOff, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Trophy, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
-import DailyWellCheck from "../components/DailyWellCheck";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 
@@ -127,7 +126,19 @@ export default function Profile() {
         </div>
       </div>
 
-      {user.email && <DailyWellCheck email={user.email} />}
+      <Link
+        to="/well-check"
+        className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mb-4"
+      >
+        <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center shrink-0">
+          <Activity size={16} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-text">Daily WELL Check</p>
+          <p className="text-xs text-text-muted">Your progress + tomorrow's challenges</p>
+        </div>
+        <ChevronRight size={16} className="text-text-dim shrink-0" />
+      </Link>
 
       <div className="flex flex-col gap-2.5 mb-6">
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />

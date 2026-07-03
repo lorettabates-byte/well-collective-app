@@ -2,6 +2,7 @@ import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, S
 import { logActivity } from "../utils/wellCup";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import BirthdayModal from "../components/BirthdayModal";
 import FeatureTourModal from "../components/FeatureTourModal";
 import NotificationOptInModal from "../components/NotificationOptInModal";
@@ -231,7 +232,9 @@ export default function Home() {
 
       <TribeActivityStrip />
 
-      <div className="mb-6">
+      <WellCupLeaderboard />
+
+      <div className="mb-6 mt-6">
         <SectionHeader title="From the Community" to="/community" />
         <div className="flex flex-col gap-3">
           {latestThreads.map((thread) => (

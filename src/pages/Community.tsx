@@ -1,9 +1,8 @@
-import { Mail, MessageCircle, PenSquare, Pin } from "lucide-react";
+import { Mail, MessageCircle, PenSquare, Pin, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
-import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useApp } from "../store/AppContext";
 
@@ -64,7 +63,19 @@ export default function Community() {
           </div>
         </div>
 
-        <WellCupLeaderboard />
+        <Link
+          to="/well-cup"
+          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mt-4"
+        >
+          <div className="w-9 h-9 rounded-full bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center shrink-0">
+            <Trophy size={16} className="text-yellow-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text">WELL Cup Leaderboard</p>
+            <p className="text-xs text-text-muted">Today's rankings, winners &amp; champions</p>
+          </div>
+          <span className="text-[11px] font-bold text-yellow-400 shrink-0">View →</span>
+        </Link>
       </div>
     </div>
   );
