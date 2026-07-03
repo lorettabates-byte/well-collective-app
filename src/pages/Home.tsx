@@ -20,6 +20,8 @@ import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { todayISO } from "../utils/format";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
 const QUICK_LINKS = [
   { to: "/community", label: "Community", icon: MessageCircle },
   { to: "/wellness", label: "Wellness", icon: Waves },
