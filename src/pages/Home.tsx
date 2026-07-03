@@ -1,6 +1,7 @@
-import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Sparkles, Video, Waves } from "lucide-react";
-import { logActivity } from "../utils/wellCup";
+import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Trophy, Video, Waves, X } from "lucide-react";
+import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
 import { useEffect, useState } from "react";
+import WellCupShareCard from "../components/WellCupShareCard";
 import { Link, useNavigate } from "react-router-dom";
 import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import BirthdayModal from "../components/BirthdayModal";
@@ -56,6 +57,8 @@ export default function Home() {
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
+  const [showWinShare, setShowWinShare] = useState(false);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -91,6 +94,17 @@ export default function Home() {
     localStorage.setItem("well-feature-tour-v1", "1");
     setShowTour(false);
   };
+
+  // Check if this user won yesterday's WELL Cup (show banner once per win_date)
+  useEffect(() => {
+    if (!user.email) return;
+    fetchYesterdayWinner().then((winner) => {
+      if (!winner || winner.email !== user.email) return;
+      const key = `well-cup-win-banner-${winner.win_date}`;
+      if (localStorage.getItem(key)) return;
+      setWinnerBanner(winner);
+    }).catch(() => {});
+  }, [user.email]);
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
@@ -138,6 +152,49 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* WELL Cup winner banner */}
+      {winnerBanner && (
+        <div className="rounded-card mb-4 border border-yellow-400/40 overflow-hidden" style={{ background: "rgba(250,204,21,0.07)" }}>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-2xl shrink-0">🏆</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-yellow-300">You won the WELL Cup yesterday!</p>
+              <p className="text-xs text-yellow-400/70">{winnerBanner.total_points.toLocaleString()} points — you led the entire leaderboard.</p>
+            </div>
+            <button
+              onClick={() => setShowWinShare(true)}
+              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-yellow-300 bg-yellow-400/10 border border-yellow-400/30 rounded-pill px-3 py-1.5"
+            >
+              <Share2 size={12} />
+              Share
+            </button>
+            <button
+              onClick={() => {
+                localStorage.setItem(`well-cup-win-banner-${winnerBanner.win_date}`, "1");
+                setWinnerBanner(null);
+              }}
+              className="shrink-0 text-text-dim p-1"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showWinShare && winnerBanner && (
+        <WellCupShareCard
+          winner={{ name: user.name, avatar: user.avatar || null, total_points: winnerBanner.total_points }}
+          period="daily"
+          periodLabel="Yesterday's Winner"
+          onClose={() => {
+            setShowWinShare(false);
+            localStorage.setItem(`well-cup-win-banner-${winnerBanner.win_date}`, "1");
+            setWinnerBanner(null);
+          }}
+        />
       )}
 
       <div className="mb-6">

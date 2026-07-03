@@ -1,4 +1,4 @@
-import { Activity, CheckCircle2, Star, X } from "lucide-react";
+import { Activity, CheckCircle2, Sparkles, Star, TrendingUp, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { logActivity } from "../utils/wellCup";
@@ -70,6 +70,69 @@ const ALL_CHALLENGES: (Challenge & { requiresAbsence?: string; requiresPoorSleep
   { id: "well_activity", emoji: "⭐", title: "WELL Activity", description: "Complete tomorrow's daily WELL Activity", pts: 15, requiresAbsence: "well_activity" },
   { id: "tribe", emoji: "🤝", title: "Grow Your Tribe", description: "Add one new member to your WELL Tribe", pts: 5, requiresAbsence: "tribe_add" },
 ];
+
+function getDailySummary(
+  doneTypes: Set<string>,
+  sleepData: { hours: number; quality: string } | null,
+): { positive: string; improve: string } {
+  // ── One positive ──
+  let positive = "You showed up today! Opening the app is step one — and you did it. We're proud of you. 🌟";
+
+  if (doneTypes.has("well_escape")) {
+    positive = "You attended a WELL Escape — that's an extraordinary wellness milestone. 🌟";
+  } else if (doneTypes.has("event_attend")) {
+    positive = "You showed up to an event today. In-person connection is one of the most powerful wellness practices. 🙌";
+  } else if (doneTypes.has("resistance_training")) {
+    positive = "Strength training done! Every rep builds the body and confidence you deserve. 💪";
+  } else if (doneTypes.has("cardio")) {
+    positive = "Cardio complete — your heart, lungs, and energy levels are all thanking you right now. 🏃";
+  } else if (doneTypes.has("breathwork")) {
+    positive = "Breathwork done — you took time to center yourself today. That kind of intention changes everything. 🌬️";
+  } else if (doneTypes.has("stretching")) {
+    positive = "Stretching complete! Flexibility and recovery are just as vital as any hard workout. 🧘";
+  } else if (doneTypes.has("sleep_log") && sleepData?.quality === "enough") {
+    positive = `You logged ${sleepData.hours}h of great sleep last night. Rest is the foundation everything else builds on. 😴`;
+  } else if (doneTypes.has("class_watch")) {
+    positive = "You invested in yourself by watching a class today. That 10–20 minutes will compound over time. 🎥";
+  } else if (doneTypes.has("well_activity")) {
+    positive = "WELL Activity complete! Daily consistency with small practices transforms your life over months. ⭐";
+  } else if (doneTypes.has("meal_log")) {
+    positive = "Meal logged! Mindful nutrition starts with awareness, and you're actively practicing it. 🥗";
+  } else if (doneTypes.has("forum_post")) {
+    positive = "You shared in the community today — your story and perspective lift others up more than you know. ✍️";
+  } else if (doneTypes.has("daily_challenge_accept")) {
+    positive = "You accepted today's challenge — that kind of commitment to growth is what separates those who change. 🎯";
+  } else if (doneTypes.has("tribe_add")) {
+    positive = "Your WELL Tribe is growing — community is one of the strongest predictors of long-term wellness. 🤝";
+  } else if (doneTypes.has("song_play")) {
+    positive = "Music is medicine — you used it today to fuel your mood and energy. 🎵";
+  } else if (doneTypes.has("blog_open")) {
+    positive = "You read the blog today. Investing 5 minutes in knowledge is investing in yourself. 📖";
+  } else if (doneTypes.has("forum_comment")) {
+    positive = "You engaged in the community — even one encouraging comment can change the direction of someone's day. 💬";
+  }
+
+  // ── One area to improve ──
+  let improve = "You're covering all your wellness bases today — carry that same energy into tomorrow! 🔥";
+
+  if (!doneTypes.has("sleep_log")) {
+    improve = "Log your sleep tonight — it's worth 10 pts and gives you personalized insights each morning.";
+  } else if (sleepData && (sleepData.quality === "not_enough" || sleepData.hours < 6)) {
+    improve = `You logged ${sleepData.hours}h last night — try a wind-down routine tonight. Breathwork or stretching before bed can help you drift off faster.`;
+  } else if (!doneTypes.has("resistance_training") && !doneTypes.has("cardio") && !doneTypes.has("stretching")) {
+    improve = "No movement logged yet today — even a 20-minute walk or quick stretch can shift your entire mood and energy.";
+  } else if (!doneTypes.has("breathwork")) {
+    improve = "Breathwork hasn't been logged today — just 5 minutes lowers cortisol, sharpens focus, and earns 15 pts.";
+  } else if (!doneTypes.has("meal_log")) {
+    improve = "Logging meals builds nutritional self-awareness over time. Even tracking one meal today is a strong start.";
+  } else if (!doneTypes.has("class_watch")) {
+    improve = "A wellness class is ready for you — even 10 minutes of focused learning fuels your long-term growth.";
+  } else if (!doneTypes.has("forum_post") && !doneTypes.has("forum_comment")) {
+    improve = "Share something in the community today — your unique perspective and story inspire people more than you realize.";
+  }
+
+  return { positive, improve };
+}
 
 function pickChallenges(doneTypes: Set<string>, poorSleep: boolean): Challenge[] {
   const scored = ALL_CHALLENGES.map((c) => {
@@ -184,21 +247,27 @@ export default function WellCheck() {
           )}
         </div>
 
-        {/* Sleep note */}
-        {sleepData && (
-          <div className="flex items-start gap-3 bg-indigo-500/10 border border-indigo-400/30 rounded-card px-4 py-3">
-            <span className="text-lg shrink-0">😴</span>
-            <div>
-              <p className="text-xs font-semibold text-text">
-                You slept {sleepData.hours}h last night —{" "}
-                {sleepData.quality === "enough" ? "great rest!" : sleepData.quality === "not_enough" ? "a bit short." : "you felt you could use more."}
-              </p>
-              {poorSleep && (
-                <p className="text-xs text-text-muted mt-0.5">Aim for 7–9 hours tonight. Good sleep powers your wellness.</p>
-              )}
+        {/* Daily Summary — always shown, personalized based on today's activity */}
+        {!loading && (() => {
+          const { positive, improve } = getDailySummary(doneTypes, sleepData);
+          return (
+            <div className="glass-card rounded-card p-4 flex flex-col gap-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Daily Summary</p>
+
+              {/* Positive */}
+              <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-400/25 rounded-card px-3 py-2.5">
+                <Sparkles size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-text leading-relaxed">{positive}</p>
+              </div>
+
+              {/* Improvement */}
+              <div className="flex items-start gap-3 bg-brand/8 border border-brand-light/20 rounded-card px-3 py-2.5">
+                <TrendingUp size={15} className="text-brand-light shrink-0 mt-0.5" />
+                <p className="text-xs text-text leading-relaxed">{improve}</p>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Tomorrow's challenges */}
         <div>
