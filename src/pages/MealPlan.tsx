@@ -253,6 +253,9 @@ export default function MealPlan() {
           const isToday = date === todayStr;
           const isExpanded = expandedDays.has(date);
 
+          // Show dinner photo on the bar; fall back to whichever single meal is set
+          const previewEntry = dayMap.get("dinner") ?? (mealCount === 1 ? [...dayMap.values()][0] : undefined);
+
           return (
             <div
               key={date}
@@ -269,13 +272,23 @@ export default function MealPlan() {
                     {Number(date.slice(8, 10))}
                   </p>
                 </div>
+                {previewEntry ? (
+                  <img
+                    src={previewEntry.recipe.image}
+                    alt={previewEntry.recipe.name}
+                    className="w-9 h-9 rounded-md object-cover shrink-0"
+                  />
+                ) : null}
                 <div className="flex-1 text-left min-w-0">
                   {mealCount > 0 ? (
-                    <p className="text-xs font-medium text-text">
-                      {mealCount} meal{mealCount !== 1 ? "s" : ""} planned
+                    <p className="text-xs font-medium text-text truncate">
+                      {previewEntry ? previewEntry.recipe.name : `${mealCount} meal${mealCount !== 1 ? "s" : ""} planned`}
                     </p>
                   ) : (
                     <p className="text-xs text-text-muted">Tap to plan meals</p>
+                  )}
+                  {mealCount > 1 && previewEntry && (
+                    <p className="text-[10px] text-text-dim">{mealCount} meals planned</p>
                   )}
                 </div>
                 {isExpanded
