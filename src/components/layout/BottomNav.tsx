@@ -43,15 +43,18 @@ export default function BottomNav() {
   const { user } = useApp();
   const todayPoints = useTodayPoints(user.email);
 
+  type NavItem = { to: string; label: string; icon: typeof Home; badge?: number };
+  const navItems: NavItem[] = [
+    { to: "/", label: "Home", icon: Home },
+    { to: "/community", label: "Community", icon: MessageCircle },
+    { to: "/well-cup", label: "Well Cup", icon: Trophy, badge: todayPoints },
+    { to: "/wellness", label: "Wellness", icon: Waves },
+    { to: "/profile", label: "Profile", icon: User },
+  ];
+
   return (
     <nav className="glass-card border-t border-border px-2 py-2 flex items-center justify-between">
-      {([
-        { to: "/", label: "Home", icon: Home },
-        { to: "/community", label: "Community", icon: MessageCircle },
-        { to: "/well-cup", label: "Well Cup", icon: Trophy, badge: todayPoints },
-        { to: "/wellness", label: "Wellness", icon: Waves },
-        { to: "/profile", label: "Profile", icon: User },
-      ] as const).map(({ to, label, icon: Icon, badge }) => (
+      {navItems.map(({ to, label, icon: Icon, badge }) => (
         <NavLink
           key={to}
           to={to}

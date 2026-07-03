@@ -102,7 +102,7 @@ export default function Home() {
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
   const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
-  const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+  const [sleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
 
   const handleResistance = () => { localStorage.setItem(`well-resistance-${today}`, "1"); setResistanceDone(true); if (user.email) logActivity(user.email, "resistance_training").catch(() => {}); };
   const handleStretching = () => { localStorage.setItem(`well-stretching-${today}`, "1"); setStretchingDone(true); if (user.email) logActivity(user.email, "stretching").catch(() => {}); };
