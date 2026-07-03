@@ -8,7 +8,7 @@
   # otherwise a browser that already cached sw.js can keep running a
   # stale service worker indefinitely, which is what made updates appear
   # to require deleting and re-adding the home-screen icon.
-  <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+  <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest|version\.json)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires 0
