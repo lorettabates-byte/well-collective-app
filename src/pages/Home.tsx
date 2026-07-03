@@ -90,7 +90,7 @@ export default function Home() {
     setShowTour(true);
   }, []);
 
-  const handleCloseTour = () => {
+  const handleCloseTour = (_completed: boolean) => {
     localStorage.setItem("well-feature-tour-v1", "1");
     setShowTour(false);
   };
@@ -304,7 +304,7 @@ export default function Home() {
       </div>
 
       {showBirthday && <BirthdayModal name={user.name} email={user.email} onClose={() => setShowBirthday(false)} />}
-      {!showBirthday && showTour && <FeatureTourModal onClose={handleCloseTour} />}
+      {!showBirthday && showTour && <FeatureTourModal userEmail={user.email} onClose={handleCloseTour} />}
       {!showBirthday && !showTour && showNotifOptIn && <NotificationOptInModal onClose={handleCloseNotifOptIn} />}
     </div>
   );

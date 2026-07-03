@@ -17,7 +17,10 @@ export type ActivityType =
   | "well_escape"
   | "tribe_add"
   | "cardio"
-  | "daily_challenge_accept";
+  | "daily_challenge_accept"
+  | "tutorial_complete"
+  | "notifications_enabled"
+  | "add_to_homescreen";
 
 export async function logActivity(
   memberEmail: string,
