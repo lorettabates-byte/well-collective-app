@@ -105,7 +105,7 @@ async function drawProfileCircle(
 
 async function generateCard(
   winner: ShareWinner,
-  period: SharePeriod,
+  _period: SharePeriod,
   periodLabel: string,
   size: "instagram" | "facebook"
 ): Promise<string> {

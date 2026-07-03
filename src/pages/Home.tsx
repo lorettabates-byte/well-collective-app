@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Trophy, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
 import { useEffect, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
