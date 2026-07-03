@@ -396,7 +396,7 @@ interface AppContextValue extends PersistedState {
   moveRecipeToFolder: (savedRecipeId: number, folderId: number | null) => void;
   fetchRecipeHistory: (before?: string, limit?: number) => Promise<Recipe[]>;
   mealPlan: MealPlanEntry[];
-  setMealPlanRecipe: (planDate: string, recipe: Recipe) => void;
+  setMealPlanRecipe: (planDate: string, mealType: string, recipe: Recipe) => void;
   removeMealPlanEntry: (entryId: number) => void;
   toggleRsvp: (eventId: string) => void;
   addEvent: (
@@ -1001,18 +1001,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const setMealPlanRecipe: AppContextValue["setMealPlanRecipe"] = (planDate, recipe) => {
+  const setMealPlanRecipe: AppContextValue["setMealPlanRecipe"] = (planDate, mealType, recipe) => {
     if (!API_URL || !state.user.email) return;
     fetch(`${API_URL}/api/meal-plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: state.user.email, planDate, recipe }),
+      body: JSON.stringify({ email: state.user.email, planDate, mealType, recipe }),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to set meal plan entry"))))
       .then((data) =>
-        setMealPlan((prev) => [...prev.filter((e) => e.planDate !== planDate), data.entry].sort((a, b) =>
-          a.planDate.localeCompare(b.planDate)
-        ))
+        setMealPlan((prev) => [
+          ...prev.filter((e) => !(e.planDate === planDate && e.mealType === mealType)),
+          data.entry,
+        ].sort((a, b) => a.planDate.localeCompare(b.planDate) || a.mealType.localeCompare(b.mealType)))
       )
       .catch((err) => console.error("Failed to set meal plan entry:", err));
   };

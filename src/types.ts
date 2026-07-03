@@ -93,6 +93,7 @@ export interface SavedRecipe extends Recipe {
 export interface MealPlanEntry {
   id: number;
   planDate: string; // ISO date (yyyy-mm-dd)
+  mealType: string; // 'breakfast' | 'lunch' | 'dinner' | 'snack'
   recipe: Recipe;
 }
 

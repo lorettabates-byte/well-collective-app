@@ -1,6 +1,7 @@
-import { ChevronDown, ChevronUp, Info, Trophy } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Share2, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
+import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -27,13 +28,18 @@ function WinnerBanner({
   winner,
   accent,
   empty,
+  period,
+  periodLabel,
 }: {
   label: string;
   sublabel: string;
   winner: WinnerInfo | null;
   accent: string;
   empty: string;
+  period: SharePeriod;
+  periodLabel: string;
 }) {
+  const [showShare, setShowShare] = useState(false);
   return (
     <div className={`rounded-card px-4 py-3 border ${accent}`}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">{label}</p>
@@ -44,10 +50,25 @@ function WinnerBanner({
             <p className="text-sm font-bold text-text truncate">{winner.name}</p>
             <p className="text-xs text-text-muted">{sublabel} · {winner.total_points.toLocaleString()} pts</p>
           </div>
+          <button
+            onClick={() => setShowShare(true)}
+            className="shrink-0 p-1.5 rounded-full bg-white/10 hover:bg-white/20"
+            aria-label="Share win"
+          >
+            <Share2 size={15} className="text-yellow-300" />
+          </button>
           <Trophy size={18} className="shrink-0 text-yellow-400" />
         </div>
       ) : (
         <p className="text-xs text-text-dim italic">{empty}</p>
+      )}
+      {showShare && winner && (
+        <WellCupShareCard
+          winner={winner as ShareWinner}
+          period={period}
+          periodLabel={periodLabel}
+          onClose={() => setShowShare(false)}
+        />
       )}
     </div>
   );
@@ -170,6 +191,8 @@ export default function WellCup() {
               winner={yesterday}
               accent="border-yellow-400/30 bg-yellow-400/5"
               empty="No winner recorded yet"
+              period="daily"
+              periodLabel="Daily Winner"
             />
             <WinnerBanner
               label={`${monthName} Leader`}
@@ -177,6 +200,8 @@ export default function WellCup() {
               winner={monthly}
               accent="border-purple-400/30 bg-purple-400/5"
               empty="No monthly leader yet — keep earning points!"
+              period="monthly"
+              periodLabel={`${monthName} Winner`}
             />
             <WinnerBanner
               label={`${year} Leader`}
@@ -184,9 +209,33 @@ export default function WellCup() {
               winner={yearly}
               accent="border-brand-light/20 bg-brand/5"
               empty="No yearly leader yet — the year is just getting started!"
+              period="yearly"
+              periodLabel={`${year} WELL Crown`}
             />
           </div>
         )}
+
+        {/* Prizes */}
+        <div className="glass-card rounded-card p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">WELL Cup Prizes</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">🏆</span>
+              <div>
+                <p className="text-sm font-bold text-text">Monthly Winner</p>
+                <p className="text-xs text-text-muted">Earn a free month of WELL Collective membership</p>
+              </div>
+            </div>
+            <div className="w-full h-px bg-border" />
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">👑</span>
+              <div>
+                <p className="text-sm font-bold text-text">Yearly WELL Crown Winner</p>
+                <p className="text-xs text-text-muted">Win a free WELL ESCAPE — our exclusive retreat experience</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Full leaderboard */}
         <div>
