@@ -1,7 +1,6 @@
 import { Calendar, Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
-import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry, InspirationCadence } from "../../types";
 
 const CADENCE_OPTIONS: { id: InspirationCadence; label: string }[] = [
@@ -28,7 +27,6 @@ interface ServerNote {
 }
 
 export default function AdminInspirations() {
-  const { user } = useApp();
 
   // ── Server-backed loretta notes ──────────────────────────────────────────
   const [notes, setNotes] = useState<ServerNote[]>([]);
