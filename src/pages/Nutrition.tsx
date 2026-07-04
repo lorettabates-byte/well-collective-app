@@ -193,10 +193,10 @@ export default function Nutrition() {
 
   const todaysMealTotals = todaysMeals.reduce(
     (sum, m) => ({
-      calories: sum.calories + (m.estimated_calories ?? 0),
-      protein: sum.protein + (m.estimated_protein_g ?? 0),
-      carbs: sum.carbs + (m.estimated_carbs_g ?? 0),
-      fat: sum.fat + (m.estimated_fat_g ?? 0),
+      calories: sum.calories + Number(m.estimated_calories ?? 0),
+      protein: sum.protein + Number(m.estimated_protein_g ?? 0),
+      carbs: sum.carbs + Number(m.estimated_carbs_g ?? 0),
+      fat: sum.fat + Number(m.estimated_fat_g ?? 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
@@ -632,10 +632,13 @@ export default function Nutrition() {
                       {meal.notes && <p className="text-[11px] text-text-muted mt-0.5">{meal.notes}</p>}
                       {meal.estimated_calories != null && (
                         <p className="text-[11px] text-text-dim mt-0.5">
-                          {meal.estimated_calories} kcal
-                          {meal.estimated_protein_g != null && ` · ${meal.estimated_protein_g}g protein`}
-                          {meal.estimated_carbs_g != null && ` · ${meal.estimated_carbs_g}g carbs`}
-                          {meal.estimated_fat_g != null && ` · ${meal.estimated_fat_g}g fat`}
+                          {meal.estimated_calories} kcal ({Math.round(meal.estimated_calories * KCAL_TO_KJ).toLocaleString()}kJ)
+                          {meal.estimated_protein_g != null &&
+                            ` · ${Math.round(Number(meal.estimated_protein_g))}g (${(Number(meal.estimated_protein_g) * GRAMS_TO_OZ).toFixed(1)}oz) protein`}
+                          {meal.estimated_carbs_g != null &&
+                            ` · ${Math.round(Number(meal.estimated_carbs_g))}g (${(Number(meal.estimated_carbs_g) * GRAMS_TO_OZ).toFixed(1)}oz) carbs`}
+                          {meal.estimated_fat_g != null &&
+                            ` · ${Math.round(Number(meal.estimated_fat_g))}g (${(Number(meal.estimated_fat_g) * GRAMS_TO_OZ).toFixed(1)}oz) fat`}
                         </p>
                       )}
                     </div>
