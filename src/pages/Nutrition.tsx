@@ -95,36 +95,58 @@ export default function Nutrition() {
   const [estimatedCalories, setEstimatedCalories] = useState("");
   const [savingMeal, setSavingMeal] = useState(false);
 
-  // Calorie estimator — describe what you ate, USDA-backed lookup fills in the rest.
-  const [mealDescription, setMealDescription] = useState("");
+  // Calorie estimator — add one food item at a time, USDA-backed lookup fills
+  // in each item's nutrition, and the meal's totals are the sum of the list.
+  interface MealItemEstimate {
+    description: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    verified: boolean;
+  }
+  const [mealItemInput, setMealItemInput] = useState("");
+  const [mealItems, setMealItems] = useState<MealItemEstimate[]>([]);
   const [estimating, setEstimating] = useState(false);
   const [estimateError, setEstimateError] = useState("");
-  const [nutritionEstimate, setNutritionEstimate] = useState<{
-    protein: number; carbs: number; fat: number; verified: boolean;
-  } | null>(null);
 
-  const handleEstimateNutrition = async () => {
-    if (!API_URL || !mealDescription.trim() || estimating) return;
+  const totalEstimated = mealItems.reduce(
+    (sum, i) => ({
+      calories: sum.calories + i.calories,
+      protein: sum.protein + i.protein,
+      carbs: sum.carbs + i.carbs,
+      fat: sum.fat + i.fat,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+  const allVerified = mealItems.length > 0 && mealItems.every((i) => i.verified);
+
+  const handleAddMealItem = async () => {
+    if (!API_URL || !mealItemInput.trim() || estimating) return;
     setEstimating(true);
     setEstimateError("");
     try {
       const res = await fetch(`${API_URL}/api/meals/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: mealDescription.trim() }),
+        body: JSON.stringify({ description: mealItemInput.trim() }),
       });
       if (res.ok) {
         const data = await res.json() as { calories: number; protein: number; carbs: number; fat: number; verified: boolean };
-        setEstimatedCalories(String(data.calories));
-        setNutritionEstimate({ protein: data.protein, carbs: data.carbs, fat: data.fat, verified: data.verified });
+        setMealItems((prev) => [...prev, { description: mealItemInput.trim(), ...data }]);
+        setMealItemInput("");
       } else {
-        setEstimateError("Couldn't estimate that meal — try being more specific, or enter calories manually.");
+        setEstimateError("Couldn't estimate that item — try being more specific, or enter calories manually below.");
       }
     } catch {
       setEstimateError("Couldn't reach the estimator — try again in a moment.");
     } finally {
       setEstimating(false);
     }
+  };
+
+  const removeMealItem = (index: number) => {
+    setMealItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -151,11 +173,13 @@ export default function Nutrition() {
           hadFruit,
           hadWholeFoods,
           notes: mealNotes.trim() || undefined,
-          estimatedCalories: estimatedCalories ? parseInt(estimatedCalories, 10) : undefined,
-          estimatedProtein: nutritionEstimate?.protein,
-          estimatedCarbs: nutritionEstimate?.carbs,
-          estimatedFat: nutritionEstimate?.fat,
-          nutritionVerified: nutritionEstimate?.verified,
+          estimatedCalories: mealItems.length > 0
+            ? Math.round(totalEstimated.calories)
+            : (estimatedCalories ? parseInt(estimatedCalories, 10) : undefined),
+          estimatedProtein: mealItems.length > 0 ? Math.round(totalEstimated.protein) : undefined,
+          estimatedCarbs: mealItems.length > 0 ? Math.round(totalEstimated.carbs) : undefined,
+          estimatedFat: mealItems.length > 0 ? Math.round(totalEstimated.fat) : undefined,
+          nutritionVerified: mealItems.length > 0 ? allVerified : undefined,
         }),
       });
       if (res.ok) {
@@ -166,7 +190,7 @@ export default function Nutrition() {
         setHadProtein(false); setHadVegetable(false);
         setHadWater(false); setHadFruit(false);
         setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
-        setMealDescription(""); setNutritionEstimate(null); setEstimateError("");
+        setMealItemInput(""); setMealItems([]); setEstimateError("");
       }
     } catch { /* silent */ } finally {
       setSavingMeal(false);
@@ -426,63 +450,83 @@ export default function Nutrition() {
                 </button>
               ))}
 
-              {/* Calorie estimator — describe the food, USDA-backed lookup fills in the rest */}
+              {/* Calorie estimator — add one food item at a time, USDA-backed lookup fills in the rest */}
               <div className="flex flex-col gap-2">
                 <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">Calorie & Nutrition Estimate <span className="normal-case font-normal text-text-dim">(optional)</span></p>
                 <div className="flex gap-2">
                   <input
-                    value={mealDescription}
-                    onChange={(e) => { setMealDescription(e.target.value); setNutritionEstimate(null); setEstimateError(""); }}
-                    placeholder="e.g. grilled chicken, rice, broccoli"
+                    value={mealItemInput}
+                    onChange={(e) => { setMealItemInput(e.target.value); setEstimateError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMealItem())}
+                    placeholder="e.g. grilled chicken breast"
                     className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                   />
                   <button
-                    onClick={handleEstimateNutrition}
-                    disabled={!mealDescription.trim() || estimating}
+                    onClick={handleAddMealItem}
+                    disabled={!mealItemInput.trim() || estimating}
                     className="flex items-center gap-1.5 gradient-brand text-white text-xs font-bold rounded-pill px-3.5 shrink-0 disabled:opacity-40"
                   >
                     <Wand2 size={13} />
-                    {estimating ? "…" : "Estimate"}
+                    {estimating ? "…" : "Add"}
                   </button>
                 </div>
 
                 {estimateError && <p className="text-[11px] text-red-400">{estimateError}</p>}
 
-                {(estimatedCalories || nutritionEstimate) && (
-                  <div className="bg-surface-2 border border-border rounded-card p-3">
-                    <div className="grid grid-cols-4 gap-2 text-center">
+                {mealItems.length > 0 && (
+                  <div className="bg-surface-2 border border-border rounded-card p-3 flex flex-col gap-2">
+                    {mealItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-text truncate">{item.description}</p>
+                          <p className="text-[10px] text-text-dim">
+                            {item.calories} kcal · {item.protein}g protein · {item.carbs}g carbs · {item.fat}g fat
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeMealItem(i)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim shrink-0"
+                          aria-label="Remove item"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <div className="grid grid-cols-4 gap-2 text-center border-t border-border pt-2 mt-1">
                       <div>
-                        <p className="text-sm font-bold text-text">{estimatedCalories || "—"}</p>
+                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.calories)}</p>
                         <p className="text-[10px] text-text-dim">Calories</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.protein}g` : "—"}</p>
+                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.protein)}g</p>
                         <p className="text-[10px] text-text-dim">Protein</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.carbs}g` : "—"}</p>
+                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.carbs)}g</p>
                         <p className="text-[10px] text-text-dim">Carbs</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.fat}g` : "—"}</p>
+                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.fat)}g</p>
                         <p className="text-[10px] text-text-dim">Fat</p>
                       </div>
                     </div>
-                    {nutritionEstimate && (
-                      <p className="text-[10px] text-text-dim text-center mt-2">
-                        {nutritionEstimate.verified ? "Matched against the USDA nutrition database" : "Estimated — not fully matched in the USDA database"}
-                      </p>
-                    )}
-                    <input
-                      type="number"
-                      value={estimatedCalories}
-                      onChange={(e) => setEstimatedCalories(e.target.value)}
-                      placeholder="Adjust calories manually"
-                      min={0}
-                      max={5000}
-                      className="w-full bg-surface border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light mt-2"
-                    />
+                    <p className="text-[10px] text-text-dim text-center">
+                      {allVerified ? "Matched against the USDA nutrition database" : "Estimated — not fully matched in the USDA database"}
+                    </p>
                   </div>
+                )}
+
+                {mealItems.length === 0 && (
+                  <input
+                    type="number"
+                    value={estimatedCalories}
+                    onChange={(e) => setEstimatedCalories(e.target.value)}
+                    placeholder="Or enter total calories manually"
+                    min={0}
+                    max={5000}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                  />
                 )}
               </div>
 
