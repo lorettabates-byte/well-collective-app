@@ -51,8 +51,8 @@ function CalorieStat({ kcal, label }: { kcal: number; label: string }) {
 function GramStat({ grams, label }: { grams: number; label: string }) {
   return (
     <div>
-      <p className="text-sm font-bold text-text">{Math.round(grams)}g</p>
-      <p className="text-[9px] text-text-dim">{(grams * GRAMS_TO_OZ).toFixed(1)}oz</p>
+      <p className="text-sm font-bold text-text">{(grams * GRAMS_TO_OZ).toFixed(1)}oz</p>
+      <p className="text-[9px] text-text-dim">{Math.round(grams)}g</p>
       <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
     </div>
   );
@@ -634,11 +634,11 @@ export default function Nutrition() {
                         <p className="text-[11px] text-text-dim mt-0.5">
                           {meal.estimated_calories} kcal ({Math.round(meal.estimated_calories * KCAL_TO_KJ).toLocaleString()}kJ)
                           {meal.estimated_protein_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_protein_g))}g (${(Number(meal.estimated_protein_g) * GRAMS_TO_OZ).toFixed(1)}oz) protein`}
+                            ` · ${(Number(meal.estimated_protein_g) * GRAMS_TO_OZ).toFixed(1)}oz (${Math.round(Number(meal.estimated_protein_g))}g) protein`}
                           {meal.estimated_carbs_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_carbs_g))}g (${(Number(meal.estimated_carbs_g) * GRAMS_TO_OZ).toFixed(1)}oz) carbs`}
+                            ` · ${(Number(meal.estimated_carbs_g) * GRAMS_TO_OZ).toFixed(1)}oz (${Math.round(Number(meal.estimated_carbs_g))}g) carbs`}
                           {meal.estimated_fat_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_fat_g))}g (${(Number(meal.estimated_fat_g) * GRAMS_TO_OZ).toFixed(1)}oz) fat`}
+                            ` · ${(Number(meal.estimated_fat_g) * GRAMS_TO_OZ).toFixed(1)}oz (${Math.round(Number(meal.estimated_fat_g))}g) fat`}
                         </p>
                       )}
                     </div>
