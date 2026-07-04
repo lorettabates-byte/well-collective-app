@@ -197,7 +197,7 @@ export default function Breathwork() {
                 }}
               >
                 {/* ?v=2 busts the 24h browser cache from before the full-length rebuild */}
-                <source src={`${API_URL}/api/breathwork/audio/daily?v=2`} type="audio/mpeg" />
+                <source src={`${API_URL}/api/breathwork/audio/daily?v=3`} type="audio/mpeg" />
               </audio>
               {todayBreathwork.backgroundSoundUrl && (
                 <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
@@ -257,7 +257,7 @@ export default function Breathwork() {
         />
         <audio
           ref={sessionGuideRef}
-          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}?v=2` : ""}
+          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}?v=3` : ""}
           onEnded={() => setPlaying(null)}
         />
 

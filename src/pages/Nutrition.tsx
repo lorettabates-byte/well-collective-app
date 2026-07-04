@@ -1,4 +1,4 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -152,8 +152,16 @@ export default function Nutrition() {
         body: JSON.stringify({ description: mealItemInput.trim() }),
       });
       if (res.ok) {
-        const data = await res.json() as { calories: number; protein: number; carbs: number; fat: number; verified: boolean };
-        setMealItems((prev) => [...prev, { description: mealItemInput.trim(), servings: 1, ...data }]);
+        const data = await res.json() as {
+          items?: { label: string; calories: number; protein: number; carbs: number; fat: number; verified: boolean }[];
+          calories: number; protein: number; carbs: number; fat: number; verified: boolean;
+        };
+        // The server splits "eggs, ham, and orange juice" into one row per
+        // food so each can be adjusted or removed on its own.
+        const rows = data.items?.length
+          ? data.items.map((i) => ({ description: i.label, calories: i.calories, protein: i.protein, carbs: i.carbs, fat: i.fat, verified: i.verified, servings: 1 }))
+          : [{ description: mealItemInput.trim(), calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, verified: data.verified, servings: 1 }];
+        setMealItems((prev) => [...prev, ...rows]);
         setMealItemInput("");
       } else {
         setEstimateError("Couldn't estimate that item — try being more specific, or enter calories manually below.");
@@ -194,12 +202,66 @@ export default function Nutrition() {
   );
   const hasTrackedNutrition = todaysMeals.some((m) => m.estimated_calories != null);
 
+  // When set, the form is editing an existing logged meal instead of adding
+  // a new one — Save issues a PUT and no extra points are awarded.
+  const [editingMealId, setEditingMealId] = useState<number | null>(null);
+
+  const resetMealForm = () => {
+    setShowMealForm(false);
+    setEditingMealId(null);
+    setHadProtein(false); setHadVegetable(false);
+    setHadWater(false); setHadFruit(false);
+    setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
+    setMealItemInput(""); setMealItems([]); setEstimateError("");
+  };
+
+  const startEditMeal = (meal: MealEntry) => {
+    setEditingMealId(meal.id);
+    setMealType((MEAL_TYPES.find((t) => t === meal.meal_type) ?? "Breakfast") as MealType);
+    setHadProtein(meal.had_protein);
+    setHadVegetable(meal.had_vegetable);
+    setHadWater(meal.had_water);
+    setHadFruit(meal.had_fruit);
+    setHadWholeFoods(meal.had_whole_foods);
+    setMealNotes(meal.notes ?? "");
+    setMealItems([]);
+    setEstimatedCalories(meal.estimated_calories != null ? String(meal.estimated_calories) : "");
+    setEstimateError("");
+    setShowMealForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDeleteMeal = async (mealId: number) => {
+    if (!API_URL || !user.email) return;
+    try {
+      const res = await fetch(`${API_URL}/api/meals/${mealId}?email=${encodeURIComponent(user.email)}`, { method: "DELETE" });
+      if (res.ok) {
+        setTodaysMeals((prev) => prev.filter((m) => m.id !== mealId));
+        if (editingMealId === mealId) resetMealForm();
+      }
+    } catch { /* silent */ }
+  };
+
   const handleLogMeal = async () => {
     if (!API_URL || !user.email || savingMeal) return;
     setSavingMeal(true);
+    const isEdit = editingMealId != null;
+    // Fresh estimator rows win; otherwise keep whatever calories are in the
+    // manual field (which is prefilled from the meal when editing).
+    const nutritionBody = mealItems.length > 0
+      ? {
+          estimatedCalories: Math.round(totalEstimated.calories),
+          estimatedProtein: Math.round(totalEstimated.protein),
+          estimatedCarbs: Math.round(totalEstimated.carbs),
+          estimatedFat: Math.round(totalEstimated.fat),
+          nutritionVerified: allVerified,
+        }
+      : {
+          estimatedCalories: estimatedCalories ? parseInt(estimatedCalories, 10) : undefined,
+        };
     try {
-      const res = await fetch(`${API_URL}/api/meals`, {
-        method: "POST",
+      const res = await fetch(isEdit ? `${API_URL}/api/meals/${editingMealId}` : `${API_URL}/api/meals`, {
+        method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberEmail: user.email,
@@ -210,24 +272,20 @@ export default function Nutrition() {
           hadFruit,
           hadWholeFoods,
           notes: mealNotes.trim() || undefined,
-          estimatedCalories: mealItems.length > 0
-            ? Math.round(totalEstimated.calories)
-            : (estimatedCalories ? parseInt(estimatedCalories, 10) : undefined),
-          estimatedProtein: mealItems.length > 0 ? Math.round(totalEstimated.protein) : undefined,
-          estimatedCarbs: mealItems.length > 0 ? Math.round(totalEstimated.carbs) : undefined,
-          estimatedFat: mealItems.length > 0 ? Math.round(totalEstimated.fat) : undefined,
-          nutritionVerified: mealItems.length > 0 ? allVerified : undefined,
+          ...nutritionBody,
         }),
       });
       if (res.ok) {
         const data = await res.json();
+        if (isEdit) {
+          setTodaysMeals((prev) => prev.map((m) => (m.id === editingMealId ? data.meal : m)));
+          resetMealForm();
+          setSavingMeal(false);
+          return;
+        }
         setTodaysMeals((prev) => [...prev, data.meal]);
         logActivity(user.email!, "meal_log", { mealType });
-        setShowMealForm(false);
-        setHadProtein(false); setHadVegetable(false);
-        setHadWater(false); setHadFruit(false);
-        setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
-        setMealItemInput(""); setMealItems([]); setEstimateError("");
+        resetMealForm();
       }
     } catch { /* silent */ } finally {
       setSavingMeal(false);
@@ -436,7 +494,7 @@ export default function Nutrition() {
               <p className="text-[11px] text-text-muted">Log what you ate — earn 10 pts per meal</p>
             </div>
             <button
-              onClick={() => setShowMealForm((v) => !v)}
+              onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
               className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"
             >
               <Plus size={12} />
@@ -461,31 +519,31 @@ export default function Nutrition() {
                 ))}
               </div>
 
-              {/* Wellness questions */}
-              <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">What did you include?</p>
-              {([
-                  { key: "protein",     Icon: Dumbbell, text: "Protein",          val: hadProtein,    set: setHadProtein },
-                  { key: "vegetable",   Icon: Leaf,     text: "Vegetables",        val: hadVegetable,  set: setHadVegetable },
-                  { key: "water",       Icon: Droplets, text: "Water",             val: hadWater,      set: setHadWater },
-                  { key: "fruit",       Icon: Apple,    text: "Fruit",             val: hadFruit,      set: setHadFruit },
-                  { key: "whole_foods", Icon: Wheat,    text: "Whole foods",       val: hadWholeFoods, set: setHadWholeFoods },
-                ]).map(({ key, Icon, text, val, set }) => (
-                <button
-                  key={key}
-                  onClick={() => set(!val)}
-                  className={`flex items-center gap-3 p-3 rounded-card border text-left ${
-                    val ? "border-brand-light bg-brand/10" : "border-border"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    val ? "border-brand-light bg-brand-light" : "border-border"
-                  }`}>
-                    {val && <span className="text-white text-[10px] font-bold">✓</span>}
-                  </div>
-                  <Icon size={15} className={val ? "text-brand-light shrink-0" : "text-text-dim shrink-0"} />
-                  <span className="text-sm text-text">{text}</span>
-                </button>
-              ))}
+              {/* Wellness questions — compact tappable chips */}
+              <div>
+                <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide mb-2">What did you include?</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                      { key: "protein",     Icon: Dumbbell, text: "Protein",     val: hadProtein,    set: setHadProtein },
+                      { key: "vegetable",   Icon: Leaf,     text: "Vegetables",  val: hadVegetable,  set: setHadVegetable },
+                      { key: "water",       Icon: Droplets, text: "Water",       val: hadWater,      set: setHadWater },
+                      { key: "fruit",       Icon: Apple,    text: "Fruit",       val: hadFruit,      set: setHadFruit },
+                      { key: "whole_foods", Icon: Wheat,    text: "Whole foods", val: hadWholeFoods, set: setHadWholeFoods },
+                    ]).map(({ key, Icon, text, val, set }) => (
+                    <button
+                      key={key}
+                      onClick={() => set(!val)}
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-pill border ${
+                        val ? "gradient-brand text-white border-transparent" : "bg-surface-2 text-text-muted border-border"
+                      }`}
+                    >
+                      <Icon size={13} className="shrink-0" />
+                      {text}
+                      {val && <span className="text-[10px]">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Calorie estimator — add one food item at a time, USDA-backed lookup fills in the rest */}
               <div className="flex flex-col gap-2">
@@ -495,7 +553,7 @@ export default function Nutrition() {
                     value={mealItemInput}
                     onChange={(e) => { setMealItemInput(e.target.value); setEstimateError(""); }}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMealItem())}
-                    placeholder="e.g. grilled chicken breast"
+                    placeholder="e.g. 2 eggs, 3oz ham, orange juice"
                     className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                   />
                   <button
@@ -507,6 +565,9 @@ export default function Nutrition() {
                     {estimating ? "…" : "Add"}
                   </button>
                 </div>
+                <p className="text-[10px] text-text-dim">
+                  List everything at once with amounts (2 servings, 10oz, 1 cup…) — each food becomes its own line you can adjust.
+                </p>
 
                 {estimateError && <p className="text-[11px] text-red-400">{estimateError}</p>}
 
@@ -590,10 +651,10 @@ export default function Nutrition() {
                   disabled={savingMeal}
                   className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2.5 disabled:opacity-50"
                 >
-                  {savingMeal ? "Saving…" : "Save Meal (+10 pts)"}
+                  {savingMeal ? "Saving…" : editingMealId != null ? "Update Meal" : "Save Meal (+10 pts)"}
                 </button>
                 <button
-                  onClick={() => setShowMealForm(false)}
+                  onClick={resetMealForm}
                   className="flex-1 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill py-2.5"
                 >
                   Cancel
@@ -634,9 +695,27 @@ export default function Nutrition() {
                         </p>
                       )}
                     </div>
-                    <span className="text-[10px] text-text-dim shrink-0">
-                      {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="text-[10px] text-text-dim">
+                        {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => startEditMeal(meal)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim"
+                          aria-label="Edit meal"
+                        >
+                          <Pencil size={11} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMeal(meal.id)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-red-400/70"
+                          aria-label="Delete meal"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}

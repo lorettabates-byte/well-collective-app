@@ -152,16 +152,23 @@ export default function Thread() {
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <label className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-2 text-text-dim shrink-0 cursor-pointer">
             <ImageIcon size={16} />
             <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           </label>
-          <input
+          <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              // Grow with the content like a phone messenger, up to ~5 lines.
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+            }}
             placeholder="Type a message..."
-            className="flex-1 bg-surface-2 border border-border rounded-pill px-4 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+            rows={1}
+            className="flex-1 bg-surface-2 border border-border rounded-card px-4 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none leading-snug"
+            style={{ maxHeight: 120 }}
           />
           <button
             type="submit"
