@@ -492,7 +492,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!API_URL || !state.user.email) return;
 
-    // Award points for opening the app today (capped at 1 per UTC day server-side).
+    // Award points for opening the app today (capped at 1 per Eastern-time day server-side).
     fetch(`${API_URL}/api/activity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

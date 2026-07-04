@@ -155,7 +155,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
     tagline: "Every good habit earns you points — and prizes.",
     bullets: [
       { Icon: LayoutList, text: "Today's leaderboard shows who's earning the most points right now" },
-      { Icon: Clock, text: "Points reset daily at midnight UTC (7 PM Eastern • 4 PM Pacific • 6 PM Central)" },
+      { Icon: Clock, text: "Points reset daily at midnight Eastern Time" },
       { Icon: Trophy, text: "Top daily earner wins the WELL Cup trophy for that day" },
       { Icon: CalendarDays, text: "Monthly winner earns a FREE month of WELL Collective!" },
       { Icon: Globe, text: "Yearly winner wins a FREE WELL Escape retreat!" },
