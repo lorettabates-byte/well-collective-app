@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Flame, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import BirthdayModal from "../components/BirthdayModal";
 import FeatureTourModal from "../components/FeatureTourModal";
 import NotificationOptInModal from "../components/NotificationOptInModal";
+import StreakHistoryModal from "../components/StreakHistoryModal";
 import EventCard from "../components/events/EventCard";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
@@ -63,6 +64,8 @@ export default function Home() {
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
   const [showWinShare, setShowWinShare] = useState(false);
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
+  const [headerStreak, setHeaderStreak] = useState<number | null>(null);
+  const [showStreakModal, setShowStreakModal] = useState(false);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -101,22 +104,24 @@ export default function Home() {
     return startSessionTracking(user.email);
   }, [user.email]);
 
-  // Show login streak banner once per day (read after a short delay so streak update lands first)
+  // Fetch current streak (for the header pill + the once-per-day banner)
+  // after a short delay so the app_open/streak update lands first.
   useEffect(() => {
     if (!user.email || !API_URL) return;
-    const key = `well-streak-banner-${todayISO()}`;
-    if (localStorage.getItem(key)) return;
+    const bannerKey = `well-streak-banner-${todayISO()}`;
     const timer = setTimeout(() => {
       fetch(`${API_URL}/api/streak?email=${encodeURIComponent(user.email!)}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           const s = data?.streak;
-          if (s && s.current_streak > 1) {
+          if (!s) return;
+          setHeaderStreak(s.current_streak);
+          if (s.current_streak > 1 && !localStorage.getItem(bannerKey)) {
             setStreakBanner({ streak: s.current_streak, bonus: s.todays_bonus });
           }
         })
         .catch(() => {});
-    }, 2000); // wait 2s for the app_open/streak update to settle
+    }, 2000);
     return () => clearTimeout(timer);
   }, [user.email]);
 
@@ -158,6 +163,16 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <img src={LOGO_URL} alt="WELL Collective" className="h-24" />
         <div className="flex items-center gap-3">
+          {headerStreak != null && headerStreak > 0 && (
+            <button
+              onClick={() => setShowStreakModal(true)}
+              className="flex items-center gap-1 h-9 px-2.5 rounded-full bg-surface-2 border border-border"
+              aria-label={`${headerStreak}-day login streak — view details`}
+            >
+              <Flame size={15} className="text-orange-400" />
+              <span className="text-xs font-bold text-orange-300">{headerStreak}</span>
+            </button>
+          )}
           <Link to="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-2 border border-border">
             <Bell size={17} />
             {unreadCount > 0 && (
@@ -171,6 +186,10 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+      {showStreakModal && user.email && (
+        <StreakHistoryModal email={user.email} onClose={() => setShowStreakModal(false)} />
+      )}
 
       {showTrialBanner && (
         <div className="gradient-brand p-[1px] rounded-card mb-4">
