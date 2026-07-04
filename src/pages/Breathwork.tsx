@@ -101,7 +101,6 @@ export default function Breathwork() {
         if (dailyMusicRef.current) {
           dailyMusicRef.current.loop = true;
           dailyMusicRef.current.volume = 0.25;
-          dailyMusicRef.current.currentTime = 0;
           dailyMusicRef.current.play().catch((err) => console.error("Daily background music play failed:", err));
         } else {
           console.warn("Daily background music ref not available - backgroundSoundUrl may be missing");
@@ -129,7 +128,9 @@ export default function Breathwork() {
       sessionAudioRef.current.play().catch((err) => console.error("Session background play failed:", err));
     }
     if (sessionGuideRef.current) {
-      sessionGuideRef.current.loop = true;
+      // The guide track is generated server-side to span the session's full
+      // duration — looping it would restart the welcome speech mid-session.
+      sessionGuideRef.current.loop = false;
       sessionGuideRef.current.volume = 1;
       sessionGuideRef.current.currentTime = 0;
       sessionGuideRef.current.play().catch((err) => console.error("Guide audio play failed:", err));
@@ -195,7 +196,8 @@ export default function Breathwork() {
                   dailyMusicRef.current?.pause();
                 }}
               >
-                <source src={`${API_URL}/api/breathwork/audio/daily`} type="audio/mpeg" />
+                {/* ?v=2 busts the 24h browser cache from before the full-length rebuild */}
+                <source src={`${API_URL}/api/breathwork/audio/daily?v=2`} type="audio/mpeg" />
               </audio>
               {todayBreathwork.backgroundSoundUrl && (
                 <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
@@ -255,7 +257,8 @@ export default function Breathwork() {
         />
         <audio
           ref={sessionGuideRef}
-          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}` : ""}
+          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}?v=2` : ""}
+          onEnded={() => setPlaying(null)}
         />
 
         {/* Deeper Sessions */}

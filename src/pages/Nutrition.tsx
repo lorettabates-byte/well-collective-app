@@ -32,17 +32,10 @@ type MealType = (typeof MEAL_TYPES)[number];
 
 const HISTORY_PAGE_SIZE = 10;
 
-// Metric energy unit (kJ) alongside kcal, and imperial-style ounces alongside
-// grams — same real-world pairing as EU/Australian nutrition labels (kJ + g)
-// vs US-style labels (kcal + oz), so totals read correctly either way.
-const KCAL_TO_KJ = 4.184;
-const GRAMS_TO_OZ = 0.035274;
-
 function CalorieStat({ kcal, label }: { kcal: number; label: string }) {
   return (
     <div>
       <p className="text-sm font-bold text-text">{Math.round(kcal).toLocaleString()}</p>
-      <p className="text-[9px] text-text-dim">kcal · {Math.round(kcal * KCAL_TO_KJ).toLocaleString()}kJ</p>
       <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
     </div>
   );
@@ -52,7 +45,6 @@ function GramStat({ grams, label }: { grams: number; label: string }) {
   return (
     <div>
       <p className="text-sm font-bold text-text">{Math.round(grams)}g</p>
-      <p className="text-[9px] text-text-dim">{(grams * GRAMS_TO_OZ).toFixed(1)}oz</p>
       <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
     </div>
   );
@@ -632,13 +624,13 @@ export default function Nutrition() {
                       {meal.notes && <p className="text-[11px] text-text-muted mt-0.5">{meal.notes}</p>}
                       {meal.estimated_calories != null && (
                         <p className="text-[11px] text-text-dim mt-0.5">
-                          {meal.estimated_calories} kcal ({Math.round(meal.estimated_calories * KCAL_TO_KJ).toLocaleString()}kJ)
+                          {meal.estimated_calories} kcal
                           {meal.estimated_protein_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_protein_g))}g (${(Number(meal.estimated_protein_g) * GRAMS_TO_OZ).toFixed(1)}oz) protein`}
+                            ` · ${Math.round(Number(meal.estimated_protein_g))}g protein`}
                           {meal.estimated_carbs_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_carbs_g))}g (${(Number(meal.estimated_carbs_g) * GRAMS_TO_OZ).toFixed(1)}oz) carbs`}
+                            ` · ${Math.round(Number(meal.estimated_carbs_g))}g carbs`}
                           {meal.estimated_fat_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_fat_g))}g (${(Number(meal.estimated_fat_g) * GRAMS_TO_OZ).toFixed(1)}oz) fat`}
+                            ` · ${Math.round(Number(meal.estimated_fat_g))}g fat`}
                         </p>
                       )}
                     </div>
