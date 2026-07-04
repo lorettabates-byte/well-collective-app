@@ -1,4 +1,4 @@
-import { CheckCircle2, Lock, Pause, Play, Volume2, Wind } from "lucide-react";
+import { CheckCircle2, Lock, Pause, Play, RotateCcw, RotateCw, Square, Volume2, Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
@@ -10,6 +10,12 @@ import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+// Background music sits under the voice — low enough that guidance is always
+// clearly on top, high enough to stay present during the quiet stretches.
+const MUSIC_VOLUME = 0.22;
+// Seconds over which the music fades to silence at the end of a track.
+const FADE_SECONDS = 12;
 
 interface Breathwork {
   title: string;
@@ -39,6 +45,20 @@ const BACKGROUND_SOUNDS = [
   { day: 6, name: "Soothing Tones", url: "https://WELLCOLLECTIVESOUNDTRACK.b-cdn.net/Peaceful%20Sounds/mp3/main%20track.mp3" },
 ];
 
+function formatTime(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}
+
+// As the voice track approaches its end (which includes trailing quiet built
+// in server-side), ease the music down to silence instead of cutting it off.
+function fadedMusicVolume(currentTime: number, duration: number): number {
+  if (!duration) return MUSIC_VOLUME;
+  const remaining = duration - currentTime;
+  return MUSIC_VOLUME * Math.min(1, Math.max(0, remaining / FADE_SECONDS));
+}
+
 export default function Breathwork() {
   const { user, logBreathworkCompletion } = useApp();
   const navigate = useNavigate();
@@ -61,9 +81,18 @@ export default function Breathwork() {
   const [todayBreathwork, setTodayBreathwork] = useState<Breathwork | null>(null);
   const [storedSessions, setStoredSessions] = useState<StoredSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playing, setPlaying] = useState<number | null>(null);
+
+  // Daily session player state
   const [dailyPlaying, setDailyPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [dailyDuration, setDailyDuration] = useState(0);
+
+  // Deeper Session player state
+  const [playing, setPlaying] = useState<number | null>(null);
+  const [sessionPaused, setSessionPaused] = useState(false);
+  const [sessionTime, setSessionTime] = useState(0);
+  const [sessionDuration, setSessionDuration] = useState(0);
+
   const dailyAudioRef = useRef<HTMLAudioElement>(null);
   const dailyMusicRef = useRef<HTMLAudioElement>(null);
   const sessionAudioRef = useRef<HTMLAudioElement>(null);
@@ -91,25 +120,39 @@ export default function Breathwork() {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Daily session controls ──────────────────────────────────────────────
   const handleDailyPlayPause = () => {
-    if (dailyAudioRef.current) {
-      if (dailyPlaying) {
-        dailyAudioRef.current.pause();
-        dailyMusicRef.current?.pause();
-      } else {
-        dailyAudioRef.current.play().catch((err) => console.error("Daily voice play failed:", err));
-        if (dailyMusicRef.current) {
-          dailyMusicRef.current.loop = true;
-          dailyMusicRef.current.volume = 0.25;
-          dailyMusicRef.current.play().catch((err) => console.error("Daily background music play failed:", err));
-        } else {
-          console.warn("Daily background music ref not available - backgroundSoundUrl may be missing");
-        }
+    if (!dailyAudioRef.current) return;
+    if (dailyPlaying) {
+      dailyAudioRef.current.pause();
+      dailyMusicRef.current?.pause();
+    } else {
+      dailyAudioRef.current.play().catch((err) => console.error("Daily voice play failed:", err));
+      if (dailyMusicRef.current) {
+        dailyMusicRef.current.loop = true;
+        dailyMusicRef.current.volume = fadedMusicVolume(dailyAudioRef.current.currentTime, dailyDuration);
+        dailyMusicRef.current.play().catch((err) => console.error("Daily background music play failed:", err));
       }
-      setDailyPlaying(!dailyPlaying);
     }
+    setDailyPlaying(!dailyPlaying);
   };
 
+  const dailySeekTo = (seconds: number) => {
+    if (!dailyAudioRef.current) return;
+    const clamped = Math.min(Math.max(seconds, 0), dailyDuration || 0);
+    dailyAudioRef.current.currentTime = clamped;
+    setCurrentTime(clamped);
+    if (dailyMusicRef.current) dailyMusicRef.current.volume = fadedMusicVolume(clamped, dailyDuration);
+  };
+
+  const handleDailyTimeUpdate = () => {
+    if (!dailyAudioRef.current) return;
+    const t = dailyAudioRef.current.currentTime;
+    setCurrentTime(t);
+    if (dailyMusicRef.current) dailyMusicRef.current.volume = fadedMusicVolume(t, dailyDuration);
+  };
+
+  // ── Deeper Session controls ─────────────────────────────────────────────
   const playingSession = storedSessions.find((s) => s.id === playing) ?? null;
 
   // Runs after React has committed the new `src` for the shared session
@@ -119,33 +162,60 @@ export default function Breathwork() {
     if (playing == null) {
       sessionAudioRef.current?.pause();
       sessionGuideRef.current?.pause();
+      setSessionPaused(false);
+      setSessionTime(0);
+      setSessionDuration(0);
       return;
     }
     if (sessionAudioRef.current) {
       sessionAudioRef.current.loop = true;
-      sessionAudioRef.current.volume = 0.3;
+      sessionAudioRef.current.volume = MUSIC_VOLUME;
       sessionAudioRef.current.currentTime = 0;
       sessionAudioRef.current.play().catch((err) => console.error("Session background play failed:", err));
     }
     if (sessionGuideRef.current) {
       // The guide track is generated server-side to span the session's full
-      // duration — looping it would restart the welcome speech mid-session.
+      // duration (wrap-up + trailing quiet included) — never loop it.
       sessionGuideRef.current.loop = false;
       sessionGuideRef.current.volume = 1;
       sessionGuideRef.current.currentTime = 0;
       sessionGuideRef.current.play().catch((err) => console.error("Guide audio play failed:", err));
     }
+    setSessionPaused(false);
+    setSessionTime(0);
   }, [playing]);
 
-  const handleSessionPlayPause = (sessionId: number) => {
+  const handleSessionButton = (sessionId: number) => {
     if (isTrialUser) return;
-    setPlaying((prev) => (prev === sessionId ? null : sessionId));
+    if (playing !== sessionId) {
+      setPlaying(sessionId);
+      return;
+    }
+    // Same session: toggle pause/resume so members don't lose their place.
+    if (sessionPaused) {
+      sessionGuideRef.current?.play().catch(() => {});
+      sessionAudioRef.current?.play().catch(() => {});
+      setSessionPaused(false);
+    } else {
+      sessionGuideRef.current?.pause();
+      sessionAudioRef.current?.pause();
+      setSessionPaused(true);
+    }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  const sessionSeekTo = (seconds: number) => {
+    if (!sessionGuideRef.current) return;
+    const clamped = Math.min(Math.max(seconds, 0), sessionDuration || 0);
+    sessionGuideRef.current.currentTime = clamped;
+    setSessionTime(clamped);
+    if (sessionAudioRef.current) sessionAudioRef.current.volume = fadedMusicVolume(clamped, sessionDuration);
+  };
+
+  const handleSessionTimeUpdate = () => {
+    if (!sessionGuideRef.current) return;
+    const t = sessionGuideRef.current.currentTime;
+    setSessionTime(t);
+    if (sessionAudioRef.current) sessionAudioRef.current.volume = fadedMusicVolume(t, sessionDuration);
   };
 
   if (loading) {
@@ -160,11 +230,7 @@ export default function Breathwork() {
   }
 
   // Group stored sessions by duration
-  const sessionsByDuration = {
-    10: storedSessions.filter((s) => s.duration_minutes === 10),
-    15: storedSessions.filter((s) => s.duration_minutes === 15),
-    30: storedSessions.filter((s) => s.duration_minutes === 30),
-  };
+  const durations = [10, 15, 30] as const;
 
   return (
     <div>
@@ -190,14 +256,15 @@ export default function Breathwork() {
             <div className="bg-surface-2 rounded-card p-4 flex flex-col gap-3">
               <audio
                 ref={dailyAudioRef}
-                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                onTimeUpdate={handleDailyTimeUpdate}
+                onLoadedMetadata={(e) => setDailyDuration(e.currentTarget.duration || 0)}
                 onEnded={() => {
                   setDailyPlaying(false);
                   dailyMusicRef.current?.pause();
                 }}
               >
-                {/* ?v=2 busts the 24h browser cache from before the full-length rebuild */}
-                <source src={`${API_URL}/api/breathwork/audio/daily?v=3`} type="audio/mpeg" />
+                {/* ?v=4 busts the browser cache from earlier audio builds */}
+                <source src={`${API_URL}/api/breathwork/audio/daily?v=4`} type="audio/mpeg" />
               </audio>
               {todayBreathwork.backgroundSoundUrl && (
                 <audio ref={dailyMusicRef} src={todayBreathwork.backgroundSoundUrl} />
@@ -210,16 +277,35 @@ export default function Breathwork() {
                 >
                   {dailyPlaying ? <Pause size={18} className="fill-white" /> : <Play size={18} className="fill-white" />}
                 </button>
-                <div className="flex-1">
-                  <div className="h-1 bg-surface rounded-full overflow-hidden">
-                    <div
-                      className="h-full gradient-brand transition-all"
-                      style={{ width: `${(currentTime / (todayBreathwork.duration * 60)) * 100}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="text-xs text-text-muted w-8 text-right">{formatTime(currentTime)}</span>
+                <button
+                  onClick={() => dailySeekTo(currentTime - 15)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-surface border border-border text-text-muted shrink-0"
+                  aria-label="Back 15 seconds"
+                >
+                  <RotateCcw size={14} />
+                </button>
+                <button
+                  onClick={() => dailySeekTo(currentTime + 15)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-surface border border-border text-text-muted shrink-0"
+                  aria-label="Forward 15 seconds"
+                >
+                  <RotateCw size={14} />
+                </button>
+                <span className="text-xs text-text-muted flex-1 text-right">
+                  {formatTime(currentTime)} / {dailyDuration ? formatTime(dailyDuration) : "–:––"}
+                </span>
               </div>
+
+              <input
+                type="range"
+                min={0}
+                max={dailyDuration || todayBreathwork.duration * 60}
+                step={1}
+                value={currentTime}
+                onChange={(e) => dailySeekTo(Number(e.target.value))}
+                className="w-full accent-[#5ba3f5] h-1.5"
+                aria-label="Seek"
+              />
               <p className="text-xs text-text-muted text-center">5 minutes with {todayBreathwork.backgroundSound}</p>
             </div>
           </div>
@@ -253,11 +339,12 @@ export default function Breathwork() {
         <audio
           ref={sessionAudioRef}
           src={playingSession?.audio_url || ""}
-          onEnded={() => setPlaying(null)}
         />
         <audio
           ref={sessionGuideRef}
-          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}?v=3` : ""}
+          src={playing ? `${API_URL}/api/breathwork/audio/session-guide/${playing}?v=4` : ""}
+          onTimeUpdate={handleSessionTimeUpdate}
+          onLoadedMetadata={(e) => setSessionDuration(e.currentTarget.duration || 0)}
           onEnded={() => setPlaying(null)}
         />
 
@@ -272,134 +359,101 @@ export default function Breathwork() {
           </div>
         )}
 
-        {/* 10 Minute Sessions */}
-        {sessionsByDuration[10].length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-text-muted mb-3">10 Minutes</p>
-            <div className="flex flex-col gap-3">
-              {sessionsByDuration[10].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-text">{session.title}</h4>
-                      <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleSessionPlayPause(session.id)}
-                    disabled={isTrialUser}
-                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
-                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
-                    }`}
-                  >
-                    {isTrialUser ? (
-                      <>
-                        <Lock size={14} />
-                        Locked
-                      </>
-                    ) : playing === session.id ? (
-                      <>
-                        <Pause size={14} className="fill-white" />
-                        Playing
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} className="fill-white" />
-                        Play Session
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {durations.map((mins) => {
+          const sessions = storedSessions.filter((s) => s.duration_minutes === mins);
+          if (sessions.length === 0) return null;
+          return (
+            <div key={mins} className="mb-6">
+              <p className="text-xs font-semibold text-text-muted mb-3">{mins} Minutes</p>
+              <div className="flex flex-col gap-3">
+                {sessions.map((session) => {
+                  const isActive = playing === session.id;
+                  return (
+                    <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${isActive ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-text">{session.title}</h4>
+                          <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleSessionButton(session.id)}
+                        disabled={isTrialUser}
+                        className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
+                          isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
+                        }`}
+                      >
+                        {isTrialUser ? (
+                          <>
+                            <Lock size={14} />
+                            Locked
+                          </>
+                        ) : isActive && !sessionPaused ? (
+                          <>
+                            <Pause size={14} className="fill-white" />
+                            Pause
+                          </>
+                        ) : isActive && sessionPaused ? (
+                          <>
+                            <Play size={14} className="fill-white" />
+                            Resume
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} className="fill-white" />
+                            Play Session
+                          </>
+                        )}
+                      </button>
 
-        {/* 15 Minute Sessions */}
-        {sessionsByDuration[15].length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-text-muted mb-3">15 Minutes</p>
-            <div className="flex flex-col gap-3">
-              {sessionsByDuration[15].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-text">{session.title}</h4>
-                      <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
+                      {isActive && (
+                        <div className="mt-3 flex flex-col gap-2">
+                          <input
+                            type="range"
+                            min={0}
+                            max={sessionDuration || mins * 60}
+                            step={1}
+                            value={sessionTime}
+                            onChange={(e) => sessionSeekTo(Number(e.target.value))}
+                            className="w-full accent-[#5ba3f5] h-1.5"
+                            aria-label="Seek"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => sessionSeekTo(sessionTime - 15)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted shrink-0"
+                              aria-label="Back 15 seconds"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                            <button
+                              onClick={() => sessionSeekTo(sessionTime + 15)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted shrink-0"
+                              aria-label="Forward 15 seconds"
+                            >
+                              <RotateCw size={14} />
+                            </button>
+                            <span className="text-xs text-text-muted flex-1 text-right">
+                              {formatTime(sessionTime)} / {sessionDuration ? formatTime(sessionDuration) : `${mins}:00`}
+                            </span>
+                            <button
+                              onClick={() => setPlaying(null)}
+                              className="flex items-center gap-1 text-[11px] font-semibold text-text-muted bg-surface-2 border border-border rounded-pill px-2.5 py-1.5 shrink-0"
+                              aria-label="End session"
+                            >
+                              <Square size={10} />
+                              End
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <button
-                    onClick={() => handleSessionPlayPause(session.id)}
-                    disabled={isTrialUser}
-                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
-                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
-                    }`}
-                  >
-                    {isTrialUser ? (
-                      <>
-                        <Lock size={14} />
-                        Locked
-                      </>
-                    ) : playing === session.id ? (
-                      <>
-                        <Pause size={14} className="fill-white" />
-                        Playing
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} className="fill-white" />
-                        Play Session
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* 30 Minute Sessions */}
-        {sessionsByDuration[30].length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-text-muted mb-3">30 Minutes</p>
-            <div className="flex flex-col gap-3">
-              {sessionsByDuration[30].map((session) => (
-                <div key={session.id} className={`glass-card rounded-card p-4 transition-colors ${playing === session.id ? "ring-2 ring-brand-light" : ""} ${isTrialUser ? "opacity-40" : ""}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-text">{session.title}</h4>
-                      <p className="text-xs text-text-muted mt-0.5">{session.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleSessionPlayPause(session.id)}
-                    disabled={isTrialUser}
-                    className={`w-full flex items-center gap-2 text-xs font-semibold rounded-pill py-2 px-3 ${
-                      isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "text-white gradient-brand hover:opacity-90"
-                    }`}
-                  >
-                    {isTrialUser ? (
-                      <>
-                        <Lock size={14} />
-                        Locked
-                      </>
-                    ) : playing === session.id ? (
-                      <>
-                        <Pause size={14} className="fill-white" />
-                        Playing
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} className="fill-white" />
-                        Play Session
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          );
+        })}
 
         {storedSessions.length === 0 && todayBreathwork && (
           <div className="text-center py-8">
