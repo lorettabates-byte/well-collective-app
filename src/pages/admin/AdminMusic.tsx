@@ -356,6 +356,9 @@ export default function AdminMusic() {
         alert(err.error || "Failed to delete category — it may still be in use.");
         return;
       }
+      // Immediately remove from local state so it disappears right away
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+      // Then refetch to ensure we're in sync with server
       fetchCategories();
       fetchSongs();
     } catch (err) {
