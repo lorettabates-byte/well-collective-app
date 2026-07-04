@@ -1,4 +1,4 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Plus, Sparkles, Trash2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -19,6 +19,11 @@ interface MealEntry {
   had_fruit: boolean;
   had_whole_foods: boolean;
   notes: string | null;
+  estimated_calories: number | null;
+  estimated_protein_g: number | null;
+  estimated_carbs_g: number | null;
+  estimated_fat_g: number | null;
+  nutrition_verified: boolean | null;
   logged_at: string;
 }
 
@@ -90,6 +95,38 @@ export default function Nutrition() {
   const [estimatedCalories, setEstimatedCalories] = useState("");
   const [savingMeal, setSavingMeal] = useState(false);
 
+  // Calorie estimator — describe what you ate, USDA-backed lookup fills in the rest.
+  const [mealDescription, setMealDescription] = useState("");
+  const [estimating, setEstimating] = useState(false);
+  const [estimateError, setEstimateError] = useState("");
+  const [nutritionEstimate, setNutritionEstimate] = useState<{
+    protein: number; carbs: number; fat: number; verified: boolean;
+  } | null>(null);
+
+  const handleEstimateNutrition = async () => {
+    if (!API_URL || !mealDescription.trim() || estimating) return;
+    setEstimating(true);
+    setEstimateError("");
+    try {
+      const res = await fetch(`${API_URL}/api/meals/estimate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: mealDescription.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { calories: number; protein: number; carbs: number; fat: number; verified: boolean };
+        setEstimatedCalories(String(data.calories));
+        setNutritionEstimate({ protein: data.protein, carbs: data.carbs, fat: data.fat, verified: data.verified });
+      } else {
+        setEstimateError("Couldn't estimate that meal — try being more specific, or enter calories manually.");
+      }
+    } catch {
+      setEstimateError("Couldn't reach the estimator — try again in a moment.");
+    } finally {
+      setEstimating(false);
+    }
+  };
+
   useEffect(() => {
     if (!API_URL || !user.email) return;
     fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
@@ -115,6 +152,10 @@ export default function Nutrition() {
           hadWholeFoods,
           notes: mealNotes.trim() || undefined,
           estimatedCalories: estimatedCalories ? parseInt(estimatedCalories, 10) : undefined,
+          estimatedProtein: nutritionEstimate?.protein,
+          estimatedCarbs: nutritionEstimate?.carbs,
+          estimatedFat: nutritionEstimate?.fat,
+          nutritionVerified: nutritionEstimate?.verified,
         }),
       });
       if (res.ok) {
@@ -125,6 +166,7 @@ export default function Nutrition() {
         setHadProtein(false); setHadVegetable(false);
         setHadWater(false); setHadFruit(false);
         setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
+        setMealDescription(""); setNutritionEstimate(null); setEstimateError("");
       }
     } catch { /* silent */ } finally {
       setSavingMeal(false);
@@ -384,15 +426,65 @@ export default function Nutrition() {
                 </button>
               ))}
 
-              <input
-                type="number"
-                value={estimatedCalories}
-                onChange={(e) => setEstimatedCalories(e.target.value)}
-                placeholder="Estimated calories (optional)"
-                min={0}
-                max={5000}
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-              />
+              {/* Calorie estimator — describe the food, USDA-backed lookup fills in the rest */}
+              <div className="flex flex-col gap-2">
+                <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">Calorie & Nutrition Estimate <span className="normal-case font-normal text-text-dim">(optional)</span></p>
+                <div className="flex gap-2">
+                  <input
+                    value={mealDescription}
+                    onChange={(e) => { setMealDescription(e.target.value); setNutritionEstimate(null); setEstimateError(""); }}
+                    placeholder="e.g. grilled chicken, rice, broccoli"
+                    className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                  />
+                  <button
+                    onClick={handleEstimateNutrition}
+                    disabled={!mealDescription.trim() || estimating}
+                    className="flex items-center gap-1.5 gradient-brand text-white text-xs font-bold rounded-pill px-3.5 shrink-0 disabled:opacity-40"
+                  >
+                    <Wand2 size={13} />
+                    {estimating ? "…" : "Estimate"}
+                  </button>
+                </div>
+
+                {estimateError && <p className="text-[11px] text-red-400">{estimateError}</p>}
+
+                {(estimatedCalories || nutritionEstimate) && (
+                  <div className="bg-surface-2 border border-border rounded-card p-3">
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      <div>
+                        <p className="text-sm font-bold text-text">{estimatedCalories || "—"}</p>
+                        <p className="text-[10px] text-text-dim">Calories</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.protein}g` : "—"}</p>
+                        <p className="text-[10px] text-text-dim">Protein</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.carbs}g` : "—"}</p>
+                        <p className="text-[10px] text-text-dim">Carbs</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-text">{nutritionEstimate ? `${nutritionEstimate.fat}g` : "—"}</p>
+                        <p className="text-[10px] text-text-dim">Fat</p>
+                      </div>
+                    </div>
+                    {nutritionEstimate && (
+                      <p className="text-[10px] text-text-dim text-center mt-2">
+                        {nutritionEstimate.verified ? "Matched against the USDA nutrition database" : "Estimated — not fully matched in the USDA database"}
+                      </p>
+                    )}
+                    <input
+                      type="number"
+                      value={estimatedCalories}
+                      onChange={(e) => setEstimatedCalories(e.target.value)}
+                      placeholder="Adjust calories manually"
+                      min={0}
+                      max={5000}
+                      className="w-full bg-surface border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light mt-2"
+                    />
+                  </div>
+                )}
+              </div>
 
               <textarea
                 value={mealNotes}
@@ -440,6 +532,14 @@ export default function Nutrition() {
                         <p className="text-[11px] text-brand-light mt-0.5">{checks.join(" · ")}</p>
                       )}
                       {meal.notes && <p className="text-[11px] text-text-muted mt-0.5">{meal.notes}</p>}
+                      {meal.estimated_calories != null && (
+                        <p className="text-[11px] text-text-dim mt-0.5">
+                          {meal.estimated_calories} kcal
+                          {meal.estimated_protein_g != null && ` · ${meal.estimated_protein_g}g protein`}
+                          {meal.estimated_carbs_g != null && ` · ${meal.estimated_carbs_g}g carbs`}
+                          {meal.estimated_fat_g != null && ` · ${meal.estimated_fat_g}g fat`}
+                        </p>
+                      )}
                     </div>
                     <span className="text-[10px] text-text-dim shrink-0">
                       {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

@@ -69,6 +69,31 @@ const CHECKIN_GRID = [
   { key: "mindset",    label: "Mindset",    Icon: Sparkles,  maps: ["class_watch", "blog_open", "well_activity"] },
 ];
 
+// MET (Metabolic Equivalent of Task) values from the Compendium of Physical
+// Activities (Ainsworth et al., 2011) — the standard reference used in
+// exercise science and clinical research for estimating energy expenditure.
+// Since the app logs "did you do X today" rather than a timer, each entry
+// also carries a typical session length so the estimate has something
+// concrete to multiply against.
+const ACTIVITY_MET: Record<string, { met: number; minutes: number }> = {
+  resistance_training: { met: 5.0, minutes: 40 }, // Compendium: resistance training, moderate effort
+  cardio: { met: 7.0, minutes: 30 },               // Compendium: aerobic/cardio exercise, general
+  breathwork: { met: 1.3, minutes: 10 },           // Compendium: meditation / breathing exercises
+  stretching: { met: 2.3, minutes: 15 },           // Compendium: stretching, mild effort
+  well_activity: { met: 2.8, minutes: 20 },        // light-moderate general wellness activity
+};
+
+// ACSM formula: kcal burned = MET x 3.5 x weight(kg) / 200 x minutes.
+function metCalories(met: number, minutes: number, weightKg: number, count: number): number {
+  return ((met * 3.5 * weightKg) / 200) * minutes * count;
+}
+
+// Calories per step, derived from the same MET formula applied to walking
+// (MET 3.5) at an average cadence of ~100 steps/min — consistent with
+// Harvard Health Publishing's widely cited estimate of ~0.04 kcal/step for a
+// 70kg (154lb) adult walking at a moderate pace, scaled linearly by weight.
+const KCAL_PER_STEP_PER_KG = 0.00057;
+
 interface Challenge {
   id: string;
   title: string;
@@ -261,12 +286,28 @@ export default function WellCheck() {
     }
   };
 
-  // Mifflin-St Jeor BMR → TDEE (lightly active ×1.375)
-  const tdee = (user.heightCm && user.weightKg && user.age) ? (() => {
+  // Exercise calories: MET-based (Compendium of Physical Activities) for
+  // each logged workout type, using today's actual count from `activities`.
+  const exerciseCalories = user.weightKg
+    ? activities.reduce((sum, a) => {
+        const def = ACTIVITY_MET[a.type];
+        return def ? sum + metCalories(def.met, def.minutes, user.weightKg!, a.count) : sum;
+      }, 0)
+    : 0;
+
+  // Step calories: see KCAL_PER_STEP_PER_KG above for the source.
+  const stepCalories = user.weightKg && todaySteps ? todaySteps.steps * user.weightKg * KCAL_PER_STEP_PER_KG : 0;
+
+  // Mifflin-St Jeor BMR × sedentary baseline (1.2) — exercise and steps are
+  // added explicitly above rather than folded into a higher activity
+  // multiplier, since we're already counting them individually.
+  const baselineCalories = (user.heightCm && user.weightKg && user.age) ? (() => {
     const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
     const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
-    return Math.round(bmr * 1.375);
+    return bmr * 1.2;
   })() : null;
+
+  const tdee = baselineCalories !== null ? Math.round(baselineCalories + exerciseCalories + stepCalories) : null;
 
   // Count how many of the 6 grid categories are done
   const gridDoneCount = CHECKIN_GRID.filter((item) =>
@@ -443,8 +484,15 @@ export default function WellCheck() {
                   </p>
                 </div>
               )}
+              {(exerciseCalories > 0 || stepCalories > 0) && (
+                <p className="text-[11px] text-text-muted mb-2">
+                  Includes {Math.round(exerciseCalories + stepCalories).toLocaleString()} kcal from today's logged workouts
+                  {stepCalories > 0 ? " and steps" : ""}.
+                </p>
+              )}
               <p className="text-[11px] text-text-dim leading-relaxed">
-                Energy out uses Mifflin-St Jeor (lightly active). Log meals with calorie estimates in Nutrition to track intake.
+                Energy out = Mifflin-St Jeor BMR (sedentary baseline) + MET-based workout calories (Compendium of Physical Activities)
+                + step calories. Log meals with calorie estimates in Nutrition to track intake.
               </p>
             </>
           ) : (

@@ -46,6 +46,38 @@ export default function EditProfile() {
   const [weightKg, setWeightKg] = useState(user.weightKg?.toString() ?? "");
   const [age, setAge] = useState(user.age?.toString() ?? "");
   const [gender, setGender] = useState<"female" | "male" | "other" | "">(user.gender ?? "");
+  const [bodyUnit, setBodyUnit] = useState<"metric" | "imperial">(
+    () => (localStorage.getItem("well-body-unit") as "metric" | "imperial" | null) ?? "metric"
+  );
+
+  // Height/weight are always stored in cm/kg (heightCm/weightKg above) —
+  // these are just the imperial display + conversion for that same state.
+  const heightCmNum = heightCm ? parseFloat(heightCm) : null;
+  const weightKgNum = weightKg ? parseFloat(weightKg) : null;
+  const feetVal = heightCmNum ? Math.floor(heightCmNum / 2.54 / 12) : "";
+  const inchesVal = heightCmNum ? Math.round((heightCmNum / 2.54) % 12) : "";
+  const lbsVal = weightKgNum ? Math.round(weightKgNum * 2.20462) : "";
+
+  const handleFeetChange = (v: string) => {
+    if (v === "" && inchesVal === "") { setHeightCm(""); return; }
+    const ft = parseInt(v, 10) || 0;
+    const inc = typeof inchesVal === "number" ? inchesVal : 0;
+    setHeightCm((((ft * 12) + inc) * 2.54).toFixed(1));
+  };
+  const handleInchesChange = (v: string) => {
+    if (v === "" && feetVal === "") { setHeightCm(""); return; }
+    const inc = parseInt(v, 10) || 0;
+    const ft = typeof feetVal === "number" ? feetVal : 0;
+    setHeightCm((((ft * 12) + inc) * 2.54).toFixed(1));
+  };
+  const handleLbsChange = (v: string) => {
+    if (v === "") { setWeightKg(""); return; }
+    setWeightKg((parseFloat(v) / 2.20462).toFixed(1));
+  };
+  const selectBodyUnit = (u: "metric" | "imperial") => {
+    setBodyUnit(u);
+    localStorage.setItem("well-body-unit", u);
+  };
 
   const earnedBadgeIds = new Set(
     [user.levelBadge, ...(user.bonusBadges ?? []), ...(user.grantedBadges ?? [])].filter(Boolean) as string[]
@@ -269,45 +301,118 @@ export default function EditProfile() {
 
         {/* Body metrics — used for energy balance in WELL Check */}
         <div>
-          <label className="block text-xs font-semibold text-text-muted mb-1.5">Body Metrics <span className="font-normal text-text-dim">(optional — for energy balance)</span></label>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div>
-              <p className="text-[10px] text-text-dim mb-1">Height (cm)</p>
-              <input
-                type="number"
-                value={heightCm}
-                onChange={(e) => setHeightCm(e.target.value)}
-                placeholder="e.g. 165"
-                min={100}
-                max={250}
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
-              />
-            </div>
-            <div>
-              <p className="text-[10px] text-text-dim mb-1">Weight (kg)</p>
-              <input
-                type="number"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
-                placeholder="e.g. 65"
-                min={30}
-                max={300}
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
-              />
-            </div>
-            <div>
-              <p className="text-[10px] text-text-dim mb-1">Age</p>
-              <input
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="e.g. 32"
-                min={13}
-                max={120}
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
-              />
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <label className="block text-xs font-semibold text-text-muted">Body Metrics <span className="font-normal text-text-dim">(optional — for energy balance)</span></label>
+            <div className="flex gap-1 shrink-0">
+              {(["metric", "imperial"] as const).map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => selectBodyUnit(u)}
+                  className={`text-[10px] font-semibold px-2 py-1 rounded-pill border ${
+                    bodyUnit === u ? "gradient-brand text-white border-transparent" : "bg-surface-2 text-text-dim border-border"
+                  }`}
+                >
+                  {u === "metric" ? "cm / kg" : "ft / lbs"}
+                </button>
+              ))}
             </div>
           </div>
+
+          {bodyUnit === "metric" ? (
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] text-text-dim mb-1">Height (cm)</p>
+                <input
+                  type="number"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  placeholder="e.g. 165"
+                  min={100}
+                  max={250}
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-1">Weight (kg)</p>
+                <input
+                  type="number"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                  placeholder="e.g. 65"
+                  min={30}
+                  max={300}
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-1">Age</p>
+                <input
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="e.g. 32"
+                  min={13}
+                  max={120}
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 mb-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[10px] text-text-dim mb-1">Height (ft)</p>
+                  <input
+                    type="number"
+                    value={feetVal}
+                    onChange={(e) => handleFeetChange(e.target.value)}
+                    placeholder="e.g. 5"
+                    min={3}
+                    max={8}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] text-text-dim mb-1">Height (in)</p>
+                  <input
+                    type="number"
+                    value={inchesVal}
+                    onChange={(e) => handleInchesChange(e.target.value)}
+                    placeholder="e.g. 6"
+                    min={0}
+                    max={11}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] text-text-dim mb-1">Age</p>
+                  <input
+                    type="number"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="e.g. 32"
+                    min={13}
+                    max={120}
+                    className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-1">Weight (lbs)</p>
+                <input
+                  type="number"
+                  value={lbsVal}
+                  onChange={(e) => handleLbsChange(e.target.value)}
+                  placeholder="e.g. 143"
+                  min={60}
+                  max={660}
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2">
             {(["female", "male", "other"] as const).map((g) => (
               <button
