@@ -32,6 +32,32 @@ type MealType = (typeof MEAL_TYPES)[number];
 
 const HISTORY_PAGE_SIZE = 10;
 
+// Metric energy unit (kJ) alongside kcal, and imperial-style ounces alongside
+// grams — same real-world pairing as EU/Australian nutrition labels (kJ + g)
+// vs US-style labels (kcal + oz), so totals read correctly either way.
+const KCAL_TO_KJ = 4.184;
+const GRAMS_TO_OZ = 0.035274;
+
+function CalorieStat({ kcal, label }: { kcal: number; label: string }) {
+  return (
+    <div>
+      <p className="text-sm font-bold text-text">{Math.round(kcal).toLocaleString()}</p>
+      <p className="text-[9px] text-text-dim">kcal · {Math.round(kcal * KCAL_TO_KJ).toLocaleString()}kJ</p>
+      <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
+    </div>
+  );
+}
+
+function GramStat({ grams, label }: { grams: number; label: string }) {
+  return (
+    <div>
+      <p className="text-sm font-bold text-text">{Math.round(grams)}g</p>
+      <p className="text-[9px] text-text-dim">{(grams * GRAMS_TO_OZ).toFixed(1)}oz</p>
+      <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
+    </div>
+  );
+}
+
 function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; verified?: boolean }) {
   return (
     <div className="bg-surface-2 border border-border rounded-card p-3 mb-4">
@@ -534,22 +560,10 @@ export default function Nutrition() {
                     ))}
 
                     <div className="grid grid-cols-4 gap-2 text-center border-t border-border pt-2 mt-1">
-                      <div>
-                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.calories)}</p>
-                        <p className="text-[10px] text-text-dim">Calories</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.protein)}g</p>
-                        <p className="text-[10px] text-text-dim">Protein</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.carbs)}g</p>
-                        <p className="text-[10px] text-text-dim">Carbs</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-text">{Math.round(totalEstimated.fat)}g</p>
-                        <p className="text-[10px] text-text-dim">Fat</p>
-                      </div>
+                      <CalorieStat kcal={totalEstimated.calories} label="Calories" />
+                      <GramStat grams={totalEstimated.protein} label="Protein" />
+                      <GramStat grams={totalEstimated.carbs} label="Carbs" />
+                      <GramStat grams={totalEstimated.fat} label="Fat" />
                     </div>
                     <p className="text-[10px] text-text-dim text-center">
                       {allVerified ? "Matched against the USDA nutrition database" : "Estimated — not fully matched in the USDA database"}
@@ -636,22 +650,10 @@ export default function Nutrition() {
 
           {hasTrackedNutrition && (
             <div className="grid grid-cols-4 gap-2 text-center border-t border-border pt-3 mt-3">
-              <div>
-                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.calories)}</p>
-                <p className="text-[10px] text-text-dim">Calories</p>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.protein)}g</p>
-                <p className="text-[10px] text-text-dim">Protein</p>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.carbs)}g</p>
-                <p className="text-[10px] text-text-dim">Carbs</p>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.fat)}g</p>
-                <p className="text-[10px] text-text-dim">Fat</p>
-              </div>
+              <CalorieStat kcal={todaysMealTotals.calories} label="Calories" />
+              <GramStat grams={todaysMealTotals.protein} label="Protein" />
+              <GramStat grams={todaysMealTotals.carbs} label="Carbs" />
+              <GramStat grams={todaysMealTotals.fat} label="Fat" />
               <p className="col-span-4 text-[10px] text-text-dim mt-1">Today's totals</p>
             </div>
           )}
