@@ -303,7 +303,13 @@ export default function Breathwork() {
                 step={1}
                 value={currentTime}
                 onChange={(e) => dailySeekTo(Number(e.target.value))}
-                className="w-full accent-[#5ba3f5] h-1.5"
+                onPointerDown={(e) => e.currentTarget.focus()}
+                className="w-full h-2 cursor-pointer accent-[#5ba3f5]"
+                style={{
+                  WebkitAppearance: "slider-horizontal",
+                  WebkitTouchCallout: "none",
+                  touchAction: "manipulation",
+                }}
                 aria-label="Seek"
               />
               <p className="text-xs text-text-muted text-center">5 minutes with {todayBreathwork.backgroundSound}</p>
@@ -415,7 +421,13 @@ export default function Breathwork() {
                             step={1}
                             value={sessionTime}
                             onChange={(e) => sessionSeekTo(Number(e.target.value))}
-                            className="w-full accent-[#5ba3f5] h-1.5"
+                            onPointerDown={(e) => e.currentTarget.focus()}
+                            className="w-full h-2 cursor-pointer accent-[#5ba3f5]"
+                            style={{
+                              WebkitAppearance: "slider-horizontal",
+                              WebkitTouchCallout: "none",
+                              touchAction: "manipulation",
+                            }}
                             aria-label="Seek"
                           />
                           <div className="flex items-center gap-2">

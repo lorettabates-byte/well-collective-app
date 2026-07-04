@@ -98,3 +98,78 @@ body {
 .animate-pop-in {
   animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* Range input styling for touch and desktop */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #5ba3f5 0%,
+    #5ba3f5 var(--value),
+    #1f3349 var(--value),
+    #1f3349 100%
+  );
+  outline: none;
+  cursor: pointer;
+  /* Remove tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #5ba3f5;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(91, 163, 245, 0.4);
+  border: 2px solid #0d1826;
+  margin-top: -5px;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+  box-shadow: 0 2px 12px rgba(91, 163, 245, 0.6);
+}
+
+/* Webkit track */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: #1f3349;
+  border-radius: 4px;
+  border: none;
+}
+
+/* Firefox thumb */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #5ba3f5;
+  cursor: pointer;
+  border: 2px solid #0d1826;
+  box-shadow: 0 2px 8px rgba(91, 163, 245, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(1.2);
+  box-shadow: 0 2px 12px rgba(91, 163, 245, 0.6);
+}
+
+/* Firefox track */
+input[type="range"]::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+input[type="range"]::-moz-range-progress {
+  background: #5ba3f5;
+  border-radius: 4px;
+}
