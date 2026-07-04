@@ -1,4 +1,4 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -96,14 +96,16 @@ export default function Nutrition() {
   const [savingMeal, setSavingMeal] = useState(false);
 
   // Calorie estimator — add one food item at a time, USDA-backed lookup fills
-  // in each item's nutrition, and the meal's totals are the sum of the list.
+  // in each item's per-serving nutrition, and the meal's totals are the sum
+  // across all items, each multiplied by its own servings count.
   interface MealItemEstimate {
     description: string;
-    calories: number;
+    calories: number; // per serving
     protein: number;
     carbs: number;
     fat: number;
     verified: boolean;
+    servings: number;
   }
   const [mealItemInput, setMealItemInput] = useState("");
   const [mealItems, setMealItems] = useState<MealItemEstimate[]>([]);
@@ -112,10 +114,10 @@ export default function Nutrition() {
 
   const totalEstimated = mealItems.reduce(
     (sum, i) => ({
-      calories: sum.calories + i.calories,
-      protein: sum.protein + i.protein,
-      carbs: sum.carbs + i.carbs,
-      fat: sum.fat + i.fat,
+      calories: sum.calories + i.calories * i.servings,
+      protein: sum.protein + i.protein * i.servings,
+      carbs: sum.carbs + i.carbs * i.servings,
+      fat: sum.fat + i.fat * i.servings,
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
@@ -133,7 +135,7 @@ export default function Nutrition() {
       });
       if (res.ok) {
         const data = await res.json() as { calories: number; protein: number; carbs: number; fat: number; verified: boolean };
-        setMealItems((prev) => [...prev, { description: mealItemInput.trim(), ...data }]);
+        setMealItems((prev) => [...prev, { description: mealItemInput.trim(), servings: 1, ...data }]);
         setMealItemInput("");
       } else {
         setEstimateError("Couldn't estimate that item — try being more specific, or enter calories manually below.");
@@ -149,6 +151,12 @@ export default function Nutrition() {
     setMealItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const updateMealItemServings = (index: number, delta: number) => {
+    setMealItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, servings: Math.max(1, Math.min(20, item.servings + delta)) } : item))
+    );
+  };
+
   useEffect(() => {
     if (!API_URL || !user.email) return;
     fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
@@ -156,6 +164,17 @@ export default function Nutrition() {
       .then((d) => setTodaysMeals(d.meals || []))
       .catch(() => {});
   }, [user.email]);
+
+  const todaysMealTotals = todaysMeals.reduce(
+    (sum, m) => ({
+      calories: sum.calories + (m.estimated_calories ?? 0),
+      protein: sum.protein + (m.estimated_protein_g ?? 0),
+      carbs: sum.carbs + (m.estimated_carbs_g ?? 0),
+      fat: sum.fat + (m.estimated_fat_g ?? 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+  const hasTrackedNutrition = todaysMeals.some((m) => m.estimated_calories != null);
 
   const handleLogMeal = async () => {
     if (!API_URL || !user.email || savingMeal) return;
@@ -480,8 +499,29 @@ export default function Nutrition() {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-text truncate">{item.description}</p>
                           <p className="text-[10px] text-text-dim">
-                            {item.calories} kcal · {item.protein}g protein · {item.carbs}g carbs · {item.fat}g fat
+                            {Math.round(item.calories * item.servings)} kcal · {Math.round(item.protein * item.servings)}g protein ·{" "}
+                            {Math.round(item.carbs * item.servings)}g carbs · {Math.round(item.fat * item.servings)}g fat
                           </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => updateMealItemServings(i, -1)}
+                            disabled={item.servings <= 1}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim disabled:opacity-30"
+                            aria-label="Fewer servings"
+                          >
+                            <Minus size={10} />
+                          </button>
+                          <span className="text-xs font-semibold text-text w-8 text-center" title="Servings">
+                            {item.servings}×
+                          </span>
+                          <button
+                            onClick={() => updateMealItemServings(i, 1)}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim"
+                            aria-label="More servings"
+                          >
+                            <Plus size={10} />
+                          </button>
                         </div>
                         <button
                           onClick={() => removeMealItem(i)}
@@ -591,6 +631,28 @@ export default function Nutrition() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {hasTrackedNutrition && (
+            <div className="grid grid-cols-4 gap-2 text-center border-t border-border pt-3 mt-3">
+              <div>
+                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.calories)}</p>
+                <p className="text-[10px] text-text-dim">Calories</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.protein)}g</p>
+                <p className="text-[10px] text-text-dim">Protein</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.carbs)}g</p>
+                <p className="text-[10px] text-text-dim">Carbs</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text">{Math.round(todaysMealTotals.fat)}g</p>
+                <p className="text-[10px] text-text-dim">Fat</p>
+              </div>
+              <p className="col-span-4 text-[10px] text-text-dim mt-1">Today's totals</p>
             </div>
           )}
         </div>
