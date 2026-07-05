@@ -38,10 +38,12 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
     setRegenerating(true);
     setError("");
     try {
+      const currentRecipeName = data.recipe.name.trim();
+      const regeneratePrompt = `Generate a completely different healthy recipe than "${currentRecipeName}". Pick a different cuisine, cooking method, or main ingredient. Make it something fresh and varied.`;
       const res = await fetch(`${API_URL}/api/recipes/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suggestion: data.recipe.name.trim() }),
+        body: JSON.stringify({ suggestion: regeneratePrompt }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
