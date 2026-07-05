@@ -215,7 +215,7 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
       {everShown && !show && (
         <button
           onClick={reopen}
-          className="fixed right-4 bottom-[72px] z-40 w-10 h-10 rounded-full gradient-brand shadow-glow flex items-center justify-center"
+          className="fixed right-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 w-10 h-10 rounded-full gradient-brand shadow-glow flex items-center justify-center"
           aria-label="Show page guide"
         >
           <HelpCircle size={16} className="text-white" />
