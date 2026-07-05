@@ -81,7 +81,7 @@ export default function Thread() {
     const cursorPos = e.target.selectionStart;
     const mention = getCurrentMention(newText, cursorPos);
 
-    if (mention && mention.query.length > 0) {
+    if (mention && mention.query.length >= 0) {
       setCurrentMention(mention);
 
       // Calculate position for autocomplete dropdown

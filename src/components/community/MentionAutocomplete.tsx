@@ -22,15 +22,18 @@ export default function MentionAutocomplete({ query, members, onSelect, position
     }
   }, [position]);
 
-  if (!position || query.length === 0) return null;
+  if (!position) return null;
 
   // Filter members by query (case-insensitive) — search both username and name
-  const filtered = members
-    .filter((m) => {
-      const username = (m.username || m.name || "").toLowerCase();
-      return username.includes(query.toLowerCase());
-    })
-    .slice(0, 8);
+  // If query is empty, show all members; otherwise filter
+  const filtered = query.length === 0
+    ? members.slice(0, 8)
+    : members
+        .filter((m) => {
+          const username = (m.username || m.name || "").toLowerCase();
+          return username.includes(query.toLowerCase());
+        })
+        .slice(0, 8);
 
   if (filtered.length === 0) return null;
 
