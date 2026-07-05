@@ -35,5 +35,5 @@ jobs:
           port: 21
           protocol: ftps
           local-dir: ./dist/
-          server-dir: ./app.lorettabates.com/
-          state-name: .ftp-state-app.json
+          server-dir: /home3/lorette6/app.lorettabates.com/
+          state-name: .ftp-sync-state.json
