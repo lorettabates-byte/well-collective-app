@@ -31,25 +31,41 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
   const [error, setError] = useState("");
 
   const handleRegenerateRecipe = async () => {
-    if (!data.recipe?.name || !API_URL) return;
+    if (!data.recipe?.name?.trim() || !API_URL) {
+      setError("Recipe name is required to regenerate");
+      return;
+    }
     setRegenerating(true);
+    setError("");
     try {
       const res = await fetch(`${API_URL}/api/recipes/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suggestion: data.recipe.name }),
+        body: JSON.stringify({ suggestion: data.recipe.name.trim() }),
       });
-      if (res.ok) {
-        const newRecipe = await res.json();
-        setData((d) => ({
-          ...d,
-          recipe: { ...d.recipe!, ...newRecipe },
-        }));
-      } else {
-        setError("Failed to regenerate recipe");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || "Failed to regenerate recipe");
+        return;
       }
-    } catch {
-      setError("Failed to regenerate recipe");
+      const newRecipe = await res.json();
+      if (!newRecipe.name) {
+        setError("Generated recipe missing name");
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        recipe: {
+          ...d.recipe!,
+          name: newRecipe.name,
+          description: newRecipe.description,
+          ingredients: newRecipe.ingredients || [],
+          steps: newRecipe.steps || [],
+        },
+      }));
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to regenerate recipe");
     } finally {
       setRegenerating(false);
     }
