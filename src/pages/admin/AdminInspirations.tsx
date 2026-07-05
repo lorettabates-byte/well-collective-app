@@ -128,6 +128,38 @@ export default function AdminInspirations() {
   const [recipeIngredients, setRecipeIngredients] = useState("");
   const [recipeSteps, setRecipeSteps] = useState("");
   const [scheduleStatus, setScheduleStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [recipeSuggestion, setRecipeSuggestion] = useState("");
+  const [generatingRecipe, setGeneratingRecipe] = useState(false);
+
+  const handleGenerateRecipe = async () => {
+    if (!recipeSuggestion.trim() || !API_URL) return;
+
+    setGeneratingRecipe(true);
+    try {
+      const res = await fetch(`${API_URL}/api/recipes/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestion: recipeSuggestion.trim() }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setRecipeName(data.name || "");
+        setRecipeDescription(data.description || "");
+        setRecipeIngredients(data.ingredients?.join(", ") || "");
+        setRecipeSteps(data.steps?.join(" → ") || "");
+        setRecipeSuggestion("");
+        setScheduleStatus({ type: "success", message: `Recipe generated: ${data.name}` });
+        setTimeout(() => setScheduleStatus(null), 3000);
+      } else {
+        setScheduleStatus({ type: "error", message: "Failed to generate recipe" });
+      }
+    } catch (err) {
+      setScheduleStatus({ type: "error", message: "Error generating recipe" });
+    } finally {
+      setGeneratingRecipe(false);
+    }
+  };
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -435,7 +467,31 @@ export default function AdminInspirations() {
           </div>
 
           <div className="border-t border-border pt-3">
-            <p className="text-[11px] font-semibold text-brand-light mb-2">Recipe / Workout</p>
+            <p className="text-[11px] font-semibold text-brand-light mb-2">Recipe</p>
+
+            {/* Recipe Generator */}
+            <div className="mb-3 p-3 bg-surface-2 border border-brand-light/20 rounded-card flex flex-col gap-2">
+              <p className="text-xs text-text-muted">✨ Or suggest a food type and we'll generate a recipe for you</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={recipeSuggestion}
+                  onChange={(e) => setRecipeSuggestion(e.target.value)}
+                  placeholder="e.g., 'Italian pasta', 'healthy breakfast', 'vegan dessert'"
+                  className="flex-1 bg-surface border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateRecipe}
+                  disabled={generatingRecipe || !recipeSuggestion.trim()}
+                  className="gradient-brand text-white text-sm font-semibold px-4 py-2 rounded-pill disabled:opacity-50 shrink-0"
+                >
+                  {generatingRecipe ? "Generating..." : "Generate"}
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Recipe Fields */}
             <div className="flex flex-col gap-2">
               <input value={recipeName} onChange={(e) => setRecipeName(e.target.value)} placeholder="Name" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
               <textarea value={recipeDescription} onChange={(e) => setRecipeDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
