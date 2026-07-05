@@ -279,12 +279,12 @@ export default function AdminInspirations() {
 
         {/* ── Upcoming (scheduled for future) ───────────────────────── */}
         {upcoming.length > 0 && (
-          <>
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar size={14} className="text-brand-light" />
-              <h2 className="text-sm font-bold text-text">Upcoming ({upcoming.length})</h2>
+          <div className="mb-8 p-4 bg-brand/5 border border-brand-light/30 rounded-card">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar size={16} className="text-brand-light" />
+              <h2 className="text-sm font-bold text-text">📅 Upcoming Inspirations ({upcoming.length})</h2>
             </div>
-            <div className="flex flex-col gap-2.5 mb-6">
+            <div className="flex flex-col gap-2.5">
               {upcoming.map((note) => (
                 <div key={note.id} className="glass-card rounded-card px-4 py-3 border border-brand-blue/30">
                   {editingId === note.id ? (
@@ -335,13 +335,16 @@ export default function AdminInspirations() {
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {/* ── Published / past ──────────────────────────────────────── */}
-        <h2 className="text-sm font-bold text-text mb-3">
-          Published ({notesLoading ? "…" : published.length})
-        </h2>
+        {published.length > 0 && (
+          <details className="group mb-6">
+            <summary className="cursor-pointer select-none flex items-center gap-2 mb-3 text-sm font-bold text-text-muted hover:text-text transition-colors">
+              <span className="inline-block transition-transform group-open:rotate-90">▶</span>
+              Published ({notesLoading ? "…" : published.length})
+            </summary>
         <div className="flex flex-col gap-2.5 mb-6">
           {notesLoading && (
             <p className="text-xs text-text-muted py-4 text-center">Loading…</p>
@@ -392,7 +395,9 @@ export default function AdminInspirations() {
               )}
             </div>
           ))}
-        </div>
+          </div>
+          </details>
+        )}
 
         {/* ── Weekly Theme / WELL Activity / Recipe ─────────────────── */}
         <form onSubmit={handleScheduleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3">

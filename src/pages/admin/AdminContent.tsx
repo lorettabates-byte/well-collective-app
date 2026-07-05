@@ -5,6 +5,7 @@ import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
 import ContentScheduleEditModal from "../../components/ContentScheduleEditModal";
+import FutureContentSchedule from "../../components/admin/FutureContentSchedule";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -234,6 +235,10 @@ export default function AdminContent() {
   const todayEntry = contentSchedule.find((e) => e.date === todayISO);
   const isMondayToday = new Date().getDay() === 1;
 
+  // Separate future and past content
+  const futureContent = sorted.filter((e) => e.date >= todayISO);
+  const pastContent = sorted.filter((e) => e.date < todayISO);
+
   return (
     <div>
       <TopBar title="Content Schedule" subtitle="Bulk-upload weekly themes & daily content" showBack />
@@ -364,64 +369,80 @@ export default function AdminContent() {
           </button>
         </div>
 
-        <div>
-          <h2 className="text-sm font-bold text-text mb-3">Scheduled Days ({sorted.length})</h2>
-          {sorted.length === 0 ? (
-            <p className="text-sm text-text-muted">No content scheduled yet.</p>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              {sorted.map((entry) => (
-                <div key={entry.date} className="flex items-center gap-3 glass-card rounded-card px-4 py-3 hover:bg-surface-2 transition-colors cursor-pointer" onClick={() => setEditingEntry(entry)}>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text">{formatDateLong(entry.date)}</p>
-                    <div className="flex gap-1.5 mt-1 flex-wrap">
-                      {entry.weeklyTheme && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
-                          Weekly Theme
-                        </span>
-                      )}
-                      {entry.dailyInspiration && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
-                          Daily Inspiration
-                        </span>
-                      )}
-                      {entry.wellActivity && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
-                          Well Activity
-                        </span>
-                      )}
-                      {entry.recipe && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
-                          Recipe
-                        </span>
-                      )}
+        {/* Future content (prominently displayed) */}
+        {futureContent.length > 0 && (
+          <div className="mb-8">
+            <FutureContentSchedule
+              entries={futureContent}
+              onEdit={setEditingEntry}
+              onDelete={handleRemove}
+              title="📅 Upcoming Content (Next 7+ Days)"
+            />
+          </div>
+        )}
+
+        {/* Past content (collapsible) */}
+        {pastContent.length > 0 && (
+          <div>
+            <details className="group">
+              <summary className="cursor-pointer select-none flex items-center gap-2 mb-3 text-sm font-bold text-text-muted hover:text-text transition-colors">
+                <span className="inline-block transition-transform group-open:rotate-90">▶</span>
+                Past Content ({pastContent.length})
+              </summary>
+              <div className="ml-4 flex flex-col gap-2.5">
+                {pastContent.map((entry) => (
+                  <div key={entry.date} className="flex items-center gap-3 glass-card rounded-card px-4 py-3 hover:bg-surface-2 transition-colors cursor-pointer" onClick={() => setEditingEntry(entry)}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">{formatDateLong(entry.date)}</p>
+                      <div className="flex gap-1.5 mt-1 flex-wrap">
+                        {entry.weeklyTheme && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
+                            Weekly Theme
+                          </span>
+                        )}
+                        {entry.dailyInspiration && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
+                            Daily Inspiration
+                          </span>
+                        )}
+                        {entry.wellActivity && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
+                            Well Activity
+                          </span>
+                        )}
+                        {entry.recipe && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-3 text-brand-light rounded-pill px-2 py-0.5">
+                            Recipe
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingEntry(entry);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-brand-light hover:bg-brand-light hover:text-white transition-colors"
+                      aria-label="Edit scheduled content"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(entry.date);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400 hover:bg-red-400 hover:text-white transition-colors"
+                      aria-label="Remove scheduled content"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingEntry(entry);
-                    }}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-brand-light hover:bg-brand-light hover:text-white transition-colors"
-                    aria-label="Edit scheduled content"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove(entry.date);
-                    }}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400 hover:bg-red-400 hover:text-white transition-colors"
-                    aria-label="Remove scheduled content"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
 
         {editingEntry && <ContentScheduleEditModal entry={editingEntry} onClose={() => setEditingEntry(null)} onSave={handleEditSaved} />}
       </div>
