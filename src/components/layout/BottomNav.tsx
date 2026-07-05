@@ -8,6 +8,8 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 const CACHE_KEY = "well-cup-today-pts";
 const CACHE_TTL = 90_000; // 90 seconds
+const MESSAGES_CACHE_KEY = "unread-messages-count";
+const MESSAGES_CACHE_TTL = 60_000; // 60 seconds
 
 function useTodayPoints(email?: string) {
   const [points, setPoints] = useState<number>(() => {
@@ -39,14 +41,45 @@ function useTodayPoints(email?: string) {
   return points;
 }
 
+function useUnreadMessageCount(email?: string) {
+  const [count, setCount] = useState<number>(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(MESSAGES_CACHE_KEY) ?? "{}") as { count?: number; at?: number };
+      if (Date.now() - (cached.at ?? 0) < MESSAGES_CACHE_TTL) return cached.count ?? 0;
+    } catch { /* ignore */ }
+    return 0;
+  });
+
+  useEffect(() => {
+    if (!API_URL || !email) return;
+    const refresh = () => {
+      fetch(`${API_URL}/api/messages/unread-count?email=${encodeURIComponent(email)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d && typeof d.count === "number") {
+            setCount(d.count);
+            localStorage.setItem(MESSAGES_CACHE_KEY, JSON.stringify({ count: d.count, at: Date.now() }));
+          }
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const id = setInterval(refresh, MESSAGES_CACHE_TTL);
+    return () => clearInterval(id);
+  }, [email]);
+
+  return count;
+}
+
 export default function BottomNav() {
   const { user } = useApp();
   const todayPoints = useTodayPoints(user.email);
+  const unreadMessages = useUnreadMessageCount(user.email);
 
   type NavItem = { to: string; label: string; icon: typeof Home; badge?: number };
   const navItems: NavItem[] = [
     { to: "/", label: "Home", icon: Home },
-    { to: "/community", label: "Community", icon: MessageCircle },
+    { to: "/community", label: "Community", icon: MessageCircle, badge: unreadMessages },
     { to: "/well-cup", label: "Well Cup", icon: Trophy, badge: todayPoints },
     { to: "/wellness", label: "Wellness", icon: Waves },
     { to: "/profile", label: "Profile", icon: User },
