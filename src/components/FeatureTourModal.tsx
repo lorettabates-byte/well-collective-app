@@ -94,7 +94,7 @@ const SLIDES: Slide[] = [
   {
     icon: User,
     title: "Track Your Steps 👟",
-    body: "Log your daily steps in the Well Check to track your activity and energy output. Combined with your workouts and meals, you'll get a complete picture of your daily wellness.",
+    body: "Log your daily steps in the Well Check to track your activity and energy output — or connect your Apple Watch or Fitbit in Profile > Health Sync to auto-fill steps, sleep, and workouts for you. Combined with your meals, you'll get a complete picture of your daily wellness.",
     findIt: [{ icon: Sparkles, label: "Well Check" }],
   },
   {
