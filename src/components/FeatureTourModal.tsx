@@ -2,6 +2,7 @@ import {
   Bell,
   Calendar,
   CheckCircle2,
+  Flame,
   Heart,
   MessageCircle,
   Music,
@@ -83,6 +84,24 @@ const SLIDES: Slide[] = [
     title: "Music",
     body: "Loretta has made songs just for you — only available here. Sort by category to find the right vibe, or tap the heart to save songs to your Favorites playlist.",
     findIt: [{ icon: Music, label: "Music" }],
+  },
+  {
+    icon: Flame,
+    title: "Login Streaks 🔥",
+    body: "Log in every day to build your streak. Hit milestones at 2, 7, 14, and 30 days to unlock bonus points. Tap the flame icon by the bell to see your weekly login history and track your progress!",
+    findIt: [{ icon: Sparkles, label: "Home" }],
+  },
+  {
+    icon: User,
+    title: "Track Your Steps 👟",
+    body: "Log your daily steps in the Well Check to track your activity and energy output. Combined with your workouts and meals, you'll get a complete picture of your daily wellness.",
+    findIt: [{ icon: Sparkles, label: "Well Check" }],
+  },
+  {
+    icon: Salad,
+    title: "Nourishment Balance 🥗",
+    body: "Log meals and snacks to track your daily nutrition. See your macro totals (protein, carbs, fats), calories, and net nourishment score. Monitor your food intake and balance it with your energy output.",
+    findIt: [{ icon: Salad, label: "Nutrition" }],
   },
   {
     icon: Calendar,

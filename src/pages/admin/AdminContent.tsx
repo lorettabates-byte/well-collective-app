@@ -1,9 +1,10 @@
-import { BadgeCheck, Download, ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, Download, ImageIcon, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
+import ContentScheduleEditModal from "../../components/ContentScheduleEditModal";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -116,7 +117,7 @@ interface DiversifyResult {
 }
 
 export default function AdminContent() {
-  const { contentSchedule, importContentSchedule, removeContentEntry } = useApp();
+  const { contentSchedule, importContentSchedule, removeContentEntry, updateContentEntry } = useApp();
   const [jsonText, setJsonText] = useState("");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [syncing, setSyncing] = useState(true);
@@ -126,6 +127,7 @@ export default function AdminContent() {
   const [diversifying, setDiversifying] = useState(false);
   const [diversifyResults, setDiversifyResults] = useState<DiversifyResult[] | null>(null);
   const [diversifyError, setDiversifyError] = useState("");
+  const [editingEntry, setEditingEntry] = useState<ContentBatchEntry | null>(null);
 
   useEffect(() => {
     fetchContentSchedule()
@@ -180,6 +182,11 @@ export default function AdminContent() {
   const handleRemove = (date: string) => {
     removeContentEntry(date);
     deleteContentScheduleEntry(date).catch(() => {});
+  };
+
+  const handleEditSaved = (updated: ContentBatchEntry) => {
+    updateContentEntry(updated);
+    setEditingEntry(null);
   };
 
   const handleBackfillNutrition = async () => {
@@ -364,7 +371,7 @@ export default function AdminContent() {
           ) : (
             <div className="flex flex-col gap-2.5">
               {sorted.map((entry) => (
-                <div key={entry.date} className="flex items-center gap-3 glass-card rounded-card px-4 py-3">
+                <div key={entry.date} className="flex items-center gap-3 glass-card rounded-card px-4 py-3 hover:bg-surface-2 transition-colors cursor-pointer" onClick={() => setEditingEntry(entry)}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-text">{formatDateLong(entry.date)}</p>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
@@ -391,8 +398,21 @@ export default function AdminContent() {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleRemove(entry.date)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingEntry(entry);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-brand-light hover:bg-brand-light hover:text-white transition-colors"
+                    aria-label="Edit scheduled content"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(entry.date);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border shrink-0 text-red-400 hover:bg-red-400 hover:text-white transition-colors"
                     aria-label="Remove scheduled content"
                   >
                     <Trash2 size={14} />
@@ -402,6 +422,8 @@ export default function AdminContent() {
             </div>
           )}
         </div>
+
+        {editingEntry && <ContentScheduleEditModal entry={editingEntry} onClose={() => setEditingEntry(null)} onSave={handleEditSaved} />}
       </div>
     </div>
   );

@@ -417,6 +417,7 @@ interface AppContextValue extends PersistedState {
   logClassCompletion: () => void;
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
   removeContentEntry: (date: string) => void;
+  updateContentEntry: (entry: ContentBatchEntry) => void;
   setFeaturedEvent: (eventId: string | null) => void;
   soldOutEventIds: string[];
   toggleLiveEventSoldOut: (eventId: string) => void;
@@ -1263,6 +1264,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateContentEntry: AppContextValue["updateContentEntry"] = (entry) => {
+    setState((prev) => ({
+      ...prev,
+      contentSchedule: prev.contentSchedule.map((e) => (e.date === entry.date ? entry : e)),
+    }));
+  };
+
   const setFeaturedEvent: AppContextValue["setFeaturedEvent"] = (eventId) => {
     setState((prev) => ({
       ...prev,
@@ -2055,6 +2063,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logClassCompletion,
     importContentSchedule,
     removeContentEntry,
+    updateContentEntry,
     setFeaturedEvent,
     soldOutEventIds,
     toggleLiveEventSoldOut,
