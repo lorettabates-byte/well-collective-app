@@ -1,13 +1,15 @@
 import { Image as ImageIcon, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { compressImage, MAX_PHOTO_BYTES } from "../utils/compressImage";
+import MentionAutocomplete from "../components/community/MentionAutocomplete";
+import { getCurrentMention, replaceMention } from "../utils/mentions";
 
 export default function NewThread() {
   const { categoryId } = useParams<{ categoryId: string }>();
-  const { categories, addThread } = useApp();
+  const { categories, addThread, memberBadges } = useApp();
   const navigate = useNavigate();
   const category = categories.find((c) => c.id === categoryId);
 
@@ -15,6 +17,14 @@ export default function NewThread() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | undefined>();
   const [photoError, setPhotoError] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
+  const [currentMention, setCurrentMention] = useState<{ query: string; start: number; end: number } | null>(null);
+
+  const allMembers = Object.entries(memberBadges).map(([id, entry]) => ({
+    id,
+    ...entry,
+  }));
 
   if (!category || !categoryId) return <Navigate to="/community" replace />;
 
@@ -29,6 +39,47 @@ export default function NewThread() {
     setPhotoError("");
     setImage(await compressImage(file, 640, 0.6));
     e.target.value = "";
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setText(newText);
+
+    // Detect mention being typed
+    const cursorPos = e.target.selectionStart;
+    const mention = getCurrentMention(newText, cursorPos);
+
+    if (mention && mention.query.length > 0) {
+      setCurrentMention(mention);
+
+      // Calculate position for autocomplete dropdown
+      if (textareaRef.current) {
+        const textarea = textareaRef.current;
+        const lines = newText.substring(0, mention.start).split("\n");
+        const lineIndex = lines.length - 1;
+        const lineStart = newText.substring(0, mention.start).lastIndexOf("\n") + 1;
+        const charInLine = mention.start - lineStart;
+
+        const rect = textarea.getBoundingClientRect();
+        const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+        const top = rect.top + (lineIndex + 1) * lineHeight + 10;
+        const left = rect.left + charInLine * 8;
+
+        setMentionPosition({ top, left });
+      }
+    } else {
+      setCurrentMention(null);
+      setMentionPosition(null);
+    }
+  };
+
+  const handleMentionSelect = (username: string) => {
+    if (!currentMention) return;
+    const newText = replaceMention(text, currentMention, username);
+    setText(newText);
+    setCurrentMention(null);
+    setMentionPosition(null);
+    textareaRef.current?.focus();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -51,15 +102,24 @@ export default function NewThread() {
             className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
           />
         </div>
-        <div>
+        <div className="relative">
           <label className="block text-xs font-semibold text-text-muted mb-1.5">Message</label>
           <textarea
+            ref={textareaRef}
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Share what's on your mind..."
+            onChange={handleTextChange}
+            placeholder="Share what's on your mind... (use @username to mention someone)"
             rows={6}
             className="w-full bg-surface-2 border border-border rounded-card px-4 py-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
           />
+          {currentMention && (
+            <MentionAutocomplete
+              query={currentMention.query}
+              members={allMembers}
+              onSelect={handleMentionSelect}
+              position={mentionPosition}
+            />
+          )}
         </div>
         <div>
           {image ? (

@@ -6,6 +6,8 @@ import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { compressImage, MAX_PHOTO_BYTES } from "../utils/compressImage";
 import { timeAgo } from "../utils/format";
+import MentionAutocomplete from "../components/community/MentionAutocomplete";
+import { getCurrentMention, replaceMention } from "../utils/mentions";
 
 export default function Thread() {
   const { categoryId, threadId } = useParams<{ categoryId: string; threadId: string }>();
@@ -18,6 +20,15 @@ export default function Thread() {
   const [photoError, setPhotoError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const [highlighted, setHighlighted] = useState<string | undefined>(highlightMessageId);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
+  const [currentMention, setCurrentMention] = useState<{ query: string; start: number; end: number } | null>(null);
+
+  // Get all members for mention autocomplete
+  const allMembers = Object.entries(memberBadges).map(([id, entry]) => ({
+    id,
+    ...entry,
+  }));
 
   const thread = threads.find((t) => t.id === threadId);
   const category = categories.find((c) => c.id === categoryId);
@@ -60,6 +71,52 @@ export default function Thread() {
     addMessage(thread.id, text.trim(), image);
     setText("");
     setImage(undefined);
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setText(newText);
+
+    // Detect mention being typed
+    const cursorPos = e.target.selectionStart;
+    const mention = getCurrentMention(newText, cursorPos);
+
+    if (mention && mention.query.length > 0) {
+      setCurrentMention(mention);
+
+      // Calculate position for autocomplete dropdown
+      if (textareaRef.current) {
+        const textarea = textareaRef.current;
+        const lines = newText.substring(0, mention.start).split("\n");
+        const lineIndex = lines.length - 1;
+        const lineStart = newText.substring(0, mention.start).lastIndexOf("\n") + 1;
+        const charInLine = mention.start - lineStart;
+
+        const rect = textarea.getBoundingClientRect();
+        const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+        const top = rect.top + (lineIndex + 1) * lineHeight + 10;
+        const left = rect.left + charInLine * 8; // Approximate char width
+
+        setMentionPosition({ top, left });
+      }
+    } else {
+      setCurrentMention(null);
+      setMentionPosition(null);
+    }
+
+    // Grow textarea with content
+    e.target.style.height = "auto";
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+  };
+
+  const handleMentionSelect = (username: string) => {
+    if (!currentMention) return;
+    const newText = replaceMention(text, currentMention, username);
+    setText(newText);
+    setCurrentMention(null);
+    setMentionPosition(null);
+    // Refocus textarea
+    textareaRef.current?.focus();
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,20 +209,16 @@ export default function Thread() {
             </button>
           </div>
         )}
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 relative">
           <label className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-2 text-text-dim shrink-0 cursor-pointer">
             <ImageIcon size={16} />
             <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
           </label>
           <textarea
+            ref={textareaRef}
             value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              // Grow with the content like a phone messenger, up to ~5 lines.
-              e.target.style.height = "auto";
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-            }}
-            placeholder="Type a message..."
+            onChange={handleTextChange}
+            placeholder="Type a message... (use @username to mention someone)"
             rows={1}
             className="flex-1 bg-surface-2 border border-border rounded-card px-4 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none leading-snug"
             style={{ maxHeight: 120 }}
@@ -177,6 +230,15 @@ export default function Thread() {
           >
             <Send size={16} />
           </button>
+
+          {currentMention && (
+            <MentionAutocomplete
+              query={currentMention.query}
+              members={allMembers}
+              onSelect={handleMentionSelect}
+              position={mentionPosition}
+            />
+          )}
         </div>
       </form>
     </div>

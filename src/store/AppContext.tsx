@@ -14,9 +14,10 @@ import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
 import type { BadgeHolder } from "../data/badges";
 
-interface MemberDirectoryEntry extends BadgeHolder {
+export interface MemberDirectoryEntry extends BadgeHolder {
   name?: string;
   avatar?: string;
+  username?: string;
 }
 import type {
   AppNotification,
