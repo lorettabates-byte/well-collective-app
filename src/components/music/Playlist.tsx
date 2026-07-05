@@ -25,8 +25,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { arrayMove } from "@dnd-kit/utilities";
+import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { logActivity } from "../../utils/wellCup";
 
@@ -578,7 +577,6 @@ export default function Playlist({
                         isPlaying={isCurrent && isPlaying}
                         onPlay={() => togglePlaySong(song)}
                         onFavorite={() => toggleFavorite(song.id)}
-                        isFavorite={favorites.has(song.id)}
                       />
                     </div>
                   </div>
