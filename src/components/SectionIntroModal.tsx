@@ -186,10 +186,18 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
   },
 };
 
+// Once a member hides the floating help button (they've been around long
+// enough not to need it), that preference applies across every page's
+// SectionIntroModal instance, not just the one they hid it from.
+const HELP_BUTTON_HIDDEN_KEY = "well-help-button-hidden";
+
 export default function SectionIntroModal({ sectionKey }: { sectionKey: string }) {
   const storageKey = `well-section-intro-${sectionKey}-v2`;
   const [show, setShow] = useState(false);
   const [everShown, setEverShown] = useState(false);
+  const [helpButtonHidden, setHelpButtonHidden] = useState(
+    () => localStorage.getItem(HELP_BUTTON_HIDDEN_KEY) === "1"
+  );
 
   useEffect(() => {
     if (!localStorage.getItem(storageKey)) {
@@ -210,21 +218,35 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
 
   const reopen = () => setShow(true);
 
+  const hideHelpButton = () => {
+    localStorage.setItem(HELP_BUTTON_HIDDEN_KEY, "1");
+    setHelpButtonHidden(true);
+  };
+
   // Portal straight to document.body: MobileShell wraps page content in a
   // `relative z-10` div, which creates its own stacking context, trapping
   // any z-index set on a descendant (even position:fixed ones) inside it —
   // no z-index here could ever out-rank BottomNav's sibling z-20 wrapper.
   return createPortal(
     <>
-      {/* Floating help button — visible after first dismissal so the guide is always accessible */}
-      {everShown && !show && (
-        <button
-          onClick={reopen}
-          className="fixed right-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40 w-10 h-10 rounded-full gradient-brand shadow-glow flex items-center justify-center"
-          aria-label="Show page guide"
-        >
-          <HelpCircle size={16} className="text-white" />
-        </button>
+      {/* Floating help button — visible after first dismissal so the guide is always accessible, until a member hides it for good */}
+      {everShown && !show && !helpButtonHidden && (
+        <div className="fixed right-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-40">
+          <button
+            onClick={reopen}
+            className="w-8 h-8 rounded-full gradient-brand shadow-glow flex items-center justify-center"
+            aria-label="Show page guide"
+          >
+            <HelpCircle size={14} className="text-white" />
+          </button>
+          <button
+            onClick={hideHelpButton}
+            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-surface-2 border border-border flex items-center justify-center"
+            aria-label="Hide page guide button"
+          >
+            <X size={9} className="text-text-muted" />
+          </button>
+        </div>
       )}
 
     {show && (
