@@ -5,7 +5,10 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 // 'workouts' must be requested explicitly (separate from steps/sleep) or
 // queryWorkouts() comes back empty even after the user grants the others.
-const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts"];
+// No "active calories" type here — WellCheck already derives Energy Out from
+// weight/height/age (BMR) plus steps/workouts itself; syncing HealthKit's own
+// calorie number too would just create a second, disagreeing estimate.
+const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts", "weight"];
 
 const ASLEEP_STATES: SleepState[] = ["asleep", "rem", "deep", "light"];
 
@@ -123,14 +126,34 @@ async function syncWorkoutsForToday(logWorkoutCompletion: () => void): Promise<v
   if (workouts.length > 0) logWorkoutCompletion();
 }
 
+async function syncWeightForToday(setWeightKg: (kg: number) => void): Promise<void> {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  // Only take a weigh-in logged today (e.g. from a smart scale) — weightKg
+  // is a single current-value profile field with no history, so pulling in
+  // an old HealthKit sample could silently overwrite a value the user just
+  // corrected by hand in Edit Profile.
+  const { samples } = await Health.readSamples({
+    dataType: "weight",
+    startDate: startOfDay.toISOString(),
+    endDate: new Date().toISOString(),
+    limit: 10,
+    ascending: false,
+  });
+  if (samples.length === 0) return;
+  setWeightKg(samples[0].value);
+}
+
 export async function runDailyHealthSync(
   email: string,
-  opts: { logWorkoutCompletion: () => void }
+  opts: { logWorkoutCompletion: () => void; setWeightKg: (kg: number) => void }
 ): Promise<void> {
   const results = await Promise.allSettled([
     syncStepsForToday(email),
     syncSleepForLastNight(email),
     syncWorkoutsForToday(opts.logWorkoutCompletion),
+    syncWeightForToday(opts.setWeightKg),
   ]);
   for (const r of results) {
     if (r.status === "rejected") console.error("Health sync step failed:", r.reason);

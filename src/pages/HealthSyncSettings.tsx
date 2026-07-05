@@ -54,7 +54,10 @@ export default function HealthSyncSettings() {
     updateProfile({ healthSyncEnabled: true });
     if (user.email) {
       setSyncing(true);
-      runDailyHealthSync(user.email, { logWorkoutCompletion })
+      runDailyHealthSync(user.email, {
+        logWorkoutCompletion,
+        setWeightKg: (kg) => updateProfile({ weightKg: kg }),
+      })
         .then(() => setLastSynced(new Date().toLocaleTimeString()))
         .finally(() => setSyncing(false));
     }
@@ -64,7 +67,10 @@ export default function HealthSyncSettings() {
     if (!user.email) return;
     setError("");
     setSyncing(true);
-    runDailyHealthSync(user.email, { logWorkoutCompletion })
+    runDailyHealthSync(user.email, {
+      logWorkoutCompletion,
+      setWeightKg: (kg) => updateProfile({ weightKg: kg }),
+    })
       .then(() => setLastSynced(new Date().toLocaleTimeString()))
       .catch(() => setError("Sync failed. Please try again."))
       .finally(() => setSyncing(false));
@@ -93,8 +99,8 @@ export default function HealthSyncSettings() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-text">Connect Smart Watch</p>
             <p className="text-xs text-text-muted mt-0.5">
-              Auto-fill today's steps, sleep, and workouts from Apple Health or Health Connect
-              each time you open the app
+              Auto-fill today's steps, sleep, workouts, and weight from Apple Health or Health
+              Connect each time you open the app
             </p>
           </div>
           <Toggle enabled={!!user.healthSyncEnabled} onToggle={handleToggle} />

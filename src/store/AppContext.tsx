@@ -1201,11 +1201,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // Auto-populates steps/sleep/workouts from Apple Health / Health Connect
-  // once per calendar day, for members who've opted in via the health sync
-  // settings toggle. Kept as its own effect (not merged into the app_open
-  // effect below) since it has its own gating condition and native-only
-  // guard, and native (non-web) health data is only ever available on device.
+  // Auto-populates steps/sleep/workouts/weight from Apple Health / Health
+  // Connect once per calendar day, for members who've opted in via the
+  // health sync settings toggle. Kept as its own effect (not merged into the
+  // app_open effect below) since it has its own gating condition and
+  // native-only guard, and native (non-web) health data is only ever
+  // available on device.
   useEffect(() => {
     if (!state.user.email || !state.user.healthSyncEnabled) return;
     if (!Capacitor.isNativePlatform()) return;
@@ -1214,7 +1215,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     checkHealthPermissions().then((granted) => {
       if (!granted) return;
-      runDailyHealthSync(state.user.email!, { logWorkoutCompletion })
+      runDailyHealthSync(state.user.email!, {
+        logWorkoutCompletion,
+        setWeightKg: (kg) => updateProfile({ weightKg: kg }),
+      })
         .then(() => localStorage.setItem(guardKey, "1"))
         .catch((err) => console.error("Daily health sync failed:", err));
     });
