@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CommunityEvent } from "../types";
 
-const API_URL = "https://lorettabates.com/wp-json/tribe/events/v1/events?per_page=25";
+const LIVE_API_URL = "https://lorettabates.com/wp-json/tribe/events/v1/events?per_page=25";
+const SERVER_API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 const COLORS = ["#01519D", "#0191CE", "#84D8FD"];
 
@@ -76,12 +77,12 @@ export function useEventsFeed(): FeedState {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(API_URL)
+    fetch(LIVE_API_URL)
       .then((res) => {
         if (!res.ok) throw new Error("bad response");
         return res.json();
       })
-      .then((data: TribeResponse) => {
+      .then(async (data: TribeResponse) => {
         if (cancelled) return;
         const raw = Array.isArray(data.events) ? data.events : [];
         const events: CommunityEvent[] = raw.map((event, index) => ({
@@ -98,6 +99,24 @@ export function useEventsFeed(): FeedState {
           cost: event.cost || undefined,
           source: "live",
         }));
+
+        // Fetch RSVPs for each live event from server
+        if (SERVER_API_URL) {
+          try {
+            const rsvpPromises = events.map((event) =>
+              fetch(`${SERVER_API_URL}/api/live-events/rsvps/${event.id}`)
+                .then((res) => (res.ok ? res.json() : { rsvps: [] }))
+                .catch(() => ({ rsvps: [] }))
+            );
+            const rsvpResults = await Promise.all(rsvpPromises);
+            events.forEach((event, index) => {
+              event.rsvps = rsvpResults[index]?.rsvps ?? [];
+            });
+          } catch (err) {
+            console.error("Failed to fetch live event RSVPs:", err);
+          }
+        }
+
         setState({ events, loading: false, error: false });
       })
       .catch(() => {

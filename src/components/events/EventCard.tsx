@@ -10,6 +10,8 @@ const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
 function monthAbbrev(dateStr: string): string {
   const month = Number(dateStr.split("-")[1]);
   return MONTHS[month - 1];
@@ -26,16 +28,27 @@ export default function EventCard({ event, compact }: EventCardProps) {
   const isLive = event.source === "live";
   const soldOut = !!event.soldOut || soldOutEventIds.includes(event.id);
 
-  const liveGoingKey = `well-event-going-${event.id}`;
-  const [liveGoing, setLiveGoing] = useState(() => !!localStorage.getItem(liveGoingKey));
-  const toggleLiveGoing = () => {
-    const next = !liveGoing;
-    if (next) localStorage.setItem(liveGoingKey, "1");
-    else localStorage.removeItem(liveGoingKey);
-    setLiveGoing(next);
+  const [liveRsvps, setLiveRsvps] = useState<string[]>(event.rsvps);
+
+  const toggleLiveGoing = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/live-events/${event.id}/rsvp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: user.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLiveRsvps(data.rsvps ?? []);
+      }
+    } catch (err) {
+      console.error("Failed to toggle live event RSVP:", err);
+    }
   };
 
   if (compact) {
+    const compactRsvps = isLive ? liveRsvps : event.rsvps;
     return (
       <div className="relative glass-card rounded-card p-3 w-44 shrink-0 animate-fade-in-up overflow-hidden">
         {soldOut && (
@@ -55,10 +68,10 @@ export default function EventCard({ event, compact }: EventCardProps) {
         </div>
         <h4 className="text-xs font-bold text-text line-clamp-2 mb-1">{event.title}</h4>
         <p className="text-[11px] text-text-dim">{event.time}</p>
-        {!isLive && event.rsvps.length > 0 && (
+        {compactRsvps.length > 0 && (
           <div className="flex items-center gap-1 text-[11px] text-text-dim mt-1">
             <Users size={11} />
-            <span>{event.rsvps.length}</span>
+            <span>{compactRsvps.length}</span>
           </div>
         )}
       </div>
@@ -110,17 +123,33 @@ export default function EventCard({ event, compact }: EventCardProps) {
       <div className="flex items-center justify-between mt-3">
         {isLive ? (
           <>
-            <div className="flex-1 min-w-0">
-              {event.cost && <span className="text-[11px] font-semibold text-brand-light">{event.cost}</span>}
+            <div className="flex items-center -space-x-2">
+              {liveRsvps.slice(0, 4).map((rsvpId) => {
+                const attendee = rsvpId === user.id ? user : memberBadges[rsvpId];
+                return (
+                  <Avatar
+                    key={rsvpId}
+                    src={attendee?.avatar || ""}
+                    alt={attendee?.name || "Attendee"}
+                    size={24}
+                    ring
+                  />
+                );
+              })}
+              {liveRsvps.length > 0 && (
+                <span className="ml-3 text-[11px] text-text-dim">
+                  {liveRsvps.length} going
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleLiveGoing}
                 className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors ${
-                  liveGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "bg-surface-2 text-text-muted border border-border"
+                  liveRsvps.includes(user.id) ? "bg-surface-3 text-brand-light border border-brand-light/30" : "bg-surface-2 text-text-muted border border-border"
                 }`}
               >
-                {liveGoing ? "Going ✓" : "Going"}
+                {liveRsvps.includes(user.id) ? "Going ✓" : "Going"}
               </button>
               <a
                 href={event.url}
