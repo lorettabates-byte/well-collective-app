@@ -120,6 +120,8 @@ export default function AdminMusic() {
 
   const [playingSongId, setPlayingSongId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [queueRepeatMode, setQueueRepeatMode] = useState<"off" | "one" | "all">("off");
+  const [playingFromQueue, setPlayingFromQueue] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // A small drag distance threshold keeps taps on the handle from being
@@ -598,8 +600,44 @@ export default function AdminMusic() {
       audio.currentTime = 0;
       audio.play();
       setPlayingSongId(song.id);
+      setPlayingFromQueue(false);
     }
   };
+
+  const playQueueAll = () => {
+    if (queuedSongs.length === 0) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = queuedSongs[0].url;
+    audio.currentTime = 0;
+    audio.play();
+    setPlayingSongId(queuedSongs[0].id);
+    setPlayingFromQueue(true);
+  };
+
+  // Handle song end: repeat or play next
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      if (!playingFromQueue) return;
+      if (queueRepeatMode === "one") {
+        audio.currentTime = 0;
+        audio.play();
+      } else if (queueRepeatMode === "all") {
+        const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
+        const nextIndex = (currentIndex + 1) % queuedSongs.length;
+        audio.src = queuedSongs[nextIndex].url;
+        audio.currentTime = 0;
+        audio.play();
+        setPlayingSongId(queuedSongs[nextIndex].id);
+      }
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    return () => audio.removeEventListener("ended", handleEnded);
+  }, [playingFromQueue, playingSongId, queueRepeatMode, queuedSongs]);
 
   const stopPlayer = () => {
     audioRef.current?.pause();
@@ -710,11 +748,35 @@ export default function AdminMusic() {
               </div>
               {queueExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
             </button>
-            {queueExpanded && <><p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
-            {queueLoading ? (
-              <p className="text-xs text-text-muted">Loading...</p>
-            ) : (
-              <DndContext
+            {queueExpanded && (
+              <>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    onClick={playQueueAll}
+                    disabled={queuedSongs.length === 0}
+                    className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-brand-light text-white disabled:opacity-50"
+                  >
+                    <Play size={12} className="inline mr-1" />
+                    Play All
+                  </button>
+                  <button
+                    onClick={() => setQueueRepeatMode((m) => (m === "off" ? "one" : m === "one" ? "all" : "off"))}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-pill transition-colors ${
+                      queueRepeatMode === "off"
+                        ? "bg-surface-2 text-text-muted border border-border"
+                        : queueRepeatMode === "one"
+                          ? "bg-brand-light text-white"
+                          : "bg-brand text-white"
+                    }`}
+                  >
+                    {queueRepeatMode === "off" ? "Repeat: Off" : queueRepeatMode === "one" ? "Repeat: 1" : "Repeat: All"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
+                {queueLoading ? (
+                  <p className="text-xs text-text-muted">Loading...</p>
+                ) : (
+                  <DndContext
                 sensors={dragSensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEndQueue}
@@ -836,7 +898,9 @@ export default function AdminMusic() {
               </div>
               </SortableContext>
               </DndContext>
-            )}</>}
+                )}
+              </>
+            )}
           </div>
         )}
 
