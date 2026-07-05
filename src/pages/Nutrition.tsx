@@ -10,6 +10,16 @@ import { logActivity } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
+interface SavedMeal {
+  id: number;
+  name: string;
+  mealType: string;
+  estimatedCalories: number | null;
+  estimatedProteinG: number | null;
+  estimatedCarbsG: number | null;
+  estimatedFatG: number | null;
+}
+
 interface MealEntry {
   id: number;
   meal_type: string;
@@ -190,6 +200,70 @@ export default function Nutrition() {
       .then((d) => setTodaysMeals(d.meals || []))
       .catch(() => {});
   }, [user.email]);
+
+  // ── Saved meals (quick reuse of commonly eaten meals) ──────────────────────
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
+  const [showSaveMealPrompt, setShowSaveMealPrompt] = useState(false);
+  const [saveMealName, setSaveMealName] = useState("");
+  const [savingSavedMeal, setSavingSavedMeal] = useState(false);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/meals/saved?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { saved: [] }))
+      .then((d) => setSavedMeals(d.saved || []))
+      .catch(() => {});
+  }, [user.email]);
+
+  const handleSaveMeal = async () => {
+    if (!API_URL || !user.email || !saveMealName.trim() || savingSavedMeal) return;
+    setSavingSavedMeal(true);
+    const nutrition = mealItems.length > 0
+      ? {
+          estimatedCalories: Math.round(totalEstimated.calories),
+          estimatedProteinG: Math.round(totalEstimated.protein),
+          estimatedCarbsG: Math.round(totalEstimated.carbs),
+          estimatedFatG: Math.round(totalEstimated.fat),
+        }
+      : { estimatedCalories: estimatedCalories ? parseInt(estimatedCalories, 10) : undefined };
+    try {
+      const res = await fetch(`${API_URL}/api/meals/saved`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, name: saveMealName.trim(), mealType, ...nutrition }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedMeals((prev) => [data.saved, ...prev.filter((m) => m.id !== data.saved.id)]);
+        setShowSaveMealPrompt(false);
+        setSaveMealName("");
+      }
+    } catch { /* silent */ } finally {
+      setSavingSavedMeal(false);
+    }
+  };
+
+  const handleDeleteSavedMeal = async (id: number) => {
+    if (!API_URL) return;
+    setSavedMeals((prev) => prev.filter((m) => m.id !== id));
+    try {
+      await fetch(`${API_URL}/api/meals/saved/${id}`, { method: "DELETE" });
+    } catch { /* silent */ }
+  };
+
+  const handleLoadSavedMeal = (meal: SavedMeal) => {
+    setMealType((MEAL_TYPES.find((t) => t === meal.mealType) ?? mealType) as MealType);
+    setMealItems([{
+      description: meal.name,
+      calories: meal.estimatedCalories ?? 0,
+      protein: meal.estimatedProteinG ?? 0,
+      carbs: meal.estimatedCarbsG ?? 0,
+      fat: meal.estimatedFatG ?? 0,
+      verified: false,
+      servings: 1,
+    }]);
+    setEstimateError("");
+  };
 
   const todaysMealTotals = todaysMeals.reduce(
     (sum, m) => ({
@@ -548,6 +622,35 @@ export default function Nutrition() {
               {/* Calorie estimator — add one food item at a time, USDA-backed lookup fills in the rest */}
               <div className="flex flex-col gap-2">
                 <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">Calorie & Nutrition Estimate <span className="normal-case font-normal text-text-dim">(optional)</span></p>
+
+                {savedMeals.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wide">Quick add saved meal</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {savedMeals.map((meal) => (
+                        <div
+                          key={meal.id}
+                          className="flex items-center gap-1 bg-surface-2 border border-border rounded-pill pl-3 pr-1 py-1"
+                        >
+                          <button
+                            onClick={() => handleLoadSavedMeal(meal)}
+                            className="text-xs font-semibold text-text"
+                          >
+                            {meal.name}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSavedMeal(meal.id)}
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-text-dim"
+                            aria-label={`Remove saved meal ${meal.name}`}
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <input
                     value={mealItemInput}
@@ -634,6 +737,43 @@ export default function Nutrition() {
                     max={5000}
                     className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                   />
+                )}
+
+                {(mealItems.length > 0 || estimatedCalories) && (
+                  showSaveMealPrompt ? (
+                    <div className="flex gap-2">
+                      <input
+                        value={saveMealName}
+                        onChange={(e) => setSaveMealName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSaveMeal())}
+                        placeholder="Name this meal (e.g. My usual breakfast)"
+                        className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSaveMeal}
+                        disabled={!saveMealName.trim() || savingSavedMeal}
+                        className="flex items-center gap-1 gradient-brand text-white text-xs font-semibold rounded-pill px-3 disabled:opacity-40"
+                      >
+                        {savingSavedMeal ? "…" : "Save"}
+                      </button>
+                      <button
+                        onClick={() => { setShowSaveMealPrompt(false); setSaveMealName(""); }}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-dim shrink-0"
+                        aria-label="Cancel"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowSaveMealPrompt(true)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-brand-light self-start"
+                    >
+                      <Bookmark size={13} />
+                      Save this meal for quick reuse
+                    </button>
+                  )
                 )}
               </div>
 
