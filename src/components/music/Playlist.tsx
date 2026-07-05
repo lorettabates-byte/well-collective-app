@@ -191,12 +191,17 @@ export default function Playlist({
   }, [isPlaying]);
 
   const orderedSongs = order.map((id) => songs.find((s) => s.id === id)).filter((s): s is Song => !!s);
+  const featuredSong = orderedSongs.find((s) => s.featured);
   const categoryFiltered = activeCategoryId
     ? orderedSongs.filter((s) => s.categoryIds?.includes(activeCategoryId))
     : orderedSongs;
-  const visibleSongs = favoritesOnly ? categoryFiltered.filter((s) => favorites.has(s.id)) : categoryFiltered;
-  const playableSongs = visibleSongs.filter((s) => !lockedSongIds.has(s.id));
-  const featuredSong = orderedSongs.find((s) => s.featured);
+  // Exclude featured song from the main list (it only appears in the featured section)
+  const regularSongs = categoryFiltered.filter((s) => s.id !== featuredSong?.id);
+  const visibleSongs = favoritesOnly ? regularSongs.filter((s) => favorites.has(s.id)) : regularSongs;
+  // For Play All: include featured song if it's playable
+  const playableSongs = visibleSongs
+    .concat(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : [])
+    .filter((s) => !lockedSongIds.has(s.id));
 
   function playAt(queue: Song[], index: number) {
     if (index < 0 || index >= queue.length) return;
@@ -389,24 +394,61 @@ export default function Playlist({
 
       {featuredSong && !favoritesOnly && !activeCategoryId && (
         <div className="gradient-brand p-[1px] rounded-card">
-          <button
-            onClick={() => togglePlaySong(featuredSong)}
-            className="w-full bg-surface rounded-card px-3 py-2.5 flex items-center gap-2.5 text-left"
-          >
-            <div className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
+          <div className="w-full bg-surface rounded-card px-3 py-2.5 flex items-center gap-2.5">
+            <button
+              onClick={() => togglePlaySong(featuredSong)}
+              className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0"
+              aria-label={currentSong?.id === featuredSong.id && isPlaying ? "Pause" : "Play"}
+            >
               {currentSong?.id === featuredSong.id && isPlaying ? (
                 <Pause size={14} className="text-white" />
               ) : (
                 <Play size={14} className="text-white" />
               )}
-            </div>
+            </button>
             <div className="flex-1 min-w-0">
               <span className="text-[10px] font-bold uppercase tracking-wide text-brand-light">
                 🎵 New This Week — Music Monday
               </span>
               <p className="text-sm font-semibold text-text truncate">{featuredSong.title}</p>
             </div>
-          </button>
+            <button
+              onClick={() => toggleFavorite(featuredSong.id)}
+              aria-label={favorites.has(featuredSong.id) ? "Unfavorite" : "Favorite"}
+              className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
+            >
+              <Heart size={16} className={favorites.has(featuredSong.id) ? "fill-brand-light" : ""} />
+            </button>
+            {featuredSong.lyrics && (
+              <button
+                onClick={() => setLyricsSong(featuredSong)}
+                aria-label="View lyrics"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
+              >
+                <FileText size={15} />
+              </button>
+            )}
+            {downloadsLocked ? (
+              <button
+                onClick={() => showLocked("download")}
+                aria-label="Download locked for trial members"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-text-dim"
+              >
+                <Lock size={14} />
+              </button>
+            ) : (
+              <a
+                href={featuredSong.url}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-text-muted"
+              >
+                <Download size={15} />
+              </a>
+            )}
+          </div>
         </div>
       )}
 
