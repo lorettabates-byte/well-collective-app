@@ -1,12 +1,14 @@
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
+import { getRecipePhotoByCategory } from "../../utils/recipePhotos";
 
 interface FutureContentScheduleProps {
   entries: ContentBatchEntry[];
   onEdit: (entry: ContentBatchEntry) => void;
   onDelete: (date: string) => void;
+  onRegeneratePhoto?: (entry: ContentBatchEntry) => void;
   title?: string;
 }
 
@@ -14,6 +16,7 @@ export default function FutureContentSchedule({
   entries,
   onEdit,
   onDelete,
+  onRegeneratePhoto,
   title = "Upcoming Content",
 }: FutureContentScheduleProps) {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
@@ -135,6 +138,45 @@ export default function FutureContentSchedule({
                 {entry.recipe && (
                   <div className="border-l-2 border-brand-light pl-3">
                     <p className="text-xs font-bold text-brand-light uppercase tracking-wide mb-1">Recipe</p>
+                    {(() => {
+                      const recipeImage =
+                        entry.recipe.image ||
+                        getRecipePhotoByCategory(
+                          (entry.recipe as { imageCategory?: string }).imageCategory || "general_healthy",
+                          entry.recipe.name
+                        );
+                      return (
+                        <div className="relative mb-2">
+                          <img src={recipeImage} alt={entry.recipe.name} className="w-full h-32 object-cover rounded-card" />
+                          <div className="absolute top-2 right-2 flex gap-1.5">
+                            {onRegeneratePhoto && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRegeneratePhoto(entry);
+                                }}
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+                                aria-label="Regenerate photo"
+                                title="Regenerate photo"
+                              >
+                                <RefreshCw size={13} />
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(entry);
+                              }}
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+                              aria-label="Use your own photo"
+                              title="Use your own photo"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <p className="text-sm font-semibold text-text">{entry.recipe.name}</p>
                     <p className="text-xs text-text-muted mt-1">{entry.recipe.description}</p>
                     {entry.recipe.ingredients && entry.recipe.ingredients.length > 0 && (

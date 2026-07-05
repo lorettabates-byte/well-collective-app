@@ -195,6 +195,17 @@ export function getRecipePhotoByCategory(category: string, recipeName: string): 
   return photos[hashCode(recipeName) % photos.length];
 }
 
+// Picks a different photo from the same category pool than the one
+// currently showing — used by the admin "regenerate photo" action so
+// clicking it visibly changes the image instead of landing back on the
+// same hash-picked one.
+export function getAnotherRecipePhoto(category: string, currentUrl?: string): string {
+  const photos = PHOTOS[category] || PHOTOS.general_healthy;
+  if (photos.length <= 1) return photos[0];
+  const candidates = photos.filter((p) => p !== currentUrl);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 export function getRecipePhoto(name: string, ingredients: string[]): string {
   const text = `${name} ${ingredients.join(" ")}`.toLowerCase();
 

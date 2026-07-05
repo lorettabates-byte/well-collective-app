@@ -6,6 +6,7 @@ import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
 import ContentScheduleEditModal from "../../components/ContentScheduleEditModal";
 import FutureContentSchedule from "../../components/admin/FutureContentSchedule";
+import { getAnotherRecipePhoto, getRecipePhotoByCategory } from "../../utils/recipePhotos";
 
 interface GeneratedRecipeResponse {
   name?: string;
@@ -334,6 +335,18 @@ export default function AdminContent() {
     setEditingEntry(null);
   };
 
+  const handleRegeneratePhoto = async (entry: ContentBatchEntry) => {
+    if (!entry.recipe) return;
+    const category = (entry.recipe as { imageCategory?: string }).imageCategory || "general_healthy";
+    const currentImage = entry.recipe.image || getRecipePhotoByCategory(category, entry.recipe.name);
+    const newImage = getAnotherRecipePhoto(category, currentImage);
+    const updatedRecipe = { ...entry.recipe, image: newImage };
+
+    updateContentEntry({ ...entry, recipe: updatedRecipe });
+    const synced = await syncContentSchedule([{ date: entry.date, recipe: updatedRecipe }]);
+    if (synced) await refreshSchedule();
+  };
+
   const handleBackfillNutrition = async () => {
     if (!API_URL) return;
     setBackfilling(true);
@@ -442,6 +455,7 @@ export default function AdminContent() {
             entries={futureContent}
             onEdit={setEditingEntry}
             onDelete={handleRemove}
+            onRegeneratePhoto={handleRegeneratePhoto}
             title="📅 Upcoming Content (Next 7+ Days)"
           />
         )}

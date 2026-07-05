@@ -210,7 +210,14 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-text-dim block mb-1">Image URL</label>
+                  <label className="text-xs font-semibold text-text-dim block mb-1">Photo</label>
+                  {data.recipe.image && (
+                    <img
+                      src={data.recipe.image}
+                      alt={data.recipe.name}
+                      className="w-full h-32 object-cover rounded-card mb-2"
+                    />
+                  )}
                   <input
                     type="text"
                     value={data.recipe.image}
@@ -220,7 +227,8 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
                         recipe: { ...d.recipe!, image: e.target.value },
                       }))
                     }
-                    className="w-full bg-surface border border-border rounded-card px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full bg-surface border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                   />
                 </div>
                 <div>
