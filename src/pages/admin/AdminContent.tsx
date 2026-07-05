@@ -1,4 +1,4 @@
-import { BadgeCheck, Download, ImageIcon, Loader2, Pencil, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, ChefHat, Download, ImageIcon, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -157,9 +157,31 @@ export default function AdminContent() {
   const [recipeDescription, setRecipeDescription] = useState("");
   const [recipeIngredients, setRecipeIngredients] = useState("");
   const [recipeSteps, setRecipeSteps] = useState("");
+  const [recipeImage, setRecipeImage] = useState("");
   const [addDayStatus, setAddDayStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [recipeSuggestion, setRecipeSuggestion] = useState("");
   const [generatingRecipe, setGeneratingRecipe] = useState(false);
+
+  // Each recipe section starts in edit mode (plain inputs) until a recipe has
+  // been generated, at which point it flips to the "as it will actually post"
+  // preview — matching the real Today's Recipe card — with a pencil to jump
+  // back into editing that one section.
+  const [recipeEditMode, setRecipeEditMode] = useState({
+    image: true,
+    name: true,
+    description: true,
+    ingredients: true,
+    steps: true,
+  });
+
+  const toggleRecipeEdit = (field: keyof typeof recipeEditMode) => {
+    setRecipeEditMode((m) => ({ ...m, [field]: !m[field] }));
+  };
+
+  const resetRecipeForm = () => {
+    setRecipeName(""); setRecipeDescription(""); setRecipeIngredients(""); setRecipeSteps(""); setRecipeImage("");
+    setRecipeEditMode({ image: true, name: true, description: true, ingredients: true, steps: true });
+  };
 
   const handleGenerateRecipe = async () => {
     if (!recipeSuggestion.trim() || !API_URL) return;
@@ -179,6 +201,9 @@ export default function AdminContent() {
         setRecipeIngredients(data.ingredients?.join(", ") || "");
         setRecipeSteps(data.steps?.join(", ") || "");
         setRecipeSuggestion("");
+        // Show the generated recipe the way it'll actually post — only the
+        // photo still needs picking, since the generator doesn't supply one.
+        setRecipeEditMode({ image: true, name: false, description: false, ingredients: false, steps: false });
         setAddDayStatus({ type: "success", message: `Recipe generated: ${data.name}` });
         setTimeout(() => setAddDayStatus(null), 3000);
       } else {
@@ -209,7 +234,7 @@ export default function AdminContent() {
         description: recipeDescription.trim(),
         ingredients: recipeIngredients.split(",").map((s) => s.trim()).filter(Boolean),
         steps: recipeSteps.split(",").map((s) => s.trim()).filter(Boolean),
-        image: "",
+        image: recipeImage.trim(),
       };
     }
 
@@ -223,7 +248,7 @@ export default function AdminContent() {
       if (synced) {
         setAddDayStatus({ type: "success", message: `Saved for ${scheduleDate}.` });
         setWeeklyTitle(""); setWeeklyBody(""); setActivityTitle(""); setActivityDescription("");
-        setRecipeName(""); setRecipeDescription(""); setRecipeIngredients(""); setRecipeSteps("");
+        resetRecipeForm();
         setScheduleDate("");
         await refreshSchedule();
       } else {
@@ -438,12 +463,163 @@ export default function AdminContent() {
               </div>
             </div>
 
-            {/* Manual Recipe Fields */}
-            <div className="flex flex-col gap-2">
-              <input value={recipeName} onChange={(e) => setRecipeName(e.target.value)} placeholder="Name" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
-              <textarea value={recipeDescription} onChange={(e) => setRecipeDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
-              <input value={recipeIngredients} onChange={(e) => setRecipeIngredients(e.target.value)} placeholder="Ingredients, comma separated" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
-              <input value={recipeSteps} onChange={(e) => setRecipeSteps(e.target.value)} placeholder="Steps, comma separated" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+            {/* Recipe preview — mirrors the real "Today's Recipe" card members
+                see, with a pencil on each section to edit it inline. */}
+            <div className="glass-card rounded-card overflow-hidden border border-border">
+              {/* Photo */}
+              <div className="relative">
+                {recipeEditMode.image ? (
+                  <div className="p-3 bg-surface-2">
+                    <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Image URL</label>
+                    <input
+                      value={recipeImage}
+                      onChange={(e) => setRecipeImage(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full bg-surface border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                    />
+                  </div>
+                ) : recipeImage ? (
+                  <img src={recipeImage} alt={recipeName} className="w-full h-48 object-cover" />
+                ) : (
+                  <div className="w-full h-48 bg-surface-2 flex items-center justify-center">
+                    <ImageIcon size={28} className="text-text-dim" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleRecipeEdit("image")}
+                  aria-label="Edit photo"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center"
+                >
+                  <Pencil size={13} />
+                </button>
+              </div>
+
+              <div className="p-4">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <ChefHat size={16} className="text-brand-light" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
+                    Today's Recipe
+                  </span>
+                </div>
+
+                {/* Name */}
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  {recipeEditMode.name ? (
+                    <input
+                      value={recipeName}
+                      onChange={(e) => setRecipeName(e.target.value)}
+                      placeholder="Recipe name"
+                      className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                    />
+                  ) : (
+                    <h2 className="text-lg font-bold text-text flex-1">{recipeName || "Recipe name"}</h2>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleRecipeEdit("name")}
+                    aria-label="Edit name"
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light shrink-0"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                </div>
+
+                {/* Description */}
+                <div className="mb-4">
+                  <div className="flex items-start justify-between gap-2">
+                    {recipeEditMode.description ? (
+                      <textarea
+                        value={recipeDescription}
+                        onChange={(e) => setRecipeDescription(e.target.value)}
+                        placeholder="Description"
+                        rows={2}
+                        className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-text-muted leading-relaxed flex-1">
+                        {recipeDescription || "Description"}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleRecipeEdit("description")}
+                      aria-label="Edit description"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light shrink-0"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ingredients */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-text">Ingredients</h3>
+                    <button
+                      type="button"
+                      onClick={() => toggleRecipeEdit("ingredients")}
+                      aria-label="Edit ingredients"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light shrink-0"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </div>
+                  {recipeEditMode.ingredients ? (
+                    <textarea
+                      value={recipeIngredients}
+                      onChange={(e) => setRecipeIngredients(e.target.value)}
+                      placeholder="Ingredients, comma separated"
+                      rows={3}
+                      className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+                    />
+                  ) : (
+                    <ul className="flex flex-col gap-1.5">
+                      {recipeIngredients.split(",").map((s) => s.trim()).filter(Boolean).map((ingredient, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-text-muted">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-light mt-1.5 shrink-0" />
+                          {ingredient}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Steps */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-text">Steps</h3>
+                    <button
+                      type="button"
+                      onClick={() => toggleRecipeEdit("steps")}
+                      aria-label="Edit steps"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light shrink-0"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </div>
+                  {recipeEditMode.steps ? (
+                    <textarea
+                      value={recipeSteps}
+                      onChange={(e) => setRecipeSteps(e.target.value)}
+                      placeholder="Steps, comma separated"
+                      rows={3}
+                      className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none"
+                    />
+                  ) : (
+                    <ol className="flex flex-col gap-2">
+                      {recipeSteps.split(",").map((s) => s.trim()).filter(Boolean).map((step, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm text-text-muted">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-surface-2 border border-border text-[11px] font-bold text-brand-light shrink-0 mt-0.5">
+                            {i + 1}
+                          </span>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -3,7 +3,13 @@ import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import type { InspirationCadence } from "../../types";
 
+// This form always posts through /api/notes, which shows up in the app as
+// a "Note from Loretta" regardless of which tab is selected — so that's
+// the default/primary option. The other tabs are kept for labeling intent
+// only; daily/weekly automated content is actually driven by the Content
+// Schedule page, not this form.
 const CADENCE_OPTIONS: { id: InspirationCadence; label: string }[] = [
+  { id: "note", label: "Note from Loretta" },
   { id: "daily", label: "Daily" },
   { id: "weekly", label: "Weekly" },
   { id: "motivational", label: "Motivational" },
@@ -48,7 +54,7 @@ export default function AdminInspirations() {
   useEffect(() => { fetchNotes(); }, []);
 
   // ── Add note form ────────────────────────────────────────────────────────
-  const [cadence, setCadence] = useState<InspirationCadence>("daily");
+  const [cadence, setCadence] = useState<InspirationCadence>("note");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [scheduleMode, setScheduleMode] = useState<"now" | "scheduled">("now");
