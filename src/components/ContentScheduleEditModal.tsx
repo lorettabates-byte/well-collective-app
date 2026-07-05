@@ -96,7 +96,7 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-6" onClick={onClose}>
       <div
-        className="relative gradient-brand p-[1px] rounded-card shadow-glow max-w-2xl w-full animate-fade-in-up max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative gradient-brand p-[1px] rounded-card shadow-glow max-w-2xl w-full animate-fade-in-up max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-surface rounded-t-card p-5 flex items-center justify-between shrink-0 border-b border-border">
@@ -106,7 +106,7 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
           </button>
         </div>
 
-        <div className="min-h-0 overflow-y-auto flex-1 p-5 pb-32 flex flex-col gap-4">
+        <div className="min-h-0 overflow-y-auto flex-1 p-5 pb-16 flex flex-col gap-4">
           <p className="text-sm text-text-muted">Date: {entry.date}</p>
 
           {/* Weekly Theme */}
