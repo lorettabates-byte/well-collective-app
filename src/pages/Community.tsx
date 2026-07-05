@@ -1,6 +1,7 @@
 import { Mail, MessageCircle, PenSquare, Pin, Trophy } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
@@ -8,9 +9,20 @@ import SectionHeader from "../components/ui/SectionHeader";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
 export default function Community() {
   useSectionTracking("community");
-  const { categories, threads } = useApp();
+  const { categories, threads, user } = useApp();
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+
+  useEffect(() => {
+    if (!user.email || !API_URL) return;
+    fetch(`${API_URL}/api/messages/unread-count?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { count: 0 }))
+      .then((data) => setUnreadMessageCount(data.count || 0))
+      .catch(() => {});
+  }, [user.email]);
 
   const pinnedThreads = [...threads]
     .filter((t) => t.pinnedAt)
@@ -32,10 +44,15 @@ export default function Community() {
           </Link>
           <Link
             to="/messages"
-            className="flex items-center gap-2 glass-card text-text text-sm font-semibold rounded-pill py-3 px-4 justify-center"
+            className="relative flex items-center gap-2 glass-card text-text text-sm font-semibold rounded-pill py-3 px-4 justify-center"
           >
             <Mail size={16} />
             Messages
+            {unreadMessageCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full gradient-brand text-[10px] flex items-center justify-center text-white font-bold">
+                {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+              </span>
+            )}
           </Link>
         </div>
 

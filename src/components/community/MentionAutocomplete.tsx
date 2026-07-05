@@ -24,8 +24,13 @@ export default function MentionAutocomplete({ query, members, onSelect, position
 
   if (!position || query.length === 0) return null;
 
-  // Filter members by query (case-insensitive)
-  const filtered = members.filter((m) => m.username?.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+  // Filter members by query (case-insensitive) — search both username and name
+  const filtered = members
+    .filter((m) => {
+      const username = (m.username || m.name || "").toLowerCase();
+      return username.includes(query.toLowerCase());
+    })
+    .slice(0, 8);
 
   if (filtered.length === 0) return null;
 

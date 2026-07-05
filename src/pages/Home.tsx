@@ -38,7 +38,17 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, threads, inspirations, events, notifications, featuredEventId, logWorkoutCompletion, logWellActivityCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
+  const totalUnread = unreadNotifications + unreadMessages;
+
+  useEffect(() => {
+    if (!user.email || !API_URL) return;
+    fetch(`${API_URL}/api/messages/unread-count?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { count: 0 }))
+      .then((data) => setUnreadMessages(data.count || 0))
+      .catch(() => {});
+  }, [user.email]);
 
   // Most recent by sentAt, not just inspirations[0] — guards against the
   // array order ever drifting out of sync with actual send time, since this
@@ -173,11 +183,11 @@ export default function Home() {
               <span className="text-xs font-bold text-orange-300">{headerStreak}</span>
             </button>
           )}
-          <Link to="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-2 border border-border">
+          <Link to="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-2 border border-border" title="Notifications & Messages">
             <Bell size={17} />
-            {unreadCount > 0 && (
+            {totalUnread > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full gradient-brand text-[10px] flex items-center justify-center text-white font-bold">
-                {unreadCount}
+                {totalUnread > 9 ? "9+" : totalUnread}
               </span>
             )}
           </Link>
