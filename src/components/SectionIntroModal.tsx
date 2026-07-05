@@ -43,6 +43,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface Bullet {
   Icon: LucideIcon;
@@ -209,7 +210,11 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
 
   const reopen = () => setShow(true);
 
-  return (
+  // Portal straight to document.body: MobileShell wraps page content in a
+  // `relative z-10` div, which creates its own stacking context, trapping
+  // any z-index set on a descendant (even position:fixed ones) inside it —
+  // no z-index here could ever out-rank BottomNav's sibling z-20 wrapper.
+  return createPortal(
     <>
       {/* Floating help button — visible after first dismissal so the guide is always accessible */}
       {everShown && !show && (
@@ -270,6 +275,7 @@ export default function SectionIntroModal({ sectionKey }: { sectionKey: string }
       </div>
     </div>
     )}
-    </>
+    </>,
+    document.body
   );
 }
