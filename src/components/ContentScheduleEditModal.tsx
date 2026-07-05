@@ -61,6 +61,7 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
           ...d.recipe!,
           name: newRecipe.name,
           description: newRecipe.description,
+          image: newRecipe.image || d.recipe!.image,
           ingredients: newRecipe.ingredients || [],
           steps: newRecipe.steps || [],
         },
