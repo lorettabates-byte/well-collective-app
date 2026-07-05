@@ -19,15 +19,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
-  SortableContext,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
-  arrayMove,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useSortable } from "@dnd-kit/sortable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/utilities";
 import type { Song, SongCategory } from "../../types";
 import { logActivity } from "../../utils/wellCup";
 
@@ -89,10 +88,9 @@ interface DragHandleProps {
   isPlaying: boolean;
   onPlay: () => void;
   onFavorite: () => void;
-  isFavorite: boolean;
 }
 
-function SortableFavoriteSong({ song, isPlaying, onPlay, onFavorite, isFavorite }: DragHandleProps) {
+function SortableFavoriteSong({ song, isPlaying, onPlay, onFavorite }: DragHandleProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: song.id });
   const style = {
     transform: CSS.Transform.toString(transform),
