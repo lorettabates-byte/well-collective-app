@@ -126,7 +126,7 @@ export default function AdminInspirations() {
   return (
     <div>
       <TopBar title="Inspirations" subtitle="Schedule daily content" showBack />
-      <div className="px-4 pt-4 pb-8">
+      <div className="px-4 pt-4 pb-32">
 
         {/* ── Add note ──────────────────────────────────────────────── */}
         {!showAddForm ? (

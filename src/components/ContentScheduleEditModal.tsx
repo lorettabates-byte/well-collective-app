@@ -1,4 +1,4 @@
-import { Loader2, Save, X } from "lucide-react";
+import { Loader2, RefreshCw, Save, X } from "lucide-react";
 import { useState } from "react";
 import type { ContentBatchEntry } from "../types";
 
@@ -27,7 +27,33 @@ interface ContentScheduleEditModalProps {
 export default function ContentScheduleEditModal({ entry, onClose, onSave }: ContentScheduleEditModalProps) {
   const [data, setData] = useState<ContentBatchEntry>(JSON.parse(JSON.stringify(entry)));
   const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState("");
+
+  const handleRegenerateRecipe = async () => {
+    if (!data.recipe?.name || !API_URL) return;
+    setRegenerating(true);
+    try {
+      const res = await fetch(`${API_URL}/api/recipes/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestion: data.recipe.name }),
+      });
+      if (res.ok) {
+        const newRecipe = await res.json();
+        setData((d) => ({
+          ...d,
+          recipe: { ...d.recipe!, ...newRecipe },
+        }));
+      } else {
+        setError("Failed to regenerate recipe");
+      }
+    } catch {
+      setError("Failed to regenerate recipe");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -179,7 +205,18 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
           {/* Recipe */}
           {data.recipe && (
             <div className="border border-border rounded-card p-4 bg-surface-2">
-              <h3 className="text-sm font-bold text-text mb-3">Recipe</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-text">Recipe</h3>
+                <button
+                  onClick={handleRegenerateRecipe}
+                  disabled={regenerating}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-pill bg-surface border border-border text-text-muted hover:text-brand-light hover:border-brand-light disabled:opacity-50 transition-colors"
+                  title="Generate a different recipe with the same name"
+                >
+                  <RefreshCw size={12} />
+                  {regenerating ? "Generating…" : "Regenerate"}
+                </button>
+              </div>
               <div className="flex flex-col gap-2">
                 <div>
                   <label className="text-xs font-semibold text-text-dim block mb-1">Name</label>
