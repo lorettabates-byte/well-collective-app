@@ -364,7 +364,7 @@ export default function Playlist({
         </button>
       </div>
 
-      {categories.length > 0 && (
+      {categories.length > 0 && !downloadsLocked && (
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           <button
             onClick={() => setActiveCategoryId(null)}
