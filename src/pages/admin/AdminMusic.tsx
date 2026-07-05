@@ -801,21 +801,21 @@ export default function AdminMusic() {
                     {queueRepeatMode === "off" ? "Repeat: Off" : queueRepeatMode === "one" ? "Repeat: 1" : "Repeat: All"}
                   </button>
                 </div>
-                {playingFromQueue && (
+                {playingSongId && (
                   <div className="flex gap-2 mb-2">
                     <button
                       onClick={skipToPrevQueueSong}
-                      disabled={queuedSongs.findIndex((s) => s.id === playingSongId) <= 0}
+                      disabled={!playingFromQueue || queuedSongs.findIndex((s) => s.id === playingSongId) <= 0}
                       className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
-                      title="Previous song"
+                      title="Previous song (queue only)"
                     >
                       ⏮ Back
                     </button>
                     <button
                       onClick={skipToNextQueueSong}
-                      disabled={queuedSongs.findIndex((s) => s.id === playingSongId) >= queuedSongs.length - 1}
+                      disabled={!playingFromQueue || queuedSongs.findIndex((s) => s.id === playingSongId) >= queuedSongs.length - 1}
                       className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
-                      title="Next song"
+                      title="Next song (queue only)"
                     >
                       Skip ⏭
                     </button>
