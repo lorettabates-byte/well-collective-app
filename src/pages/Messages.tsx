@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, Plus, Send, Edit2, Check, X } from "lucide-react";
+import { Mail, MessageCircle, Plus, Send, Edit2, Check, X, Heart } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -17,6 +17,7 @@ interface Message {
   read: boolean;
   created_at: string;
   edited_at?: string;
+  likes?: string[];
 }
 
 interface Conversation {
@@ -51,6 +52,8 @@ interface DirectMessageProps {
   message: Message;
   isOwn: boolean;
   onEdit: (messageId: number, newBody: string) => Promise<void>;
+  onLike: (messageId: number) => Promise<void>;
+  currentUserId: string;
   otherMember: DirectoryMember | undefined;
   selectedUserId: string;
   navigate: ReturnType<typeof useNavigate>;
@@ -60,12 +63,15 @@ function DirectMessage({
   message,
   isOwn,
   onEdit,
+  onLike,
+  currentUserId,
   otherMember,
   selectedUserId,
   navigate,
 }: DirectMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.body);
+  const isLiked = (message.likes || []).includes(currentUserId);
 
   return (
     <div className={`flex gap-2 ${isOwn ? "justify-end" : ""}`}>
@@ -127,6 +133,14 @@ function DirectMessage({
                 {formatTime(message.created_at)}
                 {message.edited_at && <span className="ml-1">(edited)</span>}
               </span>
+              <button
+                onClick={() => onLike(message.id)}
+                className={`p-0.5 transition-colors ${
+                  isLiked ? "text-red-400 hover:text-red-300" : "text-text-dim hover:text-text"
+                }`}
+              >
+                <Heart size={12} className={isLiked ? "fill-red-400" : ""} />
+              </button>
               {isOwn && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -275,6 +289,34 @@ export default function Messages() {
     }
   };
 
+  const handleLikeMessage = async (messageId: number) => {
+    if (!API_URL) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/messages/${messageId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      if (res.ok) {
+        const { liked } = await res.json();
+        setMessages(messages.map((msg) =>
+          msg.id === messageId
+            ? {
+                ...msg,
+                likes: liked
+                  ? [...(msg.likes || []), user.id]
+                  : (msg.likes || []).filter((id) => id !== user.id),
+              }
+            : msg
+        ));
+      }
+    } catch (err) {
+      console.error("Like message error:", err);
+    }
+  };
+
   if (!selectedUserId) {
     return (
       <div>
@@ -381,6 +423,8 @@ export default function Messages() {
               message={msg}
               isOwn={msg.sender_id === user.id}
               onEdit={handleEditMessage}
+              onLike={handleLikeMessage}
+              currentUserId={user.id}
               otherMember={otherMember}
               selectedUserId={selectedUserId}
               navigate={navigate}
