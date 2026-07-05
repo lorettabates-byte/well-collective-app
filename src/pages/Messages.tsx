@@ -1,5 +1,5 @@
 import { Mail, MessageCircle, Plus, Send, Edit2, Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
@@ -153,6 +153,7 @@ export default function Messages() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [inboxLoading, setInboxLoading] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Fetch the member directory once so we can resolve names/avatars for
   // both the inbox list and the open conversation header/bubbles.
@@ -388,19 +389,32 @@ export default function Messages() {
         )}
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 px-4 py-4 border-t border-border flex gap-2 bg-bg">
-        <input
-          type="text"
+      <div className="fixed bottom-20 left-0 right-0 px-4 py-4 border-t border-border flex items-end gap-2 bg-bg">
+        <textarea
+          ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Type a message..."
-          className="flex-1 bg-surface-2 border border-border rounded-pill px-4 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+          onChange={(e) => {
+            setInput(e.target.value);
+            // Auto-grow textarea up to 5 lines (~120px)
+            e.target.style.height = "auto";
+            e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+          }}
+          onKeyPress={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Type a message... (Shift+Enter for new line)"
+          rows={1}
+          className="flex-1 bg-surface-2 border border-border rounded-card px-4 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none leading-snug"
+          style={{ maxHeight: 120 }}
         />
         <button
           onClick={handleSend}
           disabled={loading || !input.trim()}
-          className="gradient-brand text-white p-2.5 rounded-full disabled:opacity-50"
+          className="gradient-brand text-white p-2.5 rounded-full disabled:opacity-50 shrink-0"
+          title="Send (or press Enter)"
         >
           <Send size={18} />
         </button>
