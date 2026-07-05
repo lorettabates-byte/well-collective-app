@@ -1,4 +1,4 @@
-import { Calendar, Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Calendar, Check, Pencil, Plus, Trash2, ChefHat, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import type { ContentBatchEntry, InspirationCadence } from "../../types";
@@ -45,7 +45,26 @@ export default function AdminInspirations() {
     }
   };
 
-  useEffect(() => { fetchNotes(); }, []);
+  // ── Content schedule (themes, activities, recipes) ──────────────────────
+  const [contentSchedule, setContentSchedule] = useState<ContentBatchEntry[]>([]);
+
+  const fetchContentSchedule = async () => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/content-schedule`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setContentSchedule(data.entries ?? []);
+      }
+    } catch {
+      console.error("Failed to fetch content schedule");
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+    fetchContentSchedule();
+  }, []);
 
   // ── Add note form ────────────────────────────────────────────────────────
   const [cadence, setCadence] = useState<InspirationCadence>("daily");
@@ -197,12 +216,27 @@ export default function AdminInspirations() {
         setScheduleStatus({ type: "success", message: `Saved for ${scheduleDate}.` });
         setWeeklyTitle(""); setWeeklyBody(""); setActivityTitle(""); setActivityDescription("");
         setRecipeName(""); setRecipeDescription(""); setRecipeIngredients(""); setRecipeSteps("");
+        setScheduleDate("");
+        await fetchContentSchedule();
       } else {
         const err = await res.json();
         setScheduleStatus({ type: "error", message: err.error || "Failed to save." });
       }
     } catch {
       setScheduleStatus({ type: "error", message: "Failed to reach the server." });
+    }
+  };
+
+  const deleteContentEntry = async (date: string) => {
+    if (!API_URL) return;
+    try {
+      await fetch(`${API_URL}/api/content-schedule/${date}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      await fetchContentSchedule();
+    } catch {
+      console.error("Failed to delete content entry");
     }
   };
 
@@ -430,6 +464,92 @@ export default function AdminInspirations() {
           </div>
           </details>
         )}
+
+        {/* ── Upcoming Content Schedule ────────────────────────────── */}
+        {(() => {
+          const today = new Date().toISOString().split("T")[0];
+          const upcoming = contentSchedule
+            .filter((e) => e.date >= today)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          return upcoming.length > 0 ? (
+            <div className="mb-8 p-4 bg-brand/5 border border-brand-light/30 rounded-card">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar size={16} className="text-brand-light" />
+                <h2 className="text-sm font-bold text-text">📅 Scheduled Content (Next 7+ Days)</h2>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {upcoming.map((entry) => (
+                <div key={entry.date} className="glass-card rounded-card p-4 border border-brand-blue/30">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-xs font-semibold text-brand-light mb-1">
+                        {new Date(entry.date).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {entry.weeklyTheme && (
+                          <span className="text-[10px] bg-brand/20 text-brand-light px-2 py-1 rounded-pill">
+                            Theme
+                          </span>
+                        )}
+                        {entry.wellActivity && (
+                          <span className="text-[10px] bg-brand/20 text-brand-light px-2 py-1 rounded-pill flex items-center gap-1">
+                            <Wind size={10} /> Activity
+                          </span>
+                        )}
+                        {entry.recipe && (
+                          <span className="text-[10px] bg-brand/20 text-brand-light px-2 py-1 rounded-pill flex items-center gap-1">
+                            <ChefHat size={10} /> Recipe
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteContentEntry(entry.date)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400 shrink-0"
+                      aria-label="Delete"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+
+                  {entry.weeklyTheme && (
+                    <div className="mb-2 pb-2 border-b border-border/50">
+                      <p className="text-[11px] font-semibold text-brand-light mb-1">Theme</p>
+                      <p className="text-xs font-semibold text-text">{entry.weeklyTheme.title}</p>
+                      <p className="text-xs text-text-muted line-clamp-2">{entry.weeklyTheme.body}</p>
+                    </div>
+                  )}
+                  {entry.wellActivity && (
+                    <div className="mb-2 pb-2 border-b border-border/50">
+                      <p className="text-[11px] font-semibold text-brand-light mb-1">Activity</p>
+                      <p className="text-xs font-semibold text-text">{entry.wellActivity.title}</p>
+                      <p className="text-xs text-text-muted line-clamp-2">{entry.wellActivity.description}</p>
+                    </div>
+                  )}
+                  {entry.recipe && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-brand-light mb-1">Recipe</p>
+                      <p className="text-xs font-semibold text-text">{entry.recipe.name}</p>
+                      <p className="text-xs text-text-muted line-clamp-2">{entry.recipe.description}</p>
+                      {entry.recipe.ingredients && entry.recipe.ingredients.length > 0 && (
+                        <p className="text-[10px] text-text-dim mt-1">
+                          {entry.recipe.ingredients.slice(0, 3).join(", ")}
+                          {entry.recipe.ingredients.length > 3 ? ` +${entry.recipe.ingredients.length - 3}` : ""}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         {/* ── Weekly Theme / WELL Activity / Recipe ─────────────────── */}
         <form onSubmit={handleScheduleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3">
