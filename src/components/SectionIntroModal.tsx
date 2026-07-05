@@ -63,6 +63,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: Edit, text: "Post text, photos, or questions to the community feed" },
       { Icon: MessageCircle, text: "Reply to threads and start conversations in any topic" },
       { Icon: Heart, text: "Like posts and save your favorites to revisit later" },
+      { Icon: Users, text: "Tag people in posts and messages with @username to get their attention" },
       { Icon: Users, text: "Add members to your WELL Tribe and send direct messages to cheer them on" },
       { Icon: Waves, text: "Browse trending topics and featured community discussions" },
       { Icon: Star, text: "Earn 10 pts for posting • 5 pts for commenting", highlight: true },
