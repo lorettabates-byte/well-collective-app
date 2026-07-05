@@ -1,9 +1,66 @@
-import { Calendar, ChevronDown, ChevronUp, FileText, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, FileText, GripVertical, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song, SongCategory } from "../../types";
 import { AMBIENT_SOUNDS } from "../../utils/ambientSounds";
+
+// Wraps a single list row so it can be picked up and dragged (touch or
+// mouse) via the grip handle exposed to children through dragHandleProps —
+// only the handle is draggable so taps on play/edit/delete buttons inside
+// the row still work normally.
+function SortableItem({
+  id,
+  children,
+}: {
+  id: number;
+  children: (dragHandleProps: { attributes: Record<string, unknown>; listeners: Record<string, unknown> }) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative",
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({
+        attributes: attributes as unknown as Record<string, unknown>,
+        listeners: (listeners ?? {}) as unknown as Record<string, unknown>,
+      })}
+    </div>
+  );
+}
+
+function DragHandle({ attributes, listeners }: { attributes: Record<string, unknown>; listeners: Record<string, unknown> }) {
+  return (
+    <button
+      {...attributes}
+      {...listeners}
+      aria-label="Drag to reorder"
+      className="text-text-dim shrink-0 cursor-grab active:cursor-grabbing touch-none"
+    >
+      <GripVertical size={16} />
+    </button>
+  );
+}
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -64,6 +121,10 @@ export default function AdminMusic() {
   const [playingSongId, setPlayingSongId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // A small drag distance threshold keeps taps on the handle from being
+  // mistaken for drags, while still working smoothly with touch.
+  const dragSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const fetchHiddenBuiltins = async () => {
     if (!API_URL) return;
@@ -306,15 +367,14 @@ export default function AdminMusic() {
     }
   };
 
-  const handleMove = async (id: number, direction: 1 | -1) => {
-    const index = songs.findIndex((s) => s.id === id);
-    const swapWith = index + direction;
-    if (index < 0 || swapWith < 0 || swapWith >= songs.length || !API_URL) return;
-
-    const reordered = [...songs];
-    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+  const handleDragEndPlaylist = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = songs.findIndex((s) => s.id === active.id);
+    const newIndex = songs.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0 || !API_URL) return;
+    const reordered = arrayMove(songs, oldIndex, newIndex);
     setSongs(reordered);
-
     try {
       await fetch(`${API_URL}/api/songs/reorder`, {
         method: "PUT",
@@ -409,11 +469,13 @@ export default function AdminMusic() {
     setNewSongCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   };
 
-  const handleReorderQueue = async (fromIndex: number, direction: 1 | -1) => {
-    const toIndex = fromIndex + direction;
-    if (toIndex < 0 || toIndex >= queuedSongs.length) return;
-    const reordered = [...queuedSongs];
-    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
+  const handleDragEndQueue = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = queuedSongs.findIndex((s) => s.id === active.id);
+    const newIndex = queuedSongs.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0 || !API_URL) return;
+    const reordered = arrayMove(queuedSongs, oldIndex, newIndex);
     setQueuedSongs(reordered);
     try {
       await fetch(`${API_URL}/api/songs/queue/reorder`, {
@@ -502,15 +564,14 @@ export default function AdminMusic() {
     }
   };
 
-  const handleMoveSound = async (id: number, direction: 1 | -1) => {
-    const index = sounds.findIndex((s) => s.id === id);
-    const swapWith = index + direction;
-    if (index < 0 || swapWith < 0 || swapWith >= sounds.length || !API_URL) return;
-
-    const reordered = [...sounds];
-    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+  const handleDragEndSounds = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = sounds.findIndex((s) => s.id === active.id);
+    const newIndex = sounds.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0 || !API_URL) return;
+    const reordered = arrayMove(sounds, oldIndex, newIndex);
     setSounds(reordered);
-
     try {
       await fetch(`${API_URL}/api/peaceful-sounds/reorder`, {
         method: "PUT",
@@ -653,28 +714,19 @@ export default function AdminMusic() {
             {queueLoading ? (
               <p className="text-xs text-text-muted">Loading...</p>
             ) : (
+              <DndContext
+                sensors={dragSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEndQueue}
+              >
+              <SortableContext items={queuedSongs.map((s) => s.id)} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-2">
-                {queuedSongs.map((song, index) => (
-                  <div key={song.id} className="glass-card rounded-card p-2.5 flex flex-col gap-2">
+                {queuedSongs.map((song) => (
+                  <SortableItem key={song.id} id={song.id}>
+                    {(dragHandleProps) => (
+                  <div className="glass-card rounded-card p-2.5 flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-xs">
-                      <div className="flex flex-col shrink-0">
-                        <button
-                          onClick={() => handleReorderQueue(index, -1)}
-                          disabled={index === 0}
-                          aria-label="Move earlier"
-                          className="text-text-dim disabled:opacity-25"
-                        >
-                          <ChevronUp size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleReorderQueue(index, 1)}
-                          disabled={index === queuedSongs.length - 1}
-                          aria-label="Move later"
-                          className="text-text-dim disabled:opacity-25"
-                        >
-                          <ChevronDown size={14} />
-                        </button>
-                      </div>
+                      <DragHandle {...dragHandleProps} />
                       <div className="flex-1 min-w-0">
                         <p className="text-text font-semibold truncate">{song.title}</p>
                         {song.artist && <p className="text-text-dim truncate">{song.artist}</p>}
@@ -778,8 +830,12 @@ export default function AdminMusic() {
                       </div>
                     )}
                   </div>
+                    )}
+                  </SortableItem>
                 ))}
               </div>
+              </SortableContext>
+              </DndContext>
             )}</>}
           </div>
         )}
@@ -863,11 +919,20 @@ export default function AdminMusic() {
           ) : songs.length === 0 ? (
             <p className="text-sm text-text-muted">No songs added yet.</p>
           ) : (
+            <DndContext
+              sensors={dragSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEndPlaylist}
+            >
+            <SortableContext items={songs.map((s) => s.id)} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-2">
-              {songs.map((song, index) => (
-                <div key={song.id} className="glass-card rounded-card p-3 flex flex-col gap-2">
+              {songs.map((song) => (
+                <SortableItem key={song.id} id={song.id}>
+                  {(dragHandleProps) => (
+                <div className="glass-card rounded-card p-3 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <DragHandle {...dragHandleProps} />
                       <button
                         onClick={() => togglePlay(song)}
                         aria-label={playingSongId === song.id && isPlaying ? "Pause" : "Play"}
@@ -925,24 +990,6 @@ export default function AdminMusic() {
                     >
                       <FileText size={14} />
                     </button>
-                    <div className="flex flex-col shrink-0 mr-1">
-                      <button
-                        onClick={() => handleMove(song.id, -1)}
-                        disabled={index === 0}
-                        aria-label="Move up"
-                        className="text-text-dim disabled:opacity-25"
-                      >
-                        <ChevronUp size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleMove(song.id, 1)}
-                        disabled={index === songs.length - 1}
-                        aria-label="Move down"
-                        className="text-text-dim disabled:opacity-25"
-                      >
-                        <ChevronDown size={14} />
-                      </button>
-                    </div>
                     <button
                       onClick={() => handleDelete(song.id)}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400 shrink-0"
@@ -1074,8 +1121,12 @@ export default function AdminMusic() {
                     </div>
                   )}
                 </div>
+                  )}
+                </SortableItem>
               ))}
             </div>
+            </SortableContext>
+            </DndContext>
           ))}
         </div>
 
@@ -1188,34 +1239,25 @@ export default function AdminMusic() {
           ) : sounds.length === 0 ? (
             <p className="text-sm text-text-muted">No custom sounds added yet.</p>
           ) : (
+            <DndContext
+              sensors={dragSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEndSounds}
+            >
+            <SortableContext items={sounds.map((s) => s.id)} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-2">
-              {sounds.map((sound, index) => (
-                <div key={sound.id} className="glass-card rounded-card p-3 flex items-center justify-between">
+              {sounds.map((sound) => (
+                <SortableItem key={sound.id} id={sound.id}>
+                  {(dragHandleProps) => (
+                <div className="glass-card rounded-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <DragHandle {...dragHandleProps} />
                     <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
                       <SoundIcon icon={sound.icon} size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-text truncate">{sound.title}</p>
                     </div>
-                  </div>
-                  <div className="flex flex-col shrink-0 mr-1">
-                    <button
-                      onClick={() => handleMoveSound(sound.id, -1)}
-                      disabled={index === 0}
-                      aria-label="Move up"
-                      className="text-text-dim disabled:opacity-25"
-                    >
-                      <ChevronUp size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleMoveSound(sound.id, 1)}
-                      disabled={index === sounds.length - 1}
-                      aria-label="Move down"
-                      className="text-text-dim disabled:opacity-25"
-                    >
-                      <ChevronDown size={14} />
-                    </button>
                   </div>
                   <button
                     onClick={() => handleDeleteSound(sound.id)}
@@ -1224,8 +1266,12 @@ export default function AdminMusic() {
                     <Trash2 size={14} />
                   </button>
                 </div>
+                  )}
+                </SortableItem>
               ))}
             </div>
+            </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
