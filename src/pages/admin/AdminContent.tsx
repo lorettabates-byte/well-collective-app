@@ -7,6 +7,13 @@ import { formatDateLong } from "../../utils/format";
 import ContentScheduleEditModal from "../../components/ContentScheduleEditModal";
 import FutureContentSchedule from "../../components/admin/FutureContentSchedule";
 
+interface GeneratedRecipeResponse {
+  name?: string;
+  description?: string;
+  ingredients?: string[];
+  steps?: string[];
+}
+
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 function getAuthHeaders(): HeadersInit {
@@ -130,14 +137,102 @@ export default function AdminContent() {
   const [diversifyError, setDiversifyError] = useState("");
   const [editingEntry, setEditingEntry] = useState<ContentBatchEntry | null>(null);
 
+  const refreshSchedule = async () => {
+    const entries = await fetchContentSchedule();
+    if (entries) importContentSchedule(entries);
+  };
+
   useEffect(() => {
-    fetchContentSchedule()
-      .then((entries) => {
-        if (entries) importContentSchedule(entries);
-      })
-      .finally(() => setSyncing(false));
+    refreshSchedule().finally(() => setSyncing(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Add-a-day form: weekly theme / WELL activity / recipe ───────────────
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [weeklyTitle, setWeeklyTitle] = useState("");
+  const [weeklyBody, setWeeklyBody] = useState("");
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityDescription, setActivityDescription] = useState("");
+  const [recipeName, setRecipeName] = useState("");
+  const [recipeDescription, setRecipeDescription] = useState("");
+  const [recipeIngredients, setRecipeIngredients] = useState("");
+  const [recipeSteps, setRecipeSteps] = useState("");
+  const [addDayStatus, setAddDayStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [recipeSuggestion, setRecipeSuggestion] = useState("");
+  const [generatingRecipe, setGeneratingRecipe] = useState(false);
+
+  const handleGenerateRecipe = async () => {
+    if (!recipeSuggestion.trim() || !API_URL) return;
+
+    setGeneratingRecipe(true);
+    try {
+      const res = await fetch(`${API_URL}/api/recipes/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestion: recipeSuggestion.trim() }),
+      });
+
+      if (res.ok) {
+        const data: GeneratedRecipeResponse = await res.json();
+        setRecipeName(data.name || "");
+        setRecipeDescription(data.description || "");
+        setRecipeIngredients(data.ingredients?.join(", ") || "");
+        setRecipeSteps(data.steps?.join(", ") || "");
+        setRecipeSuggestion("");
+        setAddDayStatus({ type: "success", message: `Recipe generated: ${data.name}` });
+        setTimeout(() => setAddDayStatus(null), 3000);
+      } else {
+        const err = await res.json().catch(() => ({ error: "Failed to generate recipe" }));
+        setAddDayStatus({ type: "error", message: err.error || "Failed to generate recipe" });
+      }
+    } catch {
+      setAddDayStatus({ type: "error", message: "Error reaching the server." });
+    } finally {
+      setGeneratingRecipe(false);
+    }
+  };
+
+  const handleAddDaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleDate || !API_URL) return;
+
+    const entry: ContentBatchEntry = { date: scheduleDate };
+    if (weeklyTitle.trim() && weeklyBody.trim()) {
+      entry.weeklyTheme = { title: weeklyTitle.trim(), body: weeklyBody.trim() };
+    }
+    if (activityTitle.trim() && activityDescription.trim()) {
+      entry.wellActivity = { title: activityTitle.trim(), description: activityDescription.trim() };
+    }
+    if (recipeName.trim() && recipeDescription.trim()) {
+      entry.recipe = {
+        name: recipeName.trim(),
+        description: recipeDescription.trim(),
+        ingredients: recipeIngredients.split(",").map((s) => s.trim()).filter(Boolean),
+        steps: recipeSteps.split(",").map((s) => s.trim()).filter(Boolean),
+        image: "",
+      };
+    }
+
+    if (!entry.weeklyTheme && !entry.wellActivity && !entry.recipe) {
+      setAddDayStatus({ type: "error", message: "Fill in at least one section before saving." });
+      return;
+    }
+
+    try {
+      const synced = await syncContentSchedule([entry]);
+      if (synced) {
+        setAddDayStatus({ type: "success", message: `Saved for ${scheduleDate}.` });
+        setWeeklyTitle(""); setWeeklyBody(""); setActivityTitle(""); setActivityDescription("");
+        setRecipeName(""); setRecipeDescription(""); setRecipeIngredients(""); setRecipeSteps("");
+        setScheduleDate("");
+        await refreshSchedule();
+      } else {
+        setAddDayStatus({ type: "error", message: "Failed to save." });
+      }
+    } catch {
+      setAddDayStatus({ type: "error", message: "Failed to reach the server." });
+    }
+  };
 
   const handleDownloadTemplate = () => {
     const entries = buildTemplate(30);
@@ -282,6 +377,90 @@ export default function AdminContent() {
             Download 30-Day Template
           </button>
         </div>
+
+        {/* ── Weekly Theme / WELL Activity / Recipe ─────────────────── */}
+        <form onSubmit={handleAddDaySubmit} className="glass-card rounded-card p-4 flex flex-col gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-text mb-1">Weekly Theme, WELL Activity & Recipe</h2>
+            <p className="text-xs text-text-muted">
+              Pick a date and fill in whichever sections you want. Anything left blank is filled automatically by AI.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Date</label>
+            <input
+              type="date"
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+            />
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">Weekly Theme</p>
+            <div className="flex flex-col gap-2">
+              <input value={weeklyTitle} onChange={(e) => setWeeklyTitle(e.target.value)} placeholder="Theme title" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+              <textarea value={weeklyBody} onChange={(e) => setWeeklyBody(e.target.value)} placeholder="Theme description" rows={2} className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">WELL Activity</p>
+            <div className="flex flex-col gap-2">
+              <input value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} placeholder="Activity title" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+              <textarea value={activityDescription} onChange={(e) => setActivityDescription(e.target.value)} placeholder="Activity description" rows={2} className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-brand-light mb-2">Recipe</p>
+
+            {/* Recipe Generator */}
+            <div className="mb-3 p-3 bg-surface-2 border border-brand-light/20 rounded-card flex flex-col gap-2">
+              <p className="text-xs text-text-muted">✨ Or suggest a food type and we'll generate a recipe for you</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={recipeSuggestion}
+                  onChange={(e) => setRecipeSuggestion(e.target.value)}
+                  placeholder="e.g., 'Italian pasta', 'healthy breakfast', 'vegan dessert'"
+                  className="flex-1 bg-surface border border-border rounded-card px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateRecipe}
+                  disabled={generatingRecipe || !recipeSuggestion.trim()}
+                  className="gradient-brand text-white text-sm font-semibold px-4 py-2 rounded-pill disabled:opacity-50 shrink-0"
+                >
+                  {generatingRecipe ? "Generating..." : "Generate"}
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Recipe Fields */}
+            <div className="flex flex-col gap-2">
+              <input value={recipeName} onChange={(e) => setRecipeName(e.target.value)} placeholder="Name" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+              <textarea value={recipeDescription} onChange={(e) => setRecipeDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+              <input value={recipeIngredients} onChange={(e) => setRecipeIngredients(e.target.value)} placeholder="Ingredients, comma separated" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+              <input value={recipeSteps} onChange={(e) => setRecipeSteps(e.target.value)} placeholder="Steps, comma separated" className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue" />
+            </div>
+          </div>
+
+          {addDayStatus && (
+            <p className={`text-xs ${addDayStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+              {addDayStatus.message}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={!scheduleDate}
+            className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
+          >
+            Save for This Day
+          </button>
+        </form>
 
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">Backfill Recipe Nutrition</h2>
