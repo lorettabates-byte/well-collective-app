@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
+    "@capacitor/filesystem": "8.1.2",
     "@capacitor/ios": "^8.4.0",
     "@capgo/capacitor-health": "8.9.1",
     "@dnd-kit/core": "^6.3.1",

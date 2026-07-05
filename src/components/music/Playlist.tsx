@@ -6,6 +6,7 @@ import {
   GripVertical,
   Heart,
   ListMusic,
+  Loader2,
   Lock,
   Pause,
   Play,
@@ -28,6 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { logActivity } from "../../utils/wellCup";
+import { deleteDownload, downloadSong, getPlaybackUrl } from "../../utils/musicOffline";
 
 const FAVORITES_KEY = "well-music-favorites";
 const FAVORITES_ORDER_KEY = "well-music-favorites-order";
@@ -85,11 +87,12 @@ function formatTime(seconds: number): string {
 interface DragHandleProps {
   song: Song;
   isPlaying: boolean;
+  isDownloading?: boolean;
   onPlay: () => void;
   onFavorite: () => void;
 }
 
-function SortableFavoriteSong({ song, isPlaying, onPlay, onFavorite }: DragHandleProps) {
+function SortableFavoriteSong({ song, isPlaying, isDownloading, onPlay, onFavorite }: DragHandleProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: song.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -117,7 +120,11 @@ function SortableFavoriteSong({ song, isPlaying, onPlay, onFavorite }: DragHandl
         aria-label="Unfavorite"
         className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
       >
-        <Heart size={16} className="fill-brand-light" />
+        {isDownloading ? (
+          <Loader2 size={16} className="animate-spin text-text-muted" />
+        ) : (
+          <Heart size={16} className="fill-brand-light" />
+        )}
       </button>
     </div>
   );
@@ -140,6 +147,7 @@ export default function Playlist({
 }) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [favoritesOrder, setFavoritesOrder] = useState<number[]>(() => loadFavoritesOrder());
+  const [downloadingIds, setDownloadingIds] = useState<Set<number>>(new Set());
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
@@ -291,13 +299,15 @@ export default function Playlist({
     .concat(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : [])
     .filter((s) => !lockedSongIds.has(s.id));
 
-  function playAt(queue: Song[], index: number) {
+  async function playAt(queue: Song[], index: number) {
     if (index < 0 || index >= queue.length) return;
     queueRef.current = queue;
     queueIndexRef.current = index;
     const song = queue[index];
     const audio = audioRef.current!;
-    audio.src = song.url;
+    // Prefers the locally downloaded file (if this song was favorited and
+    // cached for offline playback) over streaming from the CDN.
+    audio.src = await getPlaybackUrl(song);
     audio.play();
     setCurrentSong(song);
     setIsPlaying(true);
@@ -370,8 +380,25 @@ export default function Playlist({
         next.delete(id);
         // Clean up from favorites order when unfavorited
         setFavoritesOrder((order) => order.filter((songId) => songId !== id));
+        deleteDownload(id).catch((err) => console.error("Failed to delete offline song:", err));
       } else {
         next.add(id);
+        // Auto-download favorited songs for offline playback — no-ops on
+        // web, and any failure (bad connection, etc.) just leaves the song
+        // streaming-only, so it's safe to fire and forget here.
+        const song = songs.find((s) => s.id === id);
+        if (song) {
+          setDownloadingIds((prevIds) => new Set(prevIds).add(id));
+          downloadSong(song)
+            .catch((err) => console.error("Failed to download song for offline playback:", err))
+            .finally(() =>
+              setDownloadingIds((prevIds) => {
+                const next = new Set(prevIds);
+                next.delete(id);
+                return next;
+              })
+            );
+        }
       }
       saveFavorites(next);
       return next;
@@ -524,7 +551,11 @@ export default function Playlist({
               aria-label={favorites.has(featuredSong.id) ? "Unfavorite" : "Favorite"}
               className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
             >
-              <Heart size={16} className={favorites.has(featuredSong.id) ? "fill-brand-light" : ""} />
+              {downloadingIds.has(featuredSong.id) ? (
+                <Loader2 size={16} className="animate-spin text-text-muted" />
+              ) : (
+                <Heart size={16} className={favorites.has(featuredSong.id) ? "fill-brand-light" : ""} />
+              )}
             </button>
             {featuredSong.lyrics && (
               <button
@@ -575,6 +606,7 @@ export default function Playlist({
                       <SortableFavoriteSong
                         song={song}
                         isPlaying={isCurrent && isPlaying}
+                        isDownloading={downloadingIds.has(song.id)}
                         onPlay={() => togglePlaySong(song)}
                         onFavorite={() => toggleFavorite(song.id)}
                       />
@@ -625,7 +657,11 @@ export default function Playlist({
                 aria-label={favorites.has(song.id) ? "Unfavorite" : "Favorite"}
                 className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
               >
-                <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
+                {downloadingIds.has(song.id) ? (
+                  <Loader2 size={16} className="animate-spin text-text-muted" />
+                ) : (
+                  <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
+                )}
               </button>
               {song.lyrics && (
                 <button
