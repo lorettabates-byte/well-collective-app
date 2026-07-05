@@ -1,4 +1,4 @@
-import { BadgeCheck, ChefHat, Download, ImageIcon, Loader2, Pencil, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, ChefHat, Download, ImageIcon, Loader2, Pencil, Sparkles, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -136,6 +136,8 @@ export default function AdminContent() {
   const [diversifyResults, setDiversifyResults] = useState<DiversifyResult[] | null>(null);
   const [diversifyError, setDiversifyError] = useState("");
   const [editingEntry, setEditingEntry] = useState<ContentBatchEntry | null>(null);
+  const [generatingWeek, setGeneratingWeek] = useState(false);
+  const [generateWeekStatus, setGenerateWeekStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const refreshSchedule = async () => {
     const entries = await fetchContentSchedule();
@@ -256,6 +258,28 @@ export default function AdminContent() {
       }
     } catch {
       setAddDayStatus({ type: "error", message: "Failed to reach the server." });
+    }
+  };
+
+  const handleGenerateWeek = async () => {
+    if (!API_URL) return;
+    setGeneratingWeek(true);
+    setGenerateWeekStatus(null);
+    try {
+      const res = await fetch(`${API_URL}/api/content-schedule/generate-week`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        await refreshSchedule();
+        setGenerateWeekStatus({ type: "success", message: "Generated — check below for the next 7 days." });
+      } else {
+        setGenerateWeekStatus({ type: "error", message: "Failed to generate this week's content." });
+      }
+    } catch {
+      setGenerateWeekStatus({ type: "error", message: "Failed to reach the server." });
+    } finally {
+      setGeneratingWeek(false);
     }
   };
 
@@ -384,6 +408,43 @@ export default function AdminContent() {
             </>
           )}
         </div>
+
+        {/* ── Upcoming Content — moved to the top so it's the first thing
+             visible, since previewing/editing ahead of time is the main
+             reason to be on this page. ──────────────────────────────── */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <h2 className="text-sm font-bold text-text">Generate the Next 7 Days Now</h2>
+          </div>
+          <p className="text-xs text-text-muted leading-relaxed mb-3">
+            Normally this runs automatically every morning at 5:30am ET, filling in a week of
+            daily inspirations, recipes, and WELL activities ahead of time so you have days to
+            preview and edit before anything posts. Use this button to run it immediately instead
+            of waiting for the next scheduled run.
+          </p>
+          <button
+            onClick={handleGenerateWeek}
+            disabled={generatingWeek}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {generatingWeek ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            {generatingWeek ? "Generating…" : "Generate This Week Now"}
+          </button>
+          {generateWeekStatus && (
+            <p className={`text-xs mt-2 ${generateWeekStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+              {generateWeekStatus.message}
+            </p>
+          )}
+        </div>
+
+        {futureContent.length > 0 && (
+          <FutureContentSchedule
+            entries={futureContent}
+            onEdit={setEditingEntry}
+            onDelete={handleRemove}
+            title="📅 Upcoming Content (Next 7+ Days)"
+          />
+        )}
 
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
@@ -723,18 +784,6 @@ export default function AdminContent() {
             Upload &amp; Schedule
           </button>
         </div>
-
-        {/* Future content (prominently displayed) */}
-        {futureContent.length > 0 && (
-          <div className="mb-8">
-            <FutureContentSchedule
-              entries={futureContent}
-              onEdit={setEditingEntry}
-              onDelete={handleRemove}
-              title="📅 Upcoming Content (Next 7+ Days)"
-            />
-          </div>
-        )}
 
         {/* Past content (collapsible) */}
         {pastContent.length > 0 && (
