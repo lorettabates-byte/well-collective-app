@@ -29,6 +29,7 @@ export interface User {
   weightKg?: number;
   age?: number;
   gender?: "female" | "male" | "other";
+  healthSyncEnabled?: boolean; // opt-in to auto-populate steps/sleep/workouts from Apple Health / Health Connect
 }
 
 export interface NotificationSettings {

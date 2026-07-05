@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
+import { checkHealthPermissions, runDailyHealthSync } from "../utils/healthSync";
 import {
   CATEGORIES,
   CURRENT_USER,
@@ -370,7 +372,7 @@ export function uid(prefix: string): string {
 }
 
 interface AppContextValue extends PersistedState {
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
   addMessage: (threadId: string, text: string, image?: string) => void;
@@ -1199,6 +1201,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Auto-populates steps/sleep/workouts from Apple Health / Health Connect
+  // once per calendar day, for members who've opted in via the health sync
+  // settings toggle. Kept as its own effect (not merged into the app_open
+  // effect below) since it has its own gating condition and native-only
+  // guard, and native (non-web) health data is only ever available on device.
+  useEffect(() => {
+    if (!state.user.email || !state.user.healthSyncEnabled) return;
+    if (!Capacitor.isNativePlatform()) return;
+    const guardKey = `well-health-sync-${state.user.email}-${todayISO()}`;
+    if (localStorage.getItem(guardKey)) return;
+
+    checkHealthPermissions().then((granted) => {
+      if (!granted) return;
+      runDailyHealthSync(state.user.email!, { logWorkoutCompletion })
+        .then(() => localStorage.setItem(guardKey, "1"))
+        .catch((err) => console.error("Daily health sync failed:", err));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.user.email, state.user.healthSyncEnabled]);
+
   // Counts the same as the assigned routine toward the workout streak — the
   // streak only cares whether today's date is in workoutLog, not which
   // workout was done.
@@ -1890,6 +1912,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         weightKg: state.user.weightKg,
         age: state.user.age,
         gender: state.user.gender,
+        healthSyncEnabled: state.user.healthSyncEnabled,
       }),
     }).catch((err) => console.error("Failed to sync member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1905,6 +1928,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.weightKg,
     state.user.age,
     state.user.gender,
+    state.user.healthSyncEnabled,
     state.inspirations,
     restoreGate,
   ]);
@@ -1957,6 +1981,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             weightKg: prev.user.weightKg ?? member.weightKg,
             age: prev.user.age ?? member.age,
             gender: prev.user.gender ?? member.gender,
+            healthSyncEnabled: prev.user.healthSyncEnabled ?? member.healthSyncEnabled,
           },
         }));
       })

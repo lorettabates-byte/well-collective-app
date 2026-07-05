@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>WELL Collective reads your steps, sleep, and workouts from Apple Health so they can automatically show up in your wellness log.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>WELL Collective does not write data to Apple Health. This permission is required by the system even for read-only access.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
