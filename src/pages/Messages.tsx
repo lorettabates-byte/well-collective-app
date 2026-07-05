@@ -351,7 +351,7 @@ export default function Messages() {
   const otherMember = directory[selectedUserId];
 
   return (
-    <div className="flex flex-col h-screen bg-bg">
+    <div className="flex flex-col h-screen bg-bg pb-24">
       <TopBar
         title={otherMember?.name || "Message"}
         subtitle="Conversation"
@@ -388,7 +388,7 @@ export default function Messages() {
         )}
       </div>
 
-      <div className="px-4 py-4 border-t border-border flex gap-2">
+      <div className="fixed bottom-20 left-0 right-0 px-4 py-4 border-t border-border flex gap-2 bg-bg">
         <input
           type="text"
           value={input}
