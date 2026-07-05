@@ -1,7 +1,6 @@
 import {
   ChevronDown,
   ChevronUp,
-  Download,
   FileText,
   GripVertical,
   Heart,
@@ -279,7 +278,13 @@ export default function Playlist({
     : orderedSongs;
   // Exclude featured song from the main list (it only appears in the featured section)
   const regularSongs = categoryFiltered.filter((s) => s.id !== featuredSong?.id);
-  const visibleSongs = favoritesOnly ? regularSongs.filter((s) => favorites.has(s.id)) : regularSongs;
+  // In favorites view, include favorited songs from regularSongs + featured song if favorited
+  const visibleSongs = favoritesOnly
+    ? [
+        ...regularSongs.filter((s) => favorites.has(s.id)),
+        ...(featuredSong && favorites.has(featuredSong.id) ? [featuredSong] : []),
+      ]
+    : regularSongs;
 
   // Reorder favorites based on saved drag order
   const orderedVisibleSongs = useMemo(() => {
@@ -566,26 +571,6 @@ export default function Playlist({
                 <FileText size={15} />
               </button>
             )}
-            {downloadsLocked ? (
-              <button
-                onClick={() => showLocked("download")}
-                aria-label="Download locked for trial members"
-                className="w-8 h-8 flex items-center justify-center shrink-0 text-text-dim"
-              >
-                <Lock size={14} />
-              </button>
-            ) : (
-              <a
-                href={featuredSong.url}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Download"
-                className="w-8 h-8 flex items-center justify-center shrink-0 text-text-muted"
-              >
-                <Download size={15} />
-              </a>
-            )}
           </div>
         </div>
       )}
@@ -671,26 +656,6 @@ export default function Playlist({
                 >
                   <FileText size={15} />
                 </button>
-              )}
-              {downloadsLocked ? (
-                <button
-                  onClick={() => showLocked("download")}
-                  aria-label="Download locked for trial members"
-                  className="w-8 h-8 flex items-center justify-center shrink-0 text-text-dim"
-                >
-                  <Lock size={14} />
-                </button>
-              ) : (
-                <a
-                  href={song.url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Download"
-                  className="w-8 h-8 flex items-center justify-center shrink-0 text-text-muted"
-                >
-                  <Download size={15} />
-                </a>
               )}
               {!favoritesOnly && (
                 <div className="flex flex-col shrink-0">

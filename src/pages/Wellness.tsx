@@ -11,7 +11,6 @@ import {
   Flame,
   Heart,
   Info,
-  Lock,
   MessageCircle,
   Moon,
   PenLine,
@@ -41,7 +40,6 @@ import { logActivity } from "../utils/wellCup";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
-import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -92,14 +90,11 @@ export default function Wellness() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const showSavedWorkouts = searchParams.get("view") === "saved";
-  const trialStatus = getTrialStatus(user.trialEndsAt);
-  const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const [plan, setPlan] = useState<WorkoutPlan>(() => generateWorkout(new Date()));
   const [planDate, setPlanDate] = useState(() => todayISO());
   const [selected, setSelected] = useState<SelectedExercise | null>(null);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
-  const [workoutLockedMessage, setWorkoutLockedMessage] = useState(false);
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
   const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -360,24 +355,13 @@ export default function Wellness() {
 
       {/* ── WORKOUT TAB ───────────────────────────────────── */}
       {activeTab === "workout" && <>
-        {workoutLockedMessage && (
-          <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
-            <Lock size={14} className="text-brand-light shrink-0" />
-            <p className="text-xs text-text-muted">The workout generator is available to full members — upgrade to unlock.</p>
-          </div>
-        )}
 
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              if (isTrialUser) { setWorkoutLockedMessage(true); setTimeout(() => setWorkoutLockedMessage(false), 3000); return; }
-              setPlan(generateWorkout(new Date()));
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 ${
-              isTrialUser ? "bg-surface-2 border border-border text-text-dim" : "gradient-brand text-white shadow-glow"
-            }`}
+            onClick={() => setPlan(generateWorkout(new Date()))}
+            className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold rounded-pill py-2.5 gradient-brand text-white shadow-glow"
           >
-            {isTrialUser ? <Lock size={15} /> : <RefreshCw size={15} />}
+            <RefreshCw size={15} />
             New Workout
           </button>
           <button
