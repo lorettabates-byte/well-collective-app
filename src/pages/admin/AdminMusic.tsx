@@ -625,13 +625,16 @@ export default function AdminMusic() {
       if (queueRepeatMode === "one") {
         audio.currentTime = 0;
         audio.play();
-      } else if (queueRepeatMode === "all") {
+      } else {
+        // Play next song (both for "off" and "all" modes; "all" wraps with %)
         const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
-        const nextIndex = (currentIndex + 1) % queuedSongs.length;
-        audio.src = queuedSongs[nextIndex].url;
-        audio.currentTime = 0;
-        audio.play();
-        setPlayingSongId(queuedSongs[nextIndex].id);
+        const nextIndex = queueRepeatMode === "all" ? (currentIndex + 1) % queuedSongs.length : currentIndex + 1;
+        if (nextIndex < queuedSongs.length) {
+          audio.src = queuedSongs[nextIndex].url;
+          audio.currentTime = 0;
+          audio.play();
+          setPlayingSongId(queuedSongs[nextIndex].id);
+        }
       }
     };
 
@@ -643,6 +646,32 @@ export default function AdminMusic() {
     audioRef.current?.pause();
     setPlayingSongId(null);
     setIsPlaying(false);
+  };
+
+  const skipToNextQueueSong = () => {
+    if (!playingFromQueue || !audioRef.current) return;
+    const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < queuedSongs.length) {
+      const audio = audioRef.current;
+      audio.src = queuedSongs[nextIndex].url;
+      audio.currentTime = 0;
+      audio.play();
+      setPlayingSongId(queuedSongs[nextIndex].id);
+    }
+  };
+
+  const skipToPrevQueueSong = () => {
+    if (!playingFromQueue || !audioRef.current) return;
+    const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      const audio = audioRef.current;
+      audio.src = queuedSongs[prevIndex].url;
+      audio.currentTime = 0;
+      audio.play();
+      setPlayingSongId(queuedSongs[prevIndex].id);
+    }
   };
 
   const allSongs = [...songs, ...queuedSongs];
@@ -772,6 +801,26 @@ export default function AdminMusic() {
                     {queueRepeatMode === "off" ? "Repeat: Off" : queueRepeatMode === "one" ? "Repeat: 1" : "Repeat: All"}
                   </button>
                 </div>
+                {playingFromQueue && (
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={skipToPrevQueueSong}
+                      disabled={queuedSongs.findIndex((s) => s.id === playingSongId) <= 0}
+                      className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
+                      title="Previous song"
+                    >
+                      ⏮ Back
+                    </button>
+                    <button
+                      onClick={skipToNextQueueSong}
+                      disabled={queuedSongs.findIndex((s) => s.id === playingSongId) >= queuedSongs.length - 1}
+                      className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
+                      title="Next song"
+                    >
+                      Skip ⏭
+                    </button>
+                  </div>
+                )}
                 <p className="text-[11px] text-text-muted mb-2">Releases automatically every Monday at 5pm.</p>
                 {queueLoading ? (
                   <p className="text-xs text-text-muted">Loading...</p>

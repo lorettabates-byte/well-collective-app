@@ -104,7 +104,7 @@ export default function ContentScheduleEditModal({ entry, onClose, onSave }: Con
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
+        <div className="overflow-y-auto flex-1 p-5 pb-6 flex flex-col gap-4">
           <p className="text-sm text-text-muted">Date: {entry.date}</p>
 
           {/* Weekly Theme */}
