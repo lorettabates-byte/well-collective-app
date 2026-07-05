@@ -369,8 +369,13 @@ export default function Playlist({
   const toggleFavorite = (id: number) => {
     setFavorites((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        // Clean up from favorites order when unfavorited
+        setFavoritesOrder((order) => order.filter((songId) => songId !== id));
+      } else {
+        next.add(id);
+      }
       saveFavorites(next);
       return next;
     });
