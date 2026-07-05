@@ -3,6 +3,7 @@ import {
   ChevronUp,
   Download,
   FileText,
+  GripVertical,
   Heart,
   ListMusic,
   Lock,
@@ -16,10 +17,22 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  DndContext,
+  SortableContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  arrayMove,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { logActivity } from "../../utils/wellCup";
 
 const FAVORITES_KEY = "well-music-favorites";
+const FAVORITES_ORDER_KEY = "well-music-favorites-order";
 const ORDER_KEY = "well-music-order";
 const FREE_SONG_COUNT = 5;
 
@@ -36,6 +49,19 @@ function loadFavorites(): Set<number> {
 
 function saveFavorites(favorites: Set<number>) {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+}
+
+function loadFavoritesOrder(): number[] {
+  try {
+    const raw = localStorage.getItem(FAVORITES_ORDER_KEY);
+    return raw ? (JSON.parse(raw) as number[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoritesOrder(order: number[]) {
+  localStorage.setItem(FAVORITES_ORDER_KEY, JSON.stringify(order));
 }
 
 function loadOrder(): number[] {
@@ -58,6 +84,48 @@ function formatTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+interface DragHandleProps {
+  song: Song;
+  isPlaying: boolean;
+  onPlay: () => void;
+  onFavorite: () => void;
+  isFavorite: boolean;
+}
+
+function SortableFavoriteSong({ song, isPlaying, onPlay, onFavorite, isFavorite }: DragHandleProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: song.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 group">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-text-muted hover:text-brand-light">
+        <GripVertical size={16} />
+      </div>
+      <button
+        onClick={onPlay}
+        className="w-8 h-8 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0"
+        aria-label={isPlaying ? "Pause" : "Play"}
+      >
+        {isPlaying ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white" />}
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-text truncate">{song.title}</p>
+      </div>
+      <button
+        onClick={onFavorite}
+        aria-label="Unfavorite"
+        className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
+      >
+        <Heart size={16} className="fill-brand-light" />
+      </button>
+    </div>
+  );
+}
+
 export default function Playlist({
   songs,
   categories = [],
@@ -74,6 +142,7 @@ export default function Playlist({
   userEmail?: string;
 }) {
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
+  const [favoritesOrder, setFavoritesOrder] = useState<number[]>(() => loadFavoritesOrder());
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
@@ -83,6 +152,14 @@ export default function Playlist({
   const [progress, setProgress] = useState({ current: 0, duration: 0 });
   const [lockedReason, setLockedReason] = useState<"play" | "download" | null>(null);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
 
   const showLocked = (reason: "play" | "download") => {
     setLockedReason(reason);
@@ -198,8 +275,22 @@ export default function Playlist({
   // Exclude featured song from the main list (it only appears in the featured section)
   const regularSongs = categoryFiltered.filter((s) => s.id !== featuredSong?.id);
   const visibleSongs = favoritesOnly ? regularSongs.filter((s) => favorites.has(s.id)) : regularSongs;
+
+  // Reorder favorites based on saved drag order
+  const orderedVisibleSongs = useMemo(() => {
+    if (!favoritesOnly || visibleSongs.length === 0) return visibleSongs;
+
+    const songIds = visibleSongs.map((s) => s.id);
+    const saved = favoritesOrder.filter((id) => songIds.includes(id));
+    const missing = songIds.filter((id) => !saved.includes(id));
+    const merged = [...saved, ...missing];
+
+    const merged_map = new Map(visibleSongs.map((s) => [s.id, s]));
+    return merged.map((id) => merged_map.get(id)!).filter(Boolean);
+  }, [visibleSongs, favoritesOrder, favoritesOnly]);
+
   // For Play All: include featured song if it's playable
-  const playableSongs = visibleSongs
+  const playableSongs = orderedVisibleSongs
     .concat(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : [])
     .filter((s) => !lockedSongIds.has(s.id));
 
@@ -283,6 +374,20 @@ export default function Playlist({
       saveFavorites(next);
       return next;
     });
+  };
+
+  const handleDragEndFavorites = (event: any) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setFavoritesOrder((prev) => {
+        const oldIndex = prev.indexOf(active.id);
+        const newIndex = prev.indexOf(over.id);
+        if (oldIndex < 0 || newIndex < 0) return prev;
+        const next = arrayMove(prev, oldIndex, newIndex);
+        saveFavoritesOrder(next);
+        return next;
+      });
+    }
   };
 
   const moveSong = (id: number, direction: 1 | -1) => {
@@ -456,7 +561,31 @@ export default function Playlist({
         <p className="text-sm text-text-muted text-center py-8">No favorites yet — tap the heart on a song.</p>
       )}
 
-      {visibleSongs.map((song, index) => {
+      {favoritesOnly && orderedVisibleSongs.length > 0 ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndFavorites}>
+          <SortableContext items={orderedVisibleSongs.map((s) => s.id)}>
+            <div className="flex flex-col gap-2.5">
+              {orderedVisibleSongs.map((song) => {
+                const isCurrent = currentSong?.id === song.id;
+                return (
+                  <div key={song.id} className={`rounded-card px-3 py-3 ${isCurrent ? "gradient-brand p-[1px]" : ""}`}>
+                    <div className={`${isCurrent ? "bg-surface rounded-[20px] px-2.5 py-2" : ""}`}>
+                      <SortableFavoriteSong
+                        song={song}
+                        isPlaying={isCurrent && isPlaying}
+                        onPlay={() => togglePlaySong(song)}
+                        onFavorite={() => toggleFavorite(song.id)}
+                        isFavorite={favorites.has(song.id)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        visibleSongs.map((song, index) => {
         const isCurrent = currentSong?.id === song.id;
         const isLocked = lockedSongIds.has(song.id);
         return (
@@ -549,7 +678,8 @@ export default function Playlist({
             </div>
           </div>
         );
-      })}
+        })
+      )}
 
       {/* Spacer so the last songs in the list aren't hidden behind the fixed
           mini player below — without this, those rows would be unclickable. */}
