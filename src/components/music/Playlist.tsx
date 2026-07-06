@@ -20,7 +20,6 @@ import { createPortal } from "react-dom";
 import {
   DndContext,
   closestCenter,
-  DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
