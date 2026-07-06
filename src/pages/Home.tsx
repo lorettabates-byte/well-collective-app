@@ -64,9 +64,18 @@ export default function Home() {
     ...(featuredEvent ? [featuredEvent] : []),
     ...allUpcomingEvents.filter((e) => e.id !== featuredEventId),
   ].slice(0, 4);
-  const latestThreads = [...threads]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, 3);
+  // Show top 2 pinned + most recent post (same as Community Trending section)
+  const pinnedThreads = [...threads]
+    .filter((t) => t.pinnedAt)
+    .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
+    .slice(0, 2);
+
+  const mostRecentNonPinned = [...threads]
+    .filter((t) => !t.pinnedAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 1);
+
+  const latestThreads = [...pinnedThreads, ...mostRecentNonPinned];
 
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);

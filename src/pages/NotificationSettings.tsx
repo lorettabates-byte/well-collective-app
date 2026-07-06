@@ -1,9 +1,27 @@
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { subscribeToPush, unsubscribeFromPush } from "../lib/push";
 import { useApp } from "../store/AppContext";
 import type { NotificationSettings as NotificationSettingsType } from "../types";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+// Common timezones for the picker
+const COMMON_TIMEZONES = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Asia/Tokyo",
+  "Asia/Hong_Kong",
+  "Australia/Sydney",
+];
 
 const TOGGLES: { key: keyof NotificationSettingsType; label: string; description: string }[] = [
   {
@@ -72,6 +90,11 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 export default function NotificationSettings() {
   const { user, notificationSettings, updateNotificationSettings } = useApp();
   const [pushError, setPushError] = useState("");
+  const [timezone, setTimezone] = useState(user.timezone || "America/New_York");
+  const [notificationSchedule, setNotificationSchedule] = useState(
+    user.notificationSchedule || { send7am: true, send3pm: false, send9pm: false }
+  );
+  const [saving, setSaving] = useState(false);
 
   const handleTogglePush = async () => {
     setPushError("");
@@ -88,6 +111,30 @@ export default function NotificationSettings() {
       }
     } catch (err) {
       setPushError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    }
+  };
+
+  const handleSaveTimezoneSettings = async () => {
+    if (!user.email || !API_URL) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/members/notification-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          timezone,
+          notificationSchedule,
+        }),
+      });
+
+      if (res.ok) {
+        updateNotificationSettings({});
+      }
+    } catch (err) {
+      console.error("Failed to save timezone settings:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -110,6 +157,70 @@ export default function NotificationSettings() {
           </div>
           <Toggle enabled={notificationSettings.pushEnabled} onToggle={handleTogglePush} />
         </div>
+
+        {/* Timezone & Scheduled Notifications */}
+        <div className="mt-2 mb-1">
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Scheduled Notifications</p>
+        </div>
+        <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
+          <Clock size={16} className="text-brand-light shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text mb-2">Your Timezone</p>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+            >
+              {COMMON_TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">7:00 AM</p>
+              <p className="text-xs text-text-muted mt-0.5">Morning motivation</p>
+            </div>
+            <Toggle
+              enabled={notificationSchedule.send7am || false}
+              onToggle={() => setNotificationSchedule({ ...notificationSchedule, send7am: !notificationSchedule.send7am })}
+            />
+          </div>
+          <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">3:00 PM</p>
+              <p className="text-xs text-text-muted mt-0.5">Afternoon check-in</p>
+            </div>
+            <Toggle
+              enabled={notificationSchedule.send3pm || false}
+              onToggle={() => setNotificationSchedule({ ...notificationSchedule, send3pm: !notificationSchedule.send3pm })}
+            />
+          </div>
+          <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">9:00 PM</p>
+              <p className="text-xs text-text-muted mt-0.5">Evening reflection</p>
+            </div>
+            <Toggle
+              enabled={notificationSchedule.send9pm || false}
+              onToggle={() => setNotificationSchedule({ ...notificationSchedule, send9pm: !notificationSchedule.send9pm })}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSaveTimezoneSettings}
+          disabled={saving}
+          className="gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-6 mt-2 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Timezone & Times"}
+        </button>
+
         {TOGGLES.map(({ key, label, description }) => (
           <div key={key} className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
             <div className="flex-1 min-w-0">

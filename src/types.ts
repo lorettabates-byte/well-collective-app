@@ -30,6 +30,8 @@ export interface User {
   age?: number;
   gender?: "female" | "male" | "other";
   healthSyncEnabled?: boolean; // opt-in to auto-populate steps/sleep/workouts from Apple Health / Health Connect
+  timezone?: string; // user's local timezone for push notifications (e.g., "America/New_York")
+  notificationSchedule?: { send7am?: boolean; send3pm?: boolean; send9pm?: boolean }; // local timezone notification times
 }
 
 export interface NotificationSettings {
