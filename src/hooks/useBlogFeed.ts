@@ -1,9 +1,9 @@
-import { useEffect, useState } from “react”;
-import { decodeEntities, stripHtml } from “../utils/format”;
+import { useEffect, useState } from "react";
+import { decodeEntities, stripHtml } from "../utils/format";
 
-export const BLOG_URL = “https://lorettabates.com/videolibrary.lorettabates.com/blog/”;
+export const BLOG_URL = "https://lorettabates.com/videolibrary.lorettabates.com/blog/";
 
-const API_URL = “https://lorettabates.com/videolibrary.lorettabates.com/wp-json/wp/v2/posts?_embed&per_page=10”;
+const API_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-json/wp/v2/posts?_embed&per_page=10";
 
 export interface BlogPost {
   title: string;
