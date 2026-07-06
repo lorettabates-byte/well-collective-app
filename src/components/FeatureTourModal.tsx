@@ -1,12 +1,16 @@
 import {
   Bell,
   Calendar,
+  Check,
   CheckCircle2,
+  Copy,
   Flame,
+  Gift,
   Heart,
   MessageCircle,
   Music,
   Salad,
+  Share2,
   Smartphone,
   Sparkles,
   Star,
@@ -22,6 +26,7 @@ import { logActivity } from "../utils/wellCup";
 import { logEvent } from "../utils/analytics";
 
 const PROFILE_PHOTO_DEMO_URL = "https://lorettabates.com/wp-content/uploads/2026/06/DSC_5773.jpg";
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 interface NavStop {
   icon: LucideIcon;
@@ -36,6 +41,7 @@ interface Slide {
   avatarDemo?: boolean;
   interactive?: "notifications" | "homescreen";
   introPoints?: boolean;
+  referralDemo?: boolean;
 }
 
 const SLIDES: Slide[] = [
@@ -48,8 +54,9 @@ const SLIDES: Slide[] = [
   {
     icon: Trophy,
     title: "WELL Cup 🏆",
-    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins! 🥇 Monthly winner gets a FREE month • 🌴 Yearly winner wins a FREE WELL Escape!",
+    body: "Earn points for everything you do — opening the app, posting, logging sleep, listening to music, completing workouts, and more. The top point-earner each day wins! 🥇 Monthly winner gets a FREE month • 🌴 Yearly winner wins a FREE WELL Escape! You can even invite friends with your personal referral code below — they get a 30-day trial and you earn bonus points.",
     findIt: [{ icon: Trophy, label: "Well Cup" }],
+    referralDemo: true,
   },
   {
     icon: User,
@@ -206,6 +213,8 @@ export default function FeatureTourModal({
   const [step, setStep] = useState(0);
   const [notifDone, setNotifDone] = useState(false);
   const [homescreenDone, setHomescreenDone] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const deferredInstall = useRef<any>(null);
 
   useEffect(() => {
@@ -216,6 +225,16 @@ export default function FeatureTourModal({
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
+
+  useEffect(() => {
+    if (!API_URL || !userEmail) return;
+    fetch(`${API_URL}/api/referrals/my-code?email=${encodeURIComponent(userEmail)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.code) setReferralCode(d.code);
+      })
+      .catch(() => {});
+  }, [userEmail]);
 
   const isLast = step === SLIDES.length - 1;
   const slide = SLIDES[step];
@@ -316,6 +335,47 @@ export default function FeatureTourModal({
               <p className="text-sm font-bold text-yellow-300">Complete this tour and earn</p>
               <p className="text-3xl font-extrabold text-yellow-400 leading-tight">50 WELL Cup Points!</p>
               <p className="text-xs text-yellow-300/70">Plus bonus points along the way</p>
+            </div>
+          )}
+
+          {/* Referral code demo (shown on the WELL Cup slide) */}
+          {slide.referralDemo && referralCode && (
+            <div className="w-full rounded-card bg-surface-2 border border-border px-3 py-3 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <Gift size={14} className="text-brand-light" />
+                <span className="text-xs font-semibold text-text">Your referral code</span>
+              </div>
+              <div className="flex items-center gap-2 w-full">
+                <div className="flex-1 bg-surface-1 border border-border rounded-lg px-3 py-2 text-center">
+                  <span className="text-sm font-bold tracking-wider text-brand-light">{referralCode}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode).then(() => {
+                      setReferralCopied(true);
+                      setTimeout(() => setReferralCopied(false), 2000);
+                    }).catch(() => {});
+                  }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-2 border border-border shrink-0"
+                  aria-label="Copy referral code"
+                >
+                  {referralCopied ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-text-muted" />}
+                </button>
+                <button
+                  onClick={() => {
+                    const text = `Join me on WELL Collective! Use my code ${referralCode} for a FREE 1-month trial. Download: https://lorettabates.com/well-collective`;
+                    if (navigator.share) {
+                      navigator.share({ text }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(text).catch(() => {});
+                    }
+                  }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg gradient-brand shrink-0"
+                  aria-label="Share referral code"
+                >
+                  <Share2 size={14} className="text-white" />
+                </button>
+              </div>
             </div>
           )}
 
