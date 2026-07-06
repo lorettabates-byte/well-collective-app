@@ -27,6 +27,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
+import { formatSeconds } from "../../utils/format";
 import { logActivity } from "../../utils/wellCup";
 import { deleteDownload, downloadSong, getPlaybackUrl } from "../../utils/musicOffline";
 
@@ -74,13 +75,6 @@ function loadOrder(): number[] {
 
 function saveOrder(order: number[]) {
   localStorage.setItem(ORDER_KEY, JSON.stringify(order));
-}
-
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 interface DragHandleProps {
@@ -710,7 +704,7 @@ export default function Playlist({
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-text-dim w-9 text-right">{formatTime(progress.current)}</span>
+              <span className="text-[10px] text-text-dim w-9 text-right">{formatSeconds(progress.current)}</span>
               <input
                 type="range"
                 min={0}
@@ -720,7 +714,7 @@ export default function Playlist({
                 onChange={(e) => handleSeek(parseFloat(e.target.value))}
                 className="flex-1 accent-brand-blue"
               />
-              <span className="text-[10px] text-text-dim w-9">{formatTime(progress.duration)}</span>
+              <span className="text-[10px] text-text-dim w-9">{formatSeconds(progress.duration)}</span>
             </div>
             <div className="flex items-center justify-center gap-6">
               <button onClick={() => handleSkip(-1)} aria-label="Previous" className="text-text">

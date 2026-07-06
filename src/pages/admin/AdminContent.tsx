@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 import type { ContentBatchEntry } from "../../types";
+import { getAuthHeaders } from "../../utils/admin";
 import { formatDateLong } from "../../utils/format";
 import ContentScheduleEditModal from "../../components/ContentScheduleEditModal";
 import FutureContentSchedule from "../../components/admin/FutureContentSchedule";
@@ -16,20 +17,6 @@ interface GeneratedRecipeResponse {
 }
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  } else {
-    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
-    if (fallbackKey) {
-      headers["x-admin-key"] = fallbackKey;
-    }
-  }
-  return headers;
-}
 
 async function syncContentSchedule(entries: ContentBatchEntry[]): Promise<boolean> {
   if (!API_URL) return false;

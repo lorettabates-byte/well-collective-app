@@ -1,22 +1,9 @@
 import { Loader2, RefreshCw, Save, X } from "lucide-react";
 import { useState } from "react";
 import type { ContentBatchEntry } from "../types";
+import { getAuthHeaders } from "../utils/admin";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  } else {
-    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
-    if (fallbackKey) {
-      headers["x-admin-key"] = fallbackKey;
-    }
-  }
-  return headers;
-}
 
 interface ContentScheduleEditModalProps {
   entry: ContentBatchEntry;

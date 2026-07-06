@@ -3,24 +3,11 @@ import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 import type { AppNotificationType } from "../../types";
+import { getAuthHeaders } from "../../utils/admin";
 import { compressImage, MAX_PHOTO_BYTES } from "../../utils/compressImage";
 import { timeAgo } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  } else {
-    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
-    if (fallbackKey) {
-      headers["x-admin-key"] = fallbackKey;
-    }
-  }
-  return headers;
-}
 
 const TYPE_OPTIONS: { id: AppNotificationType; label: string }[] = [
   { id: "general", label: "General" },

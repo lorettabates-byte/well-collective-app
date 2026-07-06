@@ -140,9 +140,10 @@ const DEFAULT_STATE: PersistedState = {
 // from each other (e.g. one member's like would show as already-liked for
 // everyone else too).
 function deriveMemberId(email: string): string {
+  const lower = email.toLowerCase();
   let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    hash = (hash << 5) - hash + email.charCodeAt(i);
+  for (let i = 0; i < lower.length; i++) {
+    hash = (hash << 5) - hash + lower.charCodeAt(i);
     hash |= 0;
   }
   return `m_${Math.abs(hash).toString(36)}`;

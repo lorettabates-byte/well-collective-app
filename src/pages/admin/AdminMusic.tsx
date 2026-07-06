@@ -18,6 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song, SongCategory } from "../../types";
+import { getAuthHeaders } from "../../utils/admin";
 import { AMBIENT_SOUNDS } from "../../utils/ambientSounds";
 
 // Wraps a single list row so it can be picked up and dragged (touch or
@@ -63,15 +64,6 @@ function DragHandle({ attributes, listeners }: { attributes: Record<string, unkn
 }
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 export default function AdminMusic() {
   const [songs, setSongs] = useState<Song[]>([]);

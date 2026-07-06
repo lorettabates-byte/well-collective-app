@@ -2,6 +2,7 @@ import { Calendar, Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import type { InspirationCadence } from "../../types";
+import { getAuthHeaders } from "../../utils/admin";
 
 // This form always posts through /api/notes, which shows up in the app as
 // a "Note from Loretta" regardless of which tab is selected — so that's
@@ -16,13 +17,6 @@ const CADENCE_OPTIONS: { id: InspirationCadence; label: string }[] = [
 ];
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
 
 interface ServerNote {
   id: string;

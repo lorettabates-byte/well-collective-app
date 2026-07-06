@@ -4,18 +4,10 @@ import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
 import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
+import { getAuthHeaders } from "../../utils/admin";
 import { formatDateLong } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 const COLOR_OPTIONS = ["#01519D", "#0191CE", "#84D8FD"];
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;

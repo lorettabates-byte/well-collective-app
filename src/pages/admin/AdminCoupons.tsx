@@ -2,19 +2,11 @@ import { ChevronDown, ChevronUp, Copy, Download, Gift, Plus, Trash2, Upload } fr
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { BIRTHDAY_STOREWIDE_POOL, BIRTHDAY_WELL_ESCAPE_POOL } from "../../constants/birthdayCoupons";
+import { getAuthHeaders } from "../../utils/admin";
 
 type BirthdayPool = "" | typeof BIRTHDAY_WELL_ESCAPE_POOL | typeof BIRTHDAY_STOREWIDE_POOL;
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];

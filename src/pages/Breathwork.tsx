@@ -7,7 +7,7 @@ import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
-import { todayISO } from "../utils/format";
+import { formatSeconds, todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -44,12 +44,6 @@ const BACKGROUND_SOUNDS = [
   { day: 5, name: "Forest Breeze", url: "https://WELLCOLLECTIVESOUNDTRACK.b-cdn.net/Peaceful%20Sounds/LDj_Audio_ForestLightBreezeAmbience_V1.wav" },
   { day: 6, name: "Soothing Tones", url: "https://WELLCOLLECTIVESOUNDTRACK.b-cdn.net/Peaceful%20Sounds/mp3/main%20track.mp3" },
 ];
-
-function formatTime(seconds: number) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-}
 
 // As the voice track approaches its end (which includes trailing quiet built
 // in server-side), ease the music down to silence instead of cutting it off.
@@ -292,7 +286,7 @@ export default function Breathwork() {
                   <RotateCw size={14} />
                 </button>
                 <span className="text-xs text-text-muted flex-1 text-right">
-                  {formatTime(currentTime)} / {dailyDuration ? formatTime(dailyDuration) : "–:––"}
+                  {formatSeconds(currentTime)} / {dailyDuration ? formatSeconds(dailyDuration) : "–:––"}
                 </span>
               </div>
 
@@ -446,7 +440,7 @@ export default function Breathwork() {
                               <RotateCw size={14} />
                             </button>
                             <span className="text-xs text-text-muted flex-1 text-right">
-                              {formatTime(sessionTime)} / {sessionDuration ? formatTime(sessionDuration) : `${mins}:00`}
+                              {formatSeconds(sessionTime)} / {sessionDuration ? formatSeconds(sessionDuration) : `${mins}:00`}
                             </span>
                             <button
                               onClick={() => setPlaying(null)}

@@ -4,32 +4,10 @@ import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
 import TopBar from "../../components/layout/TopBar";
 import { SPECIAL_BADGES } from "../../data/badges";
+import { deriveMemberId, getAuthHeaders } from "../../utils/admin";
 import { formatDateLong } from "../../utils/format";
 
-function deriveMemberId(email: string): string {
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    hash = (hash << 5) - hash + email.charCodeAt(i);
-    hash |= 0;
-  }
-  return `m_${Math.abs(hash).toString(36)}`;
-}
-
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  } else {
-    const fallbackKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
-    if (fallbackKey) {
-      headers["x-admin-key"] = fallbackKey;
-    }
-  }
-  return headers;
-}
 
 interface AdminMember {
   email: string;
