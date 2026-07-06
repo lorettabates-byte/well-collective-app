@@ -1,41 +1,22 @@
 import { Mail, MessageCircle, PenSquare, Pin, Trophy } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
+import { getTrendingThreads } from "../utils/threadUtils";
+import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 export default function Community() {
   useSectionTracking("community");
   const { categories, threads, user } = useApp();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-
-  useEffect(() => {
-    if (!user.email || !API_URL) return;
-    fetch(`${API_URL}/api/messages/unread-count?email=${encodeURIComponent(user.email)}`)
-      .then((r) => (r.ok ? r.json() : { count: 0 }))
-      .then((data) => setUnreadMessageCount(data.count || 0))
-      .catch(() => {});
-  }, [user.email]);
-
-  // Show top 2 pinned + most recent post
-  const pinnedThreads = [...threads]
-    .filter((t) => t.pinnedAt)
-    .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
-    .slice(0, 2);
-
-  const mostRecentNonPinned = [...threads]
-    .filter((t) => !t.pinnedAt)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 1);
-
-  const trendingDisplay = [...pinnedThreads, ...mostRecentNonPinned];
+  const unreadMessageCount = useUnreadMessageCount(user.email);
+  const trendingDisplay = getTrendingThreads(threads);
 
   return (
     <div>

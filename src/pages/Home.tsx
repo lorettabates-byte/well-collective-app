@@ -20,6 +20,8 @@ import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { todayISO } from "../utils/format";
+import { getTrendingThreads } from "../utils/threadUtils";
+import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -38,17 +40,9 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, threads, inspirations, events, notifications, featuredEventId, logWorkoutCompletion, logWellActivityCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
   const totalUnread = unreadNotifications + unreadMessages;
-
-  useEffect(() => {
-    if (!user.email || !API_URL) return;
-    fetch(`${API_URL}/api/messages/unread-count?email=${encodeURIComponent(user.email)}`)
-      .then((r) => (r.ok ? r.json() : { count: 0 }))
-      .then((data) => setUnreadMessages(data.count || 0))
-      .catch(() => {});
-  }, [user.email]);
 
   // Most recent by sentAt, not just inspirations[0] — guards against the
   // array order ever drifting out of sync with actual send time, since this
@@ -64,18 +58,7 @@ export default function Home() {
     ...(featuredEvent ? [featuredEvent] : []),
     ...allUpcomingEvents.filter((e) => e.id !== featuredEventId),
   ].slice(0, 4);
-  // Show top 2 pinned + most recent post (same as Community Trending section)
-  const pinnedThreads = [...threads]
-    .filter((t) => t.pinnedAt)
-    .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
-    .slice(0, 2);
-
-  const mostRecentNonPinned = [...threads]
-    .filter((t) => !t.pinnedAt)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 1);
-
-  const latestThreads = [...pinnedThreads, ...mostRecentNonPinned];
+  const latestThreads = getTrendingThreads(threads, 2, 1);
 
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);

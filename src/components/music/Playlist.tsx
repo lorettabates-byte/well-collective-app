@@ -20,6 +20,7 @@ import { createPortal } from "react-dom";
 import {
   DndContext,
   closestCenter,
+  DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -410,7 +411,7 @@ export default function Playlist({
     });
   };
 
-  const handleDragEndFavorites = (event: any) => {
+  const handleDragEndFavorites = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setFavoritesOrder((prev) => {
