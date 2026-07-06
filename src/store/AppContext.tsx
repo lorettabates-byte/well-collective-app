@@ -543,6 +543,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: state.user.email, notificationSettings: state.notificationSettings }),
+    }).then((res) => {
+      if (!res.ok) console.error(`Failed to backfill notification settings: ${res.status}`);
     }).catch((err) => console.error("Failed to backfill notification settings:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.user.email]);
@@ -601,6 +603,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: prev.user.email, notificationSettings }),
+        }).then((res) => {
+          if (!res.ok) console.error(`Failed to sync notification settings: ${res.status}`);
         }).catch((err) => console.error("Failed to sync notification settings:", err));
       }
       return { ...prev, notificationSettings };
@@ -739,6 +743,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle, userId: state.user.id }),
+    }).then((res) => {
+      if (!res.ok) console.error(`Failed to sync thread edit: ${res.status}`);
     }).catch((err) => console.error("Failed to sync thread edit:", err));
 
     setState((prev) => ({
@@ -755,6 +761,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: newText, userId: state.user.id }),
+    }).then((res) => {
+      if (!res.ok) console.error(`Failed to sync message edit: ${res.status}`);
     }).catch((err) => console.error("Failed to sync message edit:", err));
 
     setState((prev) => ({
@@ -941,9 +949,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (existing) {
       setSavedRecipes((prev) => prev.filter((r) => r.id !== existing.id));
       if (API_URL) {
-        fetch(`${API_URL}/api/recipes/saved/${existing.id}`, { method: "DELETE" }).catch((err) =>
-          console.error("Failed to unsave recipe:", err)
-        );
+        fetch(`${API_URL}/api/recipes/saved/${existing.id}`, { method: "DELETE" })
+          .then((res) => { if (!res.ok) console.error(`Failed to unsave recipe: ${res.status}`); })
+          .catch((err) => console.error("Failed to unsave recipe:", err));
       }
       return;
     }
@@ -975,9 +983,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRecipeFolders((prev) => prev.filter((f) => f.id !== folderId));
     setSavedRecipes((prev) => prev.map((r) => (r.folderId === folderId ? { ...r, folderId: undefined } : r)));
     if (!API_URL) return;
-    fetch(`${API_URL}/api/recipes/folders/${folderId}`, { method: "DELETE" }).catch((err) =>
-      console.error("Failed to delete recipe folder:", err)
-    );
+    fetch(`${API_URL}/api/recipes/folders/${folderId}`, { method: "DELETE" })
+      .then((res) => { if (!res.ok) console.error(`Failed to delete recipe folder: ${res.status}`); })
+      .catch((err) => console.error("Failed to delete recipe folder:", err));
   };
 
   const moveRecipeToFolder: AppContextValue["moveRecipeToFolder"] = (savedRecipeId, folderId) => {
@@ -987,7 +995,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folderId }),
-    }).catch((err) => console.error("Failed to move saved recipe:", err));
+    })
+      .then((res) => { if (!res.ok) console.error(`Failed to move saved recipe: ${res.status}`); })
+      .catch((err) => console.error("Failed to move saved recipe:", err));
   };
 
   const fetchRecipeHistory: AppContextValue["fetchRecipeHistory"] = async (before, limit) => {
@@ -1033,9 +1043,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeMealPlanEntry: AppContextValue["removeMealPlanEntry"] = (entryId) => {
     setMealPlan((prev) => prev.filter((e) => e.id !== entryId));
     if (!API_URL) return;
-    fetch(`${API_URL}/api/meal-plan/${entryId}`, { method: "DELETE" }).catch((err) =>
-      console.error("Failed to remove meal plan entry:", err)
-    );
+    fetch(`${API_URL}/api/meal-plan/${entryId}`, { method: "DELETE" })
+      .then((res) => { if (!res.ok) console.error(`Failed to remove meal plan entry: ${res.status}`); })
+      .catch((err) => console.error("Failed to remove meal plan entry:", err));
   };
 
   const addInspiration: AppContextValue["addInspiration"] = (inspiration) => {
@@ -1088,7 +1098,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ memberId: state.user.id, memberEmail: state.user.email }),
-      }).catch((err) => console.error("Failed to sync RSVP:", err));
+      })
+        .then((res) => { if (!res.ok) console.error(`Failed to sync RSVP: ${res.status}`); })
+        .catch((err) => console.error("Failed to sync RSVP:", err));
     }
   };
 
@@ -1137,7 +1149,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           method: "PUT",
           headers: adminHeaders(),
           body: JSON.stringify({ ...updated, ...updates }),
-        }).catch((err) => console.error("Failed to sync event update:", err));
+        })
+          .then((res) => { if (!res.ok) console.error(`Failed to sync event update: ${res.status}`); })
+          .catch((err) => console.error("Failed to sync event update:", err));
       }
     }
   };
@@ -1157,7 +1171,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetch(`${API_URL}/api/events/${eventId}${query}`, {
         method: "DELETE",
         headers: adminHeaders(),
-      }).catch((err) => console.error("Failed to sync event deletion:", err));
+      })
+        .then((res) => { if (!res.ok) console.error(`Failed to sync event deletion: ${res.status}`); })
+        .catch((err) => console.error("Failed to sync event deletion:", err));
     }
   };
 
@@ -1311,7 +1327,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: "PUT",
         headers: adminHeaders(),
         body: JSON.stringify({ featuredEventId: eventId }),
-      }).catch((err) => console.error("Failed to sync featured event:", err));
+      })
+        .then((res) => { if (!res.ok) console.error(`Failed to sync featured event: ${res.status}`); })
+        .catch((err) => console.error("Failed to sync featured event:", err));
     }
   };
 
@@ -1325,7 +1343,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: "PUT",
         headers: adminHeaders(),
         body: JSON.stringify({ ids: next }),
-      }).catch((err) => console.error("Failed to sync sold-out events:", err));
+      })
+        .then((res) => { if (!res.ok) console.error(`Failed to sync sold-out events: ${res.status}`); })
+        .catch((err) => console.error("Failed to sync sold-out events:", err));
     }
   };
 
@@ -1339,7 +1359,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: state.user.email, badgeId }),
-      }).catch((err) => console.error("Failed to sync featured badge:", err));
+      })
+        .then((res) => { if (!res.ok) console.error(`Failed to sync featured badge: ${res.status}`); })
+        .catch((err) => console.error("Failed to sync featured badge:", err));
     }
   };
 
@@ -1921,7 +1943,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         gender: state.user.gender,
         healthSyncEnabled: state.user.healthSyncEnabled,
       }),
-    }).catch((err) => console.error("Failed to sync member profile:", err));
+    })
+      .then((res) => { if (!res.ok) console.error(`Failed to sync member profile: ${res.status}`); })
+      .catch((err) => console.error("Failed to sync member profile:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.user.email,
