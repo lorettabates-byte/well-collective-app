@@ -15,6 +15,7 @@ import type { WorkoutPlan } from "../data/workoutLibrary";
 import { getFallbackWellActivity } from "../data/wellnessLibrary";
 import { getRecipePhoto, getRecipePhotoByCategory } from "../utils/recipePhotos";
 import type { BadgeHolder } from "../data/badges";
+import { todayISO } from "../utils/format";
 
 export interface MemberDirectoryEntry extends BadgeHolder {
   name?: string;
@@ -254,14 +255,6 @@ function loadState(): PersistedState {
 // lookup to miss the server's row for several hours every evening, which made
 // the recipe/well-activity silently fall back to yesterday's value instead of
 // today's freshly generated one.
-function todayISO(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 // Builds a Date for the fallback rotation (getFallbackRecipe/getFallbackWellActivity)
 // that matches todayISO()'s date, anchored at noon so local-timezone offsets can't
@@ -306,7 +299,9 @@ function syncForumThread(thread: ForumThread, authorEmail?: string) {
       messageId: thread.messages[0].id,
       image: thread.messages[0].image,
     }),
-  }).catch((err) => console.error("Failed to sync new thread:", err));
+  }).then((res) => {
+    if (!res.ok) console.error(`Failed to sync thread: ${res.status}`);
+  }).catch((err) => console.error("Failed to sync thread:", err));
 }
 
 function syncForumMessage(threadId: string, message: ThreadMessage, authorEmail?: string) {
@@ -324,7 +319,9 @@ function syncForumMessage(threadId: string, message: ThreadMessage, authorEmail?
       replyToId: message.replyToId,
       image: message.image,
     }),
-  }).catch((err) => console.error("Failed to sync new message:", err));
+  }).then((res) => {
+    if (!res.ok) console.error(`Failed to sync message: ${res.status}`);
+  }).catch((err) => console.error("Failed to sync message:", err));
 }
 
 function syncForumLike(threadId: string, messageId: string, userId: string) {
@@ -333,6 +330,8 @@ function syncForumLike(threadId: string, messageId: string, userId: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId }),
+  }).then((res) => {
+    if (!res.ok) console.error(`Failed to sync like: ${res.status}`);
   }).catch((err) => console.error("Failed to sync like:", err));
 }
 
@@ -342,21 +341,23 @@ function syncAddCategory(category: ForumCategory) {
     method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify(category),
+  }).then((res) => {
+    if (!res.ok) console.error(`Failed to sync category: ${res.status}`);
   }).catch((err) => console.error("Failed to sync category:", err));
 }
 
 function syncDeleteCategory(categoryId: string) {
   if (!API_URL) return;
-  fetch(`${API_URL}/api/forum/categories/${categoryId}`, { method: "DELETE", headers: adminHeaders() }).catch((err) =>
-    console.error("Failed to sync category deletion:", err)
-  );
+  fetch(`${API_URL}/api/forum/categories/${categoryId}`, { method: "DELETE", headers: adminHeaders() })
+    .then((res) => { if (!res.ok) console.error(`Failed to sync category deletion: ${res.status}`); })
+    .catch((err) => console.error("Failed to sync category deletion:", err));
 }
 
 function syncDeleteThread(threadId: string) {
   if (!API_URL) return;
-  fetch(`${API_URL}/api/forum/threads/${threadId}`, { method: "DELETE", headers: adminHeaders() }).catch((err) =>
-    console.error("Failed to sync thread deletion:", err)
-  );
+  fetch(`${API_URL}/api/forum/threads/${threadId}`, { method: "DELETE", headers: adminHeaders() })
+    .then((res) => { if (!res.ok) console.error(`Failed to sync thread deletion: ${res.status}`); })
+    .catch((err) => console.error("Failed to sync thread deletion:", err));
 }
 
 function syncDeleteMessage(threadId: string, messageId: string) {
@@ -364,6 +365,8 @@ function syncDeleteMessage(threadId: string, messageId: string) {
   fetch(`${API_URL}/api/forum/threads/${threadId}/messages/${messageId}`, {
     method: "DELETE",
     headers: adminHeaders(),
+  }).then((res) => {
+    if (!res.ok) console.error(`Failed to sync message deletion: ${res.status}`);
   }).catch((err) => console.error("Failed to sync message deletion:", err));
 }
 
