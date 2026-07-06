@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Dumbbell, Eye, EyeOff, LogOut, Pencil, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, LogOut, Pencil, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -46,6 +46,9 @@ export default function Profile() {
   const [tribeConnections, setTribeConnections] = useState<number | null>(null);
   const [addedByCount, setAddedByCount] = useState<number | null>(null);
   const [allTimePoints, setAllTimePoints] = useState<number | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralStats, setReferralStats] = useState({ total: 0, conversions: 0 });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -57,6 +60,15 @@ export default function Profile() {
         if (d.member.tribeConnections !== undefined) setTribeConnections(d.member.tribeConnections);
         if (d.member.addedByCount !== undefined) setAddedByCount(d.member.addedByCount);
         if (d.member.allTimePoints !== undefined) setAllTimePoints(d.member.allTimePoints);
+      })
+      .catch(() => {});
+
+    fetch(`${API_URL}/api/referrals/my-code?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setReferralCode(d.code);
+        setReferralStats({ total: d.totalReferrals, conversions: d.conversions });
       })
       .catch(() => {});
   }, [user.email]);
@@ -132,6 +144,58 @@ export default function Profile() {
           <p className="text-[11px] text-text-muted leading-tight">Total Points</p>
         </div>
       </div>
+
+      {referralCode && (
+        <div className="glass-card rounded-card p-4 mb-4 border border-brand-light/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Gift size={18} className="text-brand-light" />
+            <h3 className="text-sm font-bold text-text">Invite friends, earn rewards</h3>
+          </div>
+          <p className="text-xs text-text-muted mb-3">
+            Share your code — friends get a <span className="text-brand-light font-semibold">1-month free trial</span> and you earn <span className="text-brand-light font-semibold">25 points</span>. If they subscribe, you both get <span className="text-brand-light font-semibold">50 points</span>!
+          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 bg-surface-1 border border-border rounded-lg px-3 py-2.5 text-center">
+              <span className="text-sm font-bold tracking-wider text-brand-light">{referralCode}</span>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(referralCode).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }).catch(() => {});
+              }}
+              className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-2 border border-border"
+            >
+              {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-text-muted" />}
+            </button>
+            <button
+              onClick={() => {
+                const text = `Join me on WELL Collective! Use my code ${referralCode} for a FREE 1-month trial. Download: https://lorettabates.com/well-collective`;
+                if (navigator.share) {
+                  navigator.share({ text }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(text).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }).catch(() => {});
+                }
+              }}
+              className="w-10 h-10 flex items-center justify-center rounded-lg gradient-brand"
+            >
+              <Share2 size={16} className="text-white" />
+            </button>
+          </div>
+          {referralStats.total > 0 && (
+            <div className="flex gap-4 text-xs text-text-muted">
+              <span>{referralStats.total} friend{referralStats.total !== 1 ? "s" : ""} invited</span>
+              {referralStats.conversions > 0 && (
+                <span>{referralStats.conversions} converted</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <Link
         to="/well-check"

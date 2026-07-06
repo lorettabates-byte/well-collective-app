@@ -1,11 +1,11 @@
-import { useEffect, useState } from “react”;
-import type { CommunityEvent } from “../types”;
-import { decodeEntities, stripHtml } from “../utils/format”;
+import { useEffect, useState } from "react";
+import type { CommunityEvent } from "../types";
+import { decodeEntities, stripHtml } from "../utils/format";
 
-const LIVE_API_URL = “https://lorettabates.com/wp-json/tribe/events/v1/events?per_page=25”;
+const LIVE_API_URL = "https://lorettabates.com/wp-json/tribe/events/v1/events?per_page=25";
 const SERVER_API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-const COLORS = [“#01519D”, “#0191CE”, “#84D8FD”];
+const COLORS = ["#01519D", "#0191CE", "#84D8FD"];
 
 interface FeedState {
   events: CommunityEvent[];

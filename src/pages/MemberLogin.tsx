@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Gift, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { uid } from "../store/AppContext";
@@ -96,8 +96,27 @@ function ResumeTrial({ onSuccess, onSwitchToStart }: { onSuccess: () => void; on
 function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; onSwitchToResume: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [showReferral, setShowReferral] = useState(false);
+  const [referralValid, setReferralValid] = useState<boolean | null>(null);
+  const [referralName, setReferralName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const validateReferralCode = async (code: string) => {
+    if (!code.trim() || !API_URL) {
+      setReferralValid(null);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/referrals/validate?code=${encodeURIComponent(code.trim())}`);
+      const data = (await res.json()) as { valid: boolean; referrerName?: string };
+      setReferralValid(data.valid);
+      if (data.valid && data.referrerName) setReferralName(data.referrerName);
+    } catch {
+      setReferralValid(null);
+    }
+  };
 
   const handleStartTrial = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,12 +138,17 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
 
     setSubmitting(true);
     try {
+      const body: Record<string, string> = { name: name.trim(), email: email.trim() };
+      if (referralCode.trim() && referralValid) {
+        body.referralCode = referralCode.trim();
+      }
+
       const res = await fetch(`${API_URL}/api/auth/start-trial`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+        body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean };
+      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean; referralApplied?: boolean; trialDays?: number };
 
       if (!res.ok || !data.trialEndsAt) {
         setError(data.error || "Failed to start trial. Please try again.");
@@ -142,6 +166,8 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
       setSubmitting(false);
     }
   };
+
+  const trialLabel = referralValid ? "Start My 30-Day Free Trial" : "Start My 7-Day Free Trial";
 
   return (
     <form onSubmit={handleStartTrial} className="flex flex-col gap-4">
@@ -176,12 +202,49 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
         />
       </div>
 
+      {!showReferral ? (
+        <button
+          type="button"
+          onClick={() => setShowReferral(true)}
+          className="flex items-center gap-1.5 text-xs text-brand-light font-medium -mt-1"
+        >
+          <Gift size={13} />
+          Have a friend's referral code?
+        </button>
+      ) : (
+        <div>
+          <label className="text-xs font-semibold text-text mb-1.5 block">Referral Code</label>
+          <input
+            type="text"
+            value={referralCode}
+            onChange={(e) => {
+              setReferralCode(e.target.value.toUpperCase());
+              setReferralValid(null);
+            }}
+            onBlur={() => validateReferralCode(referralCode)}
+            placeholder="WELL-XXXX-XXXX"
+            autoCapitalize="characters"
+            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+          />
+          {referralValid === true && (
+            <p className="text-[11px] text-green-400 mt-1">
+              Referred by {referralName} — you'll get a 30-day free trial!
+            </p>
+          )}
+          {referralValid === false && referralCode.trim() && (
+            <p className="text-[11px] text-red-400 mt-1">
+              Code not recognized. Check with your friend and try again.
+            </p>
+          )}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={submitting}
         className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
       >
-        {submitting ? "Starting…" : "Start My 7-Day Free Trial"}
+        {submitting ? "Starting…" : trialLabel}
       </button>
       <p className="text-[11px] text-text-dim text-center -mt-1">
         No credit card needed. We'll let you know if you want to become a full WELL Collective member.
@@ -326,7 +389,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
             <>
               <h1 className="text-xl font-bold text-text mb-1">Start Your Free Trial</h1>
               <p className="text-xs text-text-muted mb-5">
-                Try WELL Collective free for 7 days — no membership account needed yet.
+                Try WELL Collective free for 7 days — or 30 days with a friend's referral code!
               </p>
               <StartTrial onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
             </>
