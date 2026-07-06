@@ -24,10 +24,18 @@ export default function Community() {
       .catch(() => {});
   }, [user.email]);
 
+  // Show top 2 pinned + most recent post
   const pinnedThreads = [...threads]
     .filter((t) => t.pinnedAt)
     .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
     .slice(0, 2);
+
+  const mostRecentNonPinned = [...threads]
+    .filter((t) => !t.pinnedAt)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 1);
+
+  const trendingDisplay = [...pinnedThreads, ...mostRecentNonPinned];
 
   return (
     <div>
@@ -56,7 +64,7 @@ export default function Community() {
           </Link>
         </div>
 
-        {pinnedThreads.length > 0 && (
+        {trendingDisplay.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-text flex items-center gap-2">
@@ -68,7 +76,7 @@ export default function Community() {
               </Link>
             </div>
             <div className="flex flex-col gap-3">
-              {pinnedThreads.map((thread) => (
+              {trendingDisplay.map((thread) => (
                 <ThreadPreviewCard key={thread.id} thread={thread} />
               ))}
             </div>
