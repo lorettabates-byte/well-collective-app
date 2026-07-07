@@ -126,6 +126,10 @@ export default function AdminContent() {
   const [editingEntry, setEditingEntry] = useState<ContentBatchEntry | null>(null);
   const [generatingWeek, setGeneratingWeek] = useState(false);
   const [generateWeekStatus, setGenerateWeekStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [broadcastThemeTitle, setBroadcastThemeTitle] = useState("");
+  const [broadcastThemeBody, setBroadcastThemeBody] = useState("");
+  const [broadcastingTheme, setBroadcastingTheme] = useState(false);
+  const [broadcastThemeStatus, setBroadcastThemeStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const refreshSchedule = async () => {
     const entries = await fetchContentSchedule();
@@ -271,6 +275,33 @@ export default function AdminContent() {
     }
   };
 
+  const handleBroadcastTheme = async () => {
+    if (!API_URL || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()) return;
+    setBroadcastingTheme(true);
+    setBroadcastThemeStatus(null);
+    try {
+      const res = await fetch(`${API_URL}/api/content-schedule/broadcast-theme`, {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ title: broadcastThemeTitle.trim(), body: broadcastThemeBody.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await refreshSchedule();
+        setBroadcastThemeStatus({ type: "success", message: `Saved for ${data.monday} and push sent to all members!` });
+        setBroadcastThemeTitle("");
+        setBroadcastThemeBody("");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setBroadcastThemeStatus({ type: "error", message: err.error || "Failed to broadcast." });
+      }
+    } catch {
+      setBroadcastThemeStatus({ type: "error", message: "Failed to reach the server." });
+    } finally {
+      setBroadcastingTheme(false);
+    }
+  };
+
   const handleDownloadTemplate = () => {
     const entries = buildTemplate(30);
     const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
@@ -407,6 +438,42 @@ export default function AdminContent() {
               )}
             </>
           )}
+        </div>
+
+        {/* ── Set & Broadcast This Week's Theme ────────────────────────── */}
+        <div className="glass-card rounded-card p-4 border border-brand-light/20">
+          <h2 className="text-sm font-bold text-text mb-1">Set This Week's Theme & Broadcast</h2>
+          <p className="text-xs text-text-muted leading-relaxed mb-3">
+            Use this when Monday's push already ran but no theme was scheduled. Saves to the DB for this week's Monday and immediately pushes to all members.
+          </p>
+          <div className="flex flex-col gap-2">
+            <input
+              value={broadcastThemeTitle}
+              onChange={(e) => setBroadcastThemeTitle(e.target.value)}
+              placeholder="Theme title (e.g. Power of Connection)"
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+            />
+            <textarea
+              value={broadcastThemeBody}
+              onChange={(e) => setBroadcastThemeBody(e.target.value)}
+              placeholder="Theme description / body text"
+              rows={2}
+              className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
+            />
+            <button
+              onClick={handleBroadcastTheme}
+              disabled={broadcastingTheme || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()}
+              className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+            >
+              {broadcastingTheme ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {broadcastingTheme ? "Sending…" : "Save & Broadcast to All Members"}
+            </button>
+            {broadcastThemeStatus && (
+              <p className={`text-xs ${broadcastThemeStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+                {broadcastThemeStatus.message}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ── Upcoming Content — moved to the top so it's the first thing

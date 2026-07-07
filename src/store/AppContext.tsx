@@ -2056,11 +2056,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .filter((i) => i.cadence === "weekly")
       .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
     if (fromPush) return fromPush;
-    // Fall back to the most recent Monday's content_schedule entry that has a weeklyTheme,
-    // so the bar always shows the correct theme even when the push notification was missed.
-    const fromSchedule = [...state.contentSchedule]
-      .filter((e) => e.weeklyTheme && new Date(e.date + "T00:00:00").getDay() === 1)
-      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    // Fall back to this week's Monday entry in content_schedule.
+    // Only look at the current week's Monday so stale prior-week themes don't leak through.
+    const todayDate = new Date(today + "T00:00:00");
+    const dow = todayDate.getDay();
+    const daysToMon = dow === 0 ? 6 : dow - 1;
+    const monDate = new Date(todayDate);
+    monDate.setDate(todayDate.getDate() - daysToMon);
+    const thisMonday = `${monDate.getFullYear()}-${String(monDate.getMonth() + 1).padStart(2, "0")}-${String(monDate.getDate()).padStart(2, "0")}`;
+    const fromSchedule = state.contentSchedule.find((e) => e.date === thisMonday && e.weeklyTheme);
     if (!fromSchedule?.weeklyTheme) return undefined;
     return {
       id: `schedule-weekly-${fromSchedule.date}`,
