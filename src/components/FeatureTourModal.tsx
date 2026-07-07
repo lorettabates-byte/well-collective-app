@@ -363,7 +363,7 @@ export default function FeatureTourModal({
                 </button>
                 <button
                   onClick={() => {
-                    const text = `Join me on WELL Collective! Use my code ${referralCode} for a FREE 1-month trial. Download: https://lorettabates.com/well-collective`;
+                    const text = `Join me on WELL Collective! Use my code ${referralCode} for a FREE 1-month trial. Download: https://app.lorettabates.com`;
                     if (navigator.share) {
                       navigator.share({ text }).catch(() => {});
                     } else {

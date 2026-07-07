@@ -6,7 +6,6 @@ import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 import type { Recipe, RecipeNutrition } from "../types";
-import { logActivity } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -358,7 +357,6 @@ export default function Nutrition() {
           return;
         }
         setTodaysMeals((prev) => [...prev, data.meal]);
-        logActivity(user.email!, "meal_log", { mealType });
         resetMealForm();
       }
     } catch { /* silent */ } finally {

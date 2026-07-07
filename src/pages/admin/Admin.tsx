@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Share2, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Award, BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Share2, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -13,6 +13,7 @@ const TILES = [
   { to: "/admin/events", label: "Events", description: "Manage the community calendar", icon: Calendar },
   { to: "/admin/coupons", label: "Coupons", description: "Create promo codes & birthday gift codes", icon: Gift },
   { to: "/admin/referrals", label: "Referrals", description: "Track friend invites & conversions", icon: Share2 },
+  { to: "/admin/points", label: "Award Points", description: "Manually give or deduct points for any member", icon: Award },
   { to: "/admin/music", label: "Music", description: "Manage the WELL Collective Soundtrack", icon: Music },
   { to: "/admin/analytics", label: "Analytics", description: "View engagement stats", icon: BarChart3 },
 ];
