@@ -122,7 +122,7 @@ function DirectMessage({
         ) : (
           <>
             <div
-              className={`max-w-xs rounded-card px-3 py-2 text-sm ${
+              className={`max-w-xs rounded-card px-3 py-2 text-sm whitespace-pre-wrap ${
                 isOwn ? "gradient-brand text-white" : "bg-surface-2 text-text"
               }`}
             >
