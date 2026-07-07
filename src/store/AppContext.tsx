@@ -2052,12 +2052,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);
 
   const currentWeeklyTheme = (() => {
-    const fromPush = [...state.inspirations]
-      .filter((i) => i.cadence === "weekly")
-      .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
-    if (fromPush) return fromPush;
-    // Fall back to this week's Monday entry in content_schedule.
-    // Only look at the current week's Monday so stale prior-week themes don't leak through.
+    // content_schedule (DB) is authoritative — check it first so a "Save Only"
+    // admin update takes effect without a push notification overwriting local state.
     const todayDate = new Date(today + "T00:00:00");
     const dow = todayDate.getDay();
     const daysToMon = dow === 0 ? 6 : dow - 1;
@@ -2065,17 +2061,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     monDate.setDate(todayDate.getDate() - daysToMon);
     const thisMonday = `${monDate.getFullYear()}-${String(monDate.getMonth() + 1).padStart(2, "0")}-${String(monDate.getDate()).padStart(2, "0")}`;
     const fromSchedule = state.contentSchedule.find((e) => e.date === thisMonday && e.weeklyTheme);
-    if (!fromSchedule?.weeklyTheme) return undefined;
-    return {
-      id: `schedule-weekly-${fromSchedule.date}`,
-      title: fromSchedule.weeklyTheme.title,
-      body: fromSchedule.weeklyTheme.body,
-      author: "Loretta Bates",
-      cadence: "weekly" as const,
-      sentAt: fromSchedule.date + "T08:00:00.000Z",
-      likes: [],
-      savedBy: [],
-    };
+    if (fromSchedule?.weeklyTheme) {
+      return {
+        id: `weekly-${fromSchedule.date}`,
+        title: fromSchedule.weeklyTheme.title,
+        body: fromSchedule.weeklyTheme.body,
+        author: "Loretta Bates",
+        cadence: "weekly" as const,
+        sentAt: fromSchedule.date + "T08:00:00.000Z",
+        likes: [],
+        savedBy: [],
+      };
+    }
+    // Fall back to most recent weekly inspiration delivered via push.
+    return [...state.inspirations]
+      .filter((i) => i.cadence === "weekly")
+      .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
   })();
 
   const todaysWellActivity: WellActivity = todaysEntry?.wellActivity
