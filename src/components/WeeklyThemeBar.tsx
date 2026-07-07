@@ -1,8 +1,8 @@
 import { Sparkles } from "lucide-react";
-import type { WeeklyTheme } from "../types";
+import type { Inspiration } from "../types";
 
 interface WeeklyThemeBarProps {
-  theme: WeeklyTheme | null;
+  theme: Inspiration | null | undefined;
 }
 
 export default function WeeklyThemeBar({ theme }: WeeklyThemeBarProps) {
