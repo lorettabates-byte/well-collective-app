@@ -152,6 +152,7 @@ export default function AdminMembers() {
 
   const [fullMembersExpanded, setFullMembersExpanded] = useState(true);
   const [trialMembersExpanded, setTrialMembersExpanded] = useState(true);
+  const [expiredTrialExpanded, setExpiredTrialExpanded] = useState(false);
 
   const isTrialExpired = (trialEndsAt?: string) => !!trialEndsAt && trialEndsAt < new Date().toISOString().slice(0, 10);
   const isActiveTrial = (trialEndsAt?: string) => !!trialEndsAt && !isTrialExpired(trialEndsAt);
@@ -161,8 +162,9 @@ export default function AdminMembers() {
     firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" })
   );
 
-  const fullMembers = sortedMembers.filter((m) => !isActiveTrial(m.trialEndsAt));
+  const fullMembers = sortedMembers.filter((m) => !m.trialEndsAt);
   const trialMembers = sortedMembers.filter((m) => isActiveTrial(m.trialEndsAt));
+  const expiredTrialMembers = sortedMembers.filter((m) => m.trialEndsAt && isTrialExpired(m.trialEndsAt));
 
   const toggleBadge = async (memberEmail: string, badgeId: string, currentlyGranted: boolean) => {
     if (!API_URL) return;
@@ -294,6 +296,27 @@ export default function AdminMembers() {
                 {trialMembersExpanded && (
                   <div className="flex flex-col gap-2.5">
                     {trialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Expired Trial Members — collapsed by default so they don't clutter the view */}
+            {expiredTrialMembers.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setExpiredTrialExpanded((v) => !v)}
+                  className="w-full flex items-center justify-between glass-card rounded-card px-4 py-3 mb-2 border border-red-500/20"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-red-400 text-left">Expired Trials (no longer active)</p>
+                    <p className="text-xs text-text-muted text-left">Not counted as members — {expiredTrialMembers.length} total</p>
+                  </div>
+                  {expiredTrialExpanded ? <ChevronUp size={16} className="text-text-dim shrink-0" /> : <ChevronDown size={16} className="text-text-dim shrink-0" />}
+                </button>
+                {expiredTrialExpanded && (
+                  <div className="flex flex-col gap-2.5">
+                    {expiredTrialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
                   </div>
                 )}
               </div>
