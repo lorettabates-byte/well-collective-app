@@ -39,6 +39,7 @@ import AdminEvents from "./pages/admin/AdminEvents";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminMusic from "./pages/admin/AdminMusic";
 import AdminMembers from "./pages/admin/AdminMembers";
+import AdminReferrals from "./pages/admin/AdminReferrals";
 import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
 function App() {
@@ -87,6 +88,7 @@ function App() {
         <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
         <Route path="/admin/music" element={<AdminRoute><AdminMusic /></AdminRoute>} />
         <Route path="/admin/members" element={<AdminRoute><AdminMembers /></AdminRoute>} />
+        <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
       </Routes>
     </MobileShell>
   );
