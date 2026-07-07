@@ -275,7 +275,7 @@ export default function AdminContent() {
     }
   };
 
-  const handleBroadcastTheme = async () => {
+  const handleBroadcastTheme = async (broadcast: boolean) => {
     if (!API_URL || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()) return;
     setBroadcastingTheme(true);
     setBroadcastThemeStatus(null);
@@ -283,17 +283,22 @@ export default function AdminContent() {
       const res = await fetch(`${API_URL}/api/content-schedule/broadcast-theme`, {
         method: "POST",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ title: broadcastThemeTitle.trim(), body: broadcastThemeBody.trim() }),
+        body: JSON.stringify({ title: broadcastThemeTitle.trim(), body: broadcastThemeBody.trim(), broadcast }),
       });
       if (res.ok) {
         const data = await res.json();
         await refreshSchedule();
-        setBroadcastThemeStatus({ type: "success", message: `Saved for ${data.monday} and push sent to all members!` });
+        setBroadcastThemeStatus({
+          type: "success",
+          message: broadcast
+            ? `Saved for ${data.monday} and push sent to all members!`
+            : `Saved for ${data.monday}. No push sent.`,
+        });
         setBroadcastThemeTitle("");
         setBroadcastThemeBody("");
       } else {
         const err = await res.json().catch(() => ({}));
-        setBroadcastThemeStatus({ type: "error", message: err.error || "Failed to broadcast." });
+        setBroadcastThemeStatus({ type: "error", message: err.error || "Failed to save." });
       }
     } catch {
       setBroadcastThemeStatus({ type: "error", message: "Failed to reach the server." });
@@ -460,14 +465,24 @@ export default function AdminContent() {
               rows={2}
               className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
             />
-            <button
-              onClick={handleBroadcastTheme}
-              disabled={broadcastingTheme || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()}
-              className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
-            >
-              {broadcastingTheme ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              {broadcastingTheme ? "Sending…" : "Save & Broadcast to All Members"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleBroadcastTheme(false)}
+                disabled={broadcastingTheme || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()}
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60"
+              >
+                {broadcastingTheme ? <Loader2 size={16} className="animate-spin" /> : null}
+                Save Only
+              </button>
+              <button
+                onClick={() => handleBroadcastTheme(true)}
+                disabled={broadcastingTheme || !broadcastThemeTitle.trim() || !broadcastThemeBody.trim()}
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+              >
+                {broadcastingTheme ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                Save & Send Push
+              </button>
+            </div>
             {broadcastThemeStatus && (
               <p className={`text-xs ${broadcastThemeStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
                 {broadcastThemeStatus.message}
