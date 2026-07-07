@@ -63,7 +63,7 @@ export default function AdminReferrals() {
             <div key={i} className="glass-card rounded-card px-4 py-3.5">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <p className="text-sm font-semibold text-text truncate">
-                  {r.referrerName || r.referrerEmail}
+                  {r.referredName || r.referredEmail}
                 </p>
                 {r.convertedAt && (
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-green-400 shrink-0">
@@ -73,7 +73,7 @@ export default function AdminReferrals() {
                 )}
               </div>
               <p className="text-xs text-text-muted mb-1">
-                Referred <span className="text-text">{r.referredName || r.referredEmail}</span>
+                Referred by <span className="text-text">{r.referrerName || r.referrerEmail}</span>
               </p>
               <div className="flex items-center gap-3 text-[11px] text-text-dim">
                 <span>Joined {formatDateLong(r.createdAt)}</span>
