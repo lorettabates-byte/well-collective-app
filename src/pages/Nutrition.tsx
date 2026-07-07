@@ -814,7 +814,7 @@ export default function Nutrition() {
                   meal.had_whole_foods && "Whole foods",
                 ].filter(Boolean);
                 return (
-                  <div key={meal.id} className="flex items-start gap-3 p-2.5 bg-surface-2 rounded-card border border-border">
+                  <div key={meal.id} className="flex items-start gap-3 p-3 bg-surface-2 rounded-card border border-border hover:border-brand-light/30 transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-text">{meal.meal_type}</p>
                       {checks.length > 0 && (
@@ -833,24 +833,25 @@ export default function Nutrition() {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex flex-col items-end gap-2 shrink-0">
                       <span className="text-[10px] text-text-dim">
                         {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => startEditMeal(meal)}
-                          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim"
-                          aria-label="Edit meal"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-pill bg-surface border border-border text-text-dim hover:text-text hover:border-brand-light/50 transition-colors text-[11px] font-semibold"
+                          title="Edit this meal"
                         >
-                          <Pencil size={11} />
+                          <Pencil size={12} />
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDeleteMeal(meal.id)}
-                          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-red-400/70"
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-surface border border-border text-red-400/70 hover:text-red-400 hover:border-red-400/50 transition-colors"
                           aria-label="Delete meal"
                         >
-                          <Trash2 size={11} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
