@@ -31,6 +31,11 @@ export default function Notifications() {
   const sorted = [...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const hasUnread = notifications.some((n) => !n.read);
 
+  // Auto-clear the unread badge the moment the user opens this page
+  useEffect(() => {
+    markAllNotificationsRead();
+  }, [markAllNotificationsRead]);
+
   useEffect(() => {
     if (!API_URL || !user.email) return;
     // Fetch unread messages from API — this is a simplified fetch that gets count
