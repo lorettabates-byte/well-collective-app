@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const MESSAGES_CACHE_KEY = "unread-messages-count";
 const MESSAGES_CACHE_TTL = 60_000; // 60 seconds
 
-export function useUnreadMessageCount(email: string | null) {
+export function useUnreadMessageCount(email: string | null | undefined) {
   const [count, setCount] = useState<number>(() => {
     try {
       const cached = JSON.parse(localStorage.getItem(MESSAGES_CACHE_KEY) ?? "{}") as { count?: number; at?: number };

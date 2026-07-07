@@ -10,8 +10,6 @@ import { useSectionTracking } from "../hooks/useSectionTracking";
 import { getTrendingThreads } from "../utils/threadUtils";
 import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
-const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
 export default function Community() {
   useSectionTracking("community");
   const { categories, threads, user } = useApp();

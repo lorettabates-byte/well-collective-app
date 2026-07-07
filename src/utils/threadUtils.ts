@@ -1,6 +1,6 @@
-import type { Thread } from "../types";
+import type { ForumThread } from "../types";
 
-export function getTrendingThreads(threads: Thread[], pinnedCount: number = 2, recentCount: number = 1): Thread[] {
+export function getTrendingThreads(threads: ForumThread[], pinnedCount: number = 2, recentCount: number = 1): ForumThread[] {
   const pinnedThreads = [...threads]
     .filter((t) => t.pinnedAt)
     .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
