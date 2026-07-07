@@ -2051,9 +2051,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const today = todayISO();
   const todaysEntry = state.contentSchedule.find((entry) => entry.date === today);
 
-  const currentWeeklyTheme = [...state.inspirations]
-    .filter((i) => i.cadence === "weekly")
-    .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
+  const currentWeeklyTheme = (() => {
+    const fromPush = [...state.inspirations]
+      .filter((i) => i.cadence === "weekly")
+      .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
+    if (fromPush) return fromPush;
+    // Fall back to the most recent Monday's content_schedule entry that has a weeklyTheme,
+    // so the bar always shows the correct theme even when the push notification was missed.
+    const fromSchedule = [...state.contentSchedule]
+      .filter((e) => e.weeklyTheme && new Date(e.date + "T00:00:00").getDay() === 1)
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!fromSchedule?.weeklyTheme) return undefined;
+    return {
+      id: `schedule-weekly-${fromSchedule.date}`,
+      title: fromSchedule.weeklyTheme.title,
+      body: fromSchedule.weeklyTheme.body,
+      author: "Loretta Bates",
+      cadence: "weekly" as const,
+      sentAt: fromSchedule.date + "T08:00:00.000Z",
+      likes: [],
+      savedBy: [],
+    };
+  })();
 
   const todaysWellActivity: WellActivity = todaysEntry?.wellActivity
     ? { date: today, ...todaysEntry.wellActivity }
