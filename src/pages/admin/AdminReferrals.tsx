@@ -1,4 +1,4 @@
-import { CheckCircle2, Gift } from "lucide-react";
+import { CheckCircle2, Gift, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
@@ -62,9 +62,18 @@ export default function AdminReferrals() {
           {referrals.map((r, i) => (
             <div key={i} className="glass-card rounded-card px-4 py-3.5">
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <p className="text-sm font-semibold text-text truncate">
-                  {r.referredName || r.referredEmail}
-                </p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-sm font-semibold text-text truncate">
+                    {r.referredName || r.referredEmail}
+                  </p>
+                  <a
+                    href={`mailto:${r.referredEmail}`}
+                    className="text-brand-light shrink-0"
+                    aria-label={`Email ${r.referredName || r.referredEmail}`}
+                  >
+                    <Mail size={13} />
+                  </a>
+                </div>
                 {r.convertedAt && (
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-green-400 shrink-0">
                     <CheckCircle2 size={13} />
@@ -72,8 +81,11 @@ export default function AdminReferrals() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-text-muted mb-1">
-                Referred by <span className="text-text">{r.referrerName || r.referrerEmail}</span>
+              <p className="text-xs text-text-muted mb-1 flex items-center gap-1.5">
+                Referred by{" "}
+                <a href={`mailto:${r.referrerEmail}`} className="text-text hover:text-brand-light">
+                  {r.referrerName || r.referrerEmail}
+                </a>
               </p>
               <div className="flex items-center gap-3 text-[11px] text-text-dim">
                 <span>Joined {formatDateLong(r.createdAt)}</span>

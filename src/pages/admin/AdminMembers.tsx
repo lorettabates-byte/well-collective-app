@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
@@ -47,6 +47,14 @@ function MemberCard({
             </p>
           )}
         </Link>
+        <a
+          href={`mailto:${member.email}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-brand-light p-2 shrink-0"
+          aria-label={`Email ${member.name}`}
+        >
+          <Mail size={16} />
+        </a>
         <button
           onClick={() => onDelete(member.email)}
           className="text-red-400 p-2 shrink-0"
