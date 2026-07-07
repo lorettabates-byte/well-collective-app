@@ -97,7 +97,7 @@ const POINTS_GUIDE = [
   { emoji: "📱", label: "Open the app", pts: 5 },
   { emoji: "✍️", label: "Post in community", pts: 10 },
   { emoji: "💬", label: "Comment in community", pts: 5 },
-  { emoji: "🎥", label: "Watch a class", pts: 20 },
+  { emoji: "🎥", label: "Complete a class", pts: 20 },
   { emoji: "🏃", label: "Complete cardio", pts: 20 },
   { emoji: "🎵", label: "Listen to music", pts: 5 },
   { emoji: "📖", label: "Read the blog", pts: 5 },

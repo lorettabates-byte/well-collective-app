@@ -36,10 +36,14 @@ export async function logActivity(
 ): Promise<ActivityResult> {
   if (!API_URL || !memberEmail) return { awarded: false, points: 0, streak: null };
   try {
+    // keepalive lets the request survive the page navigating away — critical
+    // here since class_watch/blog_open fire right before an external link
+    // redirect, and the browser otherwise cancels in-flight fetches on nav.
     const res = await fetch(`${API_URL}/api/activity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberEmail, type, metadata }),
+      keepalive: true,
     });
     if (!res.ok) return { awarded: false, points: 0, streak: null };
     return await res.json() as ActivityResult;

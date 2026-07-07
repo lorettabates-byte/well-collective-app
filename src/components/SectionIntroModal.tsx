@@ -95,7 +95,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: Video, text: "Join live-stream sessions when Loretta goes live" },
       { Icon: Search, text: "Filter classes by type, length, or intensity level" },
       { Icon: Bookmark, text: "Bookmark your favorites so they're easy to find again" },
-      { Icon: Star, text: "Earn 20 pts per class watched (up to 3 per day)", highlight: true },
+      { Icon: Star, text: "Earn 20 pts for completing a class (1 per day)", highlight: true },
     ],
   },
   music: {
@@ -158,7 +158,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: BookOpen, text: "Each post opens in a full reader — no leaving the app" },
       { Icon: Bookmark, text: "Bookmark posts to save them for later reading" },
       { Icon: CalendarDays, text: "New content added regularly alongside the weekly theme" },
-      { Icon: Star, text: "Earn 5 pts for each blog post you read", highlight: true },
+      { Icon: Star, text: "Earn 5 pts per blog post (up to 2 per day)", highlight: true },
     ],
   },
   "well-cup": {
