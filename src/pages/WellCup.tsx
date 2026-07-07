@@ -93,6 +93,43 @@ function Countdown({ resetAt }: { resetAt: string }) {
   return <span className="text-[10px] text-text-dim">{timeLeft}</span>;
 }
 
+function YearResetBanner({ resetAt }: { resetAt: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const ms = new Date(resetAt).getTime() - Date.now();
+      if (ms <= 0) { setTimeLeft("The year is resetting!"); return; }
+      const days = Math.floor(ms / 86_400_000);
+      const h = Math.floor((ms % 86_400_000) / 3_600_000);
+      if (days > 0) setTimeLeft(`${days}d ${h}h`);
+      else {
+        const m = Math.floor((ms % 3_600_000) / 60_000);
+        setTimeLeft(`${h}h ${m}m`);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, [resetAt]);
+
+  const resetDate = new Date(resetAt).toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric",
+  });
+
+  return (
+    <div className="rounded-card px-4 py-3 border border-amber-400/30 bg-amber-400/5 flex items-start gap-3">
+      <span className="text-xl shrink-0 mt-0.5">👑</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold text-amber-300">Yearly WELL Crown — Leaderboard Resets {resetDate}</p>
+        <p className="text-[11px] text-text-muted mt-0.5">
+          The member with the most points by year-end wins a free WELL Escape retreat.
+          {timeLeft ? ` Time remaining: ${timeLeft}.` : ""}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const POINTS_GUIDE = [
   { emoji: "📱", label: "Open the app", pts: 5 },
   { emoji: "✍️", label: "Post in community", pts: 10 },
@@ -120,6 +157,7 @@ export default function WellCup() {
   const [yesterday, setYesterday] = useState<WinnerInfo | null>(null);
   const [monthly, setMonthly] = useState<WinnerInfo | null>(null);
   const [yearly, setYearly] = useState<WinnerInfo | null>(null);
+  const [yearResetAt, setYearResetAt] = useState("");
   const [view, setView] = useState<"top10" | "all">("top10");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -137,6 +175,7 @@ export default function WellCup() {
       setYesterday(winner);
       setMonthly(mon?.leader ?? null);
       setYearly(yr?.leader ?? null);
+      if (yr?.yearResetAt) setYearResetAt(yr.yearResetAt);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -216,6 +255,7 @@ export default function WellCup() {
               period="yearly"
               periodLabel={`${year} WELL Crown`}
             />
+            {yearResetAt && <YearResetBanner resetAt={yearResetAt} />}
           </div>
         )}
 
