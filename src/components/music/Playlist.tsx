@@ -294,10 +294,11 @@ export default function Playlist({
     return merged.map((id) => merged_map.get(id)!).filter(Boolean);
   }, [visibleSongs, favoritesOrder, favoritesOnly]);
 
-  // For Play All: include featured song if it's playable
-  const playableSongs = orderedVisibleSongs
-    .concat(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : [])
-    .filter((s) => !lockedSongIds.has(s.id));
+  // For Play All: start with the Music Monday featured song, then the rest
+  const playableSongs = [
+    ...(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : []),
+    ...orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id)),
+  ];
 
   async function playAt(queue: Song[], index: number) {
     if (index < 0 || index >= queue.length) return;
