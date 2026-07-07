@@ -1,5 +1,6 @@
 import { Mail, MessageCircle, PenSquare, Pin, Trophy } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
+import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link } from "react-router-dom";
 import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
@@ -12,7 +13,7 @@ import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 export default function Community() {
   useSectionTracking("community");
-  const { categories, threads, user } = useApp();
+  const { categories, threads, user, currentWeeklyTheme } = useApp();
   const unreadMessageCount = useUnreadMessageCount(user.email);
   const trendingDisplay = getTrendingThreads(threads);
 
@@ -21,6 +22,7 @@ export default function Community() {
       <TopBar title="Community" subtitle="Connect, share, and support one another" icon={MessageCircle} iconColor="#0191CE" showBack />
       <SectionIntroModal sectionKey="community" />
       <div className="px-4 pt-4">
+        <WeeklyThemeBar theme={currentWeeklyTheme} />
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Link
             to="/community/new"

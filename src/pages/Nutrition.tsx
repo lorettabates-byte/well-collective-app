@@ -1,5 +1,6 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Sparkles, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
+import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -539,21 +540,7 @@ export default function Nutrition() {
       <TopBar title="Nutrition" subtitle="Recipes inspired by this week's theme" icon={ChefHat} iconColor="#0191CE" showBack />
       <SectionIntroModal sectionKey="nutrition" />
       <div className="px-4 pt-4 flex flex-col gap-4">
-        {currentWeeklyTheme && (
-          <div className="gradient-brand p-[1px] rounded-card">
-            <div className="bg-surface/95 rounded-card p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
-                <Sparkles size={18} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
-                  This Week's Theme
-                </span>
-                <h3 className="text-sm font-bold text-text">{currentWeeklyTheme.title}</h3>
-              </div>
-            </div>
-          </div>
-        )}
+        <WeeklyThemeBar theme={currentWeeklyTheme} />
 
         {/* Daily Meal Log */}
         <div className="glass-card rounded-card p-4">

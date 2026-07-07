@@ -3,6 +3,7 @@ import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
+import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link, useNavigate } from "react-router-dom";
 import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import BirthdayModal from "../components/BirthdayModal";
@@ -38,7 +39,7 @@ const QUICK_LINKS = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, threads, inspirations, events, notifications, featuredEventId, logWorkoutCompletion, logWellActivityCompletion } = useApp();
+  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme, logWorkoutCompletion, logWellActivityCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
@@ -350,6 +351,10 @@ export default function Home() {
       <div className="mb-6">
         <SectionHeader title="WELL Cup" to="/well-cup" />
         <WellCupLeaderboard />
+      </div>
+
+      <div className="mb-6">
+        <WeeklyThemeBar theme={currentWeeklyTheme} />
       </div>
 
       {todaysInspiration && (

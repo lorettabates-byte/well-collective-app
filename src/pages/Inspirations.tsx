@@ -1,5 +1,6 @@
 import { ArrowUpRight, Sparkles } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
+import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import InspirationCard from "../components/inspiration/InspirationCard";
@@ -21,7 +22,7 @@ const VALID_FILTERS = new Set(FILTERS.map((f) => f.id));
 
 export default function Inspirations() {
   useSectionTracking("inspiration");
-  const { user, inspirations } = useApp();
+  const { user, inspirations, currentWeeklyTheme } = useApp();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("filter");
   const [filter, setFilter] = useState<Filter>(
@@ -42,6 +43,10 @@ export default function Inspirations() {
       <TopBar title="Inspirations" subtitle="Daily wisdom & encouragement from WELL" icon={Sparkles} iconColor="#0191CE" showBack />
       <SectionIntroModal sectionKey="inspiration" />
       <div className="px-4 pt-4">
+        <div className="mb-4">
+          <WeeklyThemeBar theme={currentWeeklyTheme} />
+        </div>
+
         <a
           href="https://lorettabates.com/30-day-life-lift/"
           target="_blank"
