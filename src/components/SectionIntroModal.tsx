@@ -14,6 +14,7 @@ import {
   Edit,
   Flame,
   Footprints,
+  Gift,
   Globe,
   Heart,
   HelpCircle,
@@ -170,6 +171,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: CalendarDays, text: "Monthly winner earns a FREE month of WELL Collective!" },
       { Icon: Globe, text: "Yearly winner wins a FREE WELL Escape retreat!" },
       { Icon: Lightbulb, text: "Open the app, post, log meals, take classes, do breathwork — it all counts" },
+      { Icon: Gift, text: "Invite friends with your referral code in Profile — earn 25 pts when they join, 50 pts if they subscribe!", highlight: true },
     ],
   },
   profile: {
@@ -182,6 +184,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: Award, text: "Earn badges for hitting milestones — pick one to feature on your avatar" },
       { Icon: Users, text: "Manage your WELL Tribe — add people, message them, cheer each other on" },
       { Icon: Activity, text: "Access your WELL Check here to log daily activities and earn points" },
+      { Icon: Gift, text: "Share your referral code — friends get a 30-day trial, you earn 25 pts (50 if they subscribe!)", highlight: true },
     ],
   },
 };
