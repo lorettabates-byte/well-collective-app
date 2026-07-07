@@ -1,4 +1,4 @@
-import { Heart, Edit2, Check, X } from "lucide-react";
+import { Heart, Edit2, Check, X, CornerUpLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { resolveFeaturedBadge } from "../../data/badges";
@@ -13,20 +13,23 @@ interface ChatBubbleProps {
   showAvatar: boolean;
   showName: boolean;
   threadId: string;
+  replyToMessage?: ThreadMessage;
+  onReply?: (message: ThreadMessage) => void;
 }
 
-export default function ChatBubble({ message, isOwn, showAvatar, showName, threadId }: ChatBubbleProps) {
+export default function ChatBubble({ message, isOwn, showAvatar, showName, threadId, replyToMessage, onReply }: ChatBubbleProps) {
   const { user, toggleMessageLike, memberBadges, editMessage } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const hasLiked = message.likes.includes(user.id);
   const liveAuthor = memberBadges[message.authorId];
   const badgeId = resolveFeaturedBadge(liveAuthor ?? {});
-  // Prefer the live directory over the avatar/name baked into the message
-  // at post time, which goes stale the moment the author updates their
-  // profile photo or name.
   const authorAvatar = liveAuthor?.avatar || message.authorAvatar;
   const authorName = liveAuthor?.name || message.authorName;
+
+  const replyAuthorName = replyToMessage
+    ? (memberBadges[replyToMessage.authorId]?.name || replyToMessage.authorName)
+    : null;
 
   return (
     <div className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : ""} animate-fade-in-up`}>
@@ -42,6 +45,17 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
       </div>
       <div className={`flex flex-col max-w-[75%] ${isOwn ? "items-end" : "items-start"}`}>
         {showName && !isOwn && <span className="text-[11px] text-text-dim mb-1 px-1">{authorName}</span>}
+
+        {/* Quoted reply preview */}
+        {replyToMessage && (
+          <div className={`mb-1 px-3 py-1.5 rounded-lg border-l-2 border-brand-light/60 bg-brand/10 max-w-full ${isOwn ? "self-end" : "self-start"}`}>
+            <p className="text-[10px] font-semibold text-brand-light mb-0.5">↩ {replyAuthorName}</p>
+            <p className="text-[11px] text-text-muted line-clamp-2">
+              {replyToMessage.text || (replyToMessage.image ? "📷 Photo" : "")}
+            </p>
+          </div>
+        )}
+
         {isEditing ? (
           <div className="flex gap-2 w-full">
             <textarea
@@ -101,6 +115,15 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
                 {formatTime(message.createdAt)}
                 {message.editedAt && <span className="ml-1 text-[9px]">(edited)</span>}
               </span>
+              {onReply && (
+                <button
+                  onClick={() => onReply(message)}
+                  className="text-text-dim hover:text-brand-light transition-colors p-0.5"
+                  aria-label="Reply"
+                >
+                  <CornerUpLeft size={12} />
+                </button>
+              )}
               {isOwn && (
                 <button
                   onClick={() => setIsEditing(true)}

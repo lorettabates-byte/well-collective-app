@@ -52,20 +52,9 @@ export default function NewThread() {
     if (mention && mention.query.length >= 0) {
       setCurrentMention(mention);
 
-      // Calculate position for autocomplete dropdown
       if (textareaRef.current) {
-        const textarea = textareaRef.current;
-        const lines = newText.substring(0, mention.start).split("\n");
-        const lineIndex = lines.length - 1;
-        const lineStart = newText.substring(0, mention.start).lastIndexOf("\n") + 1;
-        const charInLine = mention.start - lineStart;
-
-        const rect = textarea.getBoundingClientRect();
-        const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-        const top = rect.top + (lineIndex + 1) * lineHeight + 10;
-        const left = rect.left + charInLine * 8;
-
-        setMentionPosition({ top, left });
+        const rect = textareaRef.current.getBoundingClientRect();
+        setMentionPosition({ top: rect.top, left: rect.left });
       }
     } else {
       setCurrentMention(null);

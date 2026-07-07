@@ -1,4 +1,4 @@
-import { Send, Pin, Image as ImageIcon, X } from "lucide-react";
+import { Send, Pin, Image as ImageIcon, X, CornerUpLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import ChatBubble from "../components/community/ChatBubble";
@@ -8,6 +8,7 @@ import { compressImage, MAX_PHOTO_BYTES } from "../utils/compressImage";
 import { timeAgo } from "../utils/format";
 import MentionAutocomplete from "../components/community/MentionAutocomplete";
 import { getCurrentMention, replaceMention } from "../utils/mentions";
+import type { ThreadMessage } from "../types";
 
 export default function Thread() {
   const { categoryId, threadId } = useParams<{ categoryId: string; threadId: string }>();
@@ -18,6 +19,7 @@ export default function Thread() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | undefined>();
   const [photoError, setPhotoError] = useState("");
+  const [replyingTo, setReplyingTo] = useState<ThreadMessage | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [highlighted, setHighlighted] = useState<string | undefined>(highlightMessageId);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,15 +64,19 @@ export default function Thread() {
   if (threads.length === 0) return null;
   if (!thread || !category) return <Navigate to="/community" replace />;
 
+  // Build a lookup so ChatBubble can show the quoted message for replies
+  const messageById = Object.fromEntries(thread.messages.map((m) => [m.id, m]));
+
   const isOwnThread = thread.authorId === user.id;
   const authorName = isOwnThread ? user.name || thread.authorName : memberBadges[thread.authorId]?.name || thread.authorName;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() && !image) return;
-    addMessage(thread.id, text.trim(), image);
+    addMessage(thread.id, text.trim(), image, replyingTo?.id);
     setText("");
     setImage(undefined);
+    setReplyingTo(null);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -84,20 +90,9 @@ export default function Thread() {
     if (mention && mention.query.length >= 0) {
       setCurrentMention(mention);
 
-      // Calculate position for autocomplete dropdown
       if (textareaRef.current) {
-        const textarea = textareaRef.current;
-        const lines = newText.substring(0, mention.start).split("\n");
-        const lineIndex = lines.length - 1;
-        const lineStart = newText.substring(0, mention.start).lastIndexOf("\n") + 1;
-        const charInLine = mention.start - lineStart;
-
-        const rect = textarea.getBoundingClientRect();
-        const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-        const top = rect.top + (lineIndex + 1) * lineHeight + 10;
-        const left = rect.left + charInLine * 8; // Approximate char width
-
-        setMentionPosition({ top, left });
+        const rect = textareaRef.current.getBoundingClientRect();
+        setMentionPosition({ top: rect.top, left: rect.left });
       }
     } else {
       setCurrentMention(null);
@@ -184,6 +179,11 @@ export default function Thread() {
                   showAvatar={showAvatar}
                   showName={showName}
                   threadId={thread.id}
+                  replyToMessage={message.replyToId ? messageById[message.replyToId] : undefined}
+                  onReply={(msg) => {
+                    setReplyingTo(msg);
+                    textareaRef.current?.focus();
+                  }}
                 />
               </div>
             );
@@ -196,6 +196,22 @@ export default function Thread() {
         onSubmit={handleSend}
         className="sticky bottom-0 z-30 glass-card border-t border-border px-3 py-2.5 flex flex-col gap-2 mt-4"
       >
+        {replyingTo && (
+          <div className="flex items-center gap-2 px-2 py-1.5 bg-brand/10 rounded-lg border-l-2 border-brand-light/60">
+            <CornerUpLeft size={13} className="text-brand-light shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold text-brand-light">
+                Replying to {memberBadges[replyingTo.authorId]?.name || replyingTo.authorName}
+              </p>
+              <p className="text-[11px] text-text-muted truncate">
+                {replyingTo.text || (replyingTo.image ? "📷 Photo" : "")}
+              </p>
+            </div>
+            <button onClick={() => setReplyingTo(null)} className="text-text-dim hover:text-text p-0.5 shrink-0">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         {photoError && <p className="text-xs text-red-400">{photoError}</p>}
         {image && (
           <div className="relative w-20">

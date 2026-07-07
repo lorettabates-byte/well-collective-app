@@ -379,7 +379,7 @@ interface AppContextValue extends PersistedState {
   updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
-  addMessage: (threadId: string, text: string, image?: string) => void;
+  addMessage: (threadId: string, text: string, image?: string, replyToId?: string) => void;
   toggleMessageLike: (threadId: string, messageId: string) => void;
   addCategory: (category: Omit<ForumCategory, "id">) => void;
   updateCategory: (categoryId: string, updates: Partial<Omit<ForumCategory, "id">>) => void;
@@ -641,7 +641,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return thread;
   };
 
-  const addMessage: AppContextValue["addMessage"] = (threadId, text, image) => {
+  const addMessage: AppContextValue["addMessage"] = (threadId, text, image, replyToId) => {
     const now = new Date().toISOString();
     const message: ThreadMessage = {
       id: uid("m"),
@@ -652,6 +652,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: now,
       likes: [],
       image,
+      replyToId,
     };
     setState((prev) => ({
       ...prev,
