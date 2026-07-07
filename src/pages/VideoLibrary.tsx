@@ -7,6 +7,7 @@ import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { logActivity } from "../utils/wellCup";
+import { openMemberLink } from "../utils/ssoLink";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -46,11 +47,10 @@ export default function VideoLibrary() {
       <SectionIntroModal sectionKey="classes" />
       <div className="px-4 pt-4 flex flex-col gap-4">
         {/* Featured Video Library */}
-        <a
-          href={FEATURED_VIDEO.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="gradient-brand p-[2px] rounded-card animate-fade-in-up overflow-hidden"
+        <button
+          type="button"
+          onClick={() => openMemberLink(FEATURED_VIDEO.url, user.email)}
+          className="w-full text-left gradient-brand p-[2px] rounded-card animate-fade-in-up overflow-hidden"
         >
           <div
             className="rounded-card flex flex-col gap-0 relative overflow-hidden bg-surface h-64"
@@ -78,7 +78,7 @@ export default function VideoLibrary() {
               </div>
             </div>
           </div>
-        </a>
+        </button>
 
         {/* Category Buttons */}
         <div>
@@ -123,13 +123,15 @@ export default function VideoLibrary() {
                 );
               }
               return (
-                <a
+                <button
                   key={id}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => { logClassCompletion(); if (user.email) logActivity(user.email, "class_watch"); }}
-                  className="flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up"
+                  type="button"
+                  onClick={() => {
+                    logClassCompletion();
+                    if (user.email) logActivity(user.email, "class_watch");
+                    openMemberLink(url, user.email);
+                  }}
+                  className="w-full text-left flex items-center gap-3 glass-card rounded-card p-4 animate-fade-in-up"
                 >
                   <div
                     className="relative flex items-center justify-center w-12 h-12 rounded-2xl shrink-0 overflow-hidden"
@@ -146,7 +148,7 @@ export default function VideoLibrary() {
                     <p className="text-xs text-text-muted line-clamp-2">{description}</p>
                   </div>
                   <ArrowUpRight size={18} className="text-text-dim shrink-0" />
-                </a>
+                </button>
               );
             })}
           </div>

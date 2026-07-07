@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import type { BlogPost } from "../../hooks/useBlogFeed";
 import { logActivity } from "../../utils/wellCup";
+import { openMemberLink } from "../../utils/ssoLink";
 
 export default function BlogPostCard({ post, compact, userEmail }: { post: BlogPost; compact?: boolean; userEmail?: string }) {
   const date = post.pubDate
@@ -9,15 +10,14 @@ export default function BlogPostCard({ post, compact, userEmail }: { post: BlogP
 
   const handleClick = () => {
     if (userEmail) logActivity(userEmail, "blog_open").catch(() => {});
+    openMemberLink(post.link, userEmail);
   };
 
   return (
-    <a
-      href={post.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
       onClick={handleClick}
-      className={`block glass-card rounded-card overflow-hidden animate-fade-in-up ${compact ? "w-60 shrink-0" : ""}`}
+      className={`block w-full text-left glass-card rounded-card overflow-hidden animate-fade-in-up ${compact ? "w-60 shrink-0" : ""}`}
     >
       {post.thumbnail && (
         <img src={post.thumbnail} alt="" className={`w-full object-cover ${compact ? "h-28" : "h-40"}`} />
@@ -32,6 +32,6 @@ export default function BlogPostCard({ post, compact, userEmail }: { post: BlogP
         )}
         {date && <p className="text-[11px] text-text-dim">{date}</p>}
       </div>
-    </a>
+    </button>
   );
 }

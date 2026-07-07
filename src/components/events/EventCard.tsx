@@ -4,6 +4,7 @@ import { useApp } from "../../store/AppContext";
 import type { CommunityEvent } from "../../types";
 import { formatDateLong, getDayNumber } from "../../utils/format";
 import { linkify } from "../../utils/linkify";
+import { openMemberLink } from "../../utils/ssoLink";
 import Avatar from "../ui/Avatar";
 
 const MONTHS = [
@@ -151,15 +152,14 @@ export default function EventCard({ event, compact }: EventCardProps) {
               >
                 {liveRsvps.includes(user.id) ? "Going ✓" : "Going"}
               </button>
-              <a
-                href={event.url}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => event.url && openMemberLink(event.url, user.email)}
                 className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-pill gradient-brand text-white"
               >
                 Info
                 <ExternalLink size={12} />
-              </a>
+              </button>
             </div>
           </>
         ) : (

@@ -4,6 +4,7 @@ import BlogPostCard from "../components/blog/BlogPostCard";
 import TopBar from "../components/layout/TopBar";
 import { BLOG_URL, useBlogFeed } from "../hooks/useBlogFeed";
 import { useApp } from "../store/AppContext";
+import { openMemberLink } from "../utils/ssoLink";
 
 export default function Blog() {
   const { posts, loading, error } = useBlogFeed();
@@ -27,15 +28,14 @@ export default function Blog() {
             <p className="text-sm text-text-muted max-w-xs">
               We couldn't load the blog feed right now. You can still visit the blog directly.
             </p>
-            <a
-              href={BLOG_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => openMemberLink(BLOG_URL, user.email)}
               className="flex items-center gap-1.5 text-xs font-semibold gradient-brand text-white rounded-pill px-4 py-2 shadow-glow"
             >
               Visit Blog
               <ArrowUpRight size={14} />
-            </a>
+            </button>
           </div>
         )}
 
