@@ -15,6 +15,7 @@ export default function AdminPoints() {
   const [members, setMembers] = useState<Member[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const [selectedEmail, setSelectedEmail] = useState("");
   const [points, setPoints] = useState("");
@@ -101,33 +102,37 @@ export default function AdminPoints() {
                 placeholder="Search by name or email…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
                 className="w-full bg-surface-2 border border-border rounded-lg pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim outline-none focus:border-brand-light"
               />
             </div>
-            {loading ? (
-              <p className="text-xs text-text-dim px-1">Loading members…</p>
-            ) : (
-              <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
-                {filtered.map((m) => (
-                  <button
-                    key={m.email}
-                    type="button"
-                    onClick={() => { setSelectedEmail(m.email); setSearch(""); }}
-                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      selectedEmail === m.email
-                        ? "bg-brand-light/20 text-brand-light font-semibold border border-brand-light/40"
-                        : "bg-surface-2 text-text hover:bg-surface-3"
-                    }`}
-                  >
-                    <span className="font-medium">{m.name}</span>
-                    <span className="text-text-dim text-xs ml-2">{m.email}</span>
-                    <span className="text-text-dim text-xs ml-2">({m.well_cup_points} pts)</span>
-                  </button>
-                ))}
-                {filtered.length === 0 && search && (
-                  <p className="text-xs text-text-dim px-1">No members match "{search}"</p>
-                )}
-              </div>
+            {(isSearchFocused || search) && (
+              loading ? (
+                <p className="text-xs text-text-dim px-1">Loading members…</p>
+              ) : (
+                <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
+                  {filtered.map((m) => (
+                    <button
+                      key={m.email}
+                      type="button"
+                      onClick={() => { setSelectedEmail(m.email); setSearch(""); setIsSearchFocused(false); }}
+                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedEmail === m.email
+                          ? "bg-brand-light/20 text-brand-light font-semibold border border-brand-light/40"
+                          : "bg-surface-2 text-text hover:bg-surface-3"
+                      }`}
+                    >
+                      <span className="font-medium">{m.name}</span>
+                      <span className="text-text-dim text-xs ml-2">{m.email}</span>
+                      <span className="text-text-dim text-xs ml-2">({m.well_cup_points} pts)</span>
+                    </button>
+                  ))}
+                  {filtered.length === 0 && search && (
+                    <p className="text-xs text-text-dim px-1">No members match "{search}"</p>
+                  )}
+                </div>
+              )
             )}
             {selected && (
               <p className="text-xs text-brand-light mt-1 px-1">
