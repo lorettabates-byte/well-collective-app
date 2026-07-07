@@ -118,7 +118,6 @@ export default function Nutrition() {
   const [hadWater, setHadWater] = useState(false);
   const [hadFruit, setHadFruit] = useState(false);
   const [hadWholeFoods, setHadWholeFoods] = useState(false);
-  const [mealNotes, setMealNotes] = useState("");
   const [estimatedCalories, setEstimatedCalories] = useState("");
   const [savingMeal, setSavingMeal] = useState(false);
 
@@ -284,7 +283,7 @@ export default function Nutrition() {
     setEditingMealId(null);
     setHadProtein(false); setHadVegetable(false);
     setHadWater(false); setHadFruit(false);
-    setHadWholeFoods(false); setMealNotes(""); setEstimatedCalories("");
+    setHadWholeFoods(false); setEstimatedCalories("");
     setMealItemInput(""); setMealItems([]); setEstimateError("");
   };
 
@@ -296,7 +295,6 @@ export default function Nutrition() {
     setHadWater(meal.had_water);
     setHadFruit(meal.had_fruit);
     setHadWholeFoods(meal.had_whole_foods);
-    setMealNotes(meal.notes ?? "");
     setMealItems([]);
     setEstimatedCalories(meal.estimated_calories != null ? String(meal.estimated_calories) : "");
     setEstimateError("");
@@ -344,7 +342,6 @@ export default function Nutrition() {
           hadWater,
           hadFruit,
           hadWholeFoods,
-          notes: mealNotes.trim() || undefined,
           ...nutritionBody,
         }),
       });
@@ -775,14 +772,6 @@ export default function Nutrition() {
                 )}
               </div>
 
-              <textarea
-                value={mealNotes}
-                onChange={(e) => setMealNotes(e.target.value)}
-                placeholder="Anything else? (optional)"
-                rows={2}
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light resize-none"
-              />
-
               <div className="flex gap-2">
                 <button
                   onClick={handleLogMeal}
@@ -820,7 +809,6 @@ export default function Nutrition() {
                       {checks.length > 0 && (
                         <p className="text-[11px] text-brand-light mt-0.5">{checks.join(" · ")}</p>
                       )}
-                      {meal.notes && <p className="text-[11px] text-text-muted mt-0.5">{meal.notes}</p>}
                       {meal.estimated_calories != null && (
                         <p className="text-[11px] text-text-dim mt-0.5">
                           {meal.estimated_calories} kcal
