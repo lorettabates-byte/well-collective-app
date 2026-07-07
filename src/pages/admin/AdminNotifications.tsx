@@ -1,4 +1,4 @@
-import { Calendar, Image as ImageIcon, Loader2, Trash2, X } from "lucide-react";
+import { Calendar, Check, Image as ImageIcon, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
@@ -52,6 +52,11 @@ export default function AdminNotifications() {
   const [scheduledItems, setScheduledItems] = useState<{ id: number; title: string; body: string; send_at: string }[]>([]);
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedMessage, setSchedMessage] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editAt, setEditAt] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => { loadScheduled(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -100,6 +105,36 @@ export default function AdminNotifications() {
       await fetch(`${API_URL}/api/notifications/scheduled/${id}`, { method: "DELETE", headers: getAuthHeaders() });
       loadScheduled();
     } catch { /* ignore */ }
+  };
+
+  const startEdit = (item: { id: number; title: string; body: string; send_at: string }) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditBody(item.body);
+    // Convert UTC ISO to local datetime-local value
+    const local = new Date(item.send_at);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setEditAt(
+      `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())}T${pad(local.getHours())}:${pad(local.getMinutes())}`
+    );
+  };
+
+  const handleSaveEdit = async (id: number) => {
+    if (!API_URL || !editTitle.trim() || !editBody.trim() || !editAt) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/notifications/scheduled/${id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title: editTitle.trim(), body: editBody.trim(), sendAt: editAt }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        loadScheduled();
+      }
+    } catch { /* ignore */ } finally {
+      setEditSaving(false);
+    }
   };
 
   const handleCheckBlogPosts = async () => {
@@ -340,15 +375,60 @@ export default function AdminNotifications() {
             <div className="flex flex-col gap-2 border-t border-border pt-3 mt-1">
               <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide">Upcoming Scheduled</p>
               {scheduledItems.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-2 bg-surface-2 rounded-card px-3 py-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-text truncate">{item.title}</p>
-                    <p className="text-[11px] text-text-muted truncate">{item.body}</p>
-                    <p className="text-[11px] text-brand-light mt-0.5">{new Date(item.send_at).toLocaleString()}</p>
-                  </div>
-                  <button onClick={() => handleDeleteScheduled(item.id)} className="text-red-400 shrink-0 p-1">
-                    <Trash2 size={14} />
-                  </button>
+                <div key={item.id} className="bg-surface-2 rounded-card px-3 py-2">
+                  {editingId === item.id ? (
+                    <div className="flex flex-col gap-2">
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-surface-3 border border-border rounded-lg px-2 py-1.5 text-xs text-text focus:outline-none focus:border-brand-light"
+                      />
+                      <textarea
+                        value={editBody}
+                        onChange={(e) => setEditBody(e.target.value)}
+                        rows={2}
+                        className="w-full bg-surface-3 border border-border rounded-lg px-2 py-1.5 text-xs text-text focus:outline-none focus:border-brand-light resize-none"
+                      />
+                      <input
+                        type="datetime-local"
+                        value={editAt}
+                        onChange={(e) => setEditAt(e.target.value)}
+                        className="w-full bg-surface-3 border border-border rounded-lg px-2 py-1.5 text-xs text-text focus:outline-none focus:border-brand-light"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveEdit(item.id)}
+                          disabled={editSaving}
+                          className="flex items-center gap-1 text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1 disabled:opacity-50"
+                        >
+                          <Check size={12} />
+                          {editSaving ? "Saving…" : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-xs text-text-muted px-2 py-1"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-text truncate">{item.title}</p>
+                        <p className="text-[11px] text-text-muted truncate">{item.body}</p>
+                        <p className="text-[11px] text-brand-light mt-0.5">{new Date(item.send_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => startEdit(item)} className="text-text-muted p-1">
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => handleDeleteScheduled(item.id)} className="text-red-400 p-1">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -168,6 +168,7 @@ export default function Messages() {
   const [loading, setLoading] = useState(false);
   const [inboxLoading, setInboxLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Fetch the member directory once so we can resolve names/avatars for
   // both the inbox list and the open conversation header/bubbles.
@@ -223,6 +224,8 @@ export default function Messages() {
         if (res.ok) {
           const data = await res.json();
           setMessages(data.messages);
+          // Scroll to the bottom so the newest message is visible
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         }
       } catch (err) {
         console.error("Fetch messages error:", err);
@@ -256,6 +259,7 @@ export default function Messages() {
         const data = await res.json();
         setMessages([...messages, data.message]);
         setInput("");
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
       }
     } catch (err) {
       console.error("Send message error:", err);
@@ -431,6 +435,7 @@ export default function Messages() {
             />
           ))
         )}
+        <div ref={bottomRef} />
       </div>
 
       <div className="fixed bottom-20 left-0 right-0 px-4 py-4 border-t border-border flex items-end gap-2 bg-bg">
