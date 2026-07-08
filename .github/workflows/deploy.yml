@@ -38,5 +38,10 @@ jobs:
           server-dir: ./
           state-name: .ftp-sync-state.json
 
+      - name: Set build version
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          npm version --no-git-tag-version "1.0.$BUILD"
+
       - name: Deploy to Capgo (native app live update)
         run: npx @capgo/cli@latest bundle upload --apikey ${{ secrets.CAPGO_TOKEN }} --channel production
