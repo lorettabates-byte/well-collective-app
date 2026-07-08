@@ -1,4 +1,4 @@
-import { AlertCircle, Gift, Loader2 } from "lucide-react";
+import { AlertCircle, Brain, ClipboardList, Dumbbell, Gift, Loader2, Moon, Trophy, Utensils } from "lucide-react";
 import { useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { uid } from "../store/AppContext";
@@ -261,7 +261,7 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
         {submitting ? "Starting…" : trialLabel}
       </button>
       <p className="text-[11px] text-text-dim text-center -mt-1">
-        No credit card needed. We'll let you know if you want to become a full WELL Collective member.
+        No credit card needed.
       </p>
       <button type="button" onClick={onSwitchToResume} className="text-[11px] text-text-dim text-center underline">
         Already started a free trial? Log back in instead.
@@ -407,15 +407,15 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
               </p>
               <div className="grid grid-cols-2 gap-2 mb-5">
                 {[
-                  { emoji: "🧘", label: "Guided Calm Toolkit", desc: "Grounding, breathing & mindset tools with AI voice" },
-                  { emoji: "💪", label: "Workout Plans", desc: "Personalized daily resistance, cardio & stretch routines" },
-                  { emoji: "🍽️", label: "Nutrition Tracking", desc: "Log meals, scan barcodes & track macros daily" },
-                  { emoji: "😴", label: "Sleep & Recovery", desc: "Track sleep quality and build recovery habits" },
-                  { emoji: "🎯", label: "WELL Check", desc: "Daily wellness score across 6 health categories" },
-                  { emoji: "🏆", label: "WELL Cup Points", desc: "Earn points, climb the leaderboard & win prizes" },
+                  { icon: <Brain size={15} />, label: "Guided Calm Toolkit", desc: "Grounding, breathing & mindset sessions with AI voice" },
+                  { icon: <Dumbbell size={15} />, label: "Workout Plans", desc: "Daily resistance, cardio & stretch routines" },
+                  { icon: <Utensils size={15} />, label: "Nutrition Tracking", desc: "Log meals, scan barcodes & track macros" },
+                  { icon: <Moon size={15} />, label: "Sleep & Recovery", desc: "Log sleep quality · guided breathwork & stretching for recovery" },
+                  { icon: <ClipboardList size={15} />, label: "WELL Check", desc: "Daily wellness score across 6 health categories" },
+                  { icon: <Trophy size={15} />, label: "WELL Cup Points", desc: "Earn points, climb the leaderboard & win prizes" },
                 ].map((f) => (
                   <div key={f.label} className="bg-surface-2 border border-border rounded-card p-2.5 flex flex-col gap-1">
-                    <span className="text-base leading-none">{f.emoji}</span>
+                    <span className="text-brand-light leading-none">{f.icon}</span>
                     <p className="text-[11px] font-semibold text-text leading-tight">{f.label}</p>
                     <p className="text-[10px] text-text-muted leading-tight">{f.desc}</p>
                   </div>

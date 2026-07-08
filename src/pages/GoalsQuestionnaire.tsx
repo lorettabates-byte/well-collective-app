@@ -1,5 +1,25 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  CalendarCheck,
+  Check,
+  Compass,
+  Dumbbell,
+  Footprints,
+  Heart,
+  Leaf,
+  Monitor,
+  Moon,
+  RefreshCw,
+  Sunrise,
+  Sun,
+  Trophy,
+  Users,
+  Wind,
+  Zap,
+} from "lucide-react";
 import { useApp } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -15,39 +35,39 @@ interface Answers {
   notifTimes: { send7am: boolean; send3pm: boolean; send9pm: boolean };
 }
 
-const GOAL_OPTIONS: { value: GoalPlan; label: string; emoji: string; desc: string }[] = [
-  { value: "energy",    label: "Boost my energy",       emoji: "⚡", desc: "Feel less tired and more alive every day" },
-  { value: "weight",    label: "Manage my weight",       emoji: "🌿", desc: "Build healthy habits that actually stick" },
-  { value: "strength",  label: "Build strength & tone",  emoji: "💪", desc: "Get stronger through movement I enjoy" },
-  { value: "rut",       label: "Break out of a rut",     emoji: "🔄", desc: "Shake things up and feel inspired again" },
-  { value: "stress",    label: "Manage stress better",   emoji: "🧘", desc: "Find calm and build resilience" },
-  { value: "community", label: "Connect & be inspired",  emoji: "💙", desc: "Be part of something bigger than myself" },
+const GOAL_OPTIONS: { value: GoalPlan; icon: ReactNode; label: string; desc: string }[] = [
+  { value: "energy",    icon: <Zap size={20} />,       label: "Boost my energy",       desc: "Feel less tired and more alive every day" },
+  { value: "weight",    icon: <Leaf size={20} />,      label: "Manage my weight",       desc: "Build healthy habits that actually stick" },
+  { value: "strength",  icon: <Dumbbell size={20} />,  label: "Build strength & tone",  desc: "Get stronger through movement I enjoy" },
+  { value: "rut",       icon: <RefreshCw size={20} />, label: "Break out of a rut",     desc: "Shake things up and feel inspired again" },
+  { value: "stress",    icon: <Wind size={20} />,      label: "Manage stress better",   desc: "Find calm and build resilience" },
+  { value: "community", icon: <Users size={20} />,     label: "Connect & be inspired",  desc: "Be part of something bigger than myself" },
 ];
 
-const CHALLENGE_OPTIONS: { value: NotifTone; label: string; emoji: string; desc: string }[] = [
-  { value: "motivation",     label: "Staying motivated",     emoji: "🔥", desc: "I start strong but lose steam" },
-  { value: "accountability", label: "Being consistent",       emoji: "📅", desc: "I need someone to keep me on track" },
-  { value: "gentle",         label: "Being too hard on myself", emoji: "🌸", desc: "I need encouragement, not pressure" },
-  { value: "education",      label: "Knowing where to start", emoji: "🗺️", desc: "I want guidance and structure" },
+const CHALLENGE_OPTIONS: { value: NotifTone; icon: ReactNode; label: string; desc: string }[] = [
+  { value: "motivation",     icon: <Zap size={20} />,          label: "Staying motivated",       desc: "I start strong but lose steam" },
+  { value: "accountability", icon: <CalendarCheck size={20} />, label: "Being consistent",        desc: "I need someone to keep me on track" },
+  { value: "gentle",         icon: <Heart size={20} />,         label: "Being too hard on myself", desc: "I need encouragement, not pressure" },
+  { value: "education",      icon: <Compass size={20} />,       label: "Knowing where to start",  desc: "I want guidance and structure" },
 ];
 
-const ACTIVITY_OPTIONS: { value: MovementTarget; label: string; emoji: string; desc: string }[] = [
-  { value: "sedentary", label: "Mostly sitting",      emoji: "🪑", desc: "Desk job, not much movement right now" },
-  { value: "light",     label: "Light movement",      emoji: "🚶", desc: "Some walks, occasional activity" },
-  { value: "moderate",  label: "Moderately active",   emoji: "🏃", desc: "Working out 2–3×/week already" },
-  { value: "active",    label: "Already very active", emoji: "🏆", desc: "Regular training, ready to level up" },
+const ACTIVITY_OPTIONS: { value: MovementTarget; icon: ReactNode; label: string; desc: string }[] = [
+  { value: "sedentary", icon: <Monitor size={20} />,   label: "Mostly sitting",      desc: "Desk job, not much movement right now" },
+  { value: "light",     icon: <Footprints size={20} />, label: "Light movement",      desc: "Some walks, occasional activity" },
+  { value: "moderate",  icon: <Activity size={20} />,   label: "Moderately active",   desc: "Working out 2–3× per week already" },
+  { value: "active",    icon: <Trophy size={20} />,     label: "Already very active", desc: "Regular training, ready to level up" },
 ];
 
-const NOTIF_OPTIONS = [
-  { key: "send7am" as const, label: "Morning",   emoji: "🌅", desc: "7am daily nudge" },
-  { key: "send3pm" as const, label: "Afternoon", emoji: "☀️",  desc: "3pm check-in" },
-  { key: "send9pm" as const, label: "Evening",   emoji: "🌙", desc: "9pm wind-down reminder" },
+const NOTIF_OPTIONS: { key: "send7am" | "send3pm" | "send9pm"; icon: ReactNode; label: string; desc: string }[] = [
+  { key: "send7am", icon: <Sunrise size={20} />, label: "Morning",   desc: "7 am daily nudge" },
+  { key: "send3pm", icon: <Sun size={20} />,     label: "Afternoon", desc: "3 pm check-in" },
+  { key: "send9pm", icon: <Moon size={20} />,    label: "Evening",   desc: "9 pm wind-down reminder" },
 ];
 
 function OptionCard<T extends string>({
-  value, label, emoji, desc, selected, onSelect,
+  value, icon, label, desc, selected, onSelect,
 }: {
-  value: T; label: string; emoji: string; desc: string; selected: boolean; onSelect: (v: T) => void;
+  value: T; icon: ReactNode; label: string; desc: string; selected: boolean; onSelect: (v: T) => void;
 }) {
   return (
     <button
@@ -58,7 +78,7 @@ function OptionCard<T extends string>({
           : "bg-surface-2 border-border"
       }`}
     >
-      <span className="text-2xl shrink-0">{emoji}</span>
+      <span className={`shrink-0 ${selected ? "text-white" : "text-brand-light"}`}>{icon}</span>
       <div className="flex-1 min-w-0">
         <p className={`font-semibold text-sm ${selected ? "text-white" : "text-text"}`}>{label}</p>
         <p className={`text-xs mt-0.5 ${selected ? "text-white/80" : "text-text-muted"}`}>{desc}</p>
@@ -89,7 +109,6 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
     if (!user.email || saving) return;
     setSaving(true);
     try {
-      // Persist goal answers to server via members/sync
       await fetch(`${API_URL}/api/members/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +121,6 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
           goalsCompleted: true,
         }),
       });
-      // Also persist notification schedule
       await fetch(`${API_URL}/api/members/notification-settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -120,7 +138,6 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
       });
       onComplete();
     } catch {
-      // Still complete locally even if network fails
       updateProfile({
         goalPlan: answers.goalPlan!,
         notificationTone: answers.notificationTone!,
@@ -143,8 +160,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
             <OptionCard
               key={o.value}
               value={o.value}
+              icon={o.icon}
               label={o.label}
-              emoji={o.emoji}
               desc={o.desc}
               selected={answers.goalPlan === o.value}
               onSelect={(v) => setAnswers((a) => ({ ...a, goalPlan: v }))}
@@ -162,8 +179,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
             <OptionCard
               key={o.value}
               value={o.value}
+              icon={o.icon}
               label={o.label}
-              emoji={o.emoji}
               desc={o.desc}
               selected={answers.notificationTone === o.value}
               onSelect={(v) => setAnswers((a) => ({ ...a, notificationTone: v }))}
@@ -181,8 +198,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
             <OptionCard
               key={o.value}
               value={o.value}
+              icon={o.icon}
               label={o.label}
-              emoji={o.emoji}
               desc={o.desc}
               selected={answers.movementTarget === o.value}
               onSelect={(v) => setAnswers((a) => ({ ...a, movementTarget: v }))}
@@ -196,7 +213,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
       sub: "Pick as many as you'd like.",
       content: (
         <div className="flex flex-col gap-2.5">
-          {NOTIF_OPTIONS.map(({ key, label, emoji, desc }) => {
+          {NOTIF_OPTIONS.map(({ key, icon, label, desc }) => {
             const on = answers.notifTimes[key];
             return (
               <button
@@ -211,7 +228,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
                   on ? "gradient-brand border-transparent shadow-glow" : "bg-surface-2 border-border"
                 }`}
               >
-                <span className="text-2xl shrink-0">{emoji}</span>
+                <span className={`shrink-0 ${on ? "text-white" : "text-brand-light"}`}>{icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className={`font-semibold text-sm ${on ? "text-white" : "text-text"}`}>{label}</p>
                   <p className={`text-xs mt-0.5 ${on ? "text-white/80" : "text-text-muted"}`}>{desc}</p>
@@ -228,7 +245,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
   const current = steps[step];
 
   return (
-    <div className="fixed inset-0 z-50 bg-surface flex flex-col overflow-y-auto">
+    <div className="fixed inset-0 z-[200] bg-surface flex flex-col">
       {/* Header */}
       <div className="px-5 pt-safe pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3 mb-5">
@@ -246,10 +263,10 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
         <p className="text-sm text-text-muted mt-1">{current.sub}</p>
       </div>
 
-      {/* Options */}
+      {/* Options — only this section scrolls */}
       <div className="flex-1 px-5 pb-4 overflow-y-auto">{current.content}</div>
 
-      {/* CTA */}
+      {/* CTA — always visible at bottom */}
       <div className="px-5 pb-safe pb-6 pt-3 shrink-0 border-t border-border bg-surface">
         <button
           disabled={!canAdvance || saving}
@@ -264,7 +281,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
           ) : saving ? (
             "Saving…"
           ) : (
-            "Let's go! 💙"
+            "Let's go"
           )}
         </button>
       </div>

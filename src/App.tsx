@@ -55,11 +55,10 @@ function App() {
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
   const periodShown = localStorage.getItem(`well-goals-period-${currentPeriod}`) === "1";
-  const showGoals =
-    !goalsDismissed &&
-    !!user.email &&
-    !user.isAdmin &&
-    (!user.goalsCompleted || !periodShown);
+  // Show the questionnaire whenever the user is logged in and hasn't seen it
+  // this calendar month. Dropping the goalsCompleted gate prevents the server
+  // field from silently blocking new users who never received the questionnaire.
+  const showGoals = !goalsDismissed && !!user.email && !user.isAdmin && !periodShown;
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
