@@ -100,6 +100,7 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
   const [showReferral, setShowReferral] = useState(false);
   const [referralValid, setReferralValid] = useState<boolean | null>(null);
   const [referralName, setReferralName] = useState("");
+  const [validatingReferral, setValidatingReferral] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -108,6 +109,7 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
       setReferralValid(null);
       return;
     }
+    setValidatingReferral(true);
     try {
       const res = await fetch(`${API_URL}/api/referrals/validate?code=${encodeURIComponent(code.trim())}`);
       const data = (await res.json()) as { valid: boolean; referrerName?: string };
@@ -115,6 +117,8 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
       if (data.valid && data.referrerName) setReferralName(data.referrerName);
     } catch {
       setReferralValid(null);
+    } finally {
+      setValidatingReferral(false);
     }
   };
 
@@ -214,18 +218,28 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
       ) : (
         <div>
           <label className="text-xs font-semibold text-text mb-1.5 block">Referral Code</label>
-          <input
-            type="text"
-            value={referralCode}
-            onChange={(e) => {
-              setReferralCode(e.target.value.toUpperCase());
-              setReferralValid(null);
-            }}
-            onBlur={() => validateReferralCode(referralCode)}
-            placeholder="WELL-XXXX-XXXX"
-            autoCapitalize="characters"
-            className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={referralCode}
+              onChange={(e) => {
+                setReferralCode(e.target.value.toUpperCase());
+                setReferralValid(null);
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); validateReferralCode(referralCode); } }}
+              placeholder="WELL-XXXX-XXXX"
+              autoCapitalize="characters"
+              className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+            />
+            <button
+              type="button"
+              onClick={() => validateReferralCode(referralCode)}
+              disabled={!referralCode.trim() || validatingReferral}
+              className="shrink-0 px-3 py-2 text-xs font-semibold rounded-card gradient-brand text-white disabled:opacity-40"
+            >
+              {validatingReferral ? "…" : "Apply"}
+            </button>
+          </div>
           {referralValid === true && (
             <p className="text-[11px] text-green-400 mt-1">
               Referred by {referralName} — you'll get a 30-day free trial!

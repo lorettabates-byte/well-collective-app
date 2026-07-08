@@ -19,13 +19,13 @@ export function formatTime(iso: string): string {
 }
 
 export function formatDateLong(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
 export function formatDateShort(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
