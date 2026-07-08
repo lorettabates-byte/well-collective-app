@@ -307,7 +307,14 @@ export default function WellCheck() {
     return bmr * 1.2;
   })() : null;
 
-  const tdee = baselineCalories !== null ? Math.round(baselineCalories + exerciseCalories + stepCalories) : null;
+  // Prefer the full-day calorie burn synced from HealthKit/Health Connect when available.
+  const syncedCalorieBurn = (() => {
+    try {
+      const raw = localStorage.getItem(`well-health-calories-${today}`);
+      return raw ? parseInt(raw, 10) : null;
+    } catch { return null; }
+  })();
+  const tdee = syncedCalorieBurn ?? (baselineCalories !== null ? Math.round(baselineCalories + exerciseCalories + stepCalories) : null);
 
   // Count how many of the 6 grid categories are done
   const gridDoneCount = CHECKIN_GRID.filter((item) =>
@@ -366,7 +373,9 @@ export default function WellCheck() {
               <p className="text-lg font-bold text-text-dim">Add stats</p>
             )}
             <p className="text-[10px] text-text-muted">
-              {tdee !== null ? "kcal estimated today" : "height/weight in Profile"}
+              {tdee !== null
+                ? syncedCalorieBurn != null ? "kcal synced from tracker" : "kcal estimated today"
+                : "height/weight in Profile"}
             </p>
           </div>
 
@@ -530,14 +539,16 @@ export default function WellCheck() {
                   </p>
                 </div>
               )}
-              {(exerciseCalories > 0 || stepCalories > 0) && (
+              {syncedCalorieBurn == null && (exerciseCalories > 0 || stepCalories > 0) && (
                 <p className="text-[11px] text-text-muted mb-2">
                   Includes {Math.round(exerciseCalories + stepCalories).toLocaleString()} kcal from today's logged workouts
                   {stepCalories > 0 ? " and steps" : ""}.
                 </p>
               )}
               <p className="text-[11px] text-text-dim leading-relaxed">
-                Energy out = Mifflin-St Jeor BMR (sedentary baseline) + MET-based workout calories (Compendium of Physical Activities)
+                {syncedCalorieBurn != null
+                  ? "Energy out synced from Apple Health / Google Health Connect — reflects your actual tracked burn for today."
+                  : "Energy out = Mifflin-St Jeor BMR (sedentary baseline) + MET-based workout calories (Compendium of Physical Activities)"}
                 + step calories. Log meals with calorie estimates in Nutrition to track intake.
               </p>
             </>

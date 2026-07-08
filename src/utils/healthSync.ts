@@ -1,14 +1,23 @@
 import { Capacitor } from "@capacitor/core";
 import { Health, type HealthDataType, type SleepState } from "@capgo/capacitor-health";
+import { todayISO } from "./format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-// 'workouts' must be requested explicitly (separate from steps/sleep) or
-// queryWorkouts() comes back empty even after the user grants the others.
-// No "active calories" type here — WellCheck already derives Energy Out from
-// weight/height/age (BMR) plus steps/workouts itself; syncing HealthKit's own
-// calorie number too would just create a second, disagreeing estimate.
-const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts", "weight"];
+// 'workouts' must be requested explicitly or queryWorkouts() returns empty.
+// 'totalCalories' = full-day calorie burn from the tracker (replaces BMR estimate).
+// 'distance' = walking/running distance aggregated by HealthKit/Health Connect.
+const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts", "weight", "totalCalories", "distance"];
+
+export interface SyncedRun {
+  workoutType: string;
+  distanceKm: number;
+  durationMinutes: number;
+  paceMinPerKm: number | null;
+  caloriesBurned: number | null;
+  startDate: string;
+  endDate: string;
+}
 
 const ASLEEP_STATES: SleepState[] = ["asleep", "rem", "deep", "light"];
 
@@ -112,18 +121,60 @@ async function syncSleepForLastNight(email: string): Promise<void> {
   });
 }
 
-async function syncWorkoutsForToday(logWorkoutCompletion: () => void): Promise<void> {
+async function syncCalorieBurnForToday(): Promise<void> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  const { workouts } = await Health.queryWorkouts({
+  const { samples } = await Health.queryAggregated({
+    dataType: "totalCalories",
     startDate: startOfDay.toISOString(),
     endDate: new Date().toISOString(),
-    limit: 10,
+    bucket: "day",
   });
-  // workoutLog is just a presence/absence date array — any session today is
-  // enough to mark the day complete, matching the existing manual-log button.
-  if (workouts.length > 0) logWorkoutCompletion();
+  const total = samples.reduce((sum, s) => sum + s.value, 0);
+  if (total <= 0) return;
+  // Stored as a plain number string; WellCheck reads this and prefers it over BMR.
+  localStorage.setItem(`well-health-calories-${todayISO()}`, String(Math.round(total)));
+}
+
+async function syncWorkoutsForToday(logWorkoutCompletion: () => void): Promise<void> {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const now = new Date();
+
+  const { workouts } = await Health.queryWorkouts({
+    startDate: startOfDay.toISOString(),
+    endDate: now.toISOString(),
+    limit: 20,
+  });
+  if (workouts.length === 0) return;
+
+  // Any session marks the day complete (matches manual log button).
+  logWorkoutCompletion();
+
+  // Extract running workouts and persist for the Wellness page run display.
+  const runs: SyncedRun[] = workouts
+    .filter((w) => w.workoutType === "running" || w.workoutType === "runningTreadmill")
+    .map((w) => {
+      const distanceKm = w.totalDistance != null ? Math.round((w.totalDistance / 1000) * 100) / 100 : 0;
+      const durationMinutes =
+        (new Date(w.endDate).getTime() - new Date(w.startDate).getTime()) / 60000;
+      const paceMinPerKm =
+        distanceKm > 0 ? Math.round((durationMinutes / distanceKm) * 10) / 10 : null;
+      return {
+        workoutType: w.workoutType,
+        distanceKm,
+        durationMinutes: Math.round(durationMinutes),
+        paceMinPerKm,
+        caloriesBurned: w.totalEnergyBurned != null ? Math.round(w.totalEnergyBurned) : null,
+        startDate: w.startDate,
+        endDate: w.endDate,
+      };
+    });
+
+  if (runs.length > 0) {
+    localStorage.setItem(`well-health-runs-${todayISO()}`, JSON.stringify(runs));
+  }
 }
 
 async function syncWeightForToday(setWeightKg: (kg: number) => void): Promise<void> {
@@ -154,6 +205,7 @@ export async function runDailyHealthSync(
     syncSleepForLastNight(email),
     syncWorkoutsForToday(opts.logWorkoutCompletion),
     syncWeightForToday(opts.setWeightKg),
+    syncCalorieBurnForToday(),
   ]);
   for (const r of results) {
     if (r.status === "rejected") console.error("Health sync step failed:", r.reason);

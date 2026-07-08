@@ -437,7 +437,7 @@ export default function Home() {
               <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-3">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-3 mb-3">
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Steps</p>
                 <p className="text-sm font-bold text-text leading-none">
