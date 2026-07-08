@@ -379,118 +379,96 @@ export default function Home() {
         <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
       </div>
 
-      {/* Morning wellness progress — tappable chips */}
+      {/* Combined WELL Check home widget */}
       {(() => {
         const workoutDone = workoutLog.includes(today);
         const wellActDone = wellActivityLog.includes(today);
         const bwDone = breathworkLog.includes(today) || breathworkDone;
-        const items: { key: string; label: string; done: boolean; onTap?: () => void }[] = [
-          { key: "workout",      label: "Workout",      done: workoutDone,  onTap: workoutDone   ? undefined : () => logWorkoutCompletion() },
-          { key: "breathwork",   label: "Breathwork",   done: bwDone,       onTap: bwDone        ? undefined : handleBreathwork },
-          { key: "well-activity",label: "Well Activity",done: wellActDone,  onTap: wellActDone   ? undefined : () => logWellActivityCompletion() },
-          { key: "resistance",   label: "Resistance",   done: resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1", onTap: resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1" ? undefined : handleResistance },
-          { key: "stretching",   label: "Stretching",   done: stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1",  onTap: stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1"  ? undefined : handleStretching },
-          { key: "sleep",        label: "Sleep",        done: sleepDone,    onTap: sleepDone     ? undefined : handleSleep },
+        const activityFlags = [
+          workoutDone,
+          bwDone,
+          wellActDone,
+          resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1",
+          stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1",
+          sleepDone,
         ];
-        const doneCount = items.filter((i) => i.done).length;
-        const pct = Math.round((doneCount / items.length) * 100);
+        const doneCount = activityFlags.filter(Boolean).length;
+        const pct = Math.round((doneCount / activityFlags.length) * 100);
+
+        let sleepHours: number | null = null;
+        try {
+          const raw = localStorage.getItem(`well-sleep-data-${today}`);
+          if (raw) sleepHours = (JSON.parse(raw) as { hours: number }).hours;
+        } catch { /* ignore */ }
+
         return (
-          <div className="mb-6 rounded-2xl border border-brand-light/20 p-5" style={{ background: "linear-gradient(135deg, rgba(8,18,48,0.92) 0%, rgba(12,32,72,0.88) 100%)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-white tracking-wide">Today's Progress</p>
-              <span className="text-xs font-semibold text-brand-light">{doneCount} of {items.length}</span>
+          <Link to="/well-check" className="block glass-card rounded-card p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="text-brand-light" />
+                <span className="text-[11px] font-bold text-text uppercase tracking-wide">WELL Check</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold text-brand-light">{doneCount}/{activityFlags.length} done</span>
+                <ChevronRight size={13} className="text-text-dim" />
+              </div>
             </div>
-            <div className="h-[3px] rounded-full mb-4" style={{ background: "rgba(255,255,255,0.1)" }}>
+
+            <div className="h-[3px] rounded-full mb-4" style={{ background: "rgba(255,255,255,0.08)" }}>
               <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
-            <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-              {items.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={item.onTap}
-                  disabled={item.done || !item.onTap}
-                  className="flex items-center gap-2 text-left disabled:cursor-default"
-                >
-                  {item.done
-                    ? <CheckCircle2 size={13} className="text-brand-light shrink-0" />
-                    : <div className="w-3 h-3 rounded-full border border-white/30 shrink-0" />}
-                  <span className={`text-xs font-semibold truncate ${item.done ? "text-white" : "text-white/50"}`}>
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-            {doneCount < items.length && (
-              <p className="text-[10px] text-white/30 text-center mt-3">Tap any item to mark it done</p>
-            )}
-          </div>
-        );
-      })()}
 
-      {/* WellCheck + Nutrition home strips */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {/* WellCheck strip */}
-        <Link to="/well-check" className="glass-card rounded-card p-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Footprints size={13} className="text-brand-light" />
-              <span className="text-[11px] font-bold text-text uppercase tracking-wide">Well Check</span>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Steps</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {homeSteps != null ? homeSteps.toLocaleString() : <span className="text-text-dim font-normal text-xs">—</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Sleep</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {sleepHours != null ? `${sleepHours}h` : <span className="text-text-dim font-normal text-xs">—</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Energy In</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {homeMacros ? `${Math.round(homeMacros.calories)} kcal` : <span className="text-text-dim font-normal text-xs">—</span>}
+                </p>
+              </div>
             </div>
-            <ChevronRight size={13} className="text-text-dim" />
-          </div>
-          {homeSteps != null ? (
-            <div>
-              <p className="text-xl font-extrabold text-text leading-none">{homeSteps.toLocaleString()}</p>
-              <p className="text-[10px] text-text-muted mt-0.5">steps today</p>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
-              <input
-                type="number"
-                value={homeStepsInput}
-                onChange={(e) => setHomeStepsInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleHomeStepsSave()}
-                placeholder="Steps"
-                className="flex-1 min-w-0 bg-surface-2 border border-border rounded px-2 py-1 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-              />
-              <button
-                onClick={(e) => { e.preventDefault(); handleHomeStepsSave(); }}
-                disabled={homeStepsSaving || !homeStepsInput}
-                className="text-[10px] font-semibold text-white gradient-brand rounded px-2 py-1 shrink-0 disabled:opacity-40"
-              >
-                {homeStepsSaving ? "…" : "Log"}
-              </button>
-            </div>
-          )}
-        </Link>
 
-        {/* Nutrition strip */}
-        <Link to="/nutrition" className="glass-card rounded-card p-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Salad size={13} className="text-brand-light" />
-              <span className="text-[11px] font-bold text-text uppercase tracking-wide">Nutrition</span>
-            </div>
-            <ChevronRight size={13} className="text-text-dim" />
-          </div>
-          {homeMacros ? (
-            <div>
-              <p className="text-xl font-extrabold text-text leading-none">{Math.round(homeMacros.calories)}</p>
-              <p className="text-[10px] text-text-muted mt-0.5">kcal · {homeMacros.mealCount} meal{homeMacros.mealCount !== 1 ? "s" : ""}</p>
-              <div className="flex gap-2 mt-1.5">
+            {homeMacros && (
+              <div className="flex gap-3 mb-3">
                 <span className="text-[10px] text-text-dim">P <span className="text-text font-semibold">{Math.round(homeMacros.protein)}g</span></span>
                 <span className="text-[10px] text-text-dim">C <span className="text-text font-semibold">{Math.round(homeMacros.carbs)}g</span></span>
                 <span className="text-[10px] text-text-dim">F <span className="text-text font-semibold">{Math.round(homeMacros.fat)}g</span></span>
               </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-[11px] text-text-dim">No meals logged yet</p>
-              <p className="text-[10px] text-text-dim mt-0.5">Tap to log today's food</p>
-            </div>
-          )}
-        </Link>
-      </div>
+            )}
+
+            {homeSteps == null && (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
+                <input
+                  type="number"
+                  value={homeStepsInput}
+                  onChange={(e) => setHomeStepsInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleHomeStepsSave()}
+                  placeholder="Log today's steps…"
+                  className="flex-1 min-w-0 bg-surface-2 border border-border rounded px-2 py-1.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                />
+                <button
+                  onClick={(e) => { e.preventDefault(); handleHomeStepsSave(); }}
+                  disabled={homeStepsSaving || !homeStepsInput}
+                  className="text-[10px] font-semibold text-white gradient-brand rounded px-3 py-1.5 shrink-0 disabled:opacity-40"
+                >
+                  {homeStepsSaving ? "…" : "Log"}
+                </button>
+              </div>
+            )}
+          </Link>
+        );
+      })()}
 
       <div className="grid grid-cols-4 gap-3 mb-6">
         {QUICK_LINKS.map(({ to, label, icon: Icon }) => (
