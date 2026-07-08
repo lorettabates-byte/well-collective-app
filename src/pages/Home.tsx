@@ -148,6 +148,7 @@ export default function Home() {
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const today = todayISO();
+  const workoutLog = user.workoutLog ?? [];
   const breathworkLog = user.breathworkLog ?? [];
   const wellActivityLog = user.wellActivityLog ?? [];
   const resistanceLog = user.resistanceLog ?? [];
@@ -384,22 +385,23 @@ export default function Home() {
         const wellActDone = wellActivityLog.includes(today);
         const bwDone = breathworkLog.includes(today) || breathworkDone;
         const stretchDone = stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1";
-        const activityFlags = [
-          bwDone,
-          stretchDone,
-          calmDone,
-          wellActDone,
-          sleepDone,
+        const workoutDone = workoutLog.includes(today) || resistanceLog.includes(today);
+
+        // 6 WELL Check entry categories — drives the progress bar
+        const CHECKIN_CATEGORIES = [
+          { label: "Workout",    done: workoutDone,                       desc: "Any cardio, resistance, or class counted in Wellness" },
+          { label: "Sleep",      done: sleepDone,                          desc: "Sleep hours & quality logged in Wellness → Activities" },
+          { label: "Nutrition",  done: homeMacros != null,                 desc: "At least one meal logged in Nutrition today" },
+          { label: "Breathwork", done: bwDone,                             desc: "Guided breathwork session completed in Wellness" },
+          { label: "Stretching", done: stretchDone,                        desc: "Stretching routine completed in Wellness → Workout" },
+          { label: "Mindset",    done: wellActDone || calmDone,            desc: "Daily WELL Activity or any Calm Toolkit tool completed" },
         ];
-        const ACTIVITY_INFO = [
-          { label: "Breathwork", desc: "Daily guided breathwork session logged in Wellness" },
-          { label: "Stretching", desc: "Stretching routine completed in the Wellness workout tab" },
-          { label: "Calm Toolkit", desc: "Any calm or anxiety tool completed (grounding, box breathing, body scan, worry dump, PMR, reframe, humming breath)" },
-          { label: "Well Activity", desc: "Today's WELL activity completed in the Wellness activities tab" },
-          { label: "Sleep", desc: "Sleep logged in the Wellness activities tab" },
-        ];
-        const doneCount = activityFlags.filter(Boolean).length;
-        const pct = Math.round((doneCount / activityFlags.length) * 100);
+        const checkinDone = CHECKIN_CATEGORIES.filter((c) => c.done).length;
+        const pct = Math.round((checkinDone / CHECKIN_CATEGORIES.length) * 100);
+
+        // 5 wellness activities — drives the Activities grid cell
+        const activityFlags = [bwDone, stretchDone, calmDone, wellActDone, sleepDone];
+        const actDone = activityFlags.filter(Boolean).length;
 
         let sleepHours: number | null = null;
         try {
@@ -420,28 +422,28 @@ export default function Home() {
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-brand-light" />
                 <span className="text-[11px] font-bold text-text uppercase tracking-wide">WELL Check</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold text-brand-light">{checkinDone}/{CHECKIN_CATEGORIES.length} categories</span>
                 <button
                   onClick={(e) => { e.preventDefault(); setShowActivityInfo((v) => !v); }}
-                  aria-label="What activities are tracked?"
-                  className="text-text-dim ml-0.5"
+                  aria-label="What does this track?"
+                  className="text-text-dim"
                 >
                   <Info size={12} />
                 </button>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-brand-light">{doneCount}/{activityFlags.length} done</span>
                 <ChevronRight size={13} className="text-text-dim" />
               </div>
             </div>
             {showActivityInfo && (
               <div className="mb-3 bg-surface-2 border border-border rounded-card px-3 py-2.5 flex flex-col gap-1.5" onClick={(e) => e.preventDefault()}>
-                <p className="text-[10px] font-bold text-text uppercase tracking-wide mb-0.5">Tracked Activities</p>
-                {ACTIVITY_INFO.map((a, i) => (
-                  <div key={i} className="flex gap-2 items-start">
-                    <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${activityFlags[i] ? "bg-brand-light" : "bg-surface border border-border"}`} />
+                <p className="text-[10px] font-bold text-text uppercase tracking-wide mb-0.5">6 Daily Categories</p>
+                {CHECKIN_CATEGORIES.map((c) => (
+                  <div key={c.label} className="flex gap-2 items-start">
+                    <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${c.done ? "bg-brand-light" : "bg-surface border border-border"}`} />
                     <div>
-                      <span className="text-[10px] font-semibold text-text">{a.label}</span>
-                      <span className="text-[10px] text-text-dim"> — {a.desc}</span>
+                      <span className="text-[10px] font-semibold text-text">{c.label}</span>
+                      <span className="text-[10px] text-text-dim"> — {c.desc}</span>
                     </div>
                   </div>
                 ))}
@@ -486,7 +488,7 @@ export default function Home() {
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Activities</p>
                 <p className="text-sm font-bold text-text leading-none">
-                  {doneCount}<span className="text-text-dim font-normal text-xs">/{activityFlags.length} done</span>
+                  {actDone}<span className="text-text-dim font-normal text-xs">/{activityFlags.length} done</span>
                 </p>
               </div>
             </div>

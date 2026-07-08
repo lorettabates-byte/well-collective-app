@@ -17,6 +17,7 @@ import {
   Hand,
   Heart,
   Info,
+  Leaf,
   MessageCircle,
   Moon,
   Music2,
@@ -1095,7 +1096,14 @@ export default function Wellness() {
           </div>
           <p className="text-xs text-text-muted mb-3 mt-2">Anxiety, stress, or overwhelm? Pick a tool — these work any time, anywhere.</p>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
+
+            {/* ── GROUNDING section ── */}
+            <div className="flex items-center gap-2 pt-1">
+              <Leaf size={12} className="text-green-400 shrink-0" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-green-400">Grounding</p>
+              <div className="flex-1 h-px bg-green-400/20" />
+            </div>
 
             {/* ── Grounding 5-4-3-2-1 ── */}
             {(() => {
@@ -1256,6 +1264,13 @@ export default function Wellness() {
               );
             })()}
 
+            {/* ── CALM section ── */}
+            <div className="flex items-center gap-2 pt-1">
+              <Sparkles size={12} className="text-amber-400 shrink-0" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Calm</p>
+              <div className="flex-1 h-px bg-amber-400/20" />
+            </div>
+
             {/* ── Worry Dump ── */}
             {(() => {
               const id = "worrydump";
@@ -1353,6 +1368,13 @@ export default function Wellness() {
                 </div>
               );
             })()}
+
+            {/* ── BREATHING section ── */}
+            <div className="flex items-center gap-2 pt-1">
+              <Wind size={12} className="text-blue-400 shrink-0" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Breathing</p>
+              <div className="flex-1 h-px bg-blue-400/20" />
+            </div>
 
             {/* ── Box Breathing (guided visual) ── */}
             {(() => {
