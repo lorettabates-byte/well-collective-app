@@ -15,7 +15,7 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -35,6 +35,7 @@ import { deleteDownload, downloadSong, getPlaybackUrl } from "../../utils/musicO
 const FAVORITES_KEY = "well-music-favorites";
 const FAVORITES_ORDER_KEY = "well-music-favorites-order";
 const ORDER_KEY = "well-music-order";
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const FREE_SONG_COUNT = 5;
 
 type RepeatMode = "off" | "all" | "one";
@@ -151,6 +152,35 @@ export default function Playlist({
   const [progress, setProgress] = useState({ current: 0, duration: 0 });
   const [lockedReason, setLockedReason] = useState<"play" | "download" | null>(null);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
+
+  // Persist favorites to the server so they survive localStorage wipes (Safari ITP).
+  const syncFavoritesToServer = useCallback((ids: number[]) => {
+    if (!API_URL || !userEmail) return;
+    fetch(`${API_URL}/api/members/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail, name: "Member", favoriteSongIds: ids }),
+    }).catch((err) => console.error("Failed to sync song favorites:", err));
+  }, [userEmail]);
+
+  // On mount, restore any server-saved favorites and merge with localStorage.
+  useEffect(() => {
+    if (!API_URL || !userEmail) return;
+    fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(userEmail)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const serverIds: number[] = data?.member?.favoriteSongIds ?? [];
+        if (serverIds.length === 0) return;
+        setFavorites((prev) => {
+          const merged = new Set([...prev, ...serverIds]);
+          if (merged.size === prev.size) return prev;
+          saveFavorites(merged);
+          return merged;
+        });
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userEmail]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -402,6 +432,7 @@ export default function Playlist({
         }
       }
       saveFavorites(next);
+      syncFavoritesToServer([...next]);
       return next;
     });
   };

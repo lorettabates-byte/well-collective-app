@@ -94,6 +94,15 @@ export default function Notifications() {
             )}
             {sorted.map((notification) => {
               const Icon = ICONS[notification.type];
+              const FALLBACK_LINKS: Record<AppNotificationType, string> = {
+                post: "/community",
+                reply: "/community",
+                mention: "/community",
+                general: "/inspirations",
+                event: "/events",
+                blog: "/blog",
+              };
+              const destination = notification.link ?? FALLBACK_LINKS[notification.type];
               const content = (
                 <div
                   className={`flex items-start gap-3 rounded-card px-4 py-3.5 ${
@@ -112,18 +121,10 @@ export default function Notifications() {
                 </div>
               );
 
-              if (notification.link) {
-                return (
-                  <Link key={notification.id} to={notification.link} onClick={() => markNotificationRead(notification.id)}>
-                    {content}
-                  </Link>
-                );
-              }
-
               return (
-                <button key={notification.id} onClick={() => markNotificationRead(notification.id)} className="text-left">
+                <Link key={notification.id} to={destination} onClick={() => markNotificationRead(notification.id)}>
                   {content}
-                </button>
+                </Link>
               );
             })}
           </>
