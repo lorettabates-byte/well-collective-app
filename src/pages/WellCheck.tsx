@@ -320,50 +320,77 @@ export default function WellCheck() {
 
       <div className="px-4 pt-4 pb-8 flex flex-col gap-5">
 
-        {/* Today's Check-In — 6-category grid */}
-        <div className="glass-card rounded-card p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">Today's Check-In</p>
-
-          {/* Progress bar */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 h-[3px] rounded-full bg-white/8">
-              <div
-                className="h-[3px] rounded-full transition-all duration-500"
-                style={{
-                  width: `${(gridDoneCount / CHECKIN_GRID.length) * 100}%`,
-                  background: "linear-gradient(90deg, #2a6dd9, #5ba3f5)",
-                }}
-              />
+        {/* Today's Stats — 4-tile grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Points */}
+          <div className="glass-card rounded-card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Star size={13} className="text-yellow-400 fill-yellow-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Points Today</span>
             </div>
-            <span className="text-xs font-semibold text-brand-light shrink-0">{gridDoneCount} of {CHECKIN_GRID.length}</span>
+            {loading ? (
+              <p className="text-2xl font-extrabold text-yellow-300">—</p>
+            ) : (
+              <p className="text-2xl font-extrabold text-yellow-300">{totalPoints}</p>
+            )}
+            <p className="text-[10px] text-text-muted">WELL Cup points earned</p>
           </div>
 
-          {/* 3-column grid */}
-          <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-            {CHECKIN_GRID.map((item) => {
-              const done = item.maps.some((m) => doneTypes.has(m));
-              return (
-                <div key={item.key} className="flex items-center gap-2">
-                  <div
-                    className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border"
-                    style={done
-                      ? { background: "rgba(42,109,217,0.25)", borderColor: "#5ba3f5" }
-                      : { background: "transparent", borderColor: "rgba(255,255,255,0.15)" }
-                    }
-                  >
-                    {done && <div className="w-2 h-2 rounded-full" style={{ background: "#5ba3f5" }} />}
-                  </div>
-                  <span className={`text-xs font-semibold truncate ${done ? "text-text" : "text-text-dim"}`}>
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
+          {/* Steps */}
+          <div className="glass-card rounded-card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Footprints size={13} className="text-brand-light shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Steps</span>
+            </div>
+            {stepsLoading ? (
+              <p className="text-2xl font-extrabold text-brand-light">—</p>
+            ) : todaySteps ? (
+              <p className="text-2xl font-extrabold text-brand-light">{todaySteps.steps.toLocaleString()}</p>
+            ) : (
+              <p className="text-lg font-bold text-text-dim">Not logged</p>
+            )}
+            <p className="text-[10px] text-text-muted">
+              {todaySteps ? `+${todaySteps.points} pts earned` : "Log below to earn points"}
+            </p>
           </div>
 
-          {/* Detailed activity list — what was actually logged */}
+          {/* Energy Out */}
+          <div className="glass-card rounded-card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Flame size={13} className="text-orange-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Energy Out</span>
+            </div>
+            {tdee !== null ? (
+              <p className="text-2xl font-extrabold text-orange-300">{tdee.toLocaleString()}</p>
+            ) : (
+              <p className="text-lg font-bold text-text-dim">Add stats</p>
+            )}
+            <p className="text-[10px] text-text-muted">
+              {tdee !== null ? "kcal estimated today" : "height/weight in Profile"}
+            </p>
+          </div>
+
+          {/* Activities */}
+          <div className="glass-card rounded-card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <CheckCircle2 size={13} className="text-green-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Activities</span>
+            </div>
+            {loading ? (
+              <p className="text-2xl font-extrabold text-green-300">—</p>
+            ) : (
+              <p className="text-2xl font-extrabold text-green-300">{gridDoneCount}<span className="text-base text-text-dim font-semibold"> / {CHECKIN_GRID.length}</span></p>
+            )}
+            <p className="text-[10px] text-text-muted">wellness areas covered</p>
+          </div>
+        </div>
+
+        {/* Today's Activity Log */}
+        <div className="glass-card rounded-card p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">Today's Activity Log</p>
+
           {!loading && activities.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               {activities.map((a) => {
                 const Icon = ACTIVITY_ICON[a.type] ?? Activity;
                 return (
@@ -396,7 +423,7 @@ export default function WellCheck() {
           )}
 
           {!loading && activities.length === 0 && (
-            <p className="text-xs text-text-dim text-center mt-3">
+            <p className="text-xs text-text-dim text-center">
               Complete activities throughout the day — they'll show up here.
             </p>
           )}

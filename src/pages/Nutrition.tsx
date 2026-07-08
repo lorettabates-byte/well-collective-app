@@ -542,6 +542,33 @@ export default function Nutrition() {
       <div className="px-4 pt-4 flex flex-col gap-4">
         <WeeklyThemeBar theme={currentWeeklyTheme} />
 
+        {/* Energy In — daily macro summary */}
+        {todaysMeals.length > 0 && (
+          <div className="glass-card rounded-card p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">Energy In Today</p>
+            <div className="flex items-end gap-2 mb-3">
+              <p className="text-3xl font-extrabold text-brand-light leading-none">
+                {Math.round(todaysMealTotals.calories).toLocaleString()}
+              </p>
+              <p className="text-sm text-text-muted mb-0.5">kcal from {todaysMeals.length} meal{todaysMeals.length !== 1 ? "s" : ""}</p>
+            </div>
+            {hasTrackedNutrition && (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Protein", val: todaysMealTotals.protein, color: "#5ba3f5" },
+                  { label: "Carbs",   val: todaysMealTotals.carbs,   color: "#a78bfa" },
+                  { label: "Fat",     val: todaysMealTotals.fat,     color: "#fb923c" },
+                ].map(({ label, val, color }) => (
+                  <div key={label} className="rounded-card px-3 py-2.5 text-center" style={{ background: `${color}12`, border: `0.5px solid ${color}30` }}>
+                    <p className="text-base font-extrabold" style={{ color }}>{Math.round(val)}g</p>
+                    <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Daily Meal Log */}
         <div className="glass-card rounded-card p-4">
           <div className="flex items-center justify-between mb-3">
