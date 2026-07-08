@@ -52,6 +52,20 @@ export async function logActivity(
   }
 }
 
+export async function unlogActivity(
+  memberEmail: string,
+  type: ActivityType,
+): Promise<void> {
+  if (!API_URL || !memberEmail) return;
+  try {
+    await fetch(`${API_URL}/api/activity`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberEmail, type }),
+    });
+  } catch { /* ignore */ }
+}
+
 export interface LeaderboardEntry {
   email: string;
   name: string;

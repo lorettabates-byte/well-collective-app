@@ -160,8 +160,6 @@ export default function Home() {
 
   // Home WellCheck strip
   const [homeSteps, setHomeSteps] = useState<number | null>(null);
-  const [homeStepsInput, setHomeStepsInput] = useState("");
-  const [homeStepsSaving, setHomeStepsSaving] = useState(false);
 
   // Home Nutrition strip
   interface HomeMacros { calories: number; protein: number; carbs: number; fat: number; mealCount: number }
@@ -170,22 +168,6 @@ export default function Home() {
   // Home points (WELL Cup today)
   const [homePoints, setHomePoints] = useState<number | null>(null);
 
-  const handleHomeStepsSave = async () => {
-    const steps = parseInt(homeStepsInput, 10);
-    if (!API_URL || !user.email || isNaN(steps) || steps < 0 || homeStepsSaving) return;
-    setHomeStepsSaving(true);
-    try {
-      await fetch(`${API_URL}/api/steps`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberEmail: user.email, steps }),
-      });
-      setHomeSteps(steps);
-      setHomeStepsInput("");
-    } catch { /* ignore */ } finally {
-      setHomeStepsSaving(false);
-    }
-  };
 
   // Sync localStorage flags from server-restored AppContext logs
   useEffect(() => {
@@ -453,19 +435,19 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-x-3 gap-y-3 mb-3">
               {/* Col 1 top — Energy In (Nutrition) */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Energy In <span className="text-text-dim/60">(Nutrition)</span></p>
+                <p className="text-[10px] text-text-dim mb-1">Energy In <span className="text-text-dim/60">(Nutrition)</span></p>
                 {homeMacros ? (
-                  <p className="text-sm font-bold text-text leading-none">{Math.round(homeMacros.calories).toLocaleString()} <span className="text-[10px] font-normal text-text-dim">kcal</span></p>
+                  <p className="text-base font-bold text-text leading-none">{Math.round(homeMacros.calories).toLocaleString()} <span className="text-xs font-normal text-text-dim">kcal</span></p>
                 ) : (
                   <p className="text-xs text-text-dim leading-tight">No meals logged</p>
                 )}
               </div>
               {/* Col 2 top — Sleep */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Sleep</p>
+                <p className="text-[10px] text-text-dim mb-1">Sleep</p>
                 {sleepDone ? (
-                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
-                    <CheckCircle2 size={11} className="shrink-0" />
+                  <p className="text-base font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={12} className="shrink-0" />
                     {sleepHours != null ? `${sleepHours}h` : "Logged"}
                   </p>
                 ) : (
@@ -474,10 +456,10 @@ export default function Home() {
               </div>
               {/* Col 3 top — Mindset */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Mindset</p>
+                <p className="text-[10px] text-text-dim mb-1">Mindset</p>
                 {(wellActDone || calmDone) ? (
-                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
-                    <CheckCircle2 size={11} className="shrink-0" /> Done
+                  <p className="text-base font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={12} className="shrink-0" /> Done
                   </p>
                 ) : (
                   <p className="text-xs text-text-dim leading-tight">Not completed</p>
@@ -485,19 +467,19 @@ export default function Home() {
               </div>
               {/* Col 1 bottom — Energy Out (Workout+BMR) */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Energy Out <span className="text-text-dim/60">(Workout+BMR)</span></p>
+                <p className="text-[10px] text-text-dim mb-1">Energy Out <span className="text-text-dim/60">(BMR)</span></p>
                 {baselineTdee != null ? (
-                  <p className="text-sm font-bold text-text leading-none">{baselineTdee.toLocaleString()} <span className="text-[10px] font-normal text-text-dim">kcal</span></p>
+                  <p className="text-base font-bold text-text leading-none">{baselineTdee.toLocaleString()} <span className="text-xs font-normal text-text-dim">kcal</span></p>
                 ) : (
                   <p className="text-xs text-text-dim leading-tight">Add profile stats</p>
                 )}
               </div>
               {/* Col 2 bottom — Breathwork */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Breathwork</p>
+                <p className="text-[10px] text-text-dim mb-1">Breathwork</p>
                 {bwDone ? (
-                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
-                    <CheckCircle2 size={11} className="shrink-0" /> Done
+                  <p className="text-base font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={12} className="shrink-0" /> Done
                   </p>
                 ) : (
                   <p className="text-xs text-text-dim leading-tight">Not logged</p>
@@ -505,8 +487,8 @@ export default function Home() {
               </div>
               {/* Col 3 bottom — Points Today */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Points Today</p>
-                <p className="text-sm font-bold text-text leading-none">
+                <p className="text-[10px] text-text-dim mb-1">Points Today</p>
+                <p className="text-base font-bold text-text leading-none">
                   {homePoints != null ? homePoints : <span className="text-text-dim font-normal text-xs">—</span>}
                 </p>
               </div>
@@ -520,28 +502,6 @@ export default function Home() {
               </div>
             )}
 
-            {homeSteps != null && (
-              <p className="text-[10px] text-text-dim mb-2">Steps today: <span className="text-text font-semibold">{homeSteps.toLocaleString()}</span></p>
-            )}
-            {homeSteps == null && (
-              <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
-                <input
-                  type="number"
-                  value={homeStepsInput}
-                  onChange={(e) => setHomeStepsInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleHomeStepsSave()}
-                  placeholder="Log today's steps (optional)…"
-                  className="flex-1 min-w-0 bg-surface-2 border border-border rounded px-2 py-1.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-                />
-                <button
-                  onClick={(e) => { e.preventDefault(); handleHomeStepsSave(); }}
-                  disabled={homeStepsSaving || !homeStepsInput}
-                  className="text-[10px] font-semibold text-white gradient-brand rounded px-3 py-1.5 shrink-0 disabled:opacity-40"
-                >
-                  {homeStepsSaving ? "…" : "Log"}
-                </button>
-              </div>
-            )}
           </Link>
         );
       })()}

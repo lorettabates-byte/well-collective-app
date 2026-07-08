@@ -653,29 +653,26 @@ export default function Nutrition() {
 
         {/* Daily Meal Log */}
         <div className="glass-card rounded-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-sm font-bold text-text">Today's Meals</h2>
-              <p className="text-[11px] text-text-muted">Log what you ate — earn 10 pts per meal</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleBarcodeScan}
-                disabled={scanning}
-                className="flex items-center gap-1.5 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill px-3 py-1.5"
-                title="Scan barcode"
-              >
-                <ScanLine size={12} />
-                {scanning ? "Scanning…" : "Scan Barcode"}
-              </button>
-              <button
-                onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
-                className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"
-              >
-                <Plus size={12} />
-                Log Meal
-              </button>
-            </div>
+          <p className="text-sm font-bold text-text mb-3">
+            Log what you ate <span className="text-text-muted font-normal">· 10 pts per meal</span>
+          </p>
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={handleBarcodeScan}
+              disabled={scanning}
+              className="flex-1 flex items-center justify-center gap-2 bg-surface-2 border border-border text-text-muted text-sm font-semibold rounded-pill py-3"
+              title="Scan barcode"
+            >
+              <ScanLine size={18} />
+              {scanning ? "Scanning…" : "Scan Barcode"}
+            </button>
+            <button
+              onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
+              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3"
+            >
+              <Plus size={18} />
+              Log Meal
+            </button>
           </div>
           {scanError && (
             <p className="text-xs text-red-400 bg-red-400/10 rounded-card px-3 py-2 mb-2">{scanError}</p>

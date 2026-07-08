@@ -49,7 +49,7 @@ import StreakCelebrationModal from "../components/StreakCelebrationModal";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
-import { logActivity } from "../utils/wellCup";
+import { logActivity, unlogActivity } from "../utils/wellCup";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
@@ -228,6 +228,7 @@ export default function Wellness() {
   useEffect(() => {
     const today = todayISO();
     if (!resistanceDone && (user.resistanceLog ?? []).includes(today)) {
+      if (localStorage.getItem(`well-resistance-unchecked-${today}`) === "1") return;
       localStorage.setItem(`well-resistance-${today}`, "1");
       setResistanceDone(true);
     }
@@ -237,6 +238,7 @@ export default function Wellness() {
   useEffect(() => {
     const today = todayISO();
     if (!stretchingDone && (user.stretchingLog ?? []).includes(today)) {
+      if (localStorage.getItem(`well-stretching-unchecked-${today}`) === "1") return;
       localStorage.setItem(`well-stretching-${today}`, "1");
       setStretchingDone(true);
     }
@@ -287,9 +289,31 @@ export default function Wellness() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.82;
-    utterance.pitch = 1.05;
-    window.speechSynthesis.speak(utterance);
+    utterance.rate = 0.70;
+    utterance.pitch = 0.88;
+    utterance.volume = 1.0;
+    const applyVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        const preferred =
+          voices.find(v => /enhanced|premium/i.test(v.name) && v.lang.startsWith("en")) ||
+          voices.find(v => /samantha|ava|allison|aria|kate|serena|karen/i.test(v.name)) ||
+          voices.find(v => v.lang === "en-US") ||
+          voices.find(v => v.lang.startsWith("en"));
+        if (preferred) utterance.voice = preferred;
+      }
+      window.speechSynthesis.speak(utterance);
+    };
+    if (window.speechSynthesis.getVoices().length === 0) {
+      const onReady = () => {
+        window.speechSynthesis.removeEventListener("voiceschanged", onReady);
+        applyVoice();
+      };
+      window.speechSynthesis.addEventListener("voiceschanged", onReady);
+      setTimeout(applyVoice, 400);
+    } else {
+      applyVoice();
+    }
   };
 
   const GROUNDING_STEPS = [
@@ -461,7 +485,7 @@ export default function Wellness() {
     stopAltNostril();
     setAltNostrilActive(true);
     const PHASES = [
-      { phase: "closeRight" as const, duration: 1, label: "Close right nostril" },
+      { phase: "closeRight" as const, duration: 3, label: "Close right nostril" },
       { phase: "inhaleLeft" as const, duration: 4, label: "Inhale through left" },
       { phase: "closeBoth" as const, duration: 4, label: "Hold, close both" },
       { phase: "exhaleRight" as const, duration: 4, label: "Exhale through right" },
@@ -469,7 +493,7 @@ export default function Wellness() {
       { phase: "exhaleLeft" as const, duration: 4, label: "Exhale through left" },
     ];
     let pi = 0, count = 1, round = 1;
-    setAltNostrilPhase("closeRight"); setAltNostrilCount(1); setAltNostrilRound(1);
+    setAltNostrilPhase("closeRight"); setAltNostrilCount(3); setAltNostrilRound(1);
     speakCue("Close your right nostril with your thumb");
     altNostrilRef.current = setInterval(() => {
       count--;
@@ -733,11 +757,15 @@ export default function Wellness() {
   };
 
   const handleCalmDone = () => {
+    if (calmDone) {
+      localStorage.removeItem(`well-calm-done-${today}`);
+      setCalmDone(false);
+      if (user.email) unlogActivity(user.email, "well_activity").catch(() => {});
+      return;
+    }
     localStorage.setItem(`well-calm-done-${today}`, "1");
     setCalmDone(true);
-    stopBoxBreath();
-    stopHumming();
-    stopBodyScan();
+    stopBoxBreath(); stopHumming(); stopBodyScan();
     stopCalmSound();
     setOpenCalmCard(null);
     if (user.email) logActivity(user.email, "well_activity").catch(() => {});
@@ -882,6 +910,34 @@ export default function Wellness() {
     localStorage.setItem(`well-breathwork-marked-${today}`, "1");
     setBreathworkMarked(true);
     if (user.email) logActivity(user.email, "breathwork").catch(() => {});
+  };
+
+  const handleBreathworkUncheck = () => {
+    localStorage.removeItem(`well-breathwork-marked-${today}`);
+    localStorage.setItem(`well-breathwork-unchecked-${today}`, "1");
+    setBreathworkMarked(false);
+    if (user.email) unlogActivity(user.email, "breathwork").catch(() => {});
+  };
+
+  const handleStretchingUncheck = () => {
+    localStorage.removeItem(`well-stretching-${today}`);
+    localStorage.setItem(`well-stretching-unchecked-${today}`, "1");
+    setStretchingDone(false);
+    if (user.email) unlogActivity(user.email, "stretching").catch(() => {});
+  };
+
+  const handleResistanceUncheck = () => {
+    localStorage.removeItem(`well-resistance-${today}`);
+    localStorage.setItem(`well-resistance-unchecked-${today}`, "1");
+    setResistanceDone(false);
+    if (user.email) unlogActivity(user.email, "resistance_training").catch(() => {});
+  };
+
+  const handleCardioUncheck = () => {
+    localStorage.removeItem(`well-cardio-${today}`);
+    localStorage.setItem(`well-cardio-unchecked-${today}`, "1");
+    setCardioDone(false);
+    if (user.email) unlogActivity(user.email, "cardio").catch(() => {});
   };
 
   const handleSleepLog = async () => {
@@ -1083,14 +1139,13 @@ export default function Wellness() {
                 <ArrowUpRight size={18} className="text-text-dim shrink-0" />
               </a>
               <button
-                onClick={handleCardioComplete}
-                disabled={cardioDone}
+                onClick={cardioDone ? handleCardioUncheck : handleCardioComplete}
                 className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-2 transition-colors ${
-                  cardioDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                  cardioDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"
                 }`}
               >
                 <CheckCircle2 size={13} />
-                {cardioDone ? "Cardio Logged · +20 pts ✓" : "I Did Cardio Today · +20 pts"}
+                {cardioDone ? "✓ Cardio Logged — tap to uncheck" : "I Did Cardio Today · +20 pts"}
               </button>
             </section>
 
@@ -1116,14 +1171,13 @@ export default function Wellness() {
                   </button>
                 ))}
                 <button
-                  onClick={handleResistanceComplete}
-                  disabled={resistanceDone}
+                  onClick={resistanceDone ? handleResistanceUncheck : handleResistanceComplete}
                   className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-1 transition-colors ${
-                    resistanceDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                    resistanceDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  {resistanceDone ? "Completed · +20 pts ✓" : "Mark Complete · +20 pts"}
+                  {resistanceDone ? "✓ Completed — tap to uncheck" : "Mark Complete · +20 pts"}
                 </button>
               </div>
             </section>
@@ -1150,14 +1204,13 @@ export default function Wellness() {
                   </button>
                 ))}
                 <button
-                  onClick={handleStretchingComplete}
-                  disabled={stretchingDone}
+                  onClick={stretchingDone ? handleStretchingUncheck : handleStretchingComplete}
                   className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mt-1 transition-colors ${
-                    stretchingDone ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white"
+                    stretchingDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  {stretchingDone ? "Completed · +15 pts ✓" : "Mark Complete · +15 pts"}
+                  {stretchingDone ? "✓ Completed — tap to uncheck" : "Mark Complete · +15 pts"}
                 </button>
               </div>
             </section>
@@ -1194,16 +1247,22 @@ export default function Wellness() {
                   Start Guided Breathwork
                 </button>
                 <button
-                  onClick={handleBreathworkMark}
-                  disabled={breathworkMarked || breathworkLog.includes(today)}
+                  onClick={breathworkMarked ? handleBreathworkUncheck : breathworkLog.includes(today) ? undefined : handleBreathworkMark}
+                  disabled={!breathworkMarked && breathworkLog.includes(today)}
                   className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 transition-colors ${
-                    breathworkMarked || breathworkLog.includes(today)
+                    breathworkMarked
+                      ? "bg-brand-light/10 border border-brand-light text-brand-light"
+                      : breathworkLog.includes(today)
                       ? "bg-surface-2 border border-border text-brand-light"
                       : "bg-surface-2 border border-border text-text-muted"
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  {breathworkMarked || breathworkLog.includes(today) ? "Breathwork Logged · +15 pts ✓" : "Did your own breathwork? Mark Complete · +15 pts"}
+                  {breathworkMarked
+                    ? "✓ Breathwork Logged — tap to uncheck"
+                    : breathworkLog.includes(today)
+                    ? "Breathwork Logged via session ✓"
+                    : "Did your own breathwork? Mark Complete · +15 pts"}
                 </button>
               </div>
             </section>
@@ -1500,11 +1559,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1560,11 +1620,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1617,11 +1678,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1674,11 +1736,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1787,11 +1850,12 @@ export default function Wellness() {
                         )}
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1836,11 +1900,12 @@ export default function Wellness() {
                         ))}
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1923,11 +1988,12 @@ export default function Wellness() {
                         )}
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1979,11 +2045,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2046,11 +2113,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2106,11 +2174,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2165,11 +2234,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2232,11 +2302,12 @@ export default function Wellness() {
                         </button>
                       </div>
                       <CalmSoundPicker />
-                      {!calmDone && (
-                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
-                          Mark Done · +5 pts
-                        </button>
-                      )}
+                      <button
+                        onClick={handleCalmDone}
+                        className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
+                      >
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                      </button>
                     </div>
                   )}
                 </div>
