@@ -1,10 +1,21 @@
 import { ChevronDown, ChevronUp, Info, Share2, Trophy } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
 import { useSectionTracking } from "../hooks/useSectionTracking";
+
+function deriveMemberId(email: string): string {
+  const lower = email.toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < lower.length; i++) {
+    hash = (hash << 5) - hash + lower.charCodeAt(i);
+    hash |= 0;
+  }
+  return `m_${Math.abs(hash).toString(36)}`;
+}
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -116,6 +127,7 @@ const POINTS_GUIDE = [
 
 export default function WellCup() {
   useSectionTracking("well-cup");
+  const navigate = useNavigate();
   const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
   const [resetAt, setResetAt] = useState("");
   const [yesterday, setYesterday] = useState<WinnerInfo | null>(null);
@@ -267,20 +279,27 @@ export default function WellCup() {
           ) : (
             <div className="glass-card rounded-card divide-y divide-border">
               {leader && (
-                <div className="flex items-center gap-3 px-4 py-3 bg-yellow-400/5">
+                <button
+                  onClick={() => navigate(`/member/${deriveMemberId(leader.email)}`)}
+                  className="flex items-center gap-3 px-4 py-3 bg-yellow-400/5 w-full text-left"
+                >
                   <span className="text-base w-5 shrink-0 text-center">🏆</span>
                   <MemberAvatar name={leader.name} avatar={leader.avatar} size={34} />
                   <span className="text-sm font-bold text-yellow-300 flex-1 min-w-0 truncate">{leader.name}</span>
                   <span className="text-sm font-bold text-yellow-300 shrink-0">{leader.points} pts</span>
-                </div>
+                </button>
               )}
               {rest.map((entry, i) => (
-                <div key={entry.email} className="flex items-center gap-3 px-4 py-3">
+                <button
+                  key={entry.email}
+                  onClick={() => navigate(`/member/${deriveMemberId(entry.email)}`)}
+                  className="flex items-center gap-3 px-4 py-3 w-full text-left"
+                >
                   <span className="text-xs text-text-dim w-5 shrink-0 text-center">{i + 2}</span>
                   <MemberAvatar name={entry.name} avatar={entry.avatar} size={32} />
                   <span className="text-sm text-text flex-1 min-w-0 truncate font-medium">{entry.name}</span>
                   <span className="text-xs font-bold text-brand-light shrink-0">{entry.points} pts</span>
-                </div>
+                </button>
               ))}
             </div>
           )}
