@@ -399,10 +399,6 @@ export default function Home() {
         const checkinDone = CHECKIN_CATEGORIES.filter((c) => c.done).length;
         const pct = Math.round((checkinDone / CHECKIN_CATEGORIES.length) * 100);
 
-        // 5 wellness activities — drives the Activities grid cell
-        const activityFlags = [bwDone, stretchDone, calmDone, wellActDone, sleepDone];
-        const actDone = activityFlags.filter(Boolean).length;
-
         let sleepHours: number | null = null;
         try {
           const raw = localStorage.getItem(`well-sleep-data-${today}`);
@@ -455,40 +451,63 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-3 gap-x-3 gap-y-3 mb-3">
+              {/* Col 1 top — Energy In (Nutrition) */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Steps</p>
-                <p className="text-sm font-bold text-text leading-none">
-                  {homeSteps != null ? homeSteps.toLocaleString() : <span className="text-text-dim font-normal text-xs">—</span>}
-                </p>
+                <p className="text-[10px] text-text-dim mb-0.5">Energy In <span className="text-text-dim/60">(Nutrition)</span></p>
+                {homeMacros ? (
+                  <p className="text-sm font-bold text-text leading-none">{Math.round(homeMacros.calories).toLocaleString()} <span className="text-[10px] font-normal text-text-dim">kcal</span></p>
+                ) : (
+                  <p className="text-xs text-text-dim leading-tight">No meals logged</p>
+                )}
               </div>
+              {/* Col 2 top — Sleep */}
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Sleep</p>
-                <p className="text-sm font-bold text-text leading-none">
-                  {sleepHours != null ? `${sleepHours}h` : <span className="text-text-dim font-normal text-xs">—</span>}
-                </p>
+                {sleepDone ? (
+                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={11} className="shrink-0" />
+                    {sleepHours != null ? `${sleepHours}h` : "Logged"}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-dim leading-tight">Not logged</p>
+                )}
               </div>
+              {/* Col 3 top — Mindset */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Energy In</p>
-                <p className="text-sm font-bold text-text leading-none">
-                  {homeMacros ? `${Math.round(homeMacros.calories).toLocaleString()} kcal` : <span className="text-text-dim font-normal text-xs">—</span>}
-                </p>
+                <p className="text-[10px] text-text-dim mb-0.5">Mindset</p>
+                {(wellActDone || calmDone) ? (
+                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={11} className="shrink-0" /> Done
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-dim leading-tight">Not completed</p>
+                )}
               </div>
+              {/* Col 1 bottom — Energy Out (Workout+BMR) */}
               <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Energy Out</p>
-                <p className="text-sm font-bold text-text leading-none">
-                  {baselineTdee != null ? `${baselineTdee.toLocaleString()} kcal` : <span className="text-text-dim font-normal text-xs">Add profile stats</span>}
-                </p>
+                <p className="text-[10px] text-text-dim mb-0.5">Energy Out <span className="text-text-dim/60">(Workout+BMR)</span></p>
+                {baselineTdee != null ? (
+                  <p className="text-sm font-bold text-text leading-none">{baselineTdee.toLocaleString()} <span className="text-[10px] font-normal text-text-dim">kcal</span></p>
+                ) : (
+                  <p className="text-xs text-text-dim leading-tight">Add profile stats</p>
+                )}
               </div>
+              {/* Col 2 bottom — Breathwork */}
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Breathwork</p>
+                {bwDone ? (
+                  <p className="text-sm font-bold text-brand-light leading-none flex items-center gap-1">
+                    <CheckCircle2 size={11} className="shrink-0" /> Done
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-dim leading-tight">Not logged</p>
+                )}
+              </div>
+              {/* Col 3 bottom — Points Today */}
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Points Today</p>
                 <p className="text-sm font-bold text-text leading-none">
                   {homePoints != null ? homePoints : <span className="text-text-dim font-normal text-xs">—</span>}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-text-dim mb-0.5">Activities</p>
-                <p className="text-sm font-bold text-text leading-none">
-                  {actDone}<span className="text-text-dim font-normal text-xs">/{activityFlags.length} done</span>
                 </p>
               </div>
             </div>
@@ -501,6 +520,9 @@ export default function Home() {
               </div>
             )}
 
+            {homeSteps != null && (
+              <p className="text-[10px] text-text-dim mb-2">Steps today: <span className="text-text font-semibold">{homeSteps.toLocaleString()}</span></p>
+            )}
             {homeSteps == null && (
               <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
                 <input
@@ -508,7 +530,7 @@ export default function Home() {
                   value={homeStepsInput}
                   onChange={(e) => setHomeStepsInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleHomeStepsSave()}
-                  placeholder="Log today's steps…"
+                  placeholder="Log today's steps (optional)…"
                   className="flex-1 min-w-0 bg-surface-2 border border-border rounded px-2 py-1.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                 />
                 <button

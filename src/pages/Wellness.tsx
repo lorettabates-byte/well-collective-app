@@ -155,6 +155,56 @@ export default function Wellness() {
   const [bodyScanTimeLeft, setBodyScanTimeLeft] = useState(30);
   const bodyScanRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Guided Grounding session
+  const [groundingActive, setGroundingActive] = useState(false);
+  const [groundingStep, setGroundingStep] = useState(0);
+  const [groundingTimeLeft, setGroundingTimeLeft] = useState(30);
+  const groundingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Guided PMR session
+  const [pmrActive, setPmrActive] = useState(false);
+  const [pmrStep, setPmrStep] = useState(0);
+  const [pmrTimeLeft, setPmrTimeLeft] = useState(35);
+  const pmrRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Safe Place Visualization (4th Grounding tool)
+  const [safePlaceActive, setSafePlaceActive] = useState(false);
+  const [safePlaceStep, setSafePlaceStep] = useState(0);
+  const [safePlaceTimeLeft, setSafePlaceTimeLeft] = useState(40);
+  const safePlaceRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 4-7-8 Breathing (3rd Breathing tool)
+  const [breath478Active, setBreath478Active] = useState(false);
+  const [breath478Phase, setBreath478Phase] = useState<"inhale"|"hold"|"exhale">("inhale");
+  const [breath478Count, setBreath478Count] = useState(4);
+  const [breath478Round, setBreath478Round] = useState(1);
+  const breath478Ref = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Alternate Nostril Breathing (4th Breathing tool)
+  const [altNostrilActive, setAltNostrilActive] = useState(false);
+  const [altNostrilPhase, setAltNostrilPhase] = useState<"closeRight"|"inhaleLeft"|"closeBoth"|"exhaleRight"|"inhaleRight"|"exhaleLeft">("closeRight");
+  const [altNostrilCount, setAltNostrilCount] = useState(4);
+  const [altNostrilRound, setAltNostrilRound] = useState(1);
+  const altNostrilRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Worry Dump visual countdown (10 min)
+  const [worryDumpActive, setWorryDumpActive] = useState(false);
+  const [worryDumpTimeLeft, setWorryDumpTimeLeft] = useState(600);
+  const [worryDumpDone, setWorryDumpDone] = useState(false);
+  const worryDumpRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Gratitude Journal 5-min timer (3rd Calm tool)
+  const [gratitudeActive, setGratitudeActive] = useState(false);
+  const [gratitudeTimeLeft, setGratitudeTimeLeft] = useState(300);
+  const [gratitudeDone, setGratitudeDone] = useState(false);
+  const gratitudeRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Self-Compassion Break (4th Calm tool)
+  const [selfCompActive, setSelfCompActive] = useState(false);
+  const [selfCompStep, setSelfCompStep] = useState(0);
+  const [selfCompTimeLeft, setSelfCompTimeLeft] = useState(60);
+  const selfCompRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Run tracking — read synced runs from health sync localStorage
   const syncedRuns = (() => {
     try {
@@ -233,6 +283,295 @@ export default function Wellness() {
     { area: "Face & Scalp", cue: "Smooth your forehead. Soften around your eyes. Peace washes over your entire face." },
   ];
 
+  const speakCue = (text: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.82;
+    utterance.pitch = 1.05;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const GROUNDING_STEPS = [
+    { label: "Settle", cue: "Find a comfortable position. Take two slow, deep breaths. Allow your body to soften and your mind to slow down." },
+    { label: "See · 5", cue: "Look around you. Name 5 things you can see right now. Take your time — really notice each one." },
+    { label: "Touch · 4", cue: "Now find 4 things you can physically touch. Notice the texture, temperature, and weight of each one." },
+    { label: "Hear · 3", cue: "Close your eyes if you like. Listen carefully. Identify 3 distinct sounds in your environment." },
+    { label: "Smell · 2", cue: "Notice 2 things you can smell right now, or recall 2 scents you love. Let them bring you into the present moment." },
+    { label: "Taste · 1", cue: "Notice 1 thing you can taste, or sip something if you have it nearby. This is your anchor to right now." },
+    { label: "Return", cue: "Take three deep breaths. Notice how present you feel. This moment is safe. You are here." },
+  ];
+
+  const PMR_GUIDED_STEPS = [
+    { muscle: "Feet & Toes", cue: "Curl your toes tightly. Hold the tension for 5 seconds. Now release completely. Feel the warmth flooding in." },
+    { muscle: "Calves", cue: "Flex your feet toward you, tensing your calves. Hold... and release. Feel them soften and grow heavy." },
+    { muscle: "Thighs & Glutes", cue: "Squeeze your thighs and glutes together firmly. Hold... now let go. Feel the difference — the beautiful release." },
+    { muscle: "Stomach", cue: "Pull your navel in toward your spine. Hold that tension... now release. Let your belly be completely soft and free." },
+    { muscle: "Hands & Arms", cue: "Make tight fists and squeeze your whole arm. Hold... and release. Feel the tension drain out through your fingertips." },
+    { muscle: "Shoulders", cue: "Shrug your shoulders up to your ears. Hold firmly... now drop them. Feel the relief spread across your shoulders and neck." },
+    { muscle: "Face & Jaw", cue: "Scrunch your whole face — squeeze your eyes, clench your jaw. Hold... and release. Let your face go completely peaceful and soft." },
+    { muscle: "Full Body", cue: "Take a deep breath and notice how relaxed your entire body feels. Every muscle has released its tension. Rest in this peace." },
+  ];
+
+  const SAFE_PLACE_STEPS = [
+    { scene: "Arrive", cue: "Close your eyes. Take three slow, deep breaths. Picture yourself arriving at the most peaceful, safe place you can imagine." },
+    { scene: "Ground", cue: "Feel the ground beneath your feet in this place. Is it warm sand, soft grass, smooth stone? Let your feet sink in and feel held." },
+    { scene: "See", cue: "Look around your safe place. Notice colors, light, and beauty. Everything here is exactly as you want it to be." },
+    { scene: "Hear", cue: "What sounds fill this place? Perhaps water, birdsong, a gentle breeze, or peaceful silence. Let these sounds soothe your nervous system." },
+    { scene: "Feel", cue: "Feel the air on your skin. Notice the temperature, any breeze. Feel completely safe, held, and at ease in this sanctuary." },
+    { scene: "Breathe", cue: "Place your hand on your heart. Feel it beating steadily. Take three deep breaths and feel deep gratitude for this place inside you." },
+    { scene: "Return", cue: "This place is always here for you — you can return any time. Gently bring your awareness back, carrying this peace with you." },
+  ];
+
+  const SELF_COMP_STEPS = [
+    { title: "Acknowledge", cue: "Place your hand on your heart. Say softly: 'This is a moment of struggle. This hurts, and that's okay.' Feel the truth of this moment." },
+    { title: "Common Humanity", cue: "Remind yourself: 'I am not alone. Suffering is part of being human. Others have felt exactly this way.' You belong to a shared humanity." },
+    { title: "Self-Kindness", cue: "Ask yourself: What does a loving friend say right now? Then say it to yourself. 'May I be kind to myself. May I give myself what I need.'" },
+  ];
+
+  const stopGrounding = () => {
+    if (groundingRef.current) { clearInterval(groundingRef.current); groundingRef.current = null; }
+    window.speechSynthesis?.cancel();
+    setGroundingActive(false); setGroundingStep(0); setGroundingTimeLeft(30);
+  };
+  const startGrounding = () => {
+    stopGrounding();
+    setGroundingActive(true);
+    let step = 0, timeLeft = 30;
+    setGroundingStep(step); setGroundingTimeLeft(timeLeft);
+    speakCue(GROUNDING_STEPS[0].cue);
+    groundingRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        step++;
+        if (step >= GROUNDING_STEPS.length) {
+          clearInterval(groundingRef.current!); groundingRef.current = null;
+          setGroundingActive(false); setGroundingStep(0); setGroundingTimeLeft(30);
+          return;
+        }
+        setGroundingStep(step); timeLeft = 30;
+        speakCue(GROUNDING_STEPS[step].cue);
+      }
+      setGroundingTimeLeft(timeLeft);
+    }, 1000);
+  };
+
+  const stopPmr = () => {
+    if (pmrRef.current) { clearInterval(pmrRef.current); pmrRef.current = null; }
+    window.speechSynthesis?.cancel();
+    setPmrActive(false); setPmrStep(0); setPmrTimeLeft(35);
+  };
+  const startPmr = () => {
+    stopPmr();
+    setPmrActive(true);
+    let step = 0, timeLeft = 35;
+    setPmrStep(step); setPmrTimeLeft(timeLeft);
+    speakCue(PMR_GUIDED_STEPS[0].cue);
+    pmrRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        step++;
+        if (step >= PMR_GUIDED_STEPS.length) {
+          clearInterval(pmrRef.current!); pmrRef.current = null;
+          setPmrActive(false); setPmrStep(0); setPmrTimeLeft(35);
+          return;
+        }
+        setPmrStep(step); timeLeft = 35;
+        speakCue(PMR_GUIDED_STEPS[step].cue);
+      }
+      setPmrTimeLeft(timeLeft);
+    }, 1000);
+  };
+
+  const stopSafePlace = () => {
+    if (safePlaceRef.current) { clearInterval(safePlaceRef.current); safePlaceRef.current = null; }
+    window.speechSynthesis?.cancel();
+    setSafePlaceActive(false); setSafePlaceStep(0); setSafePlaceTimeLeft(40);
+  };
+  const startSafePlace = () => {
+    stopSafePlace();
+    setSafePlaceActive(true);
+    let step = 0, timeLeft = 40;
+    setSafePlaceStep(step); setSafePlaceTimeLeft(timeLeft);
+    speakCue(SAFE_PLACE_STEPS[0].cue);
+    safePlaceRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        step++;
+        if (step >= SAFE_PLACE_STEPS.length) {
+          clearInterval(safePlaceRef.current!); safePlaceRef.current = null;
+          setSafePlaceActive(false); setSafePlaceStep(0); setSafePlaceTimeLeft(40);
+          return;
+        }
+        setSafePlaceStep(step); timeLeft = 40;
+        speakCue(SAFE_PLACE_STEPS[step].cue);
+      }
+      setSafePlaceTimeLeft(timeLeft);
+    }, 1000);
+  };
+
+  const stop478 = () => {
+    if (breath478Ref.current) { clearInterval(breath478Ref.current); breath478Ref.current = null; }
+    window.speechSynthesis?.cancel();
+    setBreath478Active(false); setBreath478Phase("inhale"); setBreath478Count(4); setBreath478Round(1);
+  };
+  const start478 = () => {
+    stop478();
+    setBreath478Active(true);
+    const PHASES = [
+      { phase: "inhale" as const, duration: 4, label: "Inhale" },
+      { phase: "hold" as const, duration: 7, label: "Hold" },
+      { phase: "exhale" as const, duration: 8, label: "Exhale" },
+    ];
+    let pi = 0, count = 4, round = 1;
+    setBreath478Phase("inhale"); setBreath478Count(4); setBreath478Round(1);
+    speakCue("Inhale slowly through your nose");
+    breath478Ref.current = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        pi = (pi + 1) % 3;
+        if (pi === 0) {
+          round++;
+          if (round > 4) {
+            clearInterval(breath478Ref.current!); breath478Ref.current = null;
+            setBreath478Active(false); setBreath478Phase("inhale"); setBreath478Count(4); setBreath478Round(1);
+            return;
+          }
+          setBreath478Round(round);
+        }
+        count = PHASES[pi].duration;
+        setBreath478Phase(PHASES[pi].phase);
+        const phrasePairs: Record<string, string> = {
+          inhale: "Inhale slowly through your nose",
+          hold: "Hold your breath gently",
+          exhale: "Exhale fully through your mouth",
+        };
+        speakCue(phrasePairs[PHASES[pi].phase]);
+      }
+      setBreath478Count(count);
+    }, 1000);
+  };
+
+  const stopAltNostril = () => {
+    if (altNostrilRef.current) { clearInterval(altNostrilRef.current); altNostrilRef.current = null; }
+    window.speechSynthesis?.cancel();
+    setAltNostrilActive(false); setAltNostrilPhase("closeRight"); setAltNostrilCount(4); setAltNostrilRound(1);
+  };
+  const startAltNostril = () => {
+    stopAltNostril();
+    setAltNostrilActive(true);
+    const PHASES = [
+      { phase: "closeRight" as const, duration: 1, label: "Close right nostril" },
+      { phase: "inhaleLeft" as const, duration: 4, label: "Inhale through left" },
+      { phase: "closeBoth" as const, duration: 4, label: "Hold, close both" },
+      { phase: "exhaleRight" as const, duration: 4, label: "Exhale through right" },
+      { phase: "inhaleRight" as const, duration: 4, label: "Inhale through right" },
+      { phase: "exhaleLeft" as const, duration: 4, label: "Exhale through left" },
+    ];
+    let pi = 0, count = 1, round = 1;
+    setAltNostrilPhase("closeRight"); setAltNostrilCount(1); setAltNostrilRound(1);
+    speakCue("Close your right nostril with your thumb");
+    altNostrilRef.current = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        pi++;
+        if (pi >= PHASES.length) {
+          round++;
+          if (round > 5) {
+            clearInterval(altNostrilRef.current!); altNostrilRef.current = null;
+            setAltNostrilActive(false); setAltNostrilPhase("closeRight"); setAltNostrilCount(4); setAltNostrilRound(1);
+            return;
+          }
+          setAltNostrilRound(round);
+          pi = 0;
+        }
+        count = PHASES[pi].duration;
+        setAltNostrilPhase(PHASES[pi].phase);
+        const cues: Record<string, string> = {
+          closeRight: "Close your right nostril with your thumb",
+          inhaleLeft: "Inhale slowly through your left nostril",
+          closeBoth: "Close both nostrils, hold gently",
+          exhaleRight: "Release right nostril, exhale slowly",
+          inhaleRight: "Inhale slowly through your right nostril",
+          exhaleLeft: "Close right, release left, exhale slowly",
+        };
+        speakCue(cues[PHASES[pi].phase]);
+      }
+      setAltNostrilCount(count);
+    }, 1000);
+  };
+
+  const stopWorryDump = () => {
+    if (worryDumpRef.current) { clearInterval(worryDumpRef.current); worryDumpRef.current = null; }
+    setWorryDumpActive(false); setWorryDumpTimeLeft(600);
+  };
+  const startWorryDump = () => {
+    stopWorryDump();
+    setWorryDumpActive(true);
+    setWorryDumpDone(false);
+    let timeLeft = 600;
+    setWorryDumpTimeLeft(timeLeft);
+    speakCue("Your 10 minutes begin now. Write every worry, every fear, every stressor. Don't edit, just let it pour out.");
+    worryDumpRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(worryDumpRef.current!); worryDumpRef.current = null;
+        setWorryDumpActive(false); setWorryDumpDone(true); setWorryDumpTimeLeft(0);
+        speakCue("Time is up. Stop writing. Take a breath. Now look at your list.");
+      }
+      setWorryDumpTimeLeft(timeLeft);
+    }, 1000);
+  };
+
+  const stopGratitude = () => {
+    if (gratitudeRef.current) { clearInterval(gratitudeRef.current); gratitudeRef.current = null; }
+    setGratitudeActive(false); setGratitudeTimeLeft(300);
+  };
+  const startGratitude = () => {
+    stopGratitude();
+    setGratitudeActive(true);
+    setGratitudeDone(false);
+    let timeLeft = 300;
+    setGratitudeTimeLeft(timeLeft);
+    speakCue("Begin writing. Think of 3 or more things you're grateful for today. Let your heart guide your pen.");
+    gratitudeRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(gratitudeRef.current!); gratitudeRef.current = null;
+        setGratitudeActive(false); setGratitudeDone(true); setGratitudeTimeLeft(0);
+        speakCue("Beautiful. Read back what you wrote and let gratitude settle into your body.");
+      }
+      setGratitudeTimeLeft(timeLeft);
+    }, 1000);
+  };
+
+  const stopSelfComp = () => {
+    if (selfCompRef.current) { clearInterval(selfCompRef.current); selfCompRef.current = null; }
+    window.speechSynthesis?.cancel();
+    setSelfCompActive(false); setSelfCompStep(0); setSelfCompTimeLeft(60);
+  };
+  const startSelfComp = () => {
+    stopSelfComp();
+    setSelfCompActive(true);
+    let step = 0, timeLeft = 60;
+    setSelfCompStep(step); setSelfCompTimeLeft(timeLeft);
+    speakCue(SELF_COMP_STEPS[0].cue);
+    selfCompRef.current = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        step++;
+        if (step >= SELF_COMP_STEPS.length) {
+          clearInterval(selfCompRef.current!); selfCompRef.current = null;
+          setSelfCompActive(false); setSelfCompStep(0); setSelfCompTimeLeft(60);
+          return;
+        }
+        setSelfCompStep(step); timeLeft = 60;
+        speakCue(SELF_COMP_STEPS[step].cue);
+      }
+      setSelfCompTimeLeft(timeLeft);
+    }, 1000);
+  };
+
   const stopCalmSound = () => {
     calmSoundHandleRef.current?.stop();
     calmSoundHandleRef.current = null;
@@ -268,6 +607,7 @@ export default function Wellness() {
     setBoxBreathCount(count);
     setBoxBreathRound(round);
     const PHASES = ["inhale", "hold1", "exhale", "hold2"] as const;
+    speakCue("Inhale");
     boxBreathRef.current = setInterval(() => {
       count--;
       if (count <= 0) {
@@ -290,6 +630,13 @@ export default function Wellness() {
         }
         count = 4;
         setBoxBreathPhase(phase);
+        const phrasePairs: Record<string, string> = {
+          inhale: "Inhale",
+          hold1: "Hold",
+          exhale: "Exhale",
+          hold2: "Hold",
+        };
+        speakCue(phrasePairs[phase]);
       }
       setBoxBreathCount(count);
     }, 1000);
@@ -353,6 +700,7 @@ export default function Wellness() {
     let timeLeft = 30;
     setBodyScanStep(step);
     setBodyScanTimeLeft(timeLeft);
+    speakCue(BODY_SCAN_STEPS[0].cue);
     bodyScanRef.current = setInterval(() => {
       timeLeft--;
       if (timeLeft <= 0) {
@@ -366,6 +714,7 @@ export default function Wellness() {
           return;
         }
         setBodyScanStep(step);
+        speakCue(BODY_SCAN_STEPS[step].cue);
         timeLeft = 30;
       }
       setBodyScanTimeLeft(timeLeft);
@@ -374,11 +723,11 @@ export default function Wellness() {
 
   const handleOpenCalmCard = (id: string | null) => {
     if (openCalmCard !== id) {
-      stopBoxBreath();
-      stopHumming();
-      stopBodyScan();
-      stopCalmSound();
-      setShowSoundPicker(false);
+      stopBoxBreath(); stopHumming(); stopBodyScan();
+      stopGrounding(); stopPmr(); stopSafePlace();
+      stop478(); stopAltNostril(); stopWorryDump();
+      stopGratitude(); stopSelfComp();
+      stopCalmSound(); setShowSoundPicker(false);
     }
     setOpenCalmCard(id);
   };
@@ -708,7 +1057,7 @@ export default function Wellness() {
           <section>
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
               <Flame size={15} className="text-orange-400 shrink-0" />
-              <h3 className="text-sm font-bold text-text">Cardio</h3>
+              <h3 className="text-sm font-bold text-text">Cardio Classes</h3>
             </div>
               <a
                 href={plan.cardio.url}
@@ -1110,6 +1459,7 @@ export default function Wellness() {
               const id = "grounding";
               const isOpen = openCalmCard === id;
               const Icon = getSoundIcon("leaf");
+              const progress = groundingActive ? Math.round(((GROUNDING_STEPS.length - groundingStep - 1) * 30 + groundingTimeLeft) / (GROUNDING_STEPS.length * 30) * 100) : 0;
               return (
                 <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
                   <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
@@ -1118,29 +1468,36 @@ export default function Wellness() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-text">Grounding 5-4-3-2-1</p>
-                      <p className="text-xs text-text-muted">Bring yourself back to the present</p>
+                      <p className="text-xs text-text-muted">3.5 min guided · Bring yourself back to the present</p>
                     </div>
                     {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
                   </button>
                   {isOpen && (
                     <div className="px-3 pb-4 border-t border-border">
-                      <div className="flex flex-col gap-2 mt-3">
-                        {[
-                          "Find a comfortable position. Take 2 deep breaths.",
-                          "Name 5 things you can SEE right now.",
-                          "Name 4 things you can physically TOUCH.",
-                          "Name 3 things you can HEAR.",
-                          "Name 2 things you can SMELL (or like the smell of).",
-                          "Name 1 thing you can TASTE right now.",
-                          "Take 3 deep breaths. Notice how much calmer you feel.",
-                        ].map((step, i) => (
-                          <div key={i} className="flex gap-2.5">
-                            <div className="w-5 h-5 rounded-full gradient-brand flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                      <div className="mt-3 flex flex-col items-center gap-3">
+                        {groundingActive ? (
+                          <>
+                            <div className="w-full bg-surface rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full gradient-brand transition-all duration-1000" style={{ width: `${100 - progress}%` }} />
                             </div>
-                            <p className="text-xs text-text-muted leading-relaxed flex-1">{step}</p>
-                          </div>
-                        ))}
+                            <div className="w-full rounded-card bg-green-500/10 border border-green-500/30 p-4 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-1">Focus on</p>
+                              <p className="text-base font-bold text-text mb-2">{GROUNDING_STEPS[groundingStep].label}</p>
+                              <p className="text-xs text-text-muted leading-relaxed">{GROUNDING_STEPS[groundingStep].cue}</p>
+                              <p className="text-2xl font-extrabold text-green-300 mt-3 leading-none">{groundingTimeLeft}s</p>
+                              <p className="text-[10px] text-text-dim mt-1">Step {groundingStep + 1} of {GROUNDING_STEPS.length}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-text-muted text-center">Guided voice + visual. Sit comfortably and follow along.</p>
+                        )}
+                        <button
+                          onClick={groundingActive ? stopGrounding : startGrounding}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {groundingActive ? "Stop Session" : "Begin Guided Session"}
+                        </button>
                       </div>
                       <CalmSoundPicker />
                       {!calmDone && (
@@ -1219,6 +1576,7 @@ export default function Wellness() {
               const id = "pmr";
               const isOpen = openCalmCard === id;
               const Icon = Hand;
+              const progress = pmrActive ? Math.round(((PMR_GUIDED_STEPS.length - pmrStep - 1) * 35 + pmrTimeLeft) / (PMR_GUIDED_STEPS.length * 35) * 100) : 0;
               return (
                 <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
                   <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
@@ -1227,30 +1585,93 @@ export default function Wellness() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-text">Progressive Muscle Relaxation</p>
-                      <p className="text-xs text-text-muted">Tense and release for deep calm</p>
+                      <p className="text-xs text-text-muted">5 min guided · Tense and release for deep calm</p>
                     </div>
                     {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
                   </button>
                   {isOpen && (
                     <div className="px-3 pb-4 border-t border-border">
-                      <div className="flex flex-col gap-2 mt-3">
-                        {[
-                          "Sit or lie comfortably. Take 3 slow breaths.",
-                          "Curl your toes tightly for 5 seconds — then release. Feel the difference.",
-                          "Tense your calves for 5 sec — then release completely.",
-                          "Squeeze your thighs and glutes for 5 sec — then let go.",
-                          "Pull your stomach in tight for 5 sec — then release.",
-                          "Shrug your shoulders to your ears for 5 sec — then drop them.",
-                          "Clench your jaw and squint your eyes for 5 sec — then soften.",
-                          "Take 5 slow breaths. Feel the warmth and heaviness of complete relaxation.",
-                        ].map((step, i) => (
-                          <div key={i} className="flex gap-2.5">
-                            <div className="w-5 h-5 rounded-full gradient-brand flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                      <div className="mt-3 flex flex-col items-center gap-3">
+                        {pmrActive ? (
+                          <>
+                            <div className="w-full bg-surface rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full gradient-brand transition-all duration-1000" style={{ width: `${100 - progress}%` }} />
                             </div>
-                            <p className="text-xs text-text-muted leading-relaxed flex-1">{step}</p>
-                          </div>
-                        ))}
+                            <div className="w-full rounded-card bg-teal-500/10 border border-teal-500/30 p-4 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-teal-400 mb-1">Release</p>
+                              <p className="text-base font-bold text-text mb-2">{PMR_GUIDED_STEPS[pmrStep].muscle}</p>
+                              <p className="text-xs text-text-muted leading-relaxed">{PMR_GUIDED_STEPS[pmrStep].cue}</p>
+                              <p className="text-2xl font-extrabold text-teal-300 mt-3 leading-none">{pmrTimeLeft}s</p>
+                              <p className="text-[10px] text-text-dim mt-1">Group {pmrStep + 1} of {PMR_GUIDED_STEPS.length}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-text-muted text-center">Guided voice + visual. Lie down or sit comfortably.</p>
+                        )}
+                        <button
+                          onClick={pmrActive ? stopPmr : startPmr}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {pmrActive ? "Stop Session" : "Begin Guided Session"}
+                        </button>
+                      </div>
+                      <CalmSoundPicker />
+                      {!calmDone && (
+                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
+                          Mark Done · +5 pts
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Safe Place Visualization ── */}
+            {(() => {
+              const id = "safeplace";
+              const isOpen = openCalmCard === id;
+              const Icon = getSoundIcon("mountain");
+              const progress = safePlaceActive ? Math.round(((SAFE_PLACE_STEPS.length - safePlaceStep - 1) * 40 + safePlaceTimeLeft) / (SAFE_PLACE_STEPS.length * 40) * 100) : 0;
+              return (
+                <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-emerald-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">Safe Place Visualization</p>
+                      <p className="text-xs text-text-muted">5 min guided · Guided imagery for deep calm</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-4 border-t border-border">
+                      <div className="mt-3 flex flex-col items-center gap-3">
+                        {safePlaceActive ? (
+                          <>
+                            <div className="w-full bg-surface rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full gradient-brand transition-all duration-1000" style={{ width: `${100 - progress}%` }} />
+                            </div>
+                            <div className="w-full rounded-card bg-emerald-500/10 border border-emerald-500/30 p-4 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-1">Visualize</p>
+                              <p className="text-base font-bold text-text mb-2">{SAFE_PLACE_STEPS[safePlaceStep].scene}</p>
+                              <p className="text-xs text-text-muted leading-relaxed">{SAFE_PLACE_STEPS[safePlaceStep].cue}</p>
+                              <p className="text-2xl font-extrabold text-emerald-300 mt-3 leading-none">{safePlaceTimeLeft}s</p>
+                              <p className="text-[10px] text-text-dim mt-1">Scene {safePlaceStep + 1} of {SAFE_PLACE_STEPS.length}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-text-muted text-center">Guided voice + imagery. Close your eyes and let your mind travel somewhere safe.</p>
+                        )}
+                        <button
+                          onClick={safePlaceActive ? stopSafePlace : startSafePlace}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {safePlaceActive ? "Stop Session" : "Begin Visualization"}
+                        </button>
                       </div>
                       <CalmSoundPicker />
                       {!calmDone && (
@@ -1276,6 +1697,10 @@ export default function Wellness() {
               const id = "worrydump";
               const isOpen = openCalmCard === id;
               const Icon = BookOpen;
+              const totalSecs = 600;
+              const pct = worryDumpDone ? 100 : Math.round(((totalSecs - worryDumpTimeLeft) / totalSecs) * 100);
+              const mins = Math.floor(worryDumpTimeLeft / 60);
+              const secs = worryDumpTimeLeft % 60;
               return (
                 <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
                   <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
@@ -1284,29 +1709,82 @@ export default function Wellness() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-text">Worry Dump</p>
-                      <p className="text-xs text-text-muted">Get it out of your head and onto paper</p>
+                      <p className="text-xs text-text-muted">10 min timed · Get it out of your head</p>
                     </div>
                     {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
                   </button>
                   {isOpen && (
                     <div className="px-3 pb-4 border-t border-border">
-                      <div className="flex flex-col gap-2 mt-3">
-                        {[
-                          "Set a timer for 10 minutes.",
-                          "Write every worry, fear, and stressor on your mind — don't edit, just dump.",
-                          "When the timer ends, stop writing.",
-                          "Look at the list. Circle ONLY what you can control today.",
-                          "Cross out everything else — they're real, but not yours to carry right now.",
-                          "For the circled items: what is ONE tiny step you can take?",
-                          "Close the page. The worries are contained. You can return if needed.",
-                        ].map((step, i) => (
-                          <div key={i} className="flex gap-2.5">
-                            <div className="w-5 h-5 rounded-full gradient-brand flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-[10px] font-bold text-white">{i + 1}</span>
-                            </div>
-                            <p className="text-xs text-text-muted leading-relaxed flex-1">{step}</p>
+                      <div className="mt-4 flex flex-col items-center gap-4">
+                        <div className="relative w-28 h-28">
+                          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
+                            <circle
+                              cx="50" cy="50" r="44"
+                              fill="none"
+                              stroke="url(#worryGrad)"
+                              strokeWidth="8"
+                              strokeLinecap="round"
+                              strokeDasharray={`${2 * Math.PI * 44}`}
+                              strokeDashoffset={`${2 * Math.PI * 44 * (1 - pct / 100)}`}
+                              className="transition-all duration-1000"
+                            />
+                            <defs>
+                              <linearGradient id="worryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#84D8FD" />
+                                <stop offset="100%" stopColor="#B794F4" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            {worryDumpDone ? (
+                              <CheckCircle2 size={28} className="text-brand-light" />
+                            ) : (
+                              <>
+                                <p className="text-xl font-extrabold text-text leading-none">
+                                  {worryDumpActive || worryDumpTimeLeft < 600 ? `${mins}:${String(secs).padStart(2, "0")}` : "10:00"}
+                                </p>
+                                <p className="text-[10px] text-text-dim mt-0.5">{worryDumpActive ? "writing" : "ready"}</p>
+                              </>
+                            )}
                           </div>
-                        ))}
+                        </div>
+                        {worryDumpDone ? (
+                          <div className="w-full text-center">
+                            <p className="text-sm font-semibold text-text mb-2">Time's up — now review</p>
+                            <div className="flex flex-col gap-2 text-left">
+                              {["Circle ONLY what you can control today.", "Cross out everything else — real, but not yours to carry right now.", "For circled items: what is ONE tiny step you can take?"].map((s, i) => (
+                                <div key={i} className="flex gap-2.5">
+                                  <div className="w-5 h-5 rounded-full gradient-brand flex items-center justify-center shrink-0 mt-0.5">
+                                    <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                                  </div>
+                                  <p className="text-xs text-text-muted leading-relaxed flex-1">{s}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-text-muted text-center px-4">
+                            {worryDumpActive ? "Keep writing — let every worry pour out. No editing, no judging." : "Write every worry, fear, and stressor for 10 minutes. Don't edit — just dump it all out."}
+                          </p>
+                        )}
+                        {!worryDumpDone && (
+                          <button
+                            onClick={worryDumpActive ? stopWorryDump : startWorryDump}
+                            className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                          >
+                            <Timer size={14} />
+                            {worryDumpActive ? "Stop Timer" : "Start 10-Min Timer"}
+                          </button>
+                        )}
+                        {worryDumpDone && (
+                          <button
+                            onClick={() => { setWorryDumpDone(false); setWorryDumpTimeLeft(600); }}
+                            className="flex items-center gap-2 text-xs font-semibold rounded-pill px-4 py-2 bg-surface-2 border border-border text-text-muted"
+                          >
+                            <RefreshCw size={12} /> Start Again
+                          </button>
+                        )}
                       </div>
                       <CalmSoundPicker />
                       {!calmDone && (
@@ -1356,6 +1834,149 @@ export default function Wellness() {
                             <p className="text-xs text-text-muted leading-relaxed flex-1">{step}</p>
                           </div>
                         ))}
+                      </div>
+                      <CalmSoundPicker />
+                      {!calmDone && (
+                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
+                          Mark Done · +5 pts
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Gratitude Journal ── */}
+            {(() => {
+              const id = "gratitude";
+              const isOpen = openCalmCard === id;
+              const Icon = getSoundIcon("heart");
+              const totalSecs = 300;
+              const pct = gratitudeDone ? 100 : Math.round(((totalSecs - gratitudeTimeLeft) / totalSecs) * 100);
+              const mins = Math.floor(gratitudeTimeLeft / 60);
+              const secs = gratitudeTimeLeft % 60;
+              return (
+                <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-rose-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">Gratitude Journal</p>
+                      <p className="text-xs text-text-muted">5 min timed · Shift your focus to what's good</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-4 border-t border-border">
+                      <div className="mt-4 flex flex-col items-center gap-4">
+                        <div className="relative w-28 h-28">
+                          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
+                            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#gratGrad)" strokeWidth="8" strokeLinecap="round"
+                              strokeDasharray={`${2 * Math.PI * 44}`}
+                              strokeDashoffset={`${2 * Math.PI * 44 * (1 - pct / 100)}`}
+                              className="transition-all duration-1000"
+                            />
+                            <defs>
+                              <linearGradient id="gratGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#F472B6" />
+                                <stop offset="100%" stopColor="#FB923C" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            {gratitudeDone ? (
+                              <CheckCircle2 size={28} className="text-rose-400" />
+                            ) : (
+                              <>
+                                <p className="text-xl font-extrabold text-text leading-none">
+                                  {gratitudeActive || gratitudeTimeLeft < 300 ? `${mins}:${String(secs).padStart(2, "0")}` : "5:00"}
+                                </p>
+                                <p className="text-[10px] text-text-dim mt-0.5">{gratitudeActive ? "writing" : "ready"}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-text-muted text-center px-4">
+                          {gratitudeDone ? "Beautifully done. Read back what you wrote and let gratitude settle in your body." :
+                           gratitudeActive ? "Keep going — write at least 3 things you're grateful for. Let more flow if they come." :
+                           "Write 3 or more things you're grateful for. They can be tiny — a warm drink, a kind word, sunlight."}
+                        </p>
+                        {!gratitudeDone && (
+                          <button
+                            onClick={gratitudeActive ? stopGratitude : startGratitude}
+                            className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                          >
+                            <Timer size={14} />
+                            {gratitudeActive ? "Stop Timer" : "Start 5-Min Timer"}
+                          </button>
+                        )}
+                        {gratitudeDone && (
+                          <button
+                            onClick={() => { setGratitudeDone(false); setGratitudeTimeLeft(300); }}
+                            className="flex items-center gap-2 text-xs font-semibold rounded-pill px-4 py-2 bg-surface-2 border border-border text-text-muted"
+                          >
+                            <RefreshCw size={12} /> Write Again
+                          </button>
+                        )}
+                      </div>
+                      <CalmSoundPicker />
+                      {!calmDone && (
+                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
+                          Mark Done · +5 pts
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Self-Compassion Break ── */}
+            {(() => {
+              const id = "selfcomp";
+              const isOpen = openCalmCard === id;
+              const Icon = getSoundIcon("sparkles");
+              const progress = selfCompActive ? Math.round(((SELF_COMP_STEPS.length - selfCompStep - 1) * 60 + selfCompTimeLeft) / (SELF_COMP_STEPS.length * 60) * 100) : 0;
+              return (
+                <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">Self-Compassion Break</p>
+                      <p className="text-xs text-text-muted">3 min guided · Be kind to yourself right now</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-4 border-t border-border">
+                      <div className="mt-3 flex flex-col items-center gap-3">
+                        {selfCompActive ? (
+                          <>
+                            <div className="w-full bg-surface rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full gradient-brand transition-all duration-1000" style={{ width: `${100 - progress}%` }} />
+                            </div>
+                            <div className="w-full rounded-card bg-purple-500/10 border border-purple-500/30 p-4 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1">Step {selfCompStep + 1} of {SELF_COMP_STEPS.length}</p>
+                              <p className="text-base font-bold text-text mb-2">{SELF_COMP_STEPS[selfCompStep].title}</p>
+                              <p className="text-xs text-text-muted leading-relaxed">{SELF_COMP_STEPS[selfCompStep].cue}</p>
+                              <p className="text-2xl font-extrabold text-purple-300 mt-3 leading-none">{selfCompTimeLeft}s</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-text-muted text-center">Based on Dr. Kristin Neff's practice. Place one hand on your heart and follow along.</p>
+                        )}
+                        <button
+                          onClick={selfCompActive ? stopSelfComp : startSelfComp}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {selfCompActive ? "Stop Session" : "Begin Session"}
+                        </button>
                       </div>
                       <CalmSoundPicker />
                       {!calmDone && (
@@ -1482,6 +2103,132 @@ export default function Wellness() {
                         >
                           <Timer size={14} />
                           {hummingActive ? "Stop Session" : "Begin Session"}
+                        </button>
+                      </div>
+                      <CalmSoundPicker />
+                      {!calmDone && (
+                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
+                          Mark Done · +5 pts
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── 4-7-8 Breathing ── */}
+            {(() => {
+              const id = "478";
+              const isOpen = openCalmCard === id;
+              const Icon = getSoundIcon("wind");
+              const phaseLabel = { inhale: "Inhale", hold: "Hold", exhale: "Exhale" };
+              const phaseScale = breath478Active
+                ? breath478Phase === "inhale" ? "scale-125 shadow-[0_0_30px_rgba(132,216,253,0.5)]"
+                : breath478Phase === "exhale" ? "scale-75"
+                : "scale-100" : "scale-100";
+              return (
+                <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-cyan-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">4-7-8 Breathing</p>
+                      <p className="text-xs text-text-muted">4 rounds · Inhale 4, hold 7, exhale 8</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-4 border-t border-border">
+                      <div className="mt-4 flex flex-col items-center gap-4">
+                        <div className={`w-28 h-28 rounded-2xl gradient-brand flex flex-col items-center justify-center transition-all duration-1000 ${phaseScale}`}>
+                          <p className="text-xs font-bold text-white/80 tracking-wide">
+                            {breath478Active ? phaseLabel[breath478Phase] : "Ready"}
+                          </p>
+                          {breath478Active && (
+                            <p className="text-4xl font-extrabold text-white leading-none">{breath478Count}</p>
+                          )}
+                        </div>
+                        {breath478Active && <p className="text-xs text-text-muted">Round {breath478Round} of 4</p>}
+                        {!breath478Active && (
+                          <p className="text-xs text-text-muted text-center px-4">
+                            A natural tranquilizer for the nervous system. Exhale fully before starting.
+                          </p>
+                        )}
+                        <button
+                          onClick={breath478Active ? stop478 : start478}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {breath478Active ? "Stop Session" : "Begin Session"}
+                        </button>
+                      </div>
+                      <CalmSoundPicker />
+                      {!calmDone && (
+                        <button onClick={handleCalmDone} className="mt-3 w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2">
+                          Mark Done · +5 pts
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Alternate Nostril Breathing ── */}
+            {(() => {
+              const id = "altnostril";
+              const isOpen = openCalmCard === id;
+              const Icon = getSoundIcon("flower");
+              const phaseLabels: Record<string, string> = {
+                closeRight: "Close Right Nostril",
+                inhaleLeft: "Inhale · Left",
+                closeBoth: "Hold · Close Both",
+                exhaleRight: "Exhale · Right",
+                inhaleRight: "Inhale · Right",
+                exhaleLeft: "Exhale · Left",
+              };
+              const nostrilColor = altNostrilActive
+                ? (altNostrilPhase === "inhaleLeft" || altNostrilPhase === "exhaleLeft") ? "text-sky-300" : "text-rose-300"
+                : "text-text-muted";
+              return (
+                <div className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button onClick={() => handleOpenCalmCard(isOpen ? null : id)} className="w-full flex items-center gap-3 px-3 py-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-pink-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">Alternate Nostril Breathing</p>
+                      <p className="text-xs text-text-muted">5 rounds · Balances the nervous system</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-4 border-t border-border">
+                      <div className="mt-4 flex flex-col items-center gap-4">
+                        <div className="w-28 h-28 rounded-full bg-surface border-2 border-pink-400/30 flex flex-col items-center justify-center">
+                          <p className={`text-[10px] font-bold text-center leading-tight px-2 ${nostrilColor}`}>
+                            {altNostrilActive ? phaseLabels[altNostrilPhase] : "Ready"}
+                          </p>
+                          {altNostrilActive && (
+                            <p className="text-3xl font-extrabold text-pink-300 leading-none mt-1">
+                              {altNostrilCount}
+                            </p>
+                          )}
+                        </div>
+                        {altNostrilActive && <p className="text-xs text-text-muted">Round {altNostrilRound} of 5</p>}
+                        {!altNostrilActive && (
+                          <p className="text-xs text-text-muted text-center px-4">
+                            Nadi Shodhana — balances both hemispheres of the brain. Use your right thumb and ring finger.
+                          </p>
+                        )}
+                        <button
+                          onClick={altNostrilActive ? stopAltNostril : startAltNostril}
+                          className="flex items-center gap-2 text-sm font-semibold rounded-pill px-5 py-2.5 gradient-brand text-white shadow-glow"
+                        >
+                          <Timer size={14} />
+                          {altNostrilActive ? "Stop Session" : "Begin Session"}
                         </button>
                       </div>
                       <CalmSoundPicker />

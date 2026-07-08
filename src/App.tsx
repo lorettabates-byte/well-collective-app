@@ -52,11 +52,13 @@ function App() {
   const { user } = useApp();
   const [goalsDismissed, setGoalsDismissed] = useState(false);
 
+  const currentPeriod = new Date().toISOString().slice(0, 7);
+  const periodShown = localStorage.getItem(`well-goals-period-${currentPeriod}`) === "1";
   const showGoals =
     !goalsDismissed &&
     !!user.email &&
     !user.isAdmin &&
-    !user.goalsCompleted;
+    (!user.goalsCompleted || !periodShown);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -71,7 +73,10 @@ function App() {
 
   return (
     <MobileShell>
-      {showGoals && <GoalsQuestionnaire onComplete={() => setGoalsDismissed(true)} />}
+      {showGoals && <GoalsQuestionnaire onComplete={() => {
+        localStorage.setItem(`well-goals-period-${new Date().toISOString().slice(0, 7)}`, "1");
+        setGoalsDismissed(true);
+      }} />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
