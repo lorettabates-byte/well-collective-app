@@ -391,7 +391,8 @@ export default function Home() {
           const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
           const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
           const stepKcal = homeSteps ? Math.round(homeSteps * user.weightKg * 0.00057) : 0;
-          return Math.round(bmr * 1.2) + stepKcal;
+          const tdee = Math.round(bmr * 1.2) + stepKcal;
+          return (tdee >= 800 && tdee <= 4500) ? tdee : null;
         })() : null;
 
         return (
@@ -488,7 +489,7 @@ export default function Home() {
               {/* Col 3 bottom — Points Today */}
               <div>
                 <p className="text-[10px] text-text-dim mb-1">Points Today</p>
-                <p className="text-base font-bold text-text leading-none">
+                <p className="text-base font-bold text-yellow-300 leading-none">
                   {homePoints != null ? homePoints : <span className="text-text-dim font-normal text-xs">—</span>}
                 </p>
               </div>

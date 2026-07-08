@@ -418,6 +418,7 @@ interface AppContextValue extends PersistedState {
   markAllNotificationsRead: () => void;
   sendNotification: (type: AppNotificationType, title: string, body: string, link?: string) => void;
   logWorkoutCompletion: () => void;
+  unlogWorkoutCompletion: () => void;
   logCustomWorkout: (note: string) => void;
   logBreathworkCompletion: () => void;
   logResistanceCompletion: () => void;
@@ -1252,6 +1253,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const log = prev.user.workoutLog ?? [];
       if (log.includes(today)) return prev;
       return { ...prev, user: { ...prev.user, workoutLog: [...log, today] } };
+    });
+  };
+
+  const unlogWorkoutCompletion: AppContextValue["unlogWorkoutCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.workoutLog ?? [];
+      return { ...prev, user: { ...prev.user, workoutLog: log.filter(d => d !== today) } };
     });
   };
 
@@ -2231,6 +2240,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAllNotificationsRead,
     sendNotification,
     logWorkoutCompletion,
+    unlogWorkoutCompletion,
     logCustomWorkout,
     logBreathworkCompletion,
     logResistanceCompletion,

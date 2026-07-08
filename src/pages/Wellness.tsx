@@ -94,6 +94,7 @@ export default function Wellness() {
     currentWeeklyTheme,
     todaysWellActivity,
     logWorkoutCompletion,
+    unlogWorkoutCompletion,
     logCustomWorkout,
     logWellActivityCompletion,
     logResistanceCompletion,
@@ -186,6 +187,7 @@ export default function Wellness() {
   const [altNostrilCount, setAltNostrilCount] = useState(4);
   const [altNostrilRound, setAltNostrilRound] = useState(1);
   const altNostrilRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const calmCueAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Worry Dump visual countdown (10 min)
   const [worryDumpActive, setWorryDumpActive] = useState(false);
@@ -286,6 +288,15 @@ export default function Wellness() {
   ];
 
   const speakCue = (text: string) => {
+    if (API_URL) {
+      if (!calmCueAudioRef.current) calmCueAudioRef.current = new Audio();
+      const audio = calmCueAudioRef.current;
+      audio.pause();
+      audio.src = `${API_URL}/api/breathwork/calm-cue?text=${encodeURIComponent(text)}`;
+      audio.play().catch(() => {});
+      return;
+    }
+    // Fallback: Web Speech API when no server configured
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -492,8 +503,8 @@ export default function Wellness() {
       { phase: "inhaleRight" as const, duration: 4, label: "Inhale through right" },
       { phase: "exhaleLeft" as const, duration: 4, label: "Exhale through left" },
     ];
-    let pi = 0, count = 1, round = 1;
-    setAltNostrilPhase("closeRight"); setAltNostrilCount(3); setAltNostrilRound(1);
+    let pi = 0, count = PHASES[0].duration, round = 1;
+    setAltNostrilPhase("closeRight"); setAltNostrilCount(PHASES[0].duration); setAltNostrilRound(1);
     speakCue("Close your right nostril with your thumb");
     altNostrilRef.current = setInterval(() => {
       count--;
@@ -940,6 +951,15 @@ export default function Wellness() {
     if (user.email) unlogActivity(user.email, "cardio").catch(() => {});
   };
 
+  const handleUncheckWorkout = () => {
+    if (resistanceDone) handleResistanceUncheck();
+    if (stretchingDone) handleStretchingUncheck();
+    if (breathworkMarked) handleBreathworkUncheck();
+    if (cardioDone) handleCardioUncheck();
+    autoWorkoutFiredRef.current = false;
+    unlogWorkoutCompletion();
+  };
+
   const handleSleepLog = async () => {
     if (!sleepQuality || sleepSubmitting) return;
     setSleepSubmitting(true);
@@ -1331,15 +1351,14 @@ export default function Wellness() {
 
           return (
             <button
-              onClick={handleMarkAllWorkout}
-              disabled={completedToday}
+              onClick={completedToday ? handleUncheckWorkout : handleMarkAllWorkout}
               className={`w-full flex items-center justify-center gap-2 text-base font-bold rounded-2xl py-5 transition-colors ${
                 completedToday ? "bg-surface-2 border border-border text-brand-light" : "gradient-brand text-white shadow-glow"
               }`}
             >
               <CheckCircle2 size={20} />
               {completedToday
-                ? "Workout Complete for Today ✓"
+                ? "Workout Complete ✓ — tap to uncheck"
                 : potentialPts > 0
                 ? `Mark Today's Workout Complete · +${potentialPts} pts`
                 : "Mark Today's Workout Complete"}

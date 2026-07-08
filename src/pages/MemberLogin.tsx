@@ -402,9 +402,25 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
           ) : trialView === "start" ? (
             <>
               <h1 className="text-xl font-bold text-text mb-1">Start Your Free Trial</h1>
-              <p className="text-xs text-text-muted mb-5">
+              <p className="text-xs text-text-muted mb-3">
                 Try WELL Collective free for 7 days — or 30 days with a friend's referral code!
               </p>
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {[
+                  { emoji: "🧘", label: "Guided Calm Toolkit", desc: "Grounding, breathing & mindset tools with AI voice" },
+                  { emoji: "💪", label: "Workout Plans", desc: "Personalized daily resistance, cardio & stretch routines" },
+                  { emoji: "🍽️", label: "Nutrition Tracking", desc: "Log meals, scan barcodes & track macros daily" },
+                  { emoji: "😴", label: "Sleep & Recovery", desc: "Track sleep quality and build recovery habits" },
+                  { emoji: "🎯", label: "WELL Check", desc: "Daily wellness score across 6 health categories" },
+                  { emoji: "🏆", label: "WELL Cup Points", desc: "Earn points, climb the leaderboard & win prizes" },
+                ].map((f) => (
+                  <div key={f.label} className="bg-surface-2 border border-border rounded-card p-2.5 flex flex-col gap-1">
+                    <span className="text-base leading-none">{f.emoji}</span>
+                    <p className="text-[11px] font-semibold text-text leading-tight">{f.label}</p>
+                    <p className="text-[10px] text-text-muted leading-tight">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
               <StartTrial onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
             </>
           ) : (
@@ -419,7 +435,15 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
         </div>
 
         <p className="text-xs text-text-muted text-center">
-          Not a member yet? Visit lorettabates.com to join WELL Collective.
+          Want the full membership now?{" "}
+          <a
+            href="https://lorettabates.com/videolibrary.lorettabates.com/subscription-plan/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-light underline"
+          >
+            Join WELL Collective.
+          </a>
         </p>
       </div>
     </div>
