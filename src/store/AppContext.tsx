@@ -420,6 +420,8 @@ interface AppContextValue extends PersistedState {
   logWorkoutCompletion: () => void;
   logCustomWorkout: (note: string) => void;
   logBreathworkCompletion: () => void;
+  logResistanceCompletion: () => void;
+  logStretchingCompletion: () => void;
   logWellActivityCompletion: () => void;
   logClassCompletion: () => void;
   importContentSchedule: (entries: ContentBatchEntry[]) => void;
@@ -1305,6 +1307,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const logResistanceCompletion: AppContextValue["logResistanceCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.resistanceLog ?? [];
+      if (log.includes(today)) return prev;
+      return { ...prev, user: { ...prev.user, resistanceLog: [...log, today] } };
+    });
+  };
+
+  const logStretchingCompletion: AppContextValue["logStretchingCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.stretchingLog ?? [];
+      if (log.includes(today)) return prev;
+      return { ...prev, user: { ...prev.user, stretchingLog: [...log, today] } };
+    });
+  };
+
   const logWellActivityCompletion: AppContextValue["logWellActivityCompletion"] = () => {
     setState((prev) => {
       const today = todayISO();
@@ -1980,6 +2000,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         workoutLog: state.user.workoutLog,
         breathworkLog: state.user.breathworkLog,
         wellActivityLog: state.user.wellActivityLog,
+        resistanceLog: state.user.resistanceLog,
+        stretchingLog: state.user.stretchingLog,
         // Persist saved and liked inspirations server-side so they survive
         // localStorage wipes and are consistent across devices.
         savedInspirationIds: savedIds.length > 0 ? savedIds : undefined,
@@ -2004,6 +2026,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.workoutLog,
     state.user.breathworkLog,
     state.user.wellActivityLog,
+    state.user.resistanceLog,
+    state.user.stretchingLog,
     state.user.heightCm,
     state.user.weightKg,
     state.user.age,
@@ -2064,6 +2088,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             wellActivityLog: member.wellActivityLog && member.wellActivityLog.length > 0
               ? [...new Set([...(prev.user.wellActivityLog ?? []), ...member.wellActivityLog])]
               : prev.user.wellActivityLog,
+            resistanceLog: member.resistanceLog && member.resistanceLog.length > 0
+              ? [...new Set([...(prev.user.resistanceLog ?? []), ...member.resistanceLog])]
+              : prev.user.resistanceLog,
+            stretchingLog: member.stretchingLog && member.stretchingLog.length > 0
+              ? [...new Set([...(prev.user.stretchingLog ?? []), ...member.stretchingLog])]
+              : prev.user.stretchingLog,
             // Restore saved/liked inspiration IDs from server (resilient to localStorage wipes)
             savedInspirationIds: prev.user.savedInspirationIds || member.savedInspirationIds,
             likedInspirationIds: prev.user.likedInspirationIds || member.likedInspirationIds,
@@ -2199,6 +2229,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logWorkoutCompletion,
     logCustomWorkout,
     logBreathworkCompletion,
+    logResistanceCompletion,
+    logStretchingCompletion,
     logWellActivityCompletion,
     logClassCompletion,
     importContentSchedule,

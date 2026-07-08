@@ -39,7 +39,7 @@ const QUICK_LINKS = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme, logWorkoutCompletion, logWellActivityCompletion } = useApp();
+  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme, logWorkoutCompletion, logWellActivityCompletion, logResistanceCompletion, logStretchingCompletion } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
@@ -151,18 +151,25 @@ export default function Home() {
   const workoutLog = user.workoutLog ?? [];
   const breathworkLog = user.breathworkLog ?? [];
   const wellActivityLog = user.wellActivityLog ?? [];
-  const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
-  const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
+  const resistanceLog = user.resistanceLog ?? [];
+  const stretchingLog = user.stretchingLog ?? [];
   const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
   const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
 
-  const handleResistance = () => { localStorage.setItem(`well-resistance-${today}`, "1"); setResistanceDone(true); if (user.email) logActivity(user.email, "resistance_training").catch(() => {}); };
-  const handleStretching = () => { localStorage.setItem(`well-stretching-${today}`, "1"); setStretchingDone(true); if (user.email) logActivity(user.email, "stretching").catch(() => {}); };
+  const handleResistance = () => {
+    localStorage.setItem(`well-resistance-${today}`, "1");
+    logResistanceCompletion();
+    if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
+  };
+  const handleStretching = () => {
+    localStorage.setItem(`well-stretching-${today}`, "1");
+    logStretchingCompletion();
+    if (user.email) logActivity(user.email, "stretching").catch(() => {});
+  };
   const handleBreathwork = () => { localStorage.setItem(`well-breathwork-marked-${today}`, "1"); setBreathworkDone(true); if (user.email) logActivity(user.email, "breathwork").catch(() => {}); };
   const handleSleep = () => navigate("/wellness?tab=activities");
 
-  // If breathwork was done on another device, AppContext restores breathworkLog —
-  // sync the localStorage flag so the Home chip also shows completed.
+  // Sync localStorage flags from server-restored AppContext logs
   useEffect(() => {
     if (!breathworkDone && breathworkLog.includes(today)) {
       localStorage.setItem(`well-breathwork-marked-${today}`, "1");
@@ -170,6 +177,18 @@ export default function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breathworkLog]);
+
+  useEffect(() => {
+    if (!resistanceLog.includes(today)) return;
+    localStorage.setItem(`well-resistance-${today}`, "1");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resistanceLog]);
+
+  useEffect(() => {
+    if (!stretchingLog.includes(today)) return;
+    localStorage.setItem(`well-stretching-${today}`, "1");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stretchingLog]);
 
   // Check the server for today's sleep entry in case it was logged on another device.
   useEffect(() => {
@@ -315,8 +334,8 @@ export default function Home() {
           { key: "workout",      label: "Workout",      done: workoutDone,  onTap: workoutDone   ? undefined : () => logWorkoutCompletion() },
           { key: "breathwork",   label: "Breathwork",   done: bwDone,       onTap: bwDone        ? undefined : handleBreathwork },
           { key: "well-activity",label: "Well Activity",done: wellActDone,  onTap: wellActDone   ? undefined : () => logWellActivityCompletion() },
-          { key: "resistance",   label: "Resistance",   done: resistanceDone,onTap: resistanceDone? undefined : handleResistance },
-          { key: "stretching",   label: "Stretching",   done: stretchingDone,onTap: stretchingDone? undefined : handleStretching },
+          { key: "resistance",   label: "Resistance",   done: resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1", onTap: resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1" ? undefined : handleResistance },
+          { key: "stretching",   label: "Stretching",   done: stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1",  onTap: stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1"  ? undefined : handleStretching },
           { key: "sleep",        label: "Sleep",        done: sleepDone,    onTap: sleepDone     ? undefined : handleSleep },
         ];
         const doneCount = items.filter((i) => i.done).length;

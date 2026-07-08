@@ -16,6 +16,8 @@ export interface User {
   customWorkoutNotes?: Record<string, string>; // ISO date -> what they did, for days logged via "my own workout" instead of the assigned routine
   breathworkLog?: string[]; // ISO dates of completed breathwork sessions
   wellActivityLog?: string[]; // ISO dates of completed Well Activities
+  resistanceLog?: string[]; // ISO dates of completed resistance training
+  stretchingLog?: string[]; // ISO dates of completed stretching
   classLog?: string[]; // ISO dates a class tile (Livestream, Zumba, etc.) was opened
   savedWorkouts?: SavedWorkoutPlan[];
   trialEndsAt?: string; // ISO date when free trial expires

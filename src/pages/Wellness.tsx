@@ -83,6 +83,8 @@ export default function Wellness() {
     logWorkoutCompletion,
     logCustomWorkout,
     logWellActivityCompletion,
+    logResistanceCompletion,
+    logStretchingCompletion,
     logClassCompletion,
     saveWorkoutPlan,
     removeSavedWorkout,
@@ -113,9 +115,8 @@ export default function Wellness() {
   const [sleepSubmitting, setSleepSubmitting] = useState(false);
   const autoWorkoutFiredRef = useRef(false);
 
-  // If breathwork was completed on another device, the server-restored
-  // breathworkLog will contain today's date — sync it to the localStorage
-  // flag so the UI shows "Completed ✓" without requiring a re-log.
+  // If activities were completed on another device, the server-restored logs
+  // will contain today's date — sync them to localStorage and local state.
   useEffect(() => {
     const today = todayISO();
     if (!breathworkMarked && (user.breathworkLog ?? []).includes(today)) {
@@ -124,6 +125,24 @@ export default function Wellness() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.breathworkLog]);
+
+  useEffect(() => {
+    const today = todayISO();
+    if (!resistanceDone && (user.resistanceLog ?? []).includes(today)) {
+      localStorage.setItem(`well-resistance-${today}`, "1");
+      setResistanceDone(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.resistanceLog]);
+
+  useEffect(() => {
+    const today = todayISO();
+    if (!stretchingDone && (user.stretchingLog ?? []).includes(today)) {
+      localStorage.setItem(`well-stretching-${today}`, "1");
+      setStretchingDone(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.stretchingLog]);
 
   // Check the server for today's sleep entry — catches the case where sleep
   // was logged on another device/browser and the localStorage flag is missing.
@@ -221,12 +240,14 @@ export default function Wellness() {
   const handleResistanceComplete = () => {
     localStorage.setItem(`well-resistance-${today}`, "1");
     setResistanceDone(true);
+    logResistanceCompletion();
     if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
   };
 
   const handleStretchingComplete = () => {
     localStorage.setItem(`well-stretching-${today}`, "1");
     setStretchingDone(true);
+    logStretchingCompletion();
     if (user.email) logActivity(user.email, "stretching").catch(() => {});
   };
 
@@ -596,11 +617,13 @@ export default function Wellness() {
             if (!resistanceDone) {
               localStorage.setItem(`well-resistance-${today}`, "1");
               setResistanceDone(true);
+              logResistanceCompletion();
               if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
             }
             if (!stretchingDone) {
               localStorage.setItem(`well-stretching-${today}`, "1");
               setStretchingDone(true);
+              logStretchingCompletion();
               if (user.email) logActivity(user.email, "stretching").catch(() => {});
             }
             if (!bwAlreadyDone) {
