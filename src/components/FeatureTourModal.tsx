@@ -1,4 +1,5 @@
 import {
+  Activity,
   Bell,
   Calendar,
   Check,
@@ -76,6 +77,12 @@ const SLIDES: Slide[] = [
       { icon: MessageCircle, label: "Community" },
       { icon: Calendar, label: "Events" },
     ],
+  },
+  {
+    icon: Activity,
+    title: "Track Your Day 📊",
+    body: "Log steps and meals on the Home Screen. Check sleep, energy in vs. out, and daily activities in WELL Check. Every log earns points and builds your wellness picture.",
+    findIt: [{ icon: Activity, label: "WellCheck" }],
   },
   {
     icon: User,

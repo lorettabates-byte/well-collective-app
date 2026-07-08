@@ -556,8 +556,8 @@ export default function Nutrition() {
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: "Protein", val: todaysMealTotals.protein, color: "#5ba3f5" },
-                  { label: "Carbs",   val: todaysMealTotals.carbs,   color: "#a78bfa" },
-                  { label: "Fat",     val: todaysMealTotals.fat,     color: "#fb923c" },
+                  { label: "Carbs",   val: todaysMealTotals.carbs,   color: "#5ba3f5" },
+                  { label: "Fat",     val: todaysMealTotals.fat,     color: "#5ba3f5" },
                 ].map(({ label, val, color }) => (
                   <div key={label} className="rounded-card px-3 py-2.5 text-center" style={{ background: `${color}12`, border: `0.5px solid ${color}30` }}>
                     <p className="text-base font-extrabold" style={{ color }}>{Math.round(val)}g</p>

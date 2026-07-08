@@ -320,7 +320,7 @@ export default function WellCheck() {
 
       <div className="px-4 pt-4 pb-8 flex flex-col gap-5">
 
-        {/* Today's Stats — 4-tile grid */}
+        {/* Today's Stats — 5-tile grid */}
         <div className="grid grid-cols-2 gap-3">
           {/* Points */}
           <div className="glass-card rounded-card p-4 flex flex-col gap-1">
@@ -329,9 +329,9 @@ export default function WellCheck() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Points Today</span>
             </div>
             {loading ? (
-              <p className="text-2xl font-extrabold text-yellow-300">—</p>
+              <p className="text-2xl font-extrabold text-brand-light">—</p>
             ) : (
-              <p className="text-2xl font-extrabold text-yellow-300">{totalPoints}</p>
+              <p className="text-2xl font-extrabold text-brand-light">{totalPoints}</p>
             )}
             <p className="text-[10px] text-text-muted">WELL Cup points earned</p>
           </div>
@@ -357,11 +357,11 @@ export default function WellCheck() {
           {/* Energy Out */}
           <div className="glass-card rounded-card p-4 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 mb-1">
-              <Flame size={13} className="text-orange-400 shrink-0" />
+              <Flame size={13} className="text-brand-light shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Energy Out</span>
             </div>
             {tdee !== null ? (
-              <p className="text-2xl font-extrabold text-orange-300">{tdee.toLocaleString()}</p>
+              <p className="text-2xl font-extrabold text-brand-light">{tdee.toLocaleString()}</p>
             ) : (
               <p className="text-lg font-bold text-text-dim">Add stats</p>
             )}
@@ -373,15 +373,34 @@ export default function WellCheck() {
           {/* Activities */}
           <div className="glass-card rounded-card p-4 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 mb-1">
-              <CheckCircle2 size={13} className="text-green-400 shrink-0" />
+              <CheckCircle2 size={13} className="text-brand-light shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Activities</span>
             </div>
             {loading ? (
-              <p className="text-2xl font-extrabold text-green-300">—</p>
+              <p className="text-2xl font-extrabold text-brand-light">—</p>
             ) : (
-              <p className="text-2xl font-extrabold text-green-300">{gridDoneCount}<span className="text-base text-text-dim font-semibold"> / {CHECKIN_GRID.length}</span></p>
+              <p className="text-2xl font-extrabold text-brand-light">{gridDoneCount}<span className="text-base text-text-dim font-semibold"> / {CHECKIN_GRID.length}</span></p>
             )}
             <p className="text-[10px] text-text-muted">wellness areas covered</p>
+          </div>
+
+          {/* Sleep */}
+          <div className="glass-card rounded-card p-4 flex flex-col gap-1 col-span-2">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Moon size={13} className="text-brand-light shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Sleep</span>
+            </div>
+            {sleepData ? (
+              <div className="flex items-end gap-3">
+                <p className="text-2xl font-extrabold text-brand-light leading-none">{sleepData.hours}h</p>
+                <p className="text-xs text-text-muted mb-0.5">
+                  {sleepData.quality === "enough" ? "Well rested 🌙" : sleepData.quality === "not_enough" ? "Could use more" : "Needed a bit more"}
+                </p>
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-text-dim">Not logged</p>
+            )}
+            <p className="text-[10px] text-text-muted">{sleepData ? "Logged via Sleep tracker" : "Log via Wellness → Sleep"}</p>
           </div>
         </div>
 
