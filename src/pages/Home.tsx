@@ -154,12 +154,37 @@ export default function Home() {
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
   const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
-  const [sleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+  const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
 
   const handleResistance = () => { localStorage.setItem(`well-resistance-${today}`, "1"); setResistanceDone(true); if (user.email) logActivity(user.email, "resistance_training").catch(() => {}); };
   const handleStretching = () => { localStorage.setItem(`well-stretching-${today}`, "1"); setStretchingDone(true); if (user.email) logActivity(user.email, "stretching").catch(() => {}); };
   const handleBreathwork = () => { localStorage.setItem(`well-breathwork-marked-${today}`, "1"); setBreathworkDone(true); if (user.email) logActivity(user.email, "breathwork").catch(() => {}); };
   const handleSleep = () => navigate("/wellness?tab=activities");
+
+  // If breathwork was done on another device, AppContext restores breathworkLog —
+  // sync the localStorage flag so the Home chip also shows completed.
+  useEffect(() => {
+    if (!breathworkDone && breathworkLog.includes(today)) {
+      localStorage.setItem(`well-breathwork-marked-${today}`, "1");
+      setBreathworkDone(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [breathworkLog]);
+
+  // Check the server for today's sleep entry in case it was logged on another device.
+  useEffect(() => {
+    if (sleepDone || !API_URL || !user.email) return;
+    fetch(`${API_URL}/api/sleep/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.hours) {
+          localStorage.setItem(`well-sleep-${today}`, "1");
+          setSleepDone(true);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.email]);
 
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
