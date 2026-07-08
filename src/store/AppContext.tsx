@@ -1978,6 +1978,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         showBirthdayOnCalendar: state.user.showBirthdayOnCalendar,
         // Lets tribe members see each other's streaks on the Home page.
         workoutLog: state.user.workoutLog,
+        breathworkLog: state.user.breathworkLog,
+        wellActivityLog: state.user.wellActivityLog,
         // Persist saved and liked inspirations server-side so they survive
         // localStorage wipes and are consistent across devices.
         savedInspirationIds: savedIds.length > 0 ? savedIds : undefined,
@@ -2000,6 +2002,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.user.birthday,
     state.user.showBirthdayOnCalendar,
     state.user.workoutLog,
+    state.user.breathworkLog,
+    state.user.wellActivityLog,
     state.user.heightCm,
     state.user.weightKg,
     state.user.age,
@@ -2050,10 +2054,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             bonusBadges: member.bonusBadges,
             grantedBadges: member.grantedBadges,
             featuredBadge: member.featuredBadge,
-            // Merge workout log from server so cross-device/browser entries are visible everywhere.
+            // Merge activity logs from server so cross-device/browser entries are visible everywhere.
             workoutLog: member.workoutLog && member.workoutLog.length > 0
               ? [...new Set([...(prev.user.workoutLog ?? []), ...member.workoutLog])]
               : prev.user.workoutLog,
+            breathworkLog: member.breathworkLog && member.breathworkLog.length > 0
+              ? [...new Set([...(prev.user.breathworkLog ?? []), ...member.breathworkLog])]
+              : prev.user.breathworkLog,
+            wellActivityLog: member.wellActivityLog && member.wellActivityLog.length > 0
+              ? [...new Set([...(prev.user.wellActivityLog ?? []), ...member.wellActivityLog])]
+              : prev.user.wellActivityLog,
             // Restore saved/liked inspiration IDs from server (resilient to localStorage wipes)
             savedInspirationIds: prev.user.savedInspirationIds || member.savedInspirationIds,
             likedInspirationIds: prev.user.likedInspirationIds || member.likedInspirationIds,

@@ -32,10 +32,13 @@ export default function Notifications() {
   const sorted = [...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const hasUnread = notifications.some((n) => !n.read);
 
-  // Auto-clear the unread badge the moment the user opens this page
+  // Auto-clear the unread badge once on mount. Empty deps intentional —
+  // markAllNotificationsRead is not memoized, so including it as a dep
+  // creates an infinite re-render loop that freezes the page and breaks nav.
   useEffect(() => {
     markAllNotificationsRead();
-  }, [markAllNotificationsRead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;

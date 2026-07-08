@@ -113,6 +113,38 @@ export default function Wellness() {
   const [sleepSubmitting, setSleepSubmitting] = useState(false);
   const autoWorkoutFiredRef = useRef(false);
 
+  // If breathwork was completed on another device, the server-restored
+  // breathworkLog will contain today's date — sync it to the localStorage
+  // flag so the UI shows "Completed ✓" without requiring a re-log.
+  useEffect(() => {
+    const today = todayISO();
+    if (!breathworkMarked && (user.breathworkLog ?? []).includes(today)) {
+      localStorage.setItem(`well-breathwork-marked-${today}`, "1");
+      setBreathworkMarked(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.breathworkLog]);
+
+  // Check the server for today's sleep entry — catches the case where sleep
+  // was logged on another device/browser and the localStorage flag is missing.
+  useEffect(() => {
+    if (sleepLogged || !API_URL || !user.email) return;
+    fetch(`${API_URL}/api/sleep/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.hours) {
+          const today = todayISO();
+          setSleepLogged(true);
+          setSleepHours(Number(d.hours));
+          setSleepQuality((d.quality as "not_enough" | "enough" | "feel_great") || "");
+          localStorage.setItem(`well-sleep-${today}`, "1");
+          localStorage.setItem(`well-sleep-data-${today}`, JSON.stringify({ hours: d.hours, quality: d.quality }));
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.email]);
+
   const CardioIcon = plan.cardio.icon;
 
   const workoutLog = user.workoutLog ?? [];
