@@ -1,10 +1,10 @@
-import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Footprints, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
-import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
+import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import WellCupLeaderboard from "../components/WellCupLeaderboard";
 import BirthdayModal from "../components/BirthdayModal";
 import FeatureTourModal from "../components/FeatureTourModal";
@@ -38,8 +38,7 @@ const QUICK_LINKS = [
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
-  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme, logWorkoutCompletion, logWellActivityCompletion, logResistanceCompletion, logStretchingCompletion } = useApp();
+  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
@@ -184,19 +183,6 @@ export default function Home() {
       setHomeStepsSaving(false);
     }
   };
-
-  const handleResistance = () => {
-    localStorage.setItem(`well-resistance-${today}`, "1");
-    logResistanceCompletion();
-    if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
-  };
-  const handleStretching = () => {
-    localStorage.setItem(`well-stretching-${today}`, "1");
-    logStretchingCompletion();
-    if (user.email) logActivity(user.email, "stretching").catch(() => {});
-  };
-  const handleBreathwork = () => { localStorage.setItem(`well-breathwork-marked-${today}`, "1"); setBreathworkDone(true); if (user.email) logActivity(user.email, "breathwork").catch(() => {}); };
-  const handleSleep = () => navigate("/wellness?tab=activities");
 
   // Sync localStorage flags from server-restored AppContext logs
   useEffect(() => {
