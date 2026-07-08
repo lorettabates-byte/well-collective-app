@@ -401,6 +401,13 @@ export default function Home() {
           if (raw) sleepHours = (JSON.parse(raw) as { hours: number }).hours;
         } catch { /* ignore */ }
 
+        const baselineTdee = (user.heightCm && user.weightKg && user.age) ? (() => {
+          const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
+          const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
+          const stepKcal = homeSteps ? Math.round(homeSteps * user.weightKg * 0.00057) : 0;
+          return Math.round(bmr * 1.2) + stepKcal;
+        })() : null;
+
         return (
           <Link to="/well-check" className="block glass-card rounded-card p-4 mb-6">
             <div className="flex items-center justify-between mb-2">
@@ -418,7 +425,7 @@ export default function Home() {
               <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Steps</p>
                 <p className="text-sm font-bold text-text leading-none">
@@ -434,7 +441,13 @@ export default function Home() {
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Energy In</p>
                 <p className="text-sm font-bold text-text leading-none">
-                  {homeMacros ? `${Math.round(homeMacros.calories)} kcal` : <span className="text-text-dim font-normal text-xs">—</span>}
+                  {homeMacros ? `${Math.round(homeMacros.calories).toLocaleString()} kcal` : <span className="text-text-dim font-normal text-xs">—</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Energy Out</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {baselineTdee != null ? `${baselineTdee.toLocaleString()} kcal` : <span className="text-text-dim font-normal text-xs">Add profile stats</span>}
                 </p>
               </div>
             </div>

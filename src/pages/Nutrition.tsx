@@ -40,6 +40,13 @@ interface MealEntry {
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
 
+const MEAL_TYPE_STYLE: Record<string, { bg: string; border: string; accent: string }> = {
+  Breakfast: { bg: "rgba(251,191,36,0.08)",  border: "rgba(251,191,36,0.28)",  accent: "#FCD34D" },
+  Lunch:     { bg: "rgba(52,211,153,0.08)",  border: "rgba(52,211,153,0.28)",  accent: "#34D399" },
+  Dinner:    { bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.28)", accent: "#A78BFA" },
+  Snack:     { bg: "rgba(251,146,60,0.08)",  border: "rgba(251,146,60,0.28)",  accent: "#FB923C" },
+};
+
 const HISTORY_PAGE_SIZE = 10;
 
 function CalorieStat({ kcal, label }: { kcal: number; label: string }) {
@@ -816,29 +823,44 @@ export default function Nutrition() {
                   meal.had_fruit && "Fruit",
                   meal.had_whole_foods && "Whole foods",
                 ].filter(Boolean);
+                const ms = MEAL_TYPE_STYLE[meal.meal_type] ?? MEAL_TYPE_STYLE.Snack;
                 return (
-                  <div key={meal.id} className="flex items-start gap-3 p-3 bg-surface-2 rounded-card border border-border hover:border-brand-light/30 transition-colors">
+                  <div key={meal.id} className="rounded-card p-3 flex items-start gap-3 transition-colors"
+                    style={{ background: ms.bg, border: `0.5px solid ${ms.border}` }}>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-text">{meal.meal_type}</p>
-                      {checks.length > 0 && (
-                        <p className="text-[11px] text-brand-light mt-0.5">{checks.join(" · ")}</p>
-                      )}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                          style={{ background: ms.border, color: ms.accent }}>
+                          {meal.meal_type}
+                        </span>
+                        <span className="text-[10px] text-text-dim">
+                          {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
                       {meal.estimated_calories != null && (
-                        <p className="text-[11px] text-text-dim mt-0.5">
-                          {meal.estimated_calories} kcal
-                          {meal.estimated_protein_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_protein_g))}g protein`}
-                          {meal.estimated_carbs_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_carbs_g))}g carbs`}
-                          {meal.estimated_fat_g != null &&
-                            ` · ${Math.round(Number(meal.estimated_fat_g))}g fat`}
-                        </p>
+                        <div className="flex items-end gap-1.5 mb-1">
+                          <p className="text-2xl font-extrabold leading-none text-brand-light">
+                            {meal.estimated_calories}
+                          </p>
+                          <p className="text-xs text-text-muted mb-0.5">kcal</p>
+                        </div>
+                      )}
+                      {checks.length > 0 && (
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1">
+                          {(checks as string[]).map((c) => (
+                            <span key={c} className="text-[10px] font-semibold" style={{ color: ms.accent }}>{c}</span>
+                          ))}
+                        </div>
+                      )}
+                      {(meal.estimated_protein_g != null || meal.estimated_carbs_g != null || meal.estimated_fat_g != null) && (
+                        <div className="flex gap-3">
+                          {meal.estimated_protein_g != null && <span className="text-[10px] text-text-dim">P <span className="text-text font-semibold">{Math.round(Number(meal.estimated_protein_g))}g</span></span>}
+                          {meal.estimated_carbs_g != null && <span className="text-[10px] text-text-dim">C <span className="text-text font-semibold">{Math.round(Number(meal.estimated_carbs_g))}g</span></span>}
+                          {meal.estimated_fat_g != null && <span className="text-[10px] text-text-dim">F <span className="text-text font-semibold">{Math.round(Number(meal.estimated_fat_g))}g</span></span>}
+                        </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className="text-[10px] text-text-dim">
-                        {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
+                    <div className="flex flex-col items-end gap-2 shrink-0 mt-0.5">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => startEditMeal(meal)}
@@ -864,12 +886,27 @@ export default function Nutrition() {
           )}
 
           {hasTrackedNutrition && (
-            <div className="grid grid-cols-4 gap-2 text-center border-t border-border pt-3 mt-3">
-              <CalorieStat kcal={todaysMealTotals.calories} label="Calories" />
-              <GramStat grams={todaysMealTotals.protein} label="Protein" />
-              <GramStat grams={todaysMealTotals.carbs} label="Carbs" />
-              <GramStat grams={todaysMealTotals.fat} label="Fat" />
-              <p className="col-span-4 text-[10px] text-text-dim mt-1">Today's totals</p>
+            <div className="border-t border-border pt-3 mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Today's totals</p>
+              <div className="flex items-end gap-2 mb-3">
+                <p className="text-3xl font-extrabold text-brand-light leading-none">
+                  {Math.round(todaysMealTotals.calories).toLocaleString()}
+                </p>
+                <p className="text-sm text-text-muted mb-0.5">kcal</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Protein", val: todaysMealTotals.protein },
+                  { label: "Carbs",   val: todaysMealTotals.carbs },
+                  { label: "Fat",     val: todaysMealTotals.fat },
+                ].map(({ label, val }) => (
+                  <div key={label} className="text-center rounded-card py-2"
+                    style={{ background: "rgba(91,163,245,0.08)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
+                    <p className="text-base font-extrabold text-brand-light">{Math.round(val)}g</p>
+                    <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
