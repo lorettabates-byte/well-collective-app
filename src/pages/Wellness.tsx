@@ -188,6 +188,7 @@ export default function Wellness() {
   const [altNostrilRound, setAltNostrilRound] = useState(1);
   const altNostrilRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const calmCueAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cuePreloadCache = useRef<Map<string, string>>(new Map());
 
   // Worry Dump visual countdown (10 min)
   const [worryDumpActive, setWorryDumpActive] = useState(false);
@@ -287,12 +288,21 @@ export default function Wellness() {
     { area: "Face & Scalp", cue: "Smooth your forehead. Soften around your eyes. Peace washes over your entire face." },
   ];
 
+  const preloadCue = (text: string) => {
+    if (!API_URL || cuePreloadCache.current.has(text)) return;
+    fetch(`${API_URL}/api/breathwork/calm-cue?text=${encodeURIComponent(text)}`)
+      .then(res => res.ok ? res.blob() : Promise.reject())
+      .then(blob => { cuePreloadCache.current.set(text, URL.createObjectURL(blob)); })
+      .catch(() => {});
+  };
+
   const speakCue = (text: string) => {
     if (API_URL) {
       if (!calmCueAudioRef.current) calmCueAudioRef.current = new Audio();
       const audio = calmCueAudioRef.current;
       audio.pause();
-      audio.src = `${API_URL}/api/breathwork/calm-cue?text=${encodeURIComponent(text)}`;
+      const cached = cuePreloadCache.current.get(text);
+      audio.src = cached ?? `${API_URL}/api/breathwork/calm-cue?text=${encodeURIComponent(text)}`;
       audio.play().catch(() => {});
       return;
     }
@@ -490,19 +500,29 @@ export default function Wellness() {
   const stopAltNostril = () => {
     if (altNostrilRef.current) { clearInterval(altNostrilRef.current); altNostrilRef.current = null; }
     window.speechSynthesis?.cancel();
+    calmCueAudioRef.current?.pause();
     setAltNostrilActive(false); setAltNostrilPhase("closeRight"); setAltNostrilCount(4); setAltNostrilRound(1);
   };
   const startAltNostril = () => {
     stopAltNostril();
     setAltNostrilActive(true);
     const PHASES = [
-      { phase: "closeRight" as const, duration: 3, label: "Close right nostril" },
-      { phase: "inhaleLeft" as const, duration: 4, label: "Inhale through left" },
-      { phase: "closeBoth" as const, duration: 4, label: "Hold, close both" },
-      { phase: "exhaleRight" as const, duration: 4, label: "Exhale through right" },
-      { phase: "inhaleRight" as const, duration: 4, label: "Inhale through right" },
-      { phase: "exhaleLeft" as const, duration: 4, label: "Exhale through left" },
+      { phase: "closeRight" as const, duration: 5,  label: "Close right nostril" },
+      { phase: "inhaleLeft" as const, duration: 8,  label: "Inhale through left" },
+      { phase: "closeBoth" as const, duration: 6,   label: "Hold, close both" },
+      { phase: "exhaleRight" as const, duration: 9, label: "Exhale through right" },
+      { phase: "inhaleRight" as const, duration: 8, label: "Inhale through right" },
+      { phase: "exhaleLeft" as const, duration: 9,  label: "Exhale through left" },
     ];
+    // Preload all cues so playback is instant (no network latency between phases)
+    [
+      "Close your right nostril with your thumb",
+      "Inhale slowly through your left nostril",
+      "Close both nostrils, hold gently",
+      "Release right nostril, exhale slowly",
+      "Inhale slowly through your right nostril",
+      "Close right, release left, exhale slowly",
+    ].forEach(preloadCue);
     let pi = 0, count = PHASES[0].duration, round = 1;
     setAltNostrilPhase("closeRight"); setAltNostrilCount(PHASES[0].duration); setAltNostrilRound(1);
     speakCue("Close your right nostril with your thumb");
@@ -846,7 +866,8 @@ export default function Wellness() {
       setPlanDate(today);
     }
   }, [today, planDate]);
-  const completedToday = workoutLog.includes(today);
+  const workoutUnchecked = localStorage.getItem(`well-workout-unchecked-${today}`) === "1";
+  const completedToday = !workoutUnchecked && workoutLog.includes(today);
   const wellActivityCompleted = wellActivityLog.includes(today);
   const streak = computeStreak(workoutLog);
   const breathworkStreak = computeStreak(breathworkLog);
@@ -952,6 +973,7 @@ export default function Wellness() {
   };
 
   const handleUncheckWorkout = () => {
+    localStorage.setItem(`well-workout-unchecked-${today}`, "1");
     if (resistanceDone) handleResistanceUncheck();
     if (stretchingDone) handleStretchingUncheck();
     if (breathworkMarked) handleBreathworkUncheck();
@@ -1320,6 +1342,7 @@ export default function Wellness() {
 
           const handleMarkAllWorkout = () => {
             if (completedToday) return;
+            localStorage.removeItem(`well-workout-unchecked-${today}`);
             if (!resistanceDone) {
               localStorage.setItem(`well-resistance-${today}`, "1");
               setResistanceDone(true);

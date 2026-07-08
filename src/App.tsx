@@ -29,6 +29,7 @@ import Breathwork from "./pages/Breathwork";
 import Music from "./pages/Music";
 import NotificationSettings from "./pages/NotificationSettings";
 import HealthSyncSettings from "./pages/HealthSyncSettings";
+import HelpFAQ from "./pages/HelpFAQ";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/admin/Admin";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -106,6 +107,7 @@ function App() {
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/notifications" element={<NotificationSettings />} />
         <Route path="/profile/health-sync" element={<HealthSyncSettings />} />
+        <Route path="/profile/help" element={<HelpFAQ />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />

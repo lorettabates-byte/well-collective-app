@@ -79,7 +79,7 @@ const SECTION_CONTENT: Record<string, SectionIntroConfig> = {
       { Icon: Activity, text: "Tap WELL Check (in your Profile) to log daily activities and earn points" },
       { Icon: Dumbbell, text: "Log resistance training, cardio, stretching, and breathwork" },
       { Icon: Footprints, text: "Log your daily step count in WELL Check — earn points and see it counted toward your energy expenditure" },
-      { Icon: Watch, text: "Connect your Apple Watch or Fitbit in Profile > Health Sync to auto-fill steps, sleep, and workouts" },
+      { Icon: Watch, text: "Enable Health Sync in Profile to auto-fill steps, sleep, and workouts from Apple Health (iPhone) or Google Health Connect (Android)" },
       { Icon: Moon, text: "Track your sleep quality and hours each morning" },
       { Icon: TrendingUp, text: "Build streaks — the longer you keep it up, the stronger you become" },
       { Icon: Target, text: "Take on daily and weekly challenges for bonus points" },

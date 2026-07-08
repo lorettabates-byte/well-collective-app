@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, LogOut, Pencil, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -216,6 +216,7 @@ export default function Profile() {
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Watch size={16} />} label="Health Sync" to="/profile/health-sync" />
+        <MenuRow icon={<HelpCircle size={16} />} label="Help & FAQ" to="/profile/help" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations?filter=saved" badge={savedCount} />
         <MenuRow
           icon={<Dumbbell size={16} />}
