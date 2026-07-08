@@ -109,7 +109,7 @@ export default function Wellness() {
   const [cardioDone, setCardioDone] = useState(() => localStorage.getItem(`well-cardio-${todayISO()}`) === "1");
   const [sleepLogged, setSleepLogged] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
   const [sleepHours, setSleepHours] = useState(7);
-  const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "needed_more" | "">("");
+  const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "feel_great" | "">("");
   const [sleepSubmitting, setSleepSubmitting] = useState(false);
   const autoWorkoutFiredRef = useRef(false);
 
@@ -671,7 +671,7 @@ export default function Wellness() {
                 {([
                   { id: "not_enough" as const, label: "Didn't get enough" },
                   { id: "enough" as const,     label: "Got enough" },
-                  { id: "needed_more" as const, label: "Needed more" },
+                  { id: "feel_great" as const, label: "I feel great!" },
                 ] as const).map((q) => (
                   <button
                     key={q.id}

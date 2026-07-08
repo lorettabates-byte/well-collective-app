@@ -96,8 +96,8 @@ export default function DailyWellCheck({ email }: { email: string }) {
   const sleepRec = sleepData
     ? sleepData.quality === "not_enough" || sleepData.hours < 6
       ? `Tonight, try to get 7–9 hours. You logged ${sleepData.hours}h and felt under-rested.`
-      : sleepData.quality === "needed_more"
-      ? `You felt you needed more sleep last night (${sleepData.hours}h). Aim for earlier bedtime tonight.`
+      : sleepData.quality === "feel_great"
+      ? `Great sleep last night (${sleepData.hours}h)! Keep it up.`
       : null
     : null;
 
