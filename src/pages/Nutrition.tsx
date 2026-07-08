@@ -659,17 +659,15 @@ export default function Nutrition() {
               <p className="text-[11px] text-text-muted">Log what you ate — earn 10 pts per meal</p>
             </div>
             <div className="flex gap-2">
-              {Capacitor.isNativePlatform() && (
-                <button
-                  onClick={handleBarcodeScan}
-                  disabled={scanning}
-                  className="flex items-center gap-1.5 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill px-3 py-1.5"
-                  title="Scan barcode"
-                >
-                  <ScanLine size={12} />
-                  {scanning ? "Scanning…" : "Scan"}
-                </button>
-              )}
+              <button
+                onClick={handleBarcodeScan}
+                disabled={scanning}
+                className="flex items-center gap-1.5 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill px-3 py-1.5"
+                title="Scan barcode"
+              >
+                <ScanLine size={12} />
+                {scanning ? "Scanning…" : "Scan Barcode"}
+              </button>
               <button
                 onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
                 className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"

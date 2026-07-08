@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, Info, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
@@ -148,13 +148,14 @@ export default function Home() {
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
 
   const today = todayISO();
-  const workoutLog = user.workoutLog ?? [];
   const breathworkLog = user.breathworkLog ?? [];
   const wellActivityLog = user.wellActivityLog ?? [];
   const resistanceLog = user.resistanceLog ?? [];
   const stretchingLog = user.stretchingLog ?? [];
   const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
   const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
+  const [calmDone] = useState(() => localStorage.getItem(`well-calm-done-${todayISO()}`) === "1");
+  const [showActivityInfo, setShowActivityInfo] = useState(false);
 
   // Home WellCheck strip
   const [homeSteps, setHomeSteps] = useState<number | null>(null);
@@ -380,16 +381,22 @@ export default function Home() {
 
       {/* Combined WELL Check home widget */}
       {(() => {
-        const workoutDone = workoutLog.includes(today);
         const wellActDone = wellActivityLog.includes(today);
         const bwDone = breathworkLog.includes(today) || breathworkDone;
+        const stretchDone = stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1";
         const activityFlags = [
-          workoutDone,
           bwDone,
+          stretchDone,
+          calmDone,
           wellActDone,
-          resistanceLog.includes(today) || localStorage.getItem(`well-resistance-${today}`) === "1",
-          stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1",
           sleepDone,
+        ];
+        const ACTIVITY_INFO = [
+          { label: "Breathwork", desc: "Daily guided breathwork session logged in Wellness" },
+          { label: "Stretching", desc: "Stretching routine completed in the Wellness workout tab" },
+          { label: "Calm Toolkit", desc: "Any calm or anxiety tool completed (grounding, box breathing, body scan, worry dump, PMR, reframe, humming breath)" },
+          { label: "Well Activity", desc: "Today's WELL activity completed in the Wellness activities tab" },
+          { label: "Sleep", desc: "Sleep logged in the Wellness activities tab" },
         ];
         const doneCount = activityFlags.filter(Boolean).length;
         const pct = Math.round((doneCount / activityFlags.length) * 100);
@@ -413,12 +420,33 @@ export default function Home() {
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-brand-light" />
                 <span className="text-[11px] font-bold text-text uppercase tracking-wide">WELL Check</span>
+                <button
+                  onClick={(e) => { e.preventDefault(); setShowActivityInfo((v) => !v); }}
+                  aria-label="What activities are tracked?"
+                  className="text-text-dim ml-0.5"
+                >
+                  <Info size={12} />
+                </button>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-semibold text-brand-light">{doneCount}/{activityFlags.length} done</span>
                 <ChevronRight size={13} className="text-text-dim" />
               </div>
             </div>
+            {showActivityInfo && (
+              <div className="mb-3 bg-surface-2 border border-border rounded-card px-3 py-2.5 flex flex-col gap-1.5" onClick={(e) => e.preventDefault()}>
+                <p className="text-[10px] font-bold text-text uppercase tracking-wide mb-0.5">Tracked Activities</p>
+                {ACTIVITY_INFO.map((a, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${activityFlags[i] ? "bg-brand-light" : "bg-surface border border-border"}`} />
+                    <div>
+                      <span className="text-[10px] font-semibold text-text">{a.label}</span>
+                      <span className="text-[10px] text-text-dim"> — {a.desc}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="h-[3px] rounded-full mb-4" style={{ background: "rgba(255,255,255,0.08)" }}>
               <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />

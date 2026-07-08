@@ -107,6 +107,13 @@ export default function AdminMusic() {
   const [soundUrl, setSoundUrl] = useState("");
   const [soundStatus, setSoundStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // Edit state for existing peaceful sounds
+  const [editingSoundId, setEditingSoundId] = useState<number | null>(null);
+  const [editSoundTitle, setEditSoundTitle] = useState("");
+  const [editSoundIcon, setEditSoundIcon] = useState(SOUND_ICON_OPTIONS[0]);
+  const [editSoundUrl, setEditSoundUrl] = useState("");
+  const [editSoundSaving, setEditSoundSaving] = useState(false);
+
   const [hiddenBuiltins, setHiddenBuiltins] = useState<string[]>([]);
   const [hiddenLoading, setHiddenLoading] = useState(true);
 
@@ -555,6 +562,33 @@ export default function AdminMusic() {
       fetchSounds();
     } catch (err) {
       console.error("Delete peaceful sound error:", err);
+    }
+  };
+
+  const openEditSound = (sound: CustomPeacefulSound) => {
+    setEditingSoundId(sound.id);
+    setEditSoundTitle(sound.title);
+    setEditSoundIcon(sound.icon || SOUND_ICON_OPTIONS[0]);
+    setEditSoundUrl(sound.url);
+  };
+
+  const handleEditSound = async () => {
+    if (!API_URL || !editingSoundId || editSoundSaving) return;
+    setEditSoundSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/peaceful-sounds/${editingSoundId}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title: editSoundTitle, icon: editSoundIcon, url: editSoundUrl }),
+      });
+      if (res.ok) {
+        setEditingSoundId(null);
+        fetchSounds();
+      }
+    } catch (err) {
+      console.error("Edit peaceful sound error:", err);
+    } finally {
+      setEditSoundSaving(false);
     }
   };
 
@@ -1354,22 +1388,65 @@ export default function AdminMusic() {
               {sounds.map((sound) => (
                 <SortableItem key={sound.id} id={sound.id}>
                   {(dragHandleProps) => (
-                <div className="glass-card rounded-card p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <DragHandle {...dragHandleProps} />
-                    <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
-                      <SoundIcon icon={sound.icon} size={16} />
+                <div className="glass-card rounded-card p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <DragHandle {...dragHandleProps} />
+                      <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0 text-brand-light">
+                        <SoundIcon icon={sound.icon} size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-text truncate">{sound.title}</p>
+                        <p className="text-[10px] text-text-dim truncate">{sound.url}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-text truncate">{sound.title}</p>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => editingSoundId === sound.id ? setEditingSoundId(null) : openEditSound(sound)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-brand-light"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSound(sound.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteSound(sound.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-red-400 shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {editingSoundId === sound.id && (
+                    <div className="mt-3 pt-3 border-t border-border flex flex-col gap-2">
+                      <input
+                        value={editSoundTitle}
+                        onChange={(e) => setEditSoundTitle(e.target.value)}
+                        placeholder="Title"
+                        className="w-full bg-surface border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                      />
+                      <select
+                        value={editSoundIcon}
+                        onChange={(e) => setEditSoundIcon(e.target.value)}
+                        className="w-full bg-surface border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                      >
+                        {SOUND_ICON_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={editSoundUrl}
+                        onChange={(e) => setEditSoundUrl(e.target.value)}
+                        placeholder="Sound file URL"
+                        className="w-full bg-surface border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                      />
+                      <button
+                        onClick={handleEditSound}
+                        disabled={editSoundSaving || !editSoundTitle.trim()}
+                        className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-2 disabled:opacity-40"
+                      >
+                        {editSoundSaving ? "Saving…" : "Save Changes"}
+                      </button>
+                    </div>
+                  )}
                 </div>
                   )}
                 </SortableItem>
