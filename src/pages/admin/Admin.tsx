@@ -1,7 +1,11 @@
 import { Award, BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Share2, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/layout/TopBar";
+import { getAuthHeaders } from "../../utils/admin";
 import { useApp } from "../../store/AppContext";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 const TILES = [
   { to: "/admin/members", label: "Members", description: "View, add, and remove members", icon: Users },
@@ -18,8 +22,26 @@ const TILES = [
   { to: "/admin/analytics", label: "Analytics", description: "View engagement stats", icon: BarChart3 },
 ];
 
+interface AdminStats {
+  paid: number;
+  activeTrials: number;
+  newThisMonth: number;
+  totalMembers: number;
+  activeToday: number;
+  mrr: number;
+}
+
 export default function Admin() {
   const { categories, threads, events } = useApp();
+  const [stats, setStats] = useState<AdminStats | null>(null);
+
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/api/analytics/admin-stats`, { headers: getAuthHeaders() })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setStats(d))
+      .catch(() => {});
+  }, []);
 
   const totalMessages = threads.reduce((sum, t) => sum + t.messages.length, 0);
 
@@ -27,22 +49,62 @@ export default function Admin() {
     <div>
       <TopBar title="Admin Panel" subtitle="Manage WELL Collective" showBack />
       <div className="px-4 pt-4 flex flex-col gap-6">
-        <div className="grid grid-cols-4 gap-2">
-          <div className="glass-card rounded-card p-3 text-center">
-            <p className="text-lg font-bold text-text">{categories.length}</p>
-            <p className="text-[10px] text-text-muted">Categories</p>
+
+        {/* Business stats */}
+        {stats && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Business Overview</p>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-text">{stats.paid}</p>
+                <p className="text-[10px] text-text-muted">Paid Members</p>
+              </div>
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-brand-light">{stats.activeTrials}</p>
+                <p className="text-[10px] text-text-muted">Active Trials</p>
+              </div>
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-green-400">${stats.mrr.toLocaleString()}</p>
+                <p className="text-[10px] text-text-muted">Est. MRR</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-text">{stats.totalMembers}</p>
+                <p className="text-[10px] text-text-muted">Total Ever</p>
+              </div>
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-yellow-400">{stats.newThisMonth}</p>
+                <p className="text-[10px] text-text-muted">New This Month</p>
+              </div>
+              <div className="glass-card rounded-card p-3 text-center">
+                <p className="text-lg font-bold text-text">{stats.activeToday}</p>
+                <p className="text-[10px] text-text-muted">Active Today</p>
+              </div>
+            </div>
           </div>
-          <div className="glass-card rounded-card p-3 text-center">
-            <p className="text-lg font-bold text-text">{threads.length}</p>
-            <p className="text-[10px] text-text-muted">Posts</p>
-          </div>
-          <div className="glass-card rounded-card p-3 text-center">
-            <p className="text-lg font-bold text-text">{totalMessages}</p>
-            <p className="text-[10px] text-text-muted">Messages</p>
-          </div>
-          <div className="glass-card rounded-card p-3 text-center">
-            <p className="text-lg font-bold text-text">{events.length}</p>
-            <p className="text-[10px] text-text-muted">Events</p>
+        )}
+
+        {/* Community quick stats */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Community</p>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="glass-card rounded-card p-3 text-center">
+              <p className="text-lg font-bold text-text">{categories.length}</p>
+              <p className="text-[10px] text-text-muted">Categories</p>
+            </div>
+            <div className="glass-card rounded-card p-3 text-center">
+              <p className="text-lg font-bold text-text">{threads.length}</p>
+              <p className="text-[10px] text-text-muted">Posts</p>
+            </div>
+            <div className="glass-card rounded-card p-3 text-center">
+              <p className="text-lg font-bold text-text">{totalMessages}</p>
+              <p className="text-[10px] text-text-muted">Messages</p>
+            </div>
+            <div className="glass-card rounded-card p-3 text-center">
+              <p className="text-lg font-bold text-text">{events.length}</p>
+              <p className="text-[10px] text-text-muted">Events</p>
+            </div>
           </div>
         </div>
 
