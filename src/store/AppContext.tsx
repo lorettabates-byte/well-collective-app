@@ -2050,6 +2050,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             bonusBadges: member.bonusBadges,
             grantedBadges: member.grantedBadges,
             featuredBadge: member.featuredBadge,
+            // Merge workout log from server so cross-device/browser entries are visible everywhere.
+            workoutLog: member.workoutLog && member.workoutLog.length > 0
+              ? [...new Set([...(prev.user.workoutLog ?? []), ...member.workoutLog])]
+              : prev.user.workoutLog,
             // Restore saved/liked inspiration IDs from server (resilient to localStorage wipes)
             savedInspirationIds: prev.user.savedInspirationIds || member.savedInspirationIds,
             likedInspirationIds: prev.user.likedInspirationIds || member.likedInspirationIds,

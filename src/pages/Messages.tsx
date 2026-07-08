@@ -238,7 +238,10 @@ export default function Messages() {
     else bottomRef.current?.scrollIntoView({ behavior });
   };
 
-  // Adjust compose box when virtual keyboard opens/closes (iOS PWA / Capacitor)
+  // Adjust compose box when virtual keyboard opens/closes (iOS PWA / Capacitor).
+  // vv.offsetTop is the viewport scroll amount which exactly cancels the keyboard
+  // height in the (height + offsetTop) formula, so we drop it: keyboard height is
+  // simply window.innerHeight minus the shrunken visual viewport height.
   useEffect(() => {
     if (!selectedUserId) return;
     const vv = window.visualViewport;
@@ -246,9 +249,9 @@ export default function Messages() {
     const reposition = () => {
       const box = composeRef.current;
       if (!box) return;
-      const gap = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
-      box.style.bottom = `${gap}px`;
-      if (gap > 0) setTimeout(() => scrollToBottom("smooth"), 80);
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height);
+      box.style.bottom = `${keyboardHeight + 80}px`;
+      if (keyboardHeight > 0) setTimeout(() => scrollToBottom("smooth"), 80);
     };
     vv.addEventListener("resize", reposition);
     vv.addEventListener("scroll", reposition);
