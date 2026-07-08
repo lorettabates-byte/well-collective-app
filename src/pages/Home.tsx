@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, Flame, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Footprints, Gift, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 import { logActivity, fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
@@ -156,6 +156,32 @@ export default function Home() {
   const [breathworkDone, setBreathworkDone] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");
   const [sleepDone, setSleepDone] = useState(() => localStorage.getItem(`well-sleep-${todayISO()}`) === "1");
 
+  // Home WellCheck strip
+  const [homeSteps, setHomeSteps] = useState<number | null>(null);
+  const [homeStepsInput, setHomeStepsInput] = useState("");
+  const [homeStepsSaving, setHomeStepsSaving] = useState(false);
+
+  // Home Nutrition strip
+  interface HomeMacros { calories: number; protein: number; carbs: number; fat: number; mealCount: number }
+  const [homeMacros, setHomeMacros] = useState<HomeMacros | null>(null);
+
+  const handleHomeStepsSave = async () => {
+    const steps = parseInt(homeStepsInput, 10);
+    if (!API_URL || !user.email || isNaN(steps) || steps < 0 || homeStepsSaving) return;
+    setHomeStepsSaving(true);
+    try {
+      await fetch(`${API_URL}/api/steps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberEmail: user.email, steps }),
+      });
+      setHomeSteps(steps);
+      setHomeStepsInput("");
+    } catch { /* ignore */ } finally {
+      setHomeStepsSaving(false);
+    }
+  };
+
   const handleResistance = () => {
     localStorage.setItem(`well-resistance-${today}`, "1");
     logResistanceCompletion();
@@ -203,6 +229,34 @@ export default function Home() {
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.email]);
+
+  // Fetch steps for home WellCheck strip
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/steps/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.steps) setHomeSteps(d.steps); })
+      .catch(() => {});
+  }, [user.email]);
+
+  // Fetch today's meals for home Nutrition strip
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : { meals: [] }))
+      .then((d) => {
+        const meals = d.meals as { estimated_calories?: number; estimated_protein_g?: number; estimated_carbs_g?: number; estimated_fat_g?: number }[];
+        if (!meals.length) return;
+        const totals = meals.reduce((acc, m) => ({
+          calories: acc.calories + (m.estimated_calories ?? 0),
+          protein: acc.protein + (m.estimated_protein_g ?? 0),
+          carbs: acc.carbs + (m.estimated_carbs_g ?? 0),
+          fat: acc.fat + (m.estimated_fat_g ?? 0),
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setHomeMacros({ ...totals, mealCount: meals.length });
+      })
+      .catch(() => {});
   }, [user.email]);
 
   return (
@@ -372,6 +426,71 @@ export default function Home() {
           </div>
         );
       })()}
+
+      {/* WellCheck + Nutrition home strips */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* WellCheck strip */}
+        <Link to="/well-check" className="glass-card rounded-card p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Footprints size={13} className="text-brand-light" />
+              <span className="text-[11px] font-bold text-text uppercase tracking-wide">Well Check</span>
+            </div>
+            <ChevronRight size={13} className="text-text-dim" />
+          </div>
+          {homeSteps != null ? (
+            <div>
+              <p className="text-xl font-extrabold text-text leading-none">{homeSteps.toLocaleString()}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">steps today</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
+              <input
+                type="number"
+                value={homeStepsInput}
+                onChange={(e) => setHomeStepsInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleHomeStepsSave()}
+                placeholder="Steps"
+                className="flex-1 min-w-0 bg-surface-2 border border-border rounded px-2 py-1 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+              <button
+                onClick={(e) => { e.preventDefault(); handleHomeStepsSave(); }}
+                disabled={homeStepsSaving || !homeStepsInput}
+                className="text-[10px] font-semibold text-white gradient-brand rounded px-2 py-1 shrink-0 disabled:opacity-40"
+              >
+                {homeStepsSaving ? "…" : "Log"}
+              </button>
+            </div>
+          )}
+        </Link>
+
+        {/* Nutrition strip */}
+        <Link to="/nutrition" className="glass-card rounded-card p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Salad size={13} className="text-brand-light" />
+              <span className="text-[11px] font-bold text-text uppercase tracking-wide">Nutrition</span>
+            </div>
+            <ChevronRight size={13} className="text-text-dim" />
+          </div>
+          {homeMacros ? (
+            <div>
+              <p className="text-xl font-extrabold text-text leading-none">{Math.round(homeMacros.calories)}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">kcal · {homeMacros.mealCount} meal{homeMacros.mealCount !== 1 ? "s" : ""}</p>
+              <div className="flex gap-2 mt-1.5">
+                <span className="text-[10px] text-text-dim">P <span className="text-text font-semibold">{Math.round(homeMacros.protein)}g</span></span>
+                <span className="text-[10px] text-text-dim">C <span className="text-text font-semibold">{Math.round(homeMacros.carbs)}g</span></span>
+                <span className="text-[10px] text-text-dim">F <span className="text-text font-semibold">{Math.round(homeMacros.fat)}g</span></span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-[11px] text-text-dim">No meals logged yet</p>
+              <p className="text-[10px] text-text-dim mt-0.5">Tap to log today's food</p>
+            </div>
+          )}
+        </Link>
+      </div>
 
       <div className="grid grid-cols-4 gap-3 mb-6">
         {QUICK_LINKS.map(({ to, label, icon: Icon }) => (
