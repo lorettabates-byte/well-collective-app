@@ -1,4 +1,5 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { useEffect, useState } from "react";
@@ -145,6 +146,80 @@ export default function Nutrition() {
   const [mealItems, setMealItems] = useState<MealItemEstimate[]>([]);
   const [estimating, setEstimating] = useState(false);
   const [estimateError, setEstimateError] = useState("");
+
+  // Barcode scanning state
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState("");
+
+  const handleBarcodeScan = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      setScanError("Barcode scanning requires the native app (iOS or Android).");
+      return;
+    }
+    setScanError("");
+    setScanning(true);
+    try {
+      const { BarcodeScanner } = await import("@capacitor-community/barcode-scanner");
+      const perm = await BarcodeScanner.checkPermission({ force: true });
+      if (!perm.granted) {
+        setScanError("Camera permission is required to scan barcodes.");
+        setScanning(false);
+        return;
+      }
+      await BarcodeScanner.prepare();
+      const result = await BarcodeScanner.startScan();
+      await BarcodeScanner.stopScan();
+      if (!result.hasContent || !result.content) {
+        setScanning(false);
+        return;
+      }
+      const barcode = result.content;
+      // Look up nutrition data from Open Food Facts (free, no key required)
+      const offRes = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}?fields=product_name,nutriments,serving_size,brands`);
+      if (!offRes.ok) throw new Error("Product not found");
+      const offData = await offRes.json() as {
+        status: number;
+        product?: {
+          product_name?: string;
+          brands?: string;
+          serving_size?: string;
+          nutriments?: {
+            "energy-kcal_serving"?: number;
+            "energy-kcal_100g"?: number;
+            "proteins_serving"?: number;
+            "proteins_100g"?: number;
+            "carbohydrates_serving"?: number;
+            "carbohydrates_100g"?: number;
+            "fat_serving"?: number;
+            "fat_100g"?: number;
+          };
+        };
+      };
+      if (offData.status !== 1 || !offData.product) {
+        setScanError("Product not found in Open Food Facts database. Try typing it manually.");
+        setScanning(false);
+        return;
+      }
+      const p = offData.product;
+      const n = p.nutriments ?? {};
+      const name = [p.brands, p.product_name].filter(Boolean).join(" — ") || "Scanned product";
+      const cal = n["energy-kcal_serving"] ?? n["energy-kcal_100g"] ?? 0;
+      const protein = n["proteins_serving"] ?? n["proteins_100g"] ?? 0;
+      const carbs = n["carbohydrates_serving"] ?? n["carbohydrates_100g"] ?? 0;
+      const fat = n["fat_serving"] ?? n["fat_100g"] ?? 0;
+      setMealItems((prev) => [
+        ...prev,
+        { description: name, calories: Math.round(cal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat), verified: true, servings: 1 },
+      ]);
+      setEstimatedCalories(String(Math.round(cal)));
+      if (!showMealForm) setShowMealForm(true);
+    } catch (err) {
+      setScanError("Scan failed. Try again or enter food manually.");
+      console.error("Barcode scan error:", err);
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const totalEstimated = mealItems.reduce(
     (sum, i) => ({
@@ -583,14 +658,30 @@ export default function Nutrition() {
               <h2 className="text-sm font-bold text-text">Today's Meals</h2>
               <p className="text-[11px] text-text-muted">Log what you ate — earn 10 pts per meal</p>
             </div>
-            <button
-              onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
-              className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"
-            >
-              <Plus size={12} />
-              Log Meal
-            </button>
+            <div className="flex gap-2">
+              {Capacitor.isNativePlatform() && (
+                <button
+                  onClick={handleBarcodeScan}
+                  disabled={scanning}
+                  className="flex items-center gap-1.5 bg-surface-2 border border-border text-text-muted text-xs font-semibold rounded-pill px-3 py-1.5"
+                  title="Scan barcode"
+                >
+                  <ScanLine size={12} />
+                  {scanning ? "Scanning…" : "Scan"}
+                </button>
+              )}
+              <button
+                onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
+                className="flex items-center gap-1.5 gradient-brand text-white text-xs font-semibold rounded-pill px-3 py-1.5"
+              >
+                <Plus size={12} />
+                Log Meal
+              </button>
+            </div>
           </div>
+          {scanError && (
+            <p className="text-xs text-red-400 bg-red-400/10 rounded-card px-3 py-2 mb-2">{scanError}</p>
+          )}
 
           {showMealForm && (
             <div className="flex flex-col gap-3 border-t border-border pt-3 mb-3">

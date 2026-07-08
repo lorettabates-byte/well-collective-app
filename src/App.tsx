@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import AdminRoute from "./components/AdminRoute";
 import MobileShell from "./components/layout/MobileShell";
+import GoalsQuestionnaire from "./pages/GoalsQuestionnaire";
+import { useApp } from "./store/AppContext";
 import Home from "./pages/Home";
 import Community from "./pages/Community";
 import CategoryThreads from "./pages/CategoryThreads";
@@ -47,6 +49,14 @@ import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 function App() {
   useStaleVersionGuard();
   const navigate = useNavigate();
+  const { user } = useApp();
+  const [goalsDismissed, setGoalsDismissed] = useState(false);
+
+  const showGoals =
+    !goalsDismissed &&
+    !!user.email &&
+    !user.isAdmin &&
+    !user.goalsCompleted;
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -61,6 +71,7 @@ function App() {
 
   return (
     <MobileShell>
+      {showGoals && <GoalsQuestionnaire onComplete={() => setGoalsDismissed(true)} />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />

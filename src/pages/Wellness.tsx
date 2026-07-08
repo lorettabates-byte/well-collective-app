@@ -4,8 +4,11 @@ import {
   ArrowUpRight,
   Award,
   Bookmark,
+  Brain,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Crown,
   Dumbbell,
   Flame,
@@ -19,6 +22,7 @@ import {
   Sparkles,
   Star,
   StretchHorizontal,
+  Timer,
   Trash2,
   Trophy,
   Users,
@@ -113,6 +117,20 @@ export default function Wellness() {
   const [sleepHours, setSleepHours] = useState(7);
   const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "feel_great" | "">("");
   const [sleepSubmitting, setSleepSubmitting] = useState(false);
+
+  // Calm Toolkit state
+  const [openCalmCard, setOpenCalmCard] = useState<string | null>(null);
+  const [calmTimerActive, setCalmTimerActive] = useState(false);
+  const [calmTimerSeconds, setCalmTimerSeconds] = useState(0);
+  const calmTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Run tracking — read synced runs from health sync localStorage
+  const syncedRuns = (() => {
+    try {
+      const raw = localStorage.getItem(`well-health-runs-${todayISO()}`);
+      return raw ? (JSON.parse(raw) as { distanceKm: number; durationMinutes: number; paceMinPerKm: number | null; caloriesBurned: number | null; workoutType: string }[]) : [];
+    } catch { return []; }
+  })();
   const autoWorkoutFiredRef = useRef(false);
 
   // If activities were completed on another device, the server-restored logs
@@ -751,6 +769,233 @@ export default function Wellness() {
               </button>
             </>
           )}
+        </div>
+        {/* Run Tracking */}
+        {syncedRuns.length > 0 && (
+          <div className="glass-card rounded-card p-4">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+              <Activity size={15} className="text-brand-light shrink-0" />
+              <h3 className="text-sm font-bold text-text">Today's Runs</h3>
+              <span className="ml-auto text-xs text-text-dim">{syncedRuns.length} {syncedRuns.length === 1 ? "run" : "runs"} synced</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              {syncedRuns.map((run, i) => (
+                <div key={i} className="rounded-card bg-surface-2 border border-border px-3 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-light mb-2">
+                    {run.workoutType === "runningTreadmill" ? "Treadmill Run" : "Outdoor Run"}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col items-center">
+                      <p className="text-lg font-extrabold text-text leading-none">{run.distanceKm.toFixed(1)}</p>
+                      <p className="text-[10px] text-text-dim">km</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <p className="text-lg font-extrabold text-text leading-none">{run.durationMinutes}</p>
+                      <p className="text-[10px] text-text-dim">min</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      {run.paceMinPerKm != null ? (
+                        <>
+                          <p className="text-lg font-extrabold text-text leading-none">{run.paceMinPerKm.toFixed(1)}</p>
+                          <p className="text-[10px] text-text-dim">min/km</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-extrabold text-text-dim leading-none">—</p>
+                          <p className="text-[10px] text-text-dim">pace</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {run.caloriesBurned != null && (
+                    <p className="text-[11px] text-text-muted text-center mt-2">{run.caloriesBurned} kcal burned</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Calm Toolkit */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+            <Brain size={15} className="text-purple-400 shrink-0" />
+            <h3 className="text-sm font-bold text-text">Calm Toolkit</h3>
+            <span className="ml-auto text-[10px] text-text-dim uppercase tracking-wide font-semibold">On Demand</span>
+          </div>
+          <p className="text-xs text-text-muted mb-3">Anxiety, stress, or overwhelm? Pick a tool — these work any time, anywhere.</p>
+          <div className="flex flex-col gap-2">
+            {([
+              {
+                id: "grounding",
+                emoji: "🌿",
+                label: "Grounding 5-4-3-2-1",
+                sub: "Bring yourself back to the present",
+                steps: [
+                  "Find a comfortable position. Take 2 deep breaths.",
+                  "Name 5 things you can SEE right now.",
+                  "Name 4 things you can physically TOUCH.",
+                  "Name 3 things you can HEAR.",
+                  "Name 2 things you can SMELL (or like the smell of).",
+                  "Name 1 thing you can TASTE right now.",
+                  "Take 3 deep breaths. Notice how much calmer you feel.",
+                ],
+              },
+              {
+                id: "bodyscan",
+                emoji: "🧘",
+                label: "Body Scan",
+                sub: "Release tension stored in your body",
+                steps: [
+                  "Lie down or sit comfortably. Close your eyes.",
+                  "Start at your feet. Notice any tension. Breathe into it, then release.",
+                  "Move to your calves and shins. Tense gently for 3 sec, then release.",
+                  "Move to your thighs and hips. Breathe in... breathe out.",
+                  "Notice your stomach. Let it be soft. Release all effort.",
+                  "Move to your chest and shoulders. Roll them back and down. Exhale tension.",
+                  "Notice your hands, arms, neck, and face. Soften everything.",
+                  "Take 3 full breaths. You are completely relaxed.",
+                ],
+              },
+              {
+                id: "pmr",
+                emoji: "💪",
+                label: "Progressive Muscle Relaxation",
+                sub: "Tense and release for deep calm",
+                steps: [
+                  "Sit or lie comfortably. Take 3 slow breaths.",
+                  "Curl your toes tightly for 5 seconds — then release. Feel the difference.",
+                  "Tense your calves for 5 sec — then release completely.",
+                  "Squeeze your thighs and glutes for 5 sec — then let go.",
+                  "Pull your stomach in tight for 5 sec — then release.",
+                  "Shrug your shoulders to your ears for 5 sec — then drop them.",
+                  "Clench your jaw and squint your eyes for 5 sec — then soften.",
+                  "Take 5 slow breaths. Feel the warmth and heaviness of complete relaxation.",
+                ],
+              },
+              {
+                id: "worrydump",
+                emoji: "📝",
+                label: "Worry Dump",
+                sub: "Get it out of your head",
+                steps: [
+                  "Set a timer for 10 minutes.",
+                  "Write every worry, fear, and stressor on your mind — don't edit, just dump.",
+                  "When the timer ends, stop writing.",
+                  "Look at the list. Circle ONLY what you can control today.",
+                  "Cross out everything else — they're real, but not yours to carry right now.",
+                  "For the circled items: what is ONE tiny step you can take?",
+                  "Close the page. The worries are contained. You can come back if needed.",
+                ],
+              },
+              {
+                id: "reframe",
+                emoji: "🔄",
+                label: "Cognitive Reframe",
+                sub: "Change the story, change the feeling",
+                steps: [
+                  "Write down the stressful thought exactly as it appears in your mind.",
+                  "Ask yourself: Is this thought 100% true, or is it a story?",
+                  "Ask: What evidence do I have FOR this thought?",
+                  "Ask: What evidence do I have AGAINST it?",
+                  "Ask: What would I tell a close friend who had this thought?",
+                  "Write a more balanced, realistic version of the thought.",
+                  "Read the new thought 3 times. Notice how your body feels.",
+                ],
+              },
+              {
+                id: "boxbreath",
+                emoji: "🫁",
+                label: "Box Breathing",
+                sub: "4-4-4-4: inhale, hold, exhale, hold",
+                steps: [
+                  "Sit upright. Exhale completely.",
+                  "Inhale slowly for 4 counts: 1... 2... 3... 4...",
+                  "Hold your breath for 4 counts: 1... 2... 3... 4...",
+                  "Exhale slowly for 4 counts: 1... 2... 3... 4...",
+                  "Hold empty for 4 counts: 1... 2... 3... 4...",
+                  "That's 1 round. Repeat 4–6 times.",
+                  "Notice your nervous system settle with each round.",
+                ],
+              },
+              {
+                id: "humming",
+                emoji: "🎵",
+                label: "Humming Breath",
+                sub: "Activate your vagus nerve for instant calm",
+                steps: [
+                  "Sit comfortably. Take a full breath in through your nose.",
+                  "As you exhale, close your mouth and HUM — any tone.",
+                  "Feel the vibration in your chest, throat, and head.",
+                  "Inhale again... and hum on the exhale.",
+                  "Do this for 5–10 rounds. Let the sound be as long as your breath.",
+                  "Notice the warm, buzzing calm that spreads through your body.",
+                  "This stimulates the vagus nerve — your body's calm switch.",
+                ],
+              },
+            ] as const).map((tool) => {
+              const isOpen = openCalmCard === tool.id;
+              return (
+                <div key={tool.id} className="rounded-card border border-border bg-surface-2 overflow-hidden">
+                  <button
+                    onClick={() => setOpenCalmCard(isOpen ? null : tool.id)}
+                    className="w-full flex items-center gap-3 px-3 py-3 text-left"
+                  >
+                    <span className="text-xl shrink-0">{tool.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">{tool.label}</p>
+                      <p className="text-xs text-text-muted">{tool.sub}</p>
+                    </div>
+                    {isOpen ? <ChevronUp size={14} className="text-text-dim shrink-0" /> : <ChevronDown size={14} className="text-text-dim shrink-0" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-3 border-t border-border">
+                      <div className="flex flex-col gap-2 mt-3">
+                        {tool.steps.map((step, i) => (
+                          <div key={i} className="flex gap-2.5">
+                            <div className="w-5 h-5 rounded-full gradient-brand flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="text-[10px] font-bold text-white">{i + 1}</span>
+                            </div>
+                            <p className="text-xs text-text-muted leading-relaxed flex-1">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (calmTimerRef.current) {
+                              clearInterval(calmTimerRef.current);
+                              calmTimerRef.current = null;
+                            }
+                            if (calmTimerActive && openCalmCard === tool.id) {
+                              setCalmTimerActive(false);
+                              setCalmTimerSeconds(0);
+                            } else {
+                              setCalmTimerSeconds(0);
+                              setCalmTimerActive(true);
+                              calmTimerRef.current = setInterval(() => setCalmTimerSeconds((s) => s + 1), 1000);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3 py-1.5 gradient-brand text-white"
+                        >
+                          <Timer size={12} />
+                          {calmTimerActive && openCalmCard === tool.id
+                            ? `${Math.floor(calmTimerSeconds / 60)}:${String(calmTimerSeconds % 60).padStart(2, "0")} — Stop`
+                            : "Start Timer"}
+                        </button>
+                        <Link
+                          to="/breathwork"
+                          className="flex items-center gap-1 text-xs text-brand-light font-semibold"
+                        >
+                          Full Breathwork <ChevronRight size={12} />
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </>}
 

@@ -376,7 +376,7 @@ export function uid(prefix: string): string {
 }
 
 interface AppContextValue extends PersistedState {
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "notificationSchedule">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
   addMessage: (threadId: string, text: string, image?: string, replyToId?: string) => void;
@@ -2102,6 +2102,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             age: prev.user.age ?? member.age,
             gender: prev.user.gender ?? member.gender,
             healthSyncEnabled: prev.user.healthSyncEnabled ?? member.healthSyncEnabled,
+            goalPlan: prev.user.goalPlan ?? member.goalPlan,
+            notificationTone: prev.user.notificationTone ?? member.notificationTone,
+            movementTarget: prev.user.movementTarget ?? member.movementTarget,
+            goalsCompleted: prev.user.goalsCompleted || member.goalsCompleted,
           },
         }));
       })

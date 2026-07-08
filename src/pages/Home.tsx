@@ -21,6 +21,7 @@ import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { todayISO } from "../utils/format";
+import { getDailyPlan } from "../data/goalPlans";
 import { getTrendingThreads } from "../utils/threadUtils";
 import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
@@ -516,6 +517,31 @@ export default function Home() {
         <SectionHeader title="WELL Cup" to="/well-cup" />
         <WellCupLeaderboard />
       </div>
+
+      {user.goalsCompleted && user.goalPlan && (() => {
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+        const plan = getDailyPlan(user.goalPlan, dayOfYear);
+        return (
+          <Link to="/wellness" className="block glass-card rounded-card p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} className="text-brand-light shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-light">Your Daily Plan</span>
+              <ChevronRight size={13} className="ml-auto text-text-dim" />
+            </div>
+            <h3 className="text-base font-extrabold text-text leading-tight mb-0.5">{plan.title}</h3>
+            <p className="text-xs text-brand-light font-semibold mb-2">{plan.focus}</p>
+            <div className="flex flex-col gap-1.5 mb-3">
+              {plan.tasks.map((t, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle2 size={12} className="text-brand-light shrink-0 mt-0.5" />
+                  <p className="text-xs text-text-muted leading-tight">{t}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-text-dim italic leading-relaxed">"{plan.affirmation}"</p>
+          </Link>
+        );
+      })()}
 
       <div className="mb-6">
         <WeeklyThemeBar theme={currentWeeklyTheme} />
