@@ -433,6 +433,9 @@ interface AppContextValue extends PersistedState {
   todaysWellActivity: WellActivity;
   todaysRecipe: Recipe;
   memberBadges: Record<string, MemberDirectoryEntry>;
+  blockedUserIds: string[];
+  blockUser: (userId: string) => void;
+  unblockUser: (userId: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -447,6 +450,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // (which goes stale the instant the member changes their photo or name).
   // Not persisted: it's a live directory, refetched fresh each session.
   const [memberBadges, setMemberBadges] = useState<Record<string, MemberDirectoryEntry>>({});
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
 
   // Saved recipes and folders live server-side (saved_recipes / recipe_folders
   // tables), not in localStorage — recipe content (images, steps) is too big
@@ -488,6 +492,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => console.error("Failed to fetch member badges:", err));
   }, []);
+
+  // Load block list when user id is known
+  useEffect(() => {
+    if (!API_URL || !state.user.id) return;
+    fetch(`${API_URL}/api/blocks?userId=${encodeURIComponent(state.user.id)}`)
+      .then((res) => (res.ok ? res.json() : { blockedIds: [] }))
+      .then((data) => setBlockedUserIds(data.blockedIds ?? []))
+      .catch(() => {});
+  }, [state.user.id]);
 
   useEffect(() => {
     if (!API_URL) return;
@@ -1195,6 +1208,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const blockUser = (userId: string) => {
+    if (!API_URL || !state.user.id) return;
+    setBlockedUserIds((prev) => prev.includes(userId) ? prev : [...prev, userId]);
+    fetch(`${API_URL}/api/blocks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blockerId: state.user.id, blockedId: userId }),
+    }).catch(() => {});
+  };
+
+  const unblockUser = (userId: string) => {
+    if (!API_URL || !state.user.id) return;
+    setBlockedUserIds((prev) => prev.filter((id) => id !== userId));
+    fetch(`${API_URL}/api/blocks/${encodeURIComponent(userId)}?blockerId=${encodeURIComponent(state.user.id)}`, {
+      method: "DELETE",
+    }).catch(() => {});
+  };
+
   const sendNotification: AppContextValue["sendNotification"] = (type, title, body, link) => {
     setState((prev) => ({
       ...prev,
@@ -1511,9 +1542,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .then((data) => {
           const entry = data?.today as ContentBatchEntry | undefined;
           if (!entry) return;
+          const serverWeeklyTheme = data?.currentWeeklyTheme as { title: string; body: string } | null | undefined;
           setState((prev) => {
             const byDate = new Map(prev.contentSchedule.map((e) => [e.date, e]));
             byDate.set(entry.date, { ...byDate.get(entry.date), ...entry });
+            // Always populate this week's Monday slot from the server's authoritative
+            // weekly theme, even on non-Monday days when entry.weeklyTheme is absent.
+            if (serverWeeklyTheme) {
+              const entryDate = new Date(entry.date + "T00:00:00");
+              const dow = entryDate.getDay();
+              const daysToMon = dow === 0 ? 6 : dow - 1;
+              const monDate = new Date(entryDate);
+              monDate.setDate(entryDate.getDate() - daysToMon);
+              const thisMonday = `${monDate.getFullYear()}-${String(monDate.getMonth() + 1).padStart(2, "0")}-${String(monDate.getDate()).padStart(2, "0")}`;
+              byDate.set(thisMonday, { ...(byDate.get(thisMonday) ?? { date: thisMonday }), weeklyTheme: serverWeeklyTheme });
+            }
 
             // Add today's daily inspiration to the inspirations array if it exists
             let updatedInspirations = prev.inspirations;
@@ -2155,6 +2198,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     todaysWellActivity,
     todaysRecipe,
     memberBadges,
+    blockedUserIds,
+    blockUser,
+    unblockUser,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -23,7 +23,7 @@ export default function Community() {
       <SectionIntroModal sectionKey="community" />
       <div className="px-4 pt-4">
         <WeeklyThemeBar theme={currentWeeklyTheme} />
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6 mt-3">
           <Link
             to="/community/new"
             className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-4 shadow-glow justify-center"

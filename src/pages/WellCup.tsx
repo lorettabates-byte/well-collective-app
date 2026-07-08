@@ -255,7 +255,6 @@ export default function WellCup() {
               period="yearly"
               periodLabel={`${year} WELL Crown`}
             />
-            {yearResetAt && <YearResetBanner resetAt={yearResetAt} />}
           </div>
         )}
 
@@ -267,7 +266,7 @@ export default function WellCup() {
               <span className="text-xl shrink-0 mt-0.5">🏆</span>
               <div>
                 <p className="text-sm font-bold text-text">Monthly Winner</p>
-                <p className="text-xs text-text-muted">Earn a free month of WELL Collective membership</p>
+                <p className="text-xs text-text-muted">Earn a free month of WELL Collective membership. Resets at midnight on the last day of each month.</p>
               </div>
             </div>
             <div className="w-full h-px bg-border" />
@@ -275,7 +274,13 @@ export default function WellCup() {
               <span className="text-xl shrink-0 mt-0.5">👑</span>
               <div>
                 <p className="text-sm font-bold text-text">Yearly WELL Crown Winner</p>
-                <p className="text-xs text-text-muted">Win a free WELL ESCAPE — our exclusive retreat experience</p>
+                <p className="text-xs text-text-muted">
+                  Win a free WELL ESCAPE — our exclusive retreat experience. The member with the most points by year-end wins.
+                  {yearResetAt ? (() => {
+                    const resetDate = new Date(yearResetAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                    return ` Leaderboard resets ${resetDate}.`;
+                  })() : ""}
+                </p>
               </div>
             </div>
           </div>

@@ -1,10 +1,11 @@
-import { Award, Cake, Flame, Loader2, MessageCircle, Trophy, Users } from "lucide-react";
+import { Award, Cake, Flame, Loader2, MessageCircle, ShieldOff, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { computeStreak } from "../utils/streaks";
+import { useApp } from "../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -29,9 +30,12 @@ function formatBirthday(birthday: string): string {
 
 export default function MemberProfile() {
   const { memberId } = useParams<{ memberId: string }>();
+  const { blockedUserIds, blockUser, unblockUser } = useApp();
   const [member, setMember] = useState<MemberProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const isBlocked = memberId ? blockedUserIds.includes(memberId) : false;
 
   useEffect(() => {
     if (!API_URL || !memberId) {
@@ -144,10 +148,49 @@ export default function MemberProfile() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-text-dim justify-center mb-6">
+        <div className="flex items-center gap-2 text-xs text-text-dim justify-center mb-4">
           <MessageCircle size={13} />
           <span>Message them from WELL Tribe or the community to connect.</span>
         </div>
+
+        {/* Block / Unblock */}
+        {showBlockConfirm ? (
+          <div className="glass-card rounded-card p-4 mb-6 flex flex-col gap-3">
+            <p className="text-sm text-text font-semibold">
+              {isBlocked ? `Unblock ${member.name}?` : `Block ${member.name}?`}
+            </p>
+            <p className="text-xs text-text-muted">
+              {isBlocked
+                ? "You will see their posts and they can message you again."
+                : "You won't see their posts and they won't be able to message you. They won't know they've been blocked."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (memberId) isBlocked ? unblockUser(memberId) : blockUser(memberId);
+                  setShowBlockConfirm(false);
+                }}
+                className="flex-1 py-2 text-sm font-semibold rounded-pill bg-red-500/20 text-red-400 border border-red-500/30"
+              >
+                {isBlocked ? "Unblock" : "Block"}
+              </button>
+              <button
+                onClick={() => setShowBlockConfirm(false)}
+                className="flex-1 py-2 text-sm font-semibold rounded-pill glass-card text-text-muted"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowBlockConfirm(true)}
+            className="flex items-center gap-2 text-xs text-text-dim mx-auto mb-6"
+          >
+            <ShieldOff size={13} />
+            <span>{isBlocked ? `Unblock ${member.name}` : `Block ${member.name}`}</span>
+          </button>
+        )}
       </div>
     </div>
   );

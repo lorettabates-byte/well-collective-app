@@ -36,15 +36,15 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ("focus" in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
+      if (clients.length > 0) {
+        // App is open — send a message so React Router navigates without a reload
+        const client = clients[0];
+        client.postMessage({ type: "NAVIGATE", url: targetUrl });
+        return client.focus();
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
+      // App is closed — open it at the target URL
+      const absoluteUrl = new URL(targetUrl, self.location.origin).href;
+      return self.clients.openWindow(absoluteUrl);
     })
   );
 });

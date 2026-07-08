@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import AdminRoute from "./components/AdminRoute";
 import MobileShell from "./components/layout/MobileShell";
 import Home from "./pages/Home";
@@ -45,6 +46,18 @@ import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
 function App() {
   useStaleVersionGuard();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "NAVIGATE" && event.data.url) {
+        navigate(event.data.url as string);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [navigate]);
 
   return (
     <MobileShell>
