@@ -165,6 +165,9 @@ export default function Home() {
   interface HomeMacros { calories: number; protein: number; carbs: number; fat: number; mealCount: number }
   const [homeMacros, setHomeMacros] = useState<HomeMacros | null>(null);
 
+  // Home points (WELL Cup today)
+  const [homePoints, setHomePoints] = useState<number | null>(null);
+
   const handleHomeStepsSave = async () => {
     const steps = parseInt(homeStepsInput, 10);
     if (!API_URL || !user.email || isNaN(steps) || steps < 0 || homeStepsSaving) return;
@@ -256,6 +259,15 @@ export default function Home() {
         }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
         setHomeMacros({ ...totals, mealCount: meals.length });
       })
+      .catch(() => {});
+  }, [user.email]);
+
+  // Fetch today's WELL Cup points for home widget
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.totalPoints != null) setHomePoints(d.totalPoints); })
       .catch(() => {});
   }, [user.email]);
 
@@ -425,7 +437,7 @@ export default function Home() {
               <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-3">
               <div>
                 <p className="text-[10px] text-text-dim mb-0.5">Steps</p>
                 <p className="text-sm font-bold text-text leading-none">
@@ -448,6 +460,18 @@ export default function Home() {
                 <p className="text-[10px] text-text-dim mb-0.5">Energy Out</p>
                 <p className="text-sm font-bold text-text leading-none">
                   {baselineTdee != null ? `${baselineTdee.toLocaleString()} kcal` : <span className="text-text-dim font-normal text-xs">Add profile stats</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Points Today</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {homePoints != null ? homePoints : <span className="text-text-dim font-normal text-xs">—</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-text-dim mb-0.5">Activities</p>
+                <p className="text-sm font-bold text-text leading-none">
+                  {doneCount}<span className="text-text-dim font-normal text-xs">/{activityFlags.length} done</span>
                 </p>
               </div>
             </div>

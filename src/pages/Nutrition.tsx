@@ -611,7 +611,7 @@ export default function Nutrition() {
 
               {/* Wellness questions — compact tappable chips */}
               <div>
-                <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide mb-2">What did you include?</p>
+                <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide mb-2">What did you purposefully include today?</p>
                 <div className="flex flex-wrap gap-2">
                   {([
                       { key: "protein",     Icon: Dumbbell, text: "Protein",     val: hadProtein,    set: setHadProtein },
@@ -885,30 +885,6 @@ export default function Nutrition() {
             </div>
           )}
 
-          {hasTrackedNutrition && (
-            <div className="border-t border-border pt-3 mt-3">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Today's totals</p>
-              <div className="flex items-end gap-2 mb-3">
-                <p className="text-3xl font-extrabold text-brand-light leading-none">
-                  {Math.round(todaysMealTotals.calories).toLocaleString()}
-                </p>
-                <p className="text-sm text-text-muted mb-0.5">kcal</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Protein", val: todaysMealTotals.protein },
-                  { label: "Carbs",   val: todaysMealTotals.carbs },
-                  { label: "Fat",     val: todaysMealTotals.fat },
-                ].map(({ label, val }) => (
-                  <div key={label} className="text-center rounded-card py-2"
-                    style={{ background: "rgba(91,163,245,0.08)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
-                    <p className="text-base font-extrabold text-brand-light">{Math.round(val)}g</p>
-                    <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="glass-card rounded-card overflow-hidden">
