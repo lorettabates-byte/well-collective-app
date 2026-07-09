@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, PenSquare, Pin, Trophy } from "lucide-react";
+import { Mail, MessageCircle, PenSquare, Pin, Trophy, Users } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link } from "react-router-dom";
@@ -23,7 +23,7 @@ export default function Community() {
       <SectionIntroModal sectionKey="community" />
       <div className="px-4 pt-4">
         <WeeklyThemeBar theme={currentWeeklyTheme} />
-        <div className="grid grid-cols-2 gap-3 mb-6 mt-3">
+        <div className="grid grid-cols-3 gap-3 mb-6 mt-3">
           <Link
             to="/community/new"
             className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-4 shadow-glow justify-center"
@@ -42,6 +42,13 @@ export default function Community() {
                 {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
               </span>
             )}
+          </Link>
+          <Link
+            to="/tribe"
+            className="flex items-center gap-2 glass-card text-text text-sm font-semibold rounded-pill py-3 px-4 justify-center"
+          >
+            <Users size={16} />
+            My Tribe
           </Link>
         </div>
 

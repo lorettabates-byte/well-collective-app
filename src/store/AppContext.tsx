@@ -1490,22 +1490,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (entry.motivationBoost) {
-        next = {
-          ...next,
-          inspirations: [
-            {
-              id: uid("i"),
-              title: entry.motivationBoost.title,
-              body: entry.motivationBoost.body,
-              author: "Loretta Bates",
-              cadence: "motivational",
-              sentAt: now,
-              likes: [],
-              savedBy: [],
-            },
-            ...next.inspirations,
-          ],
-        };
+        // Only surface the boost after 3pm on the day it's scheduled
+        const boostHour = new Date().getHours();
+        if (boostHour >= 15) {
+          next = {
+            ...next,
+            inspirations: [
+              {
+                id: uid("i"),
+                title: entry.motivationBoost.title,
+                body: entry.motivationBoost.body,
+                author: "Loretta Bates",
+                cadence: "motivational",
+                sentAt: now,
+                likes: [],
+                savedBy: [],
+              },
+              ...next.inspirations,
+            ],
+          };
+        }
       }
 
       if (entry.dailyInspiration) {
@@ -1657,6 +1661,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             if (entry.motivationBoost) {
+              // Gate today's boost behind 3pm; always show historical dates
+              const isToday = entry.date === todayISO();
+              const boostHour = new Date().getHours();
+              if (isToday && boostHour < 15) {
+                // Not 3pm yet — skip for now; will appear on next content sync
+              } else {
               const motivationId = `motivation-${entry.date}`;
               const existingMotivation = updatedInspirations.find((i) => i.id === motivationId);
               updatedInspirations = updatedInspirations.filter(
@@ -1669,7 +1679,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   body: entry.motivationBoost.body,
                   cadence: "motivational",
                   author: "Loretta Bates",
-                  sentAt: new Date(entry.date + "T07:00:00").toISOString(),
+                  sentAt: new Date(entry.date + "T15:00:00").toISOString(),
                   likes:
                     existingMotivation?.likes ??
                     (prev.user.likedInspirationIds?.includes(motivationId) ? [prev.user.id] : []),
@@ -1679,6 +1689,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 },
                 ...updatedInspirations.filter((i) => i.cadence !== "motivational"),
               ];
+              } // end else (after 3pm or historical)
             }
 
             return {

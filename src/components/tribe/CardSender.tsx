@@ -192,7 +192,7 @@ function CardFace({
         </p>
 
         {/* From line */}
-        <p className={`text-[10px] opacity-45 mt-0.5 ${style.textColor}`}>
+        <p className={`text-[13px] font-semibold opacity-70 mt-1 ${style.textColor}`}>
           — from {userName || "you"}
         </p>
       </div>
