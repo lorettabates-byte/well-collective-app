@@ -95,7 +95,7 @@ function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; ve
           Verified against the USDA nutrition database
         </p>
       ) : (
-        <p className="text-[10px] text-text-dim text-center">Estimated — not independently verified</p>
+        <p className="text-[10px] text-text-dim text-center">Estimated — not independently verified. For more accurate results, enter food items manually using the text field below.</p>
       )}
     </div>
   );
@@ -900,7 +900,7 @@ export default function Nutrition() {
                       <GramStat grams={totalEstimated.fat} label="Fat" />
                     </div>
                     <p className="text-[10px] text-text-dim text-center">
-                      {allVerified ? "Matched against the USDA nutrition database" : "Estimated — not fully matched in the USDA database"}
+                      {allVerified ? "Matched against the USDA nutrition database" : "Estimated — for more accurate results, enter food items manually using the field below"}
                     </p>
                   </div>
                 )}
