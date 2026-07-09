@@ -39,7 +39,7 @@ export default function ExerciseInfoModal({ name, meta, description, onClose }: 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6 animate-fade-in-up"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
       onClick={onClose}
     >
       <div className="relative w-full max-w-sm gradient-brand p-[1px] rounded-card" onClick={(e) => e.stopPropagation()}>
