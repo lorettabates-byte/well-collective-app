@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Mail, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Mail, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
@@ -23,14 +23,45 @@ function MemberCard({
   member,
   onDelete,
   onToggleBadge,
+  onTrialUpdated,
   isTrialExpired,
 }: {
   member: AdminMember;
   onDelete: (email: string) => void;
   onToggleBadge: (email: string, badgeId: string, currentlyGranted: boolean) => void;
+  onTrialUpdated: (email: string, trialEndsAt: string) => void;
   isTrialExpired: (trialEndsAt?: string) => boolean;
 }) {
   const granted = new Set(member.grantedBadges ?? []);
+  const [editingTrial, setEditingTrial] = useState(false);
+  const [trialDate, setTrialDate] = useState(member.trialEndsAt ?? "");
+  const [trialSaving, setTrialSaving] = useState(false);
+  const [trialError, setTrialError] = useState("");
+
+  const saveTrial = async () => {
+    if (!trialDate || !API_URL) return;
+    setTrialSaving(true);
+    setTrialError("");
+    try {
+      const res = await fetch(`${API_URL}/api/admin/members/${encodeURIComponent(member.email)}/trial`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ trialEndsAt: trialDate }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setTrialError(d.error || "Failed to save");
+        return;
+      }
+      onTrialUpdated(member.email, trialDate);
+      setEditingTrial(false);
+    } catch {
+      setTrialError("Failed to save");
+    } finally {
+      setTrialSaving(false);
+    }
+  };
+
   return (
     <div className="glass-card rounded-card px-4 py-3 flex flex-col gap-2.5">
       <div className="flex items-center gap-3">
@@ -47,6 +78,14 @@ function MemberCard({
             </p>
           )}
         </Link>
+        <button
+          onClick={() => { setEditingTrial((v) => !v); setTrialError(""); setTrialDate(member.trialEndsAt ?? ""); }}
+          className="text-brand-light p-2 shrink-0"
+          aria-label="Edit trial date"
+          title="Edit trial end date"
+        >
+          <Calendar size={16} />
+        </button>
         <a
           href={`mailto:${member.email}`}
           onClick={(e) => e.stopPropagation()}
@@ -63,6 +102,35 @@ function MemberCard({
           <Trash2 size={16} />
         </button>
       </div>
+
+      {editingTrial && (
+        <div className="bg-surface-2 border border-border rounded-card px-3 py-2.5 flex flex-col gap-2">
+          <p className="text-[11px] font-semibold text-text-muted">Set trial end date</p>
+          {trialError && <p className="text-[11px] text-red-400">{trialError}</p>}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={trialDate}
+              onChange={(e) => setTrialDate(e.target.value)}
+              className="flex-1 bg-surface-3 border border-border rounded-card px-2.5 py-1.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+            />
+            <button
+              onClick={saveTrial}
+              disabled={trialSaving || !trialDate}
+              className="text-[12px] font-semibold gradient-brand text-white rounded-pill px-3 py-1.5 disabled:opacity-50"
+            >
+              {trialSaving ? "Saving…" : "Save"}
+            </button>
+            <button
+              onClick={() => setEditingTrial(false)}
+              className="text-[12px] text-text-muted rounded-pill px-3 py-1.5"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-1.5">
         {SPECIAL_BADGES.map((badge) => {
           const isGranted = granted.has(badge.id);
@@ -165,6 +233,12 @@ export default function AdminMembers() {
   const fullMembers = sortedMembers.filter((m) => !m.trialEndsAt);
   const trialMembers = sortedMembers.filter((m) => isActiveTrial(m.trialEndsAt));
   const expiredTrialMembers = sortedMembers.filter((m) => m.trialEndsAt && isTrialExpired(m.trialEndsAt));
+
+  const handleTrialUpdated = (memberEmail: string, trialEndsAt: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.email !== memberEmail ? m : { ...m, trialEndsAt }))
+    );
+  };
 
   const toggleBadge = async (memberEmail: string, badgeId: string, currentlyGranted: boolean) => {
     if (!API_URL) return;
@@ -275,7 +349,7 @@ export default function AdminMembers() {
                 <div className="flex flex-col gap-2.5">
                   {fullMembers.length === 0 ? (
                     <p className="text-xs text-text-muted text-center py-4">No full members yet.</p>
-                  ) : fullMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                  ) : fullMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} onTrialUpdated={handleTrialUpdated} isTrialExpired={isTrialExpired} />)}
                 </div>
               )}
             </div>
@@ -295,7 +369,7 @@ export default function AdminMembers() {
                 </button>
                 {trialMembersExpanded && (
                   <div className="flex flex-col gap-2.5">
-                    {trialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                    {trialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} onTrialUpdated={handleTrialUpdated} isTrialExpired={isTrialExpired} />)}
                   </div>
                 )}
               </div>
@@ -316,7 +390,7 @@ export default function AdminMembers() {
                 </button>
                 {expiredTrialExpanded && (
                   <div className="flex flex-col gap-2.5">
-                    {expiredTrialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} isTrialExpired={isTrialExpired} />)}
+                    {expiredTrialMembers.map((member) => <MemberCard key={member.email} member={member} onDelete={handleDelete} onToggleBadge={toggleBadge} onTrialUpdated={handleTrialUpdated} isTrialExpired={isTrialExpired} />)}
                   </div>
                 )}
               </div>

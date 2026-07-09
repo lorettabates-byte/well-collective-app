@@ -55,9 +55,9 @@ const CARD_GRAPHICS: Record<string, string> = {
   "birthday/emerald":        "/card-icons/confetti-svgrepo-com.svg",
 
   "thinking-of-you/blue-mist":    "/card-icons/flower-svgrepo-com.svg",
-  "thinking-of-you/warm-sunrise": "/card-icons/yellow-flower-2-svgrepo-com.svg",
-  "thinking-of-you/soft-mauve":   "/card-icons/organic-flora-svgrepo-com.svg",
-  "thinking-of-you/garden":       "/card-icons/flower-green-svgrepo-com.svg",
+  "thinking-of-you/warm-sunrise": "/card-icons/flowers-bouquet-svgrepo-com.svg",
+  "thinking-of-you/soft-mauve":   "/card-icons/garlands-garland-svgrepo-com.svg",
+  "thinking-of-you/garden":       "/card-icons/leaves-svgrepo-com.svg",
 
   "just-saying-hi/sunny":   "/card-icons/musical-note-music-and-multimedia-svgrepo-com.svg",
   "just-saying-hi/teal":    "/card-icons/mobile-phone-notification-svgrepo-com.svg",
@@ -71,8 +71,8 @@ const CARD_GRAPHICS: Record<string, string> = {
 
   "youve-got-this/fire":     "/card-icons/suit-vip-svgrepo-com.svg",
   "youve-got-this/electric": "/card-icons/bow-tie-svgrepo-com.svg",
-  "youve-got-this/bold-red": "/card-icons/leaf-organic-flora-svgrepo-com.svg",
-  "youve-got-this/gold":     "/card-icons/leaf-organic-2-svgrepo-com.svg",
+  "youve-got-this/bold-red": "/card-icons/karaoke-sing-svgrepo-com.svg",
+  "youve-got-this/gold":     "/card-icons/wine-svgrepo-com.svg",
 
   "congratulations/champagne": "/card-icons/crown-svgrepo-com.svg",
   "congratulations/rainbow":   "/card-icons/fireworks-rocket-svgrepo-com.svg",
