@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronUp, Mail, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Mail, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/ui/Avatar";
@@ -155,6 +155,7 @@ function MemberCard({
 export default function AdminMembers() {
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -226,9 +227,10 @@ export default function AdminMembers() {
   const isActiveTrial = (trialEndsAt?: string) => !!trialEndsAt && !isTrialExpired(trialEndsAt);
 
   const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
-  const sortedMembers = [...members].sort((a, b) =>
-    firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" })
-  );
+  const q = searchQuery.toLowerCase().trim();
+  const sortedMembers = [...members]
+    .filter((m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q))
+    .sort((a, b) => firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" }));
 
   const fullMembers = sortedMembers.filter((m) => !m.trialEndsAt);
   const trialMembers = sortedMembers.filter((m) => isActiveTrial(m.trialEndsAt));
@@ -272,6 +274,18 @@ export default function AdminMembers() {
         <div className="glass-card rounded-card px-4 py-3 mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold text-text">Total Members</p>
           <p className="text-lg font-bold text-brand-light">{loading ? "…" : members.length}</p>
+        </div>
+
+        <div className="relative mb-4">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name or email…"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="w-full bg-surface-2 border border-border rounded-pill pl-8 pr-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+          />
         </div>
 
         <button
