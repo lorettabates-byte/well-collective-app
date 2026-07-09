@@ -54,10 +54,13 @@ function App() {
   const [goalsDismissed, setGoalsDismissed] = useState(false);
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
-  const periodShown = localStorage.getItem(`well-goals-period-${currentPeriod}`) === "1";
-  // Show the questionnaire whenever the user is logged in and hasn't seen it
-  // this calendar month. Dropping the goalsCompleted gate prevents the server
-  // field from silently blocking new users who never received the questionnaire.
+  // Key is per-user so different accounts on the same device each get their own
+  // tracking, and a user logging back in on a fresh session will see the
+  // questionnaire if they haven't completed it on this device this month.
+  const periodKey = user.email
+    ? `well-goals-period-${user.email}-${currentPeriod}`
+    : null;
+  const periodShown = periodKey ? localStorage.getItem(periodKey) === "1" : false;
   const showGoals = !goalsDismissed && !!user.email && !user.isAdmin && !periodShown;
 
   useEffect(() => {
@@ -74,7 +77,7 @@ function App() {
   return (
     <MobileShell>
       {showGoals && <GoalsQuestionnaire onComplete={() => {
-        localStorage.setItem(`well-goals-period-${new Date().toISOString().slice(0, 7)}`, "1");
+        if (periodKey) localStorage.setItem(periodKey, "1");
         setGoalsDismissed(true);
       }} />}
       <Routes>

@@ -72,7 +72,6 @@ const SLIDES: Slide[] = [
     body: "Post, reply, and share in Community. Add members to your WELL Tribe and send direct messages. A new theme drops every week, daily inspirations all year, and Events keep you connected in real life too.",
     findIt: [
       { icon: MessageCircle, label: "Community" },
-      { icon: Calendar, label: "Events" },
     ],
   },
   {

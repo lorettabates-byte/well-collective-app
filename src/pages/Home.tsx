@@ -387,11 +387,14 @@ export default function Home() {
           if (raw) sleepHours = (JSON.parse(raw) as { hours: number }).hours;
         } catch { /* ignore */ }
 
+        const exerciseCals = (() => {
+          try { return parseInt(localStorage.getItem(`well-exercise-cals-${today}`) ?? "0", 10) || 0; } catch { return 0; }
+        })();
         const baselineTdee = (user.heightCm && user.weightKg && user.age) ? (() => {
           const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
           const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
           const stepKcal = homeSteps ? Math.round(homeSteps * user.weightKg * 0.00057) : 0;
-          const tdee = Math.round(bmr * 1.2) + stepKcal;
+          const tdee = Math.round(bmr * 1.2) + stepKcal + exerciseCals;
           return (tdee >= 800 && tdee <= 4500) ? tdee : null;
         })() : null;
 
@@ -466,9 +469,9 @@ export default function Home() {
                   <p className="text-xs text-text-dim leading-tight">Not completed</p>
                 )}
               </div>
-              {/* Col 1 bottom — Energy Out (Workout+BMR) */}
+              {/* Col 1 bottom — Energy Out (BMR + activity) */}
               <div>
-                <p className="text-[10px] text-text-dim mb-1">Energy Out <span className="text-text-dim/60">(BMR)</span></p>
+                <p className="text-[10px] text-text-dim mb-1">Energy Out <span className="text-text-dim/60">{exerciseCals > 0 ? "(BMR + activity)" : "(BMR)"}</span></p>
                 {baselineTdee != null ? (
                   <p className="text-base font-bold text-text leading-none">{baselineTdee.toLocaleString()} <span className="text-xs font-normal text-text-dim">kcal</span></p>
                 ) : (

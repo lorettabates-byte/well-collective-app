@@ -78,6 +78,7 @@ const CHECKIN_GRID = [
 const ACTIVITY_MET: Record<string, { met: number; minutes: number }> = {
   resistance_training: { met: 5.0, minutes: 40 }, // Compendium: resistance training, moderate effort
   cardio: { met: 7.0, minutes: 30 },               // Compendium: aerobic/cardio exercise, general
+  class_watch:        { met: 6.5, minutes: 40 },   // Compendium: dance/aerobics class (Zumba ~6.5)
   breathwork: { met: 1.3, minutes: 10 },           // Compendium: meditation / breathing exercises
   stretching: { met: 2.3, minutes: 15 },           // Compendium: stretching, mild effort
   well_activity: { met: 2.8, minutes: 20 },        // light-moderate general wellness activity

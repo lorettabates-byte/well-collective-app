@@ -29,8 +29,8 @@ type NotifTone = "motivation" | "accountability" | "gentle" | "education";
 type MovementTarget = "sedentary" | "light" | "moderate" | "active";
 
 interface Answers {
-  goalPlan: GoalPlan | null;
-  notificationTone: NotifTone | null;
+  goalPlan: GoalPlan[];
+  notificationTone: NotifTone[];
   movementTarget: MovementTarget | null;
   notifTimes: { send7am: boolean; send3pm: boolean; send9pm: boolean };
 }
@@ -64,6 +64,7 @@ const NOTIF_OPTIONS: { key: "send7am" | "send3pm" | "send9pm"; icon: ReactNode; 
   { key: "send9pm", icon: <Moon size={20} />,    label: "Evening",   desc: "9 pm wind-down reminder" },
 ];
 
+// Shared card used for both single-select and multi-select options
 function OptionCard<T extends string>({
   value, icon, label, desc, selected, onSelect,
 }: {
@@ -93,21 +94,28 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [answers, setAnswers] = useState<Answers>({
-    goalPlan: null,
-    notificationTone: null,
+    goalPlan: [],
+    notificationTone: [],
     movementTarget: null,
     notifTimes: { send7am: true, send3pm: false, send9pm: true },
   });
 
   const canAdvance =
-    (step === 0 && answers.goalPlan !== null) ||
-    (step === 1 && answers.notificationTone !== null) ||
+    (step === 0 && answers.goalPlan.length > 0) ||
+    (step === 1 && answers.notificationTone.length > 0) ||
     (step === 2 && answers.movementTarget !== null) ||
     step === 3;
+
+  function toggleMulti<T extends string>(arr: T[], value: T): T[] {
+    return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+  }
 
   const handleFinish = async () => {
     if (!user.email || saving) return;
     setSaving(true);
+    // Send primary selection to server; additional selections are a UX enhancement
+    const primaryGoal = answers.goalPlan[0] ?? null;
+    const primaryTone = answers.notificationTone[0] ?? null;
     try {
       await fetch(`${API_URL}/api/members/sync`, {
         method: "POST",
@@ -115,8 +123,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
         body: JSON.stringify({
           ...user,
           email: user.email,
-          goalPlan: answers.goalPlan,
-          notificationTone: answers.notificationTone,
+          goalPlan: primaryGoal,
+          notificationTone: primaryTone,
           movementTarget: answers.movementTarget,
           goalsCompleted: true,
         }),
@@ -130,8 +138,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
         }),
       });
       updateProfile({
-        goalPlan: answers.goalPlan!,
-        notificationTone: answers.notificationTone!,
+        goalPlan: primaryGoal!,
+        notificationTone: primaryTone!,
         movementTarget: answers.movementTarget!,
         goalsCompleted: true,
         notificationSchedule: answers.notifTimes,
@@ -139,8 +147,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
       onComplete();
     } catch {
       updateProfile({
-        goalPlan: answers.goalPlan!,
-        notificationTone: answers.notificationTone!,
+        goalPlan: primaryGoal!,
+        notificationTone: primaryTone!,
         movementTarget: answers.movementTarget!,
         goalsCompleted: true,
       });
@@ -153,7 +161,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
   const steps = [
     {
       q: "What are you here for?",
-      sub: "We'll personalize your daily plan around this.",
+      sub: "Select all that apply — we'll build your plan around these.",
       content: (
         <div className="flex flex-col gap-2.5">
           {GOAL_OPTIONS.map((o) => (
@@ -163,8 +171,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
               icon={o.icon}
               label={o.label}
               desc={o.desc}
-              selected={answers.goalPlan === o.value}
-              onSelect={(v) => setAnswers((a) => ({ ...a, goalPlan: v }))}
+              selected={answers.goalPlan.includes(o.value)}
+              onSelect={(v) => setAnswers((a) => ({ ...a, goalPlan: toggleMulti(a.goalPlan, v) }))}
             />
           ))}
         </div>
@@ -172,7 +180,7 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
     },
     {
       q: "What's your biggest challenge?",
-      sub: "Your check-ins will match your tone.",
+      sub: "Select all that apply — your check-ins will reflect these.",
       content: (
         <div className="flex flex-col gap-2.5">
           {CHALLENGE_OPTIONS.map((o) => (
@@ -182,8 +190,8 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
               icon={o.icon}
               label={o.label}
               desc={o.desc}
-              selected={answers.notificationTone === o.value}
-              onSelect={(v) => setAnswers((a) => ({ ...a, notificationTone: v }))}
+              selected={answers.notificationTone.includes(o.value)}
+              onSelect={(v) => setAnswers((a) => ({ ...a, notificationTone: toggleMulti(a.notificationTone, v) }))}
             />
           ))}
         </div>
@@ -245,7 +253,13 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
   const current = steps[step];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-surface flex flex-col">
+    // Use 100dvh (dynamic viewport height) so the layout fits correctly on
+    // mobile browsers where URL bars resize the viewport, and add min-h-0 to
+    // the scroll section so it never pushes the CTA button off-screen.
+    <div
+      className="fixed inset-0 z-[200] bg-surface flex flex-col"
+      style={{ height: "100dvh" }}
+    >
       {/* Header */}
       <div className="px-5 pt-safe pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3 mb-5">
@@ -263,11 +277,17 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
         <p className="text-sm text-text-muted mt-1">{current.sub}</p>
       </div>
 
-      {/* Options — only this section scrolls */}
-      <div className="flex-1 px-5 pb-4 overflow-y-auto">{current.content}</div>
+      {/* Options — only this section scrolls; min-h-0 prevents it from
+          overflowing and pushing the CTA below the visible area */}
+      <div className="flex-1 min-h-0 px-5 pb-4 overflow-y-auto">{current.content}</div>
 
-      {/* CTA — always visible at bottom */}
-      <div className="px-5 pb-safe pb-6 pt-3 shrink-0 border-t border-border bg-surface">
+      {/* CTA — always visible at bottom; inline paddingBottom ensures the
+          button clears the iOS home indicator bar on devices without a home
+          button, even if the pb-safe utility class isn't applied */}
+      <div
+        className="px-5 pt-3 shrink-0 border-t border-border bg-surface"
+        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+      >
         <button
           disabled={!canAdvance || saving}
           onClick={() => {

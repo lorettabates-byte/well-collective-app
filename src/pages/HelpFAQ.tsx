@@ -1,4 +1,16 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Dumbbell,
+  KeyRound,
+  ScanLine,
+  Trophy,
+  Volume2,
+  Watch,
+} from "lucide-react";
 import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 
@@ -8,14 +20,14 @@ interface FAQItem {
 }
 interface FAQSection {
   title: string;
-  emoji: string;
+  icon: ReactNode;
   items: FAQItem[];
 }
 
 const FAQ_SECTIONS: FAQSection[] = [
   {
     title: "Points & Scoring",
-    emoji: "🏆",
+    icon: <Trophy size={14} />,
     items: [
       {
         q: "I logged an activity but didn't get points.",
@@ -33,7 +45,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Time Zone & Streaks",
-    emoji: "🕐",
+    icon: <Clock size={14} />,
     items: [
       {
         q: "My streak reset even though I was active. What happened?",
@@ -51,7 +63,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Push Notifications",
-    emoji: "🔔",
+    icon: <Bell size={14} />,
     items: [
       {
         q: "I'm not receiving my morning or evening reminders.",
@@ -73,7 +85,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Health & Fitness Sync",
-    emoji: "⌚",
+    icon: <Watch size={14} />,
     items: [
       {
         q: "Which fitness devices and apps are supported?",
@@ -95,7 +107,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Guided Voice & Audio",
-    emoji: "🎙️",
+    icon: <Volume2 size={14} />,
     items: [
       {
         q: "There's no voice during guided calm sessions.",
@@ -117,7 +129,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Nutrition & Barcode Scanner",
-    emoji: "🍽️",
+    icon: <ScanLine size={14} />,
     items: [
       {
         q: "The barcode scanner isn't working.",
@@ -135,7 +147,7 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Workouts & Completion",
-    emoji: "💪",
+    icon: <Dumbbell size={14} />,
     items: [
       {
         q: "My workout plan is different every day.",
@@ -143,7 +155,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "I accidentally marked my workout complete.",
-        a: "Tap the 'Workout Complete ✓ — tap to uncheck' button to undo it. This removes the completion and all associated activity points. You can also uncheck individual activities (resistance, cardio, stretching, breathwork) using their toggle buttons.",
+        a: "Tap the 'Workout Complete — tap to uncheck' button to undo it. This removes the completion and all associated activity points. You can also uncheck individual activities (resistance, cardio, stretching, breathwork) using their toggle buttons.",
       },
       {
         q: "I unchecked my workout but it came back after refreshing.",
@@ -153,11 +165,11 @@ const FAQ_SECTIONS: FAQSection[] = [
   },
   {
     title: "Login & Account",
-    emoji: "🔐",
+    icon: <KeyRound size={14} />,
     items: [
       {
         q: "I forgot what email I used for my trial.",
-        a: "On the login screen, tap 'Free Trial' then 'Already started a trial? Resume it here' and try your most common email addresses. If you're still stuck, email us at support@wellcollective.com and we can look it up.",
+        a: "On the login screen, tap 'Free Trial' then 'Already started a trial? Resume it here' and try your most common email addresses. If you're still stuck, email us at well@lorettabates.com and we can look it up.",
       },
       {
         q: "My data isn't showing on a new device.",
@@ -201,7 +213,7 @@ export default function HelpFAQ() {
         {FAQ_SECTIONS.map((section) => (
           <div key={section.title} className="glass-card rounded-card px-4 py-2">
             <div className="flex items-center gap-2 py-3 border-b border-border mb-1">
-              <span className="text-base leading-none">{section.emoji}</span>
+              <span className="text-brand-light shrink-0">{section.icon}</span>
               <p className="text-xs font-bold text-text uppercase tracking-wide">{section.title}</p>
             </div>
             {section.items.map((item) => (
@@ -214,8 +226,8 @@ export default function HelpFAQ() {
           <p className="text-sm font-semibold text-text mb-1">Still need help?</p>
           <p className="text-xs text-text-muted">
             Email us at{" "}
-            <a href="mailto:support@wellcollective.com" className="text-brand-light underline">
-              support@wellcollective.com
+            <a href="mailto:well@lorettabates.com" className="text-brand-light underline">
+              well@lorettabates.com
             </a>
             {" "}and we'll get back to you within 24 hours.
           </p>

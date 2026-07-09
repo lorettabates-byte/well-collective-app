@@ -1,8 +1,8 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -150,6 +150,62 @@ export default function Nutrition() {
   // Barcode scanning state
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState("");
+
+  // Photo scan state
+  const [photoScanning, setPhotoScanning] = useState(false);
+  const [photoScanError, setPhotoScanError] = useState("");
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !API_URL) return;
+    setPhotoScanning(true);
+    setPhotoScanError("");
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Strip "data:image/jpeg;base64," prefix — server only wants the raw base64
+          resolve(result.split(",")[1] ?? "");
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch(`${API_URL}/api/meals/scan-photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type || "image/jpeg" }),
+      });
+      const data = await res.json() as {
+        items?: { label: string; calories: number; protein: number; carbs: number; fat: number }[];
+        error?: string;
+      };
+      if (!res.ok || !data.items?.length) {
+        setPhotoScanError(data.error ?? "No food detected — try a clearer photo or enter food manually.");
+      } else {
+        setMealItems((prev) => [
+          ...prev,
+          ...data.items!.map((i) => ({
+            description: i.label,
+            calories: Math.round(i.calories),
+            protein: Math.round(i.protein),
+            carbs: Math.round(i.carbs),
+            fat: Math.round(i.fat),
+            verified: false,
+            servings: 1,
+          })),
+        ]);
+        if (!showMealForm) setShowMealForm(true);
+      }
+    } catch {
+      setPhotoScanError("Photo scan failed — check your connection and try again.");
+    } finally {
+      setPhotoScanning(false);
+      // Reset so the same file can be re-selected if needed
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
 
   const handleBarcodeScan = async () => {
     if (!Capacitor.isNativePlatform()) {
@@ -656,26 +712,47 @@ export default function Nutrition() {
           <p className="text-sm font-bold text-text mb-3">
             Log what you ate <span className="text-text-muted font-normal">· 10 pts per meal</span>
           </p>
+          {/* Hidden file input for photo scan */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoScan}
+          />
           <div className="flex gap-2 mb-3">
             <button
               onClick={handleBarcodeScan}
               disabled={scanning}
-              className="flex-1 flex items-center justify-center gap-2 bg-surface-2 border border-border text-text-muted text-sm font-semibold rounded-pill py-3"
+              className="flex-1 flex items-center justify-center gap-2 bg-surface-2 border border-border text-text-muted text-sm font-semibold rounded-pill py-2.5"
               title="Scan barcode"
             >
-              <ScanLine size={18} />
-              {scanning ? "Scanning…" : "Scan Barcode"}
+              <ScanLine size={16} />
+              {scanning ? "Scanning…" : "Barcode"}
+            </button>
+            <button
+              onClick={() => photoInputRef.current?.click()}
+              disabled={photoScanning}
+              className="flex-1 flex items-center justify-center gap-2 bg-surface-2 border border-border text-text-muted text-sm font-semibold rounded-pill py-2.5"
+              title="Scan food photo"
+            >
+              <Camera size={16} />
+              {photoScanning ? "Scanning…" : "Scan Photo"}
             </button>
             <button
               onClick={() => (showMealForm ? resetMealForm() : setShowMealForm(true))}
-              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3"
+              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5"
             >
-              <Plus size={18} />
+              <Plus size={16} />
               Log Meal
             </button>
           </div>
           {scanError && (
             <p className="text-xs text-red-400 bg-red-400/10 rounded-card px-3 py-2 mb-2">{scanError}</p>
+          )}
+          {photoScanError && (
+            <p className="text-xs text-red-400 bg-red-400/10 rounded-card px-3 py-2 mb-2">{photoScanError}</p>
           )}
 
           {showMealForm && (

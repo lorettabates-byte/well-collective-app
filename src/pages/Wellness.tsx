@@ -11,9 +11,11 @@ import {
   ChevronRight,
   ChevronUp,
   Crown,
+  Download,
   Dumbbell,
   Eye,
   Flame,
+  Footprints,
   Hand,
   Heart,
   Info,
@@ -39,6 +41,9 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { downloadAllCalmCues, getOfflineCueUrl, isCalmToolkitCached } from "../utils/calmToolkitOffline";
+import { ALL_CALM_CUES } from "../data/calmCues";
 import { AMBIENT_SOUNDS, playAmbientSound, playLoopingAudio, type AmbientSoundHandle, type AmbientSoundId } from "../utils/ambientSounds";
 import { getSoundIcon } from "../data/soundIconMap";
 import { useEffect, useRef, useState } from "react";
@@ -56,6 +61,29 @@ import { computeBadges, computeStreak, getStreakMilestone } from "../utils/strea
 import { todayISO } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+const RUN_TYPE_LABELS: Record<string, string> = {
+  running: "Running",
+  runningTreadmill: "Treadmill Run",
+};
+
+function formatPace(paceMinPerKm: number): string {
+  const mins = Math.floor(paceMinPerKm);
+  const secs = Math.round((paceMinPerKm - mins) * 60);
+  return `${mins}:${String(secs).padStart(2, "0")}/km`;
+}
+
+// ACSM formula: kcal = MET × 3.5 × weight(kg) / 200 × minutes
+// MET values from the Compendium of Physical Activities (Ainsworth et al., 2011)
+const EXERCISE_METS = {
+  resistance: { met: 5.0, minutes: 40 },
+  stretching:  { met: 2.3, minutes: 15 },
+  cardio:      { met: 7.0, minutes: 30 },
+} as const;
+
+function calcExerciseCal(met: number, minutes: number, weightKg: number): number {
+  return Math.round(((met * 3.5 * weightKg) / 200) * minutes);
+}
 
 interface DailyBreathwork {
   title: string;
@@ -115,6 +143,7 @@ export default function Wellness() {
   const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [customWorkoutText, setCustomWorkoutText] = useState("");
+  const [customWorkoutMinutes, setCustomWorkoutMinutes] = useState(30);
   const [showCustomWorkoutForm, setShowCustomWorkoutForm] = useState(false);
   const initialTab = (["workout", "activities", "streaks"].includes(searchParams.get("tab") ?? "") ? searchParams.get("tab") : "workout") as "workout" | "activities" | "streaks";
   const [activeTab, setActiveTab] = useState<"workout" | "activities" | "streaks">(initialTab);
@@ -127,6 +156,11 @@ export default function Wellness() {
   const [sleepHours, setSleepHours] = useState(7);
   const [sleepQuality, setSleepQuality] = useState<"not_enough" | "enough" | "feel_great" | "">("");
   const [sleepSubmitting, setSleepSubmitting] = useState(false);
+
+  // Calm Toolkit offline download state
+  const [calmCached, setCalmCached] = useState(() => isCalmToolkitCached());
+  const [calmDownloading, setCalmDownloading] = useState(false);
+  const [calmDownloadProgress, setCalmDownloadProgress] = useState(0);
 
   // Calm Toolkit state
   const [openCalmCard, setOpenCalmCard] = useState<string | null>(null);
@@ -288,13 +322,28 @@ export default function Wellness() {
     { area: "Face & Scalp", cue: "Smooth your forehead. Soften around your eyes. Peace washes over your entire face." },
   ];
 
-  const preloadCue = (text: string) => {
-    if (!API_URL || cuePreloadCache.current.has(text)) return;
+  const preloadCue = async (text: string) => {
+    if (cuePreloadCache.current.has(text)) return;
+    // On-device: use the cached filesystem file for zero-latency, consistent voice
+    const offlineUrl = await getOfflineCueUrl(text);
+    if (offlineUrl) {
+      cuePreloadCache.current.set(text, offlineUrl);
+      return;
+    }
+    if (!API_URL) return;
     fetch(`${API_URL}/api/breathwork/calm-cue?text=${encodeURIComponent(text)}`)
       .then(res => res.ok ? res.blob() : Promise.reject())
       .then(blob => { cuePreloadCache.current.set(text, URL.createObjectURL(blob)); })
       .catch(() => {});
   };
+
+  // When offline cache exists, warm the in-memory cache from disk so all
+  // sessions start with zero-latency playback regardless of session type.
+  useEffect(() => {
+    if (!isCalmToolkitCached()) return;
+    ALL_CALM_CUES.forEach(preloadCue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const speakCue = (text: string) => {
     if (API_URL) {
@@ -633,6 +682,19 @@ export default function Wellness() {
     setActiveSoundKey(null);
   };
 
+  const handleDownloadCalmCues = async () => {
+    if (calmDownloading || !API_URL) return;
+    setCalmDownloading(true);
+    setCalmDownloadProgress(0);
+    await downloadAllCalmCues((done, total) => {
+      setCalmDownloadProgress(Math.round((done / total) * 100));
+    });
+    // Warm the in-memory cache from the freshly downloaded files
+    ALL_CALM_CUES.forEach(preloadCue);
+    setCalmCached(true);
+    setCalmDownloading(false);
+  };
+
   const handleSoundToggle = (key: string, url?: string) => {
     if (activeSoundKey === key) {
       stopCalmSound();
@@ -857,6 +919,23 @@ export default function Wellness() {
   const wellActivityLog = user.wellActivityLog ?? [];
   const today = todayISO();
 
+  // Per-day exercise calorie accumulator stored in localStorage so the Home
+  // page can add them to the Energy Out display without an extra API call.
+  const exerciseCalKey = `well-exercise-cals-${today}`;
+  const weightKg = user.weightKg ?? 65;
+  const resistanceCal = calcExerciseCal(EXERCISE_METS.resistance.met, EXERCISE_METS.resistance.minutes, weightKg);
+  const stretchingCal  = calcExerciseCal(EXERCISE_METS.stretching.met,  EXERCISE_METS.stretching.minutes,  weightKg);
+  const cardioCal      = calcExerciseCal(EXERCISE_METS.cardio.met,      EXERCISE_METS.cardio.minutes,      weightKg);
+
+  const addExerciseCals = (cal: number) => {
+    const cur = parseInt(localStorage.getItem(exerciseCalKey) ?? "0", 10) || 0;
+    localStorage.setItem(exerciseCalKey, String(cur + cal));
+  };
+  const subtractExerciseCals = (cal: number) => {
+    const cur = parseInt(localStorage.getItem(exerciseCalKey) ?? "0", 10) || 0;
+    localStorage.setItem(exerciseCalKey, String(Math.max(0, cur - cal)));
+  };
+
   // Auto-regenerate the workout plan when the ET date rolls over, so
   // resistance training, stretches, and cardio always reflect the current day
   // without needing a manual page reload or app restart.
@@ -886,7 +965,11 @@ export default function Wellness() {
     const milestone = getStreakMilestone(computeStreak([...workoutLog, today]));
     if (milestone) setCelebration({ days: milestone, label: "Workout" });
     logCustomWorkout(customWorkoutText.trim());
+    // Estimate calories using MET 5.0 (moderate effort, general exercise)
+    const customCal = calcExerciseCal(5.0, Math.max(1, customWorkoutMinutes), weightKg);
+    addExerciseCals(customCal);
     setCustomWorkoutText("");
+    setCustomWorkoutMinutes(30);
     setShowCustomWorkoutForm(false);
     confetti({ particleCount: 100, spread: 70 });
   };
@@ -921,12 +1004,14 @@ export default function Wellness() {
   const handleCardioComplete = () => {
     localStorage.setItem(`well-cardio-${today}`, "1");
     setCardioDone(true);
+    addExerciseCals(cardioCal);
     if (user.email) logActivity(user.email, "cardio").catch(() => {});
   };
 
   const handleResistanceComplete = () => {
     localStorage.setItem(`well-resistance-${today}`, "1");
     setResistanceDone(true);
+    addExerciseCals(resistanceCal);
     logResistanceCompletion();
     if (user.email) logActivity(user.email, "resistance_training").catch(() => {});
   };
@@ -934,6 +1019,7 @@ export default function Wellness() {
   const handleStretchingComplete = () => {
     localStorage.setItem(`well-stretching-${today}`, "1");
     setStretchingDone(true);
+    addExerciseCals(stretchingCal);
     logStretchingCompletion();
     if (user.email) logActivity(user.email, "stretching").catch(() => {});
   };
@@ -955,6 +1041,7 @@ export default function Wellness() {
     localStorage.removeItem(`well-stretching-${today}`);
     localStorage.setItem(`well-stretching-unchecked-${today}`, "1");
     setStretchingDone(false);
+    subtractExerciseCals(stretchingCal);
     if (user.email) unlogActivity(user.email, "stretching").catch(() => {});
   };
 
@@ -962,6 +1049,7 @@ export default function Wellness() {
     localStorage.removeItem(`well-resistance-${today}`);
     localStorage.setItem(`well-resistance-unchecked-${today}`, "1");
     setResistanceDone(false);
+    subtractExerciseCals(resistanceCal);
     if (user.email) unlogActivity(user.email, "resistance_training").catch(() => {});
   };
 
@@ -969,6 +1057,7 @@ export default function Wellness() {
     localStorage.removeItem(`well-cardio-${today}`);
     localStorage.setItem(`well-cardio-unchecked-${today}`, "1");
     setCardioDone(false);
+    subtractExerciseCals(cardioCal);
     if (user.email) unlogActivity(user.email, "cardio").catch(() => {});
   };
 
@@ -1187,9 +1276,41 @@ export default function Wellness() {
                 }`}
               >
                 <CheckCircle2 size={13} />
-                {cardioDone ? "✓ Cardio Logged — tap to uncheck" : "I Did Cardio Today · +20 pts"}
+                {cardioDone ? "✓ Cardio Logged — tap to uncheck" : `I Did Cardio Today · +20 pts · ~${cardioCal} cal est.`}
               </button>
             </section>
+
+          {/* Today's Runs — populated from Health Sync when available */}
+          {syncedRuns.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                <Footprints size={15} className="text-orange-400 shrink-0" />
+                <h3 className="text-sm font-bold text-text">Today's Runs</h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {syncedRuns.map((run, i) => (
+                  <div key={i} className="glass-card rounded-card p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
+                      <Footprints size={18} className="text-orange-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-text">{RUN_TYPE_LABELS[run.workoutType] ?? run.workoutType}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                        <span className="text-xs text-text-muted">{run.distanceKm.toFixed(1)} km</span>
+                        <span className="text-xs text-text-muted">{Math.round(run.durationMinutes)} min</span>
+                        {run.paceMinPerKm !== null && (
+                          <span className="text-xs text-text-muted">{formatPace(run.paceMinPerKm)}</span>
+                        )}
+                        {run.caloriesBurned !== null && (
+                          <span className="text-xs text-text-muted">{Math.round(run.caloriesBurned)} cal</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section>
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
@@ -1219,7 +1340,7 @@ export default function Wellness() {
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  {resistanceDone ? "✓ Completed — tap to uncheck" : "Mark Complete · +20 pts"}
+                  {resistanceDone ? "✓ Completed — tap to uncheck" : `Mark Complete · +20 pts · ~${resistanceCal} cal est.`}
                 </button>
               </div>
             </section>
@@ -1252,7 +1373,7 @@ export default function Wellness() {
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  {stretchingDone ? "✓ Completed — tap to uncheck" : "Mark Complete · +15 pts"}
+                  {stretchingDone ? "✓ Completed — tap to uncheck" : `Mark Complete · +15 pts · ~${stretchingCal} cal est.`}
                 </button>
               </div>
             </section>
@@ -1321,9 +1442,21 @@ export default function Wellness() {
             ) : (
               <div className="flex flex-col gap-2.5">
                 <p className="text-xs font-semibold text-text-muted">What did you do?</p>
-                <textarea value={customWorkoutText} onChange={(e) => setCustomWorkoutText(e.target.value)} placeholder="e.g. 30 min run, yoga class, hike with the dog..." rows={2} className="w-full bg-surface border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+                <textarea value={customWorkoutText} onChange={(e) => setCustomWorkoutText(e.target.value)} placeholder="e.g. run, yoga class, hike with the dog…" rows={2} className="w-full bg-surface border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue resize-none" />
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-text-muted shrink-0">Duration (min)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={300}
+                    value={customWorkoutMinutes}
+                    onChange={(e) => setCustomWorkoutMinutes(Math.max(1, parseInt(e.target.value, 10) || 30))}
+                    className="w-20 bg-surface border border-border rounded-card px-3 py-1.5 text-sm text-text text-center focus:outline-none focus:border-brand-blue"
+                  />
+                  <span className="text-xs text-text-dim">~{calcExerciseCal(5.0, customWorkoutMinutes, weightKg)} cal est.</span>
+                </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setShowCustomWorkoutForm(false); setCustomWorkoutText(""); }} className="flex-1 text-xs font-semibold text-text-muted border border-border rounded-pill py-2">Cancel</button>
+                  <button onClick={() => { setShowCustomWorkoutForm(false); setCustomWorkoutText(""); setCustomWorkoutMinutes(30); }} className="flex-1 text-xs font-semibold text-text-muted border border-border rounded-pill py-2">Cancel</button>
                   <button onClick={handleLogCustomWorkout} disabled={!customWorkoutText.trim()} className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50">Log It</button>
                 </div>
               </div>
@@ -1545,6 +1678,36 @@ export default function Wellness() {
             )}
           </div>
           <p className="text-xs text-text-muted mb-3 mt-2">Anxiety, stress, or overwhelm? Pick a tool — these work any time, anywhere.</p>
+
+          {/* Offline download — only relevant on-device where filesystem is available */}
+          {Capacitor.isNativePlatform() && API_URL && (
+            <div className="flex items-center gap-3 py-2 mb-1">
+              {calmCached ? (
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-green-400">
+                  <Download size={12} />
+                  Voice cues available offline
+                </span>
+              ) : calmDownloading ? (
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] text-text-muted font-semibold">Downloading voice cues…</span>
+                    <span className="text-[11px] text-text-dim">{calmDownloadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-surface rounded-full h-1 overflow-hidden">
+                    <div className="h-full gradient-brand transition-all" style={{ width: `${calmDownloadProgress}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleDownloadCalmCues}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-light border border-brand-light/30 rounded-pill px-3 py-1.5"
+                >
+                  <Download size={12} />
+                  Download for offline use
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
 
