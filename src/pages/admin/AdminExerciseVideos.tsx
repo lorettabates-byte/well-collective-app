@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Play, RefreshCw, Trash2, Video } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Loader2, Play, RefreshCw, Trash2, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
@@ -105,6 +105,14 @@ export default function AdminExerciseVideos() {
   const stretchExercises = ALL_EXERCISES.filter((e) => e.category === "Stretch");
   const setCount = saved.size;
 
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    "Resistance Training": true,
+    "Stretching": true,
+  });
+
+  const toggleSection = (label: string) =>
+    setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
+
   return (
     <div>
       <TopBar title="Exercise Videos" subtitle="Set demo videos for each exercise" icon={Video} iconColor="#0191CE" showBack />
@@ -127,9 +135,24 @@ export default function AdminExerciseVideos() {
           </div>
         )}
 
-        {[{ label: "Resistance Training", items: resistanceExercises }, { label: "Stretching", items: stretchExercises }].map(({ label, items }) => (
-          <div key={label} className="mb-6">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">{label}</p>
+        {[
+          { label: "Resistance Training", items: resistanceExercises, assigned: resistanceExercises.filter((e) => saved.has(e.name)).length },
+          { label: "Stretching", items: stretchExercises, assigned: stretchExercises.filter((e) => saved.has(e.name)).length },
+        ].map(({ label, items, assigned }) => {
+          const isOpen = openSections[label];
+          return (
+          <div key={label} className="mb-4">
+            <button
+              onClick={() => toggleSection(label)}
+              className="w-full flex items-center justify-between py-2 mb-2"
+            >
+              <div className="flex items-center gap-2">
+                {isOpen ? <ChevronDown size={14} className="text-text-dim" /> : <ChevronRight size={14} className="text-text-dim" />}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">{label}</p>
+              </div>
+              <p className="text-[10px] text-text-muted">{assigned} / {items.length} assigned</p>
+            </button>
+            {isOpen && (
             <div className="flex flex-col gap-3">
               {items.map(({ name }) => {
                 const currentUrl = saved.get(name);
@@ -199,8 +222,10 @@ export default function AdminExerciseVideos() {
                 );
               })}
             </div>
+            )}
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
