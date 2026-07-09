@@ -78,7 +78,7 @@ function formatPace(paceMinPerKm: number): string {
 const EXERCISE_METS = {
   resistance: { met: 5.0, minutes: 40 },
   stretching:  { met: 2.3, minutes: 15 },
-  cardio:      { met: 7.0, minutes: 30 },
+  cardio:      { met: 7.0, minutes: 60 },
 } as const;
 
 function calcExerciseCal(met: number, minutes: number, weightKg: number): number {

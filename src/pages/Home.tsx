@@ -538,7 +538,7 @@ export default function Home() {
         const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
         const plan = getDailyPlan(user.goalPlan, dayOfYear);
         return (
-          <Link to="/wellness" className="block glass-card rounded-card p-4 mb-6">
+          <Link to="/wellness?tab=activities" className="block glass-card rounded-card p-4 mb-6">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles size={14} className="text-brand-light shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-light">Your Daily Plan</span>

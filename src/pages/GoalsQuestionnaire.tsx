@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   CalendarCheck,
   Check,
@@ -263,6 +264,14 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
       {/* Header */}
       <div className="px-5 pt-safe pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3 mb-5">
+          {step > 0 && (
+            <button
+              onClick={() => setStep((s) => s - 1)}
+              className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted"
+            >
+              <ArrowLeft size={14} />
+            </button>
+          )}
           {steps.map((_, i) => (
             <div
               key={i}
