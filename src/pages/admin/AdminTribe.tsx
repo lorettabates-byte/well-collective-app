@@ -10,7 +10,6 @@ interface TribeConnection {
   owner_name: string | null;
   member_email: string;
   member_name: string | null;
-  created_at: string;
 }
 
 export default function AdminTribe() {
