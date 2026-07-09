@@ -46,6 +46,7 @@ import AdminMembers from "./pages/admin/AdminMembers";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminPoints from "./pages/admin/AdminPoints";
 import AdminTribe from "./pages/admin/AdminTribe";
+import AdminExerciseVideos from "./pages/admin/AdminExerciseVideos";
 import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
 function App() {
@@ -127,6 +128,7 @@ function App() {
         <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
         <Route path="/admin/points" element={<AdminRoute><AdminPoints /></AdminRoute>} />
         <Route path="/admin/tribe" element={<AdminRoute><AdminTribe /></AdminRoute>} />
+        <Route path="/admin/exercise-videos" element={<AdminRoute><AdminExerciseVideos /></AdminRoute>} />
       </Routes>
       </MobileShell>
     </>
