@@ -75,11 +75,12 @@ function App() {
   }, [navigate]);
 
   return (
-    <MobileShell>
+    <>
       {showGoals && <GoalsQuestionnaire onComplete={() => {
         if (periodKey) localStorage.setItem(periodKey, "1");
         setGoalsDismissed(true);
       }} />}
+      <MobileShell>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
@@ -125,7 +126,8 @@ function App() {
         <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
         <Route path="/admin/points" element={<AdminRoute><AdminPoints /></AdminRoute>} />
       </Routes>
-    </MobileShell>
+      </MobileShell>
+    </>
   );
 }
 
