@@ -1,4 +1,5 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch, X } from "lucide-react";
+import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -50,6 +51,8 @@ export default function Profile() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralStats, setReferralStats] = useState({ total: 0, conversions: 0 });
   const [copied, setCopied] = useState(false);
+  const [activeMoodId, setActiveMoodId] = useState<string | null>(null);
+  const [moodSaving, setMoodSaving] = useState(false);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -62,6 +65,7 @@ export default function Profile() {
         if (d.member.tribeConnections !== undefined) setTribeConnections(d.member.tribeConnections);
         if (d.member.addedByCount !== undefined) setAddedByCount(d.member.addedByCount);
         if (d.member.allTimePoints !== undefined) setAllTimePoints(d.member.allTimePoints);
+        if (d.member.moodStatus !== undefined) setActiveMoodId(d.member.moodStatus ?? null);
       })
       .catch(() => {});
 
@@ -108,6 +112,19 @@ export default function Profile() {
   const featuredBadgeId = resolveFeaturedBadge(user);
   const featuredBadge = getBadgeDef(featuredBadgeId);
 
+  const setMood = async (moodId: string | null) => {
+    if (!API_URL || !user.email || moodSaving) return;
+    const next = moodId === activeMoodId ? null : moodId;
+    setMoodSaving(true);
+    setActiveMoodId(next);
+    await fetch(`${API_URL}/api/member/mood-status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, moodStatusId: next }),
+    }).catch(() => {});
+    setMoodSaving(false);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
     localStorage.removeItem("memberUser");
@@ -126,7 +143,7 @@ export default function Profile() {
       <SectionIntroModal sectionKey="profile" />
     <div className="px-4 pt-4">
       <div className="flex flex-col items-center text-center mb-6">
-        <Avatar src={user.avatar} alt={user.name} size={84} ring badgeId={featuredBadgeId} />
+        <Avatar src={user.avatar} alt={user.name} size={84} ring badgeId={featuredBadgeId} moodStatus={activeMoodId} />
         <div className="flex items-center gap-2 mt-3">
           <h1 className="text-lg font-bold text-text">{user.name}</h1>
           {user.isAdmin && (
@@ -148,6 +165,47 @@ export default function Profile() {
           <Pencil size={13} />
           Edit Profile
         </Link>
+      </div>
+
+      {/* Mood status */}
+      <div className="glass-card rounded-card p-4 mb-5 border border-border">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-sm font-bold text-text">How are you feeling today?</p>
+            <p className="text-[11px] text-text-muted">Visible to your tribe members for 24 hours</p>
+          </div>
+          {activeMoodId && (
+            <button
+              onClick={() => setMood(null)}
+              className="w-6 h-6 rounded-full bg-surface-2 border border-border flex items-center justify-center"
+              aria-label="Clear mood status"
+            >
+              <X size={12} className="text-text-dim" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {MOOD_STATUSES.map((mood) => {
+            const isActive = activeMoodId === mood.id;
+            return (
+              <button
+                key={mood.id}
+                onClick={() => setMood(mood.id)}
+                disabled={moodSaving}
+                className={`flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-xs font-semibold border transition-all ${
+                  isActive
+                    ? "text-white border-transparent shadow-sm"
+                    : "glass-card border-border text-text-muted"
+                }`}
+                style={isActive ? { background: mood.color } : undefined}
+                title={mood.description}
+              >
+                <span>{mood.emoji}</span>
+                {mood.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6">

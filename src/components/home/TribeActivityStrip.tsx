@@ -1,6 +1,6 @@
-import { Flame } from "lucide-react";
+import { Cake, Flame, Heart, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { TRIBE_CHEERS } from "../../data/cheers";
 import { resolveFeaturedBadge } from "../../data/badges";
 import { useApp } from "../../store/AppContext";
@@ -18,10 +18,22 @@ interface TribeMember {
   avatar?: string;
   birthday?: string;
   workoutLog?: string[];
+  lastCheeredAt?: string | null;
   levelBadge?: string;
   bonusBadges?: string[];
   grantedBadges?: string[];
   featuredBadge?: string;
+  moodStatus?: string | null;
+}
+
+type SuggestionReason = "birthday" | "streak" | "new" | "uncheerred" | "inactive";
+
+interface ScoredMember {
+  member: TribeMember;
+  score: number;
+  reason: SuggestionReason;
+  reasonLabel: string;
+  ctaCopy: string;
 }
 
 function daysUntilBirthday(birthday: string): number {
@@ -36,11 +48,58 @@ function daysUntilBirthday(birthday: string): number {
   return diff;
 }
 
+function scoreMember(m: TribeMember): ScoredMember | null {
+  let score = 0;
+  let reason: SuggestionReason | null = null;
+  let reasonLabel = "";
+  let ctaCopy = "Send a Cheer";
+
+  if (m.birthday) {
+    const days = daysUntilBirthday(m.birthday);
+    if (days === 0) { score += 10; reason = "birthday"; reasonLabel = "Birthday today"; ctaCopy = "Send Love"; }
+    else if (days <= 2) { score += 8; reason = "birthday"; reasonLabel = `Birthday in ${days}d`; ctaCopy = "Send Love"; }
+    else if (days <= 7) { score += 5; reason = "birthday"; reasonLabel = `Birthday in ${days}d`; ctaCopy = "Send Love"; }
+  }
+
+  const streak = computeStreak(m.workoutLog || []);
+  if (streak >= 5 && !reason) { score += 6; reason = "streak"; reasonLabel = `${streak}-day streak`; ctaCopy = "Cheer Her On"; }
+  else if (streak >= 3 && !reason) { score += 3; reason = "streak"; reasonLabel = `${streak}-day streak`; ctaCopy = "Send a Cheer"; }
+  else if (streak >= 5) score += 6;
+  else if (streak >= 3) score += 3;
+
+  const logLen = (m.workoutLog || []).length;
+  if (logLen === 0 && !reason) { score += 4; reason = "new"; reasonLabel = "New member"; ctaCopy = "Say Welcome"; }
+  else if (logLen <= 3 && !reason) { score += 2; reason = "new"; reasonLabel = "Just started"; ctaCopy = "Encourage Her"; }
+  else if (logLen === 0) score += 4;
+  else if (logLen <= 3) score += 2;
+
+  const lastCheered = m.lastCheeredAt ? new Date(m.lastCheeredAt).getTime() : 0;
+  const daysSinceCheer = lastCheered ? Math.floor((Date.now() - lastCheered) / MS_PER_DAY) : 999;
+  if (daysSinceCheer >= 7 && !reason) { score += 2; reason = "uncheerred"; reasonLabel = "Needs a cheer"; ctaCopy = "Send Some Love"; }
+  else if (daysSinceCheer >= 7) score += 2;
+
+  if (daysSinceCheer >= 30 && logLen > 3 && !reason) {
+    score += 1; reason = "inactive"; reasonLabel = "Reconnect"; ctaCopy = "Reach Out";
+  }
+
+  if (score === 0 || !reason) return null;
+  return { member: m, score, reason, reasonLabel, ctaCopy };
+}
+
+const REASON_STYLES: Record<SuggestionReason, { icon: React.ReactNode; accent: string }> = {
+  birthday:   { icon: <Cake size={10} />,     accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
+  streak:     { icon: <Flame size={10} />,    accent: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
+  new:        { icon: <Sparkles size={10} />, accent: "text-violet-400 bg-violet-400/10 border-violet-400/20" },
+  uncheerred: { icon: <Heart size={10} />,    accent: "text-rose-400 bg-rose-400/10 border-rose-400/20" },
+  inactive:   { icon: <Heart size={10} />,    accent: "text-text-muted bg-surface-2 border-border" },
+};
+
 export default function TribeActivityStrip() {
   const { user } = useApp();
+  const navigate = useNavigate();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
-  const [sentCheer, setSentCheer] = useState<Record<string, string>>({});
+  const [sentCheer, setSentCheer] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -53,63 +112,71 @@ export default function TribeActivityStrip() {
   const sendCheer = async (memberId: string, cheerId: string) => {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
-    setSentCheer((prev) => ({ ...prev, [memberId]: cheerId }));
+    setSentCheer((prev) => ({ ...prev, [memberId]: true }));
     try {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, cheerId }),
       });
-    } catch {
-      // no-op — the optimistic "sent" state just won't be backed by a real send
-    }
-    setTimeout(() => setSentCheer((prev) => ({ ...prev, [memberId]: "" })), 2500);
+    } catch { /* no-op */ }
+    setTimeout(() => setSentCheer((prev) => ({ ...prev, [memberId]: false })), 2500);
   };
 
   if (tribe.length === 0) return null;
 
+  const suggestions = [...tribe]
+    .map(scoreMember)
+    .filter((s): s is ScoredMember => s !== null)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+
+  if (suggestions.length === 0) return null;
+
   return (
     <div className="mb-6">
       <SectionHeader title="Your WELL Tribe" to="/tribe" />
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
-        {tribe.map((member) => {
-          const streak = computeStreak(member.workoutLog || []);
-          const birthdayDays = member.birthday ? daysUntilBirthday(member.birthday) : null;
+
+      {/* Horizontal scrollable tiles */}
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+        {suggestions.map(({ member, reason, reasonLabel, ctaCopy }) => {
+          const cfg = REASON_STYLES[reason];
           const isCheering = cheeringFor === member.id;
           const justSent = sentCheer[member.id];
 
           return (
-            <div key={member.id} className="glass-card rounded-card p-3 w-40 shrink-0 flex flex-col items-center text-center gap-2">
-              <Link to={`/member/${member.id}`} className="flex flex-col items-center gap-2 w-full">
-                <Avatar src={member.avatar || ""} alt={member.name} size={48} badgeId={resolveFeaturedBadge(member)} />
-                <p className="text-sm font-semibold text-text truncate w-full">{member.name}</p>
+            <div
+              key={member.id}
+              className="shrink-0 w-36 glass-card rounded-card p-3.5 flex flex-col items-center gap-2 border border-border text-center"
+            >
+              <Link to={`/member/${member.id}`} className="flex flex-col items-center gap-1.5 w-full">
+                <Avatar
+                  src={member.avatar || ""}
+                  alt={member.name}
+                  size={48}
+                  badgeId={resolveFeaturedBadge(member)}
+                  moodStatus={member.moodStatus}
+                />
+                <p className="text-xs font-semibold text-text truncate w-full">{member.name.split(" ")[0]}</p>
               </Link>
 
-              <div className="flex flex-col items-center gap-1 min-h-[2.25rem]">
-                {birthdayDays !== null && birthdayDays <= 7 && (
-                  <span className="text-[11px] font-medium text-brand-light">
-                    🎂 {birthdayDays === 0 ? "Birthday today!" : `Birthday in ${birthdayDays}d`}
-                  </span>
-                )}
-                {streak > 0 && (
-                  <span className="flex items-center gap-1 text-[11px] font-medium text-text-muted">
-                    <Flame size={12} className="text-brand-light" />
-                    {streak}-day streak
-                  </span>
-                )}
-              </div>
+              {/* Reason chip */}
+              <span className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-1.5 py-0.5 border ${cfg.accent}`}>
+                {cfg.icon}
+                <span className="truncate max-w-[72px]">{reasonLabel}</span>
+              </span>
 
+              {/* Action area */}
               {justSent ? (
-                <p className="text-[11px] font-semibold text-brand-light py-1.5">Cheer sent! 🎉</p>
+                <p className="text-[10px] font-semibold text-brand-light">Sent!</p>
               ) : isCheering ? (
-                <div className="flex items-center gap-1">
-                  {TRIBE_CHEERS.map((cheer) => (
+                <div className="flex flex-wrap justify-center gap-1">
+                  {TRIBE_CHEERS.slice(0, 4).map((cheer) => (
                     <button
                       key={cheer.id}
                       onClick={() => sendCheer(member.id, cheer.id)}
                       title={cheer.label}
-                      aria-label={`Send ${cheer.label} cheer to ${member.name}`}
-                      className="w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center text-base"
+                      className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-xs"
                     >
                       {cheer.emoji}
                     </button>
@@ -117,18 +184,23 @@ export default function TribeActivityStrip() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setCheeringFor(member.id)}
-                  className="text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5 w-full"
+                  onClick={() =>
+                    reason === "birthday"
+                      ? navigate(`/member/${member.id}`)
+                      : setCheeringFor(member.id)
+                  }
+                  className="text-[11px] font-semibold gradient-brand text-white rounded-pill px-2.5 py-1 w-full"
                 >
-                  Send a Cheer
+                  {ctaCopy}
                 </button>
               )}
             </div>
           );
         })}
       </div>
-      <Link to="/tribe" className="block text-center text-xs text-text-muted mt-2">
-        Manage your WELL Tribe
+
+      <Link to="/tribe" className="block text-center text-xs text-text-muted mt-2.5">
+        See all {tribe.length} tribe member{tribe.length === 1 ? "" : "s"}
       </Link>
     </div>
   );

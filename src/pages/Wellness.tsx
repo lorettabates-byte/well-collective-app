@@ -1285,7 +1285,7 @@ export default function Wellness() {
             <section>
               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
                 <Footprints size={15} className="text-orange-400 shrink-0" />
-                <h3 className="text-sm font-bold text-text">Today's Runs</h3>
+                <h3 className="text-sm font-bold text-text">Today's {syncedRuns.length === 1 ? "Run" : "Runs"}</h3>
               </div>
               <div className="flex flex-col gap-2">
                 {syncedRuns.map((run, i) => (
@@ -1617,7 +1617,7 @@ export default function Wellness() {
         <div className="glass-card rounded-card p-4">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
             <Activity size={15} className="text-brand-light shrink-0" />
-            <h3 className="text-sm font-bold text-text">Today's Runs</h3>
+            <h3 className="text-sm font-bold text-text">Today's {syncedRuns.length === 1 ? "Run" : "Runs"}</h3>
             {syncedRuns.length > 0 && (
               <span className="ml-auto text-xs text-text-dim">{syncedRuns.length} {syncedRuns.length === 1 ? "run" : "runs"} synced</span>
             )}
