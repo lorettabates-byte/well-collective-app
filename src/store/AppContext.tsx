@@ -375,6 +375,16 @@ export function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+interface ServerNotification {
+  id: number;
+  type: AppNotificationType;
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+  link?: string;
+}
+
 interface AppContextValue extends PersistedState {
   updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "notificationSchedule">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
@@ -607,6 +617,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error("Failed to persist app state to localStorage:", err);
     }
   }, [state]);
+
+  useEffect(() => {
+    if (!API_URL || !state.user.email) return;
+
+    const syncInbox = () => {
+      fetch(`${API_URL}/api/notifications/inbox?email=${encodeURIComponent(state.user.email!)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { notifications?: ServerNotification[] } | null) => {
+          const incoming = data?.notifications ?? [];
+          if (incoming.length === 0) return;
+          setState((prev) => {
+            const byId = new Map(prev.notifications.map((notification) => [notification.id, notification]));
+            for (const notification of incoming) {
+              const id = `server-${notification.id}`;
+              const existing = byId.get(id);
+              byId.set(id, {
+                id,
+                type: notification.type,
+                title: notification.title,
+                body: notification.body,
+                createdAt: notification.createdAt,
+                read: existing?.read ?? notification.read,
+                link: notification.link,
+              });
+            }
+            return {
+              ...prev,
+              notifications: Array.from(byId.values())
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                .slice(0, 100),
+            };
+          });
+        })
+        .catch(() => {});
+    };
+
+    syncInbox();
+    const id = window.setInterval(syncInbox, 60_000);
+    return () => window.clearInterval(id);
+  }, [state.user.email]);
 
   const updateProfile: AppContextValue["updateProfile"] = (updates) => {
     setState((prev) => ({ ...prev, user: { ...prev.user, ...updates } }));
@@ -1202,6 +1252,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         notification.id === notificationId ? { ...notification, read: true } : notification
       ),
     }));
+    const serverId = notificationId.startsWith("server-") ? notificationId.slice("server-".length) : null;
+    if (serverId && API_URL && state.user.email) {
+      fetch(`${API_URL}/api/notifications/${serverId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: state.user.email }),
+      }).catch(() => {});
+    }
   };
 
   const markAllNotificationsRead: AppContextValue["markAllNotificationsRead"] = () => {
@@ -1209,6 +1267,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...prev,
       notifications: prev.notifications.map((notification) => ({ ...notification, read: true })),
     }));
+    if (API_URL && state.user.email) {
+      fetch(`${API_URL}/api/notifications/read-all`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: state.user.email }),
+      }).catch(() => {});
+    }
   };
 
   const blockUser = (userId: string) => {

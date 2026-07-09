@@ -1,4 +1,4 @@
-import { AtSign, Bell, Calendar, MessageCircle, Rss, Sparkles } from "lucide-react";
+import { AtSign, Bell, Calendar, MessageCircle, Rss, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
@@ -23,6 +23,7 @@ const ICONS: Record<AppNotificationType, typeof Bell> = {
   general: Sparkles,
   event: Calendar,
   blog: Rss,
+  tribe: Users,
 };
 
 export default function Notifications() {
@@ -105,6 +106,7 @@ export default function Notifications() {
                 general: "/inspirations",
                 event: "/events",
                 blog: "/blog",
+                tribe: "/tribe",
               };
               const destination = notification.link ?? FALLBACK_LINKS[notification.type];
               return (

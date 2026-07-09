@@ -40,7 +40,7 @@ async function fetchAppEvents(): Promise<AppEvent[]> {
 
 async function fetchWebsiteEvents(): Promise<AppEvent[]> {
   try {
-    const res = await fetch(`${WP_EVENTS_URL}?per_page=20&status=publish`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${WP_EVENTS_URL}?per_page=50&status=publish`, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return [];
     const data = await res.json();
     const events = data.events || data || [];
@@ -93,7 +93,7 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
           }
         }
         merged.sort((a, b) => a.date.localeCompare(b.date));
-        setEvents(merged.slice(0, 12));
+        setEvents(merged);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -119,7 +119,7 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
   return createPortal(
     <div className="fixed inset-0 z-[500] flex flex-col">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl flex flex-col" style={{ maxHeight: "88dvh" }}>
+      <div className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl flex flex-col min-h-0" style={{ height: "88dvh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border shrink-0">
           <div>
@@ -132,7 +132,7 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
         </div>
 
         {/* Scrollable list */}
-        <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-3">
+        <div className="overflow-y-auto flex-1 min-h-0 px-4 py-4 flex flex-col gap-3">
           {loading ? (
             <div className="flex justify-center py-10">
               <Loader2 size={24} className="text-brand-light animate-spin" />
@@ -144,38 +144,38 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
               <button
                 key={event.id}
                 onClick={() => setSelected(event)}
-                className={`w-full text-left rounded-card border transition-colors overflow-hidden ${
+                className={`w-full text-left rounded-card border transition-colors overflow-hidden p-3 ${
                   selected?.id === event.id ? "border-brand-light/40 bg-brand-light/5" : "glass-card border-border"
                 }`}
               >
-                {/* Event photo */}
-                {event.image && (
-                  <div className="w-full h-28 overflow-hidden">
-                    <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <div className="flex items-start gap-3 p-4">
-                  {!event.image && (
-                    <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
-                      <Calendar size={16} className="text-brand-light" />
+                <div className="flex items-start gap-3">
+                  {event.image ? (
+                    <img
+                      src={event.image}
+                      alt=""
+                      className="w-20 h-20 rounded-card object-cover shrink-0 bg-surface-2 border border-border"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-card bg-surface-2 border border-border flex items-center justify-center shrink-0">
+                      <Calendar size={20} className="text-brand-light" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-text leading-snug">{event.title}</p>
+                      <p className="text-sm font-semibold text-text leading-snug line-clamp-2">{event.title}</p>
                       {selected?.id === event.id && <Check size={16} className="text-brand-light shrink-0 mt-0.5" />}
                     </div>
-                    <p className="text-xs text-text-muted mt-1">
+                    <p className="text-xs text-text-muted mt-1.5">
                       {new Date(event.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                       {event.time && ` · ${event.time}`}
                     </p>
                     {event.location && (
-                      <p className="flex items-center gap-1 text-[11px] text-text-dim mt-0.5">
-                        <MapPin size={10} /> {event.location}
+                      <p className="flex items-center gap-1 text-[11px] text-text-dim mt-1 line-clamp-1">
+                        <MapPin size={10} className="shrink-0" /> {event.location}
                       </p>
                     )}
                     {event.source === "website" && (
-                      <span className="inline-block mt-1.5 text-[10px] font-bold text-brand-light/60 uppercase tracking-wide">lorettabates.com</span>
+                      <span className="inline-block mt-2 text-[10px] font-bold text-brand-light/60 uppercase tracking-wide">lorettabates.com</span>
                     )}
                   </div>
                 </div>

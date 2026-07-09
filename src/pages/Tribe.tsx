@@ -1,17 +1,20 @@
 import {
-  Cake, ChevronDown, ChevronUp, Flame, Heart, HelpCircle,
-  Plus, Search, Sparkles, UserMinus, Users, X,
+  Cake, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
+  Plus, Search, Sparkles, Trophy, UserMinus, Users, X, Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { TRIBE_CHEERS } from "../data/cheers";
 import { resolveFeaturedBadge } from "../data/badges";
+import type { TribeChallenge } from "../data/challenges";
 import { useApp } from "../store/AppContext";
 import { birthdayDateForYear } from "../utils/birthday";
 import { computeStreak } from "../utils/streaks";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
+import ReceivedCardModal from "../components/tribe/ReceivedCardModal";
+import type { ReceivedTribeCard } from "../components/tribe/ReceivedCardModal";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const TRIBE_STORAGE_KEY = "well-collective-tribe";
@@ -33,6 +36,22 @@ interface TribeMember extends DirectoryMember {
   workoutLog?: string[];
   lastCheeredAt?: string | null;
   moodStatus?: string | null;
+}
+
+interface ActiveTribeChallenge {
+  id: number;
+  challengeId: string;
+  title: string;
+  description: string;
+  duration: string;
+  category: TribeChallenge["category"];
+  goals: { id: string; label: string }[];
+  bonusPoints: number;
+  completedAt: string | null;
+  myProgress: string[];
+  partnerProgress: string[];
+  partner: { name: string; avatar?: string };
+  invitedByMe: boolean;
 }
 
 type SuggestionReason = "birthday" | "streak" | "new" | "uncheerred" | "inactive";
@@ -102,6 +121,7 @@ const REASON_CONFIG: Record<SuggestionReason, { icon: React.ReactNode; accent: s
 export default function Tribe() {
   useSectionTracking("tribe");
   const { user } = useApp();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [allMembers, setAllMembers] = useState<DirectoryMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +135,14 @@ export default function Tribe() {
   const [addError, setAddError] = useState("");
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
   const [sentCheers, setSentCheers] = useState<Record<string, boolean>>({});
+  const [challenges, setChallenges] = useState<ActiveTribeChallenge[]>([]);
+  const [challengeLoading, setChallengeLoading] = useState(true);
+  const [updatingGoal, setUpdatingGoal] = useState<string | null>(null);
+  const [challengeToast, setChallengeToast] = useState("");
+  const [receivedCard, setReceivedCard] = useState<ReceivedTribeCard | null>(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const cardParam = searchParams.get("card");
+  const challengeParam = searchParams.get("challenge");
 
   const setTribeAndPersist = (members: TribeMember[]) => {
     setTribe(members);
@@ -132,6 +160,16 @@ export default function Tribe() {
           if (cached) setTribe(JSON.parse(cached));
         } catch { setTribe([]); }
       });
+  };
+
+  const loadChallenges = () => {
+    if (!API_URL || !user.email) { setChallengeLoading(false); return; }
+    setChallengeLoading(true);
+    fetch(`${API_URL}/api/tribe/challenges?email=${encodeURIComponent(user.email)}`)
+      .then((res) => (res.ok ? res.json() : { challenges: [] }))
+      .then((data) => setChallenges(data.challenges || []))
+      .catch(() => setChallenges([]))
+      .finally(() => setChallengeLoading(false));
   };
 
   useEffect(() => {
@@ -153,6 +191,28 @@ export default function Tribe() {
       .catch(() => { /* keep cached */ })
       .finally(() => setLoading(false));
   }, [user.email]);
+
+  useEffect(() => {
+    loadChallenges();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.email]);
+
+  useEffect(() => {
+    if (!API_URL || !user.email || !cardParam) return;
+    setCardLoading(true);
+    fetch(`${API_URL}/api/tribe/cards/${encodeURIComponent(cardParam)}?email=${encodeURIComponent(user.email)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setReceivedCard(data?.card ?? null))
+      .catch(() => setReceivedCard(null))
+      .finally(() => setCardLoading(false));
+  }, [cardParam, user.email]);
+
+  useEffect(() => {
+    if (!challengeParam || challenges.length === 0) return;
+    window.setTimeout(() => {
+      document.getElementById(`tribe-challenge-${challengeParam}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  }, [challengeParam, challenges.length]);
 
   const handleAdd = async (memberId: string) => {
     if (!API_URL || !user.email) return;
@@ -197,6 +257,38 @@ export default function Tribe() {
       });
     } catch { /* no-op */ }
     setTimeout(() => setSentCheers((prev) => ({ ...prev, [memberId]: false })), 2500);
+  };
+
+  const closeReceivedCard = () => {
+    setReceivedCard(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete("card");
+    setSearchParams(next, { replace: true });
+  };
+
+  const toggleChallengeGoal = async (challenge: ActiveTribeChallenge, goalId: string) => {
+    if (!API_URL || !user.email || challenge.completedAt) return;
+    const wasComplete = challenge.myProgress.includes(goalId);
+    const key = `${challenge.id}:${goalId}`;
+    setUpdatingGoal(key);
+    try {
+      const res = await fetch(`${API_URL}/api/tribe/challenges/${challenge.id}/progress`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, goalId, completed: !wasComplete }),
+      });
+      if (!res.ok) return;
+      const data = await res.json() as { challenge?: ActiveTribeChallenge; awarded?: boolean; points?: number };
+      if (data.challenge) {
+        setChallenges((prev) => prev.map((item) => (item.id === challenge.id ? data.challenge! : item)));
+      }
+      if (data.awarded && data.points) {
+        setChallengeToast(`Challenge complete! You both earned ${data.points} bonus points.`);
+        window.setTimeout(() => setChallengeToast(""), 3500);
+      }
+    } finally {
+      setUpdatingGoal(null);
+    }
   };
 
   const tribeIds = new Set(tribe.map((m) => m.id));
@@ -293,6 +385,110 @@ export default function Tribe() {
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-card bg-gradient-to-t from-surface to-transparent" />
               )}
             </div>
+          </div>
+        )}
+
+        {(challengeLoading || challenges.length > 0) && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-text">Tribe Challenges</p>
+                <p className="text-[11px] text-text-muted">Check off your goals and watch your partner's progress.</p>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] font-bold text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-pill px-2.5 py-1">
+                <Trophy size={12} />
+                +25 pts
+              </div>
+            </div>
+
+            {challengeToast && (
+              <div className="mb-3 rounded-card border border-brand-light/30 bg-brand-light/10 px-3 py-2 text-xs font-semibold text-brand-light">
+                {challengeToast}
+              </div>
+            )}
+
+            {challengeLoading ? (
+              <div className="glass-card rounded-card p-4 text-center text-xs text-text-dim">Loading challenges...</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {challenges.map((challenge) => {
+                  const myCount = challenge.myProgress.length;
+                  const partnerCount = challenge.partnerProgress.length;
+                  const total = challenge.goals.length || 1;
+                  const highlighted = challengeParam === String(challenge.id);
+                  return (
+                    <div
+                      key={challenge.id}
+                      id={`tribe-challenge-${challenge.id}`}
+                      className={`glass-card rounded-card p-4 border ${highlighted ? "border-brand-light/50" : "border-border"}`}
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-full bg-brand-light/10 border border-brand-light/20 flex items-center justify-center shrink-0">
+                          <Zap size={16} className="text-brand-light" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-bold text-text">{challenge.title}</p>
+                            {challenge.completedAt && (
+                              <span className="text-[10px] font-bold text-brand-light bg-brand-light/10 rounded-pill px-2 py-0.5 shrink-0">
+                                Complete
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-muted mt-0.5">{challenge.description}</p>
+                          <p className="text-[10px] font-bold text-text-dim uppercase tracking-wide mt-1">
+                            {challenge.duration} with {challenge.partner.name}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim mb-1">You</p>
+                          <div className="h-1.5 rounded-full bg-surface overflow-hidden mb-1.5">
+                            <div className="h-full rounded-full bg-brand-light" style={{ width: `${(myCount / total) * 100}%` }} />
+                          </div>
+                          <p className="text-xs font-bold text-text">{myCount}/{total}</p>
+                        </div>
+                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim mb-1">{challenge.partner.name}</p>
+                          <div className="h-1.5 rounded-full bg-surface overflow-hidden mb-1.5">
+                            <div className="h-full rounded-full bg-yellow-400" style={{ width: `${(partnerCount / total) * 100}%` }} />
+                          </div>
+                          <p className="text-xs font-bold text-text">{partnerCount}/{total}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        {challenge.goals.map((goal) => {
+                          const mineDone = challenge.myProgress.includes(goal.id);
+                          const partnerDone = challenge.partnerProgress.includes(goal.id);
+                          const loadingGoal = updatingGoal === `${challenge.id}:${goal.id}`;
+                          return (
+                            <button
+                              key={goal.id}
+                              onClick={() => toggleChallengeGoal(challenge, goal.id)}
+                              disabled={!!challenge.completedAt || loadingGoal}
+                              className="w-full flex items-center gap-2 rounded-card bg-surface-2 border border-border px-3 py-2 text-left disabled:opacity-70"
+                            >
+                              {mineDone ? (
+                                <CheckCircle2 size={16} className="text-brand-light shrink-0" />
+                              ) : (
+                                <Circle size={16} className="text-text-dim shrink-0" />
+                              )}
+                              <span className="flex-1 min-w-0 text-xs font-semibold text-text">{goal.label}</span>
+                              {partnerDone && (
+                                <span className="text-[10px] font-bold text-yellow-400 shrink-0">Partner done</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -479,6 +675,9 @@ export default function Tribe() {
           </>
         )}
       </div>
+      {(cardParam || cardLoading || receivedCard) && (
+        <ReceivedCardModal card={receivedCard} loading={cardLoading} onClose={closeReceivedCard} />
+      )}
     </div>
   );
 }

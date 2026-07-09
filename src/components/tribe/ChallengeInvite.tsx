@@ -84,9 +84,25 @@ export default function ChallengeInvite({ memberId, memberName, onClose }: Props
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-text">{challenge.title}</p>
                 <p className="text-xs text-text-muted mt-0.5">{challenge.description}</p>
-                <span className="inline-block mt-1.5 text-[10px] font-bold text-text-dim uppercase tracking-wide">
-                  {challenge.duration}
-                </span>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-text-dim uppercase tracking-wide">
+                    {challenge.duration}
+                  </span>
+                  <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wide">
+                    +{challenge.bonusPoints} pts together
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  {challenge.goals.slice(0, 3).map((goal) => (
+                    <p key={goal.id} className="text-[11px] text-text-dim flex items-center gap-1.5">
+                      <Check size={10} className="text-brand-light shrink-0" />
+                      {goal.label}
+                    </p>
+                  ))}
+                  {challenge.goals.length > 3 && (
+                    <p className="text-[11px] text-text-dim">+{challenge.goals.length - 3} more goals</p>
+                  )}
+                </div>
               </div>
               {selected?.id === challenge.id && (
                 <Zap size={16} className="text-brand-light shrink-0 mt-0.5" />

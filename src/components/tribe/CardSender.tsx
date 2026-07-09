@@ -82,16 +82,18 @@ const CARD_GRAPHICS: Record<string, string> = {
 };
 
 /* ---------- CardFace ---------- */
-function CardFace({
+export function CardFace({
   style,
   occasion,
   userName,
   animate,
+  messageOverride,
 }: {
   style: CardStyle;
   occasion: CardOccasion;
   userName: string;
   animate: boolean;
+  messageOverride?: string;
 }) {
   const IconComponent = CARD_ICONS[occasion.icon];
   const graphicSrc = CARD_GRAPHICS[`${occasion.id}/${style.id}`] ?? CARD_GRAPHICS[occasion.id];
@@ -174,7 +176,7 @@ function CardFace({
 
         {/* Main message */}
         <p className={`text-[18px] font-bold leading-snug ${style.textColor}`}>
-          {style.message}
+          {messageOverride ?? style.message}
         </p>
 
         {/* Divider */}
@@ -202,7 +204,7 @@ function CardFace({
 }
 
 /* ---------- Envelope ---------- */
-function Envelope({
+export function Envelope({
   flapOpen,
   flapClosing,
   cardColor,
