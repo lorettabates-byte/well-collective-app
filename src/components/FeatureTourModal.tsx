@@ -1,7 +1,6 @@
 import {
   Activity,
   Bell,
-  Calendar,
   Check,
   CheckCircle2,
   Copy,
