@@ -112,6 +112,7 @@ export default function Tribe() {
   const [listExpanded, setListExpanded] = useState(false);
   const [showCheerInfo, setShowCheerInfo] = useState(false);
 
+  const [addError, setAddError] = useState("");
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
   const [sentCheers, setSentCheers] = useState<Record<string, boolean>>({});
 
@@ -156,14 +157,24 @@ export default function Tribe() {
   const handleAdd = async (memberId: string) => {
     if (!API_URL || !user.email) return;
     setAdding(memberId);
+    setAddError("");
     try {
       const res = await fetch(`${API_URL}/api/tribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, memberId }),
       });
-      if (res.ok) loadTribe();
-    } catch { /* no-op */ } finally { setAdding(null); }
+      if (res.ok) {
+        loadTribe();
+      } else {
+        const d = await res.json().catch(() => ({})) as { error?: string };
+        setAddError(d.error || `Error ${res.status} — please try again`);
+      }
+    } catch {
+      setAddError("Network error — please check your connection");
+    } finally {
+      setAdding(null);
+    }
   };
 
   const handleRemove = async (memberId: string) => {
@@ -233,7 +244,7 @@ export default function Tribe() {
 
         {/* Add to tribe */}
         <button
-          onClick={() => setShowAdd((v) => !v)}
+          onClick={() => { setShowAdd((v) => !v); setAddError(""); }}
           className="flex items-center justify-center gap-2 text-sm font-semibold gradient-brand text-white rounded-pill py-2.5 w-full mb-5"
         >
           {showAdd ? <X size={16} /> : <Plus size={16} />}
@@ -251,6 +262,9 @@ export default function Tribe() {
                 className="w-full bg-surface-2 border border-border rounded-pill pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
               />
             </div>
+            {addError && (
+              <p className="text-xs text-red-400 mb-2 px-1">{addError}</p>
+            )}
             <div className="relative">
               <div className="glass-card rounded-card p-3 flex flex-col gap-2 max-h-64 overflow-y-auto">
                 {addable.length === 0 ? (
