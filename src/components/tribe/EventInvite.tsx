@@ -24,18 +24,28 @@ interface Props {
 
 async function fetchAppEvents(): Promise<AppEvent[]> {
   if (!API_URL) return [];
-  const res = await fetch(`${API_URL}/api/events`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.events || []).map((e: { id: number; title: string; date: string; time?: string; location?: string; image?: string }) => ({
-    id: `app-${e.id}`,
-    title: e.title,
-    date: e.date,
-    time: e.time,
-    location: e.location,
-    image: e.image,
-    source: "app" as const,
-  }));
+  try {
+    const res = await fetch(`${API_URL}/api/events?upcoming=true&light=true&limit=100`, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.events || [])
+      .map((e: { id: number | string; title?: string; date?: string; time?: string; location?: string; image?: string }) => {
+        const date = normalizeEventDate(e.date);
+        if (!date || !e.title) return null;
+        return {
+          id: `app-${e.id}`,
+          title: e.title,
+          date,
+          time: e.time,
+          location: e.location,
+          image: e.image,
+          source: "app" as const,
+        };
+      })
+      .filter((event: AppEvent | null): event is AppEvent => event !== null);
+  } catch {
+    return [];
+  }
 }
 
 async function fetchWebsiteEvents(): Promise<AppEvent[]> {
@@ -68,6 +78,13 @@ async function fetchWebsiteEvents(): Promise<AppEvent[]> {
   } catch {
     return [];
   }
+}
+
+function normalizeEventDate(date?: string): string {
+  if (!date) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(0, 10);
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
 export default function EventInvite({ memberId, memberName, onClose }: Props) {
@@ -175,9 +192,9 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
                       <MapPin size={10} className="shrink-0" /> {event.location}
                     </p>
                   )}
-                  {event.source === "website" && (
-                    <span className="inline-block mt-2 text-[10px] font-bold text-brand-light/60 uppercase tracking-wide leading-none">lorettabates.com</span>
-                  )}
+                  <span className="inline-block mt-2 text-[10px] font-bold text-brand-light/60 uppercase tracking-wide leading-none">
+                    {event.source === "website" ? "lorettabates.com" : "WELL Collective"}
+                  </span>
                 </div>
               </button>
             ))
