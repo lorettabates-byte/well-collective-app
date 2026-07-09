@@ -38,6 +38,8 @@ export interface User {
   notificationTone?: "motivation" | "accountability" | "gentle" | "education";
   movementTarget?: "sedentary" | "light" | "moderate" | "active";
   goalsCompleted?: boolean;
+  hiddenFromCommunity?: boolean; // opt-out of appearing in member lists / discovery
+  showOnLeaderboard?: boolean;
 }
 
 export interface NotificationSettings {

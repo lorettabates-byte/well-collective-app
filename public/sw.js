@@ -33,17 +33,22 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || "/";
+  const absoluteUrl = new URL(targetUrl, self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      if (clients.length > 0) {
-        // App is open — send a message so React Router navigates without a reload
-        const client = clients[0];
-        client.postMessage({ type: "NAVIGATE", url: targetUrl });
-        return client.focus();
+      const appClient = clients.find((c) => c.url.startsWith(self.location.origin));
+      if (appClient) {
+        // Use client.navigate() for a guaranteed page change, then fall back to
+        // postMessage for browsers that don't support it (navigate returns a Promise).
+        const nav = appClient.navigate ? appClient.navigate(absoluteUrl) : Promise.reject();
+        return nav
+          .then((c) => (c || appClient).focus())
+          .catch(() => {
+            appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
+            return appClient.focus();
+          });
       }
-      // App is closed — open it at the target URL
-      const absoluteUrl = new URL(targetUrl, self.location.origin).href;
       return self.clients.openWindow(absoluteUrl);
     })
   );

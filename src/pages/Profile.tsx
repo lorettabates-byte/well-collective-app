@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -43,6 +43,7 @@ export default function Profile() {
   const { user, inspirations, savedRecipes } = useApp();
 
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
+  const [hiddenFromCommunity, setHiddenFromCommunity] = useState(false);
   const [tribeConnections, setTribeConnections] = useState<number | null>(null);
   const [addedByCount, setAddedByCount] = useState<number | null>(null);
   const [allTimePoints, setAllTimePoints] = useState<number | null>(null);
@@ -57,6 +58,7 @@ export default function Profile() {
       .then((d) => {
         if (!d?.member) return;
         if (d.member.showOnLeaderboard !== undefined) setShowOnLeaderboard(d.member.showOnLeaderboard);
+        if (d.member.hiddenFromCommunity !== undefined) setHiddenFromCommunity(d.member.hiddenFromCommunity);
         if (d.member.tribeConnections !== undefined) setTribeConnections(d.member.tribeConnections);
         if (d.member.addedByCount !== undefined) setAddedByCount(d.member.addedByCount);
         if (d.member.allTimePoints !== undefined) setAllTimePoints(d.member.allTimePoints);
@@ -82,6 +84,24 @@ export default function Profile() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: user.email, showOnLeaderboard: next }),
     }).catch(() => {});
+  };
+
+  const toggleCommunityVisibility = async () => {
+    const next = !hiddenFromCommunity;
+    setHiddenFromCommunity(next);
+    if (!API_URL || !user.email) return;
+    await fetch(`${API_URL}/api/members/community-visibility`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, hiddenFromCommunity: next }),
+    }).catch(() => {});
+  };
+
+  const handleRedoSurvey = () => {
+    if (!user.email) return;
+    const currentPeriod = new Date().toISOString().slice(0, 7);
+    localStorage.removeItem(`well-goals-period-${user.email}-${currentPeriod}`);
+    window.location.reload();
   };
 
   const savedCount = inspirations.filter((i) => i.savedBy.includes(user.id)).length;
@@ -247,6 +267,38 @@ export default function Profile() {
           ? <Eye size={16} className="text-brand-light shrink-0" />
           : <EyeOff size={16} className="text-text-dim shrink-0" />}
       </button>
+
+      {/* Community visibility */}
+      <button
+        onClick={toggleCommunityVisibility}
+        className="w-full flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3"
+      >
+        <Users size={16} className="text-brand-light shrink-0" />
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-semibold text-text">Community Visibility</p>
+          <p className="text-xs text-text-muted">
+            {hiddenFromCommunity ? "You're hidden from member lists & discovery" : "You appear in community member lists"}
+          </p>
+        </div>
+        {hiddenFromCommunity
+          ? <EyeOff size={16} className="text-text-dim shrink-0" />
+          : <Eye size={16} className="text-brand-light shrink-0" />}
+      </button>
+
+      {/* Redo goals survey */}
+      {!user.isAdmin && (
+        <button
+          onClick={handleRedoSurvey}
+          className="w-full flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3"
+        >
+          <RefreshCw size={16} className="text-brand-light shrink-0" />
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-sm font-semibold text-text">Redo Goals Survey</p>
+            <p className="text-xs text-text-muted">Update your goals and personalized plan</p>
+          </div>
+          <ChevronRight size={16} className="text-text-dim shrink-0" />
+        </button>
+      )}
 
       <button
         onClick={handleLogout}
