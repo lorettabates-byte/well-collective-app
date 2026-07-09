@@ -26,7 +26,7 @@ interface TribeMember {
   moodStatus?: string | null;
 }
 
-type SuggestionReason = "birthday" | "streak" | "new" | "uncheerred" | "inactive";
+type SuggestionReason = "birthday" | "streak" | "new" | "uncheerred" | "inactive" | "tribe";
 
 interface ScoredMember {
   member: TribeMember;
@@ -82,7 +82,8 @@ function scoreMember(m: TribeMember): ScoredMember | null {
     score += 1; reason = "inactive"; reasonLabel = "Reconnect"; ctaCopy = "Reach Out";
   }
 
-  if (score === 0 || !reason) return null;
+  // Always include — fall back to a generic "tribe" reason so the strip never disappears
+  if (!reason) { reason = "tribe"; reasonLabel = "In your tribe"; ctaCopy = "Say Hi"; }
   return { member: m, score, reason, reasonLabel, ctaCopy };
 }
 
@@ -92,6 +93,7 @@ const REASON_STYLES: Record<SuggestionReason, { icon: React.ReactNode; accent: s
   new:        { icon: <Sparkles size={10} />, accent: "text-violet-400 bg-violet-400/10 border-violet-400/20" },
   uncheerred: { icon: <Heart size={10} />,    accent: "text-rose-400 bg-rose-400/10 border-rose-400/20" },
   inactive:   { icon: <Heart size={10} />,    accent: "text-text-muted bg-surface-2 border-border" },
+  tribe:      { icon: <Heart size={10} />,    accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
 };
 
 export default function TribeActivityStrip() {
@@ -130,8 +132,6 @@ export default function TribeActivityStrip() {
     .filter((s): s is ScoredMember => s !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, 6);
-
-  if (suggestions.length === 0) return null;
 
   return (
     <div className="mb-6">
