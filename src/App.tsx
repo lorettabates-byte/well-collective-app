@@ -61,7 +61,7 @@ function App() {
     ? `well-goals-period-${user.email}-${currentPeriod}`
     : null;
   const periodShown = periodKey ? localStorage.getItem(periodKey) === "1" : false;
-  const showGoals = !goalsDismissed && !!user.email && !user.isAdmin && !periodShown;
+  const showGoals = !goalsDismissed && !!user.email && !periodShown;
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;

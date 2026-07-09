@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch, X } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch, X } from "lucide-react";
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
@@ -139,33 +139,71 @@ export default function Profile() {
 
   return (
     <div>
-      <TopBar title="My Profile" subtitle="Your WELL Collective space" icon={UserCircle} iconColor="#0191CE" showBack />
+      <TopBar title="" showBack />
       <SectionIntroModal sectionKey="profile" />
-    <div className="px-4 pt-4">
-      <div className="flex flex-col items-center text-center mb-6">
-        <Avatar src={user.avatar} alt={user.name} size={84} ring badgeId={featuredBadgeId} moodStatus={activeMoodId} />
-        <div className="flex items-center gap-2 mt-3">
-          <h1 className="text-lg font-bold text-text">{user.name}</h1>
+
+      {/* Gradient hero */}
+      <div
+        className="relative flex flex-col items-center text-center pt-10 pb-8 px-6"
+        style={{ background: "linear-gradient(160deg, #0191CE 0%, #7c3aed 60%, #1e1b4b 100%)" }}
+      >
+        <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #fff 0%, transparent 70%)" }} />
+        <div className="absolute bottom-0 left-4 w-24 h-24 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }} />
+
+        <div className="relative mb-3">
+          <Avatar src={user.avatar} alt={user.name} size={96} ring badgeId={featuredBadgeId} moodStatus={activeMoodId} />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-white">{user.name}</h1>
           {user.isAdmin && (
-            <span className="text-[10px] font-bold uppercase tracking-wide gradient-brand text-white rounded-pill px-2 py-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wide bg-white/20 text-white rounded-pill px-2 py-0.5">
               Admin
             </span>
           )}
         </div>
         {featuredBadge && (
-          <p className="text-xs font-semibold text-brand-light mt-1">
+          <p className="text-xs font-semibold text-white/70 mt-0.5">
             {featuredBadge.icon} {featuredBadge.label}
           </p>
         )}
-        <p className="text-sm text-text-muted mt-1 max-w-xs">{user.bio}</p>
+        {user.bio && (
+          <p className="text-sm text-white/60 mt-2 max-w-xs leading-snug">{user.bio}</p>
+        )}
+
+        {/* Stats strip */}
+        <div className="flex items-center gap-0 mt-5 bg-white/10 rounded-2xl overflow-hidden border border-white/10 w-full max-w-xs">
+          <div className="flex-1 flex flex-col items-center py-3 px-2">
+            <Users size={15} className="text-blue-200 mb-1" />
+            <p className="text-base font-bold text-white">{tribeConnections ?? "—"}</p>
+            <p className="text-[10px] text-white/55 uppercase tracking-wide">Tribe</p>
+          </div>
+          <div className="w-px h-10 bg-white/15" />
+          <div className="flex-1 flex flex-col items-center py-3 px-2">
+            <Heart size={15} className="text-pink-300 mb-1" />
+            <p className="text-base font-bold text-white">{addedByCount ?? "—"}</p>
+            <p className="text-[10px] text-white/55 uppercase tracking-wide">Added By</p>
+          </div>
+          <div className="w-px h-10 bg-white/15" />
+          <div className="flex-1 flex flex-col items-center py-3 px-2">
+            <Trophy size={15} className="text-yellow-300 mb-1" />
+            <p className="text-base font-bold text-white">{allTimePoints !== null ? allTimePoints.toLocaleString() : "—"}</p>
+            <p className="text-[10px] text-white/55 uppercase tracking-wide">Points</p>
+          </div>
+        </div>
+
         <Link
           to="/profile/edit"
-          className="flex items-center gap-1.5 mt-4 text-xs font-semibold gradient-brand text-white rounded-pill px-4 py-2 shadow-glow"
+          className="flex items-center gap-1.5 mt-5 text-xs font-semibold bg-white/15 border border-white/25 text-white rounded-pill px-5 py-2"
         >
           <Pencil size={13} />
           Edit Profile
         </Link>
       </div>
+
+    <div className="px-4 pt-4">
 
       {/* Mood status */}
       <div className="glass-card rounded-card p-4 mb-5 border border-border">
@@ -185,6 +223,17 @@ export default function Profile() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => activeMoodId && setMood(null)}
+            disabled={moodSaving}
+            className={`flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-xs font-semibold border transition-all ${
+              !activeMoodId
+                ? "bg-surface-3 border-brand-light/40 text-brand-light shadow-sm"
+                : "glass-card border-border text-text-muted"
+            }`}
+          >
+            None
+          </button>
           {MOOD_STATUSES.map((mood) => {
             const isActive = activeMoodId === mood.id;
             return (
@@ -208,20 +257,6 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{tribeConnections ?? "—"}</p>
-          <p className="text-[11px] text-text-muted leading-tight">Tribe Connections</p>
-        </div>
-        <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{addedByCount ?? "—"}</p>
-          <p className="text-[11px] text-text-muted leading-tight">Added By</p>
-        </div>
-        <div className="glass-card rounded-card p-3 text-center">
-          <p className="text-lg font-bold text-text">{allTimePoints !== null ? allTimePoints.toLocaleString() : "—"}</p>
-          <p className="text-[11px] text-text-muted leading-tight">Total Points</p>
-        </div>
-      </div>
 
       {referralCode && (
         <div className="glass-card rounded-card p-4 mb-4 border border-brand-light/20">
@@ -344,19 +379,17 @@ export default function Profile() {
       </button>
 
       {/* Redo goals survey */}
-      {!user.isAdmin && (
-        <button
-          onClick={handleRedoSurvey}
-          className="w-full flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3"
-        >
-          <RefreshCw size={16} className="text-brand-light shrink-0" />
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-sm font-semibold text-text">Redo Goals Survey</p>
-            <p className="text-xs text-text-muted">Update your goals and personalized plan</p>
-          </div>
-          <ChevronRight size={16} className="text-text-dim shrink-0" />
-        </button>
-      )}
+      <button
+        onClick={handleRedoSurvey}
+        className="w-full flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3"
+      >
+        <RefreshCw size={16} className="text-brand-light shrink-0" />
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-semibold text-text">Redo Goals Survey</p>
+          <p className="text-xs text-text-muted">Update your goals and personalized plan</p>
+        </div>
+        <ChevronRight size={16} className="text-text-dim shrink-0" />
+      </button>
 
       <button
         onClick={handleLogout}
