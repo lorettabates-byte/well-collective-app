@@ -19,6 +19,24 @@ interface ActivitySummary {
   count: number;
 }
 
+type HistoryRange = "week" | "month" | "year";
+
+interface ActivityHistoryDay {
+  date: string;
+  totalPoints: number;
+  activities: ActivitySummary[];
+}
+
+interface ActivityHistoryResponse {
+  range: HistoryRange;
+  days: ActivityHistoryDay[];
+  totals: {
+    totalPoints: number;
+    completedDays: number;
+    activityCounts: ActivitySummary[];
+  };
+}
+
 const ACTIVITY_LABELS: Record<string, string> = {
   app_open: "Opened the app",
   forum_post: "Posted in the community",
@@ -31,6 +49,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   breathwork: "Completed breathwork",
   stretching: "Did stretching",
   resistance_training: "Resistance training",
+  cardio: "Cardio",
   well_activity: "WELL activity",
   event_attend: "Attended an event",
   well_escape: "Attended a WELL Escape",
@@ -51,6 +70,7 @@ const ACTIVITY_ICON: Record<string, LucideIcon> = {
   breathwork: Wind,
   stretching: Activity,
   resistance_training: Dumbbell,
+  cardio: TrendingUp,
   well_activity: Zap,
   event_attend: Calendar,
   well_escape: MapPin,
@@ -68,6 +88,58 @@ const CHECKIN_GRID = [
   { key: "stretching", label: "Stretching", Icon: Activity,  maps: ["stretching"] },
   { key: "mindset",    label: "Mindset",    Icon: Sparkles,  maps: ["class_watch", "blog_open", "well_activity"] },
 ];
+
+const HISTORY_RANGES: { id: HistoryRange; label: string }[] = [
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
+];
+
+function parseHistoryDate(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatHistoryDate(date: string): string {
+  return parseHistoryDate(date).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatHistoryMonth(monthKey: string): string {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getCoveredCategoryCount(activities: ActivitySummary[]): number {
+  const doneTypes = new Set(activities.map((a) => a.type));
+  return CHECKIN_GRID.filter((item) => item.maps.some((m) => doneTypes.has(m))).length;
+}
+
+function getTopActivityLabel(activities: ActivitySummary[]): string {
+  const top = [...activities].sort((a, b) => b.points - a.points)[0];
+  return top ? ACTIVITY_LABELS[top.type] ?? top.type : "No activities";
+}
+
+function buildMonthlyHistory(days: ActivityHistoryDay[]) {
+  const monthMap = new Map<string, { key: string; totalPoints: number; activeDays: number; areas: number }>();
+
+  for (const day of days) {
+    const key = day.date.slice(0, 7);
+    const month = monthMap.get(key) ?? { key, totalPoints: 0, activeDays: 0, areas: 0 };
+    month.totalPoints += day.totalPoints;
+    month.activeDays += 1;
+    month.areas += getCoveredCategoryCount(day.activities);
+    monthMap.set(key, month);
+  }
+
+  return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key)).slice(0, 12);
+}
 
 // MET (Metabolic Equivalent of Task) values from the Compendium of Physical
 // Activities (Ainsworth et al., 2011) — the standard reference used in
@@ -196,6 +268,9 @@ export default function WellCheck() {
   const [activities, setActivities] = useState<ActivitySummary[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [historyRange, setHistoryRange] = useState<HistoryRange>("week");
+  const [history, setHistory] = useState<ActivityHistoryResponse | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   // Steps
   const [stepsInput, setStepsInput] = useState("");
@@ -226,6 +301,16 @@ export default function WellCheck() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user.email]);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) { setHistoryLoading(false); return; }
+    setHistoryLoading(true);
+    fetch(`${API_URL}/api/activity/history?email=${encodeURIComponent(user.email)}&range=${historyRange}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ActivityHistoryResponse | null) => setHistory(d))
+      .catch(() => setHistory(null))
+      .finally(() => setHistoryLoading(false));
+  }, [user.email, historyRange]);
 
   useEffect(() => {
     if (!API_URL || !user.email) { setStepsLoading(false); return; }
@@ -321,6 +406,9 @@ export default function WellCheck() {
   const gridDoneCount = CHECKIN_GRID.filter((item) =>
     item.maps.some((m) => doneTypes.has(m))
   ).length;
+  const historyDays = history?.days ?? [];
+  const historyMonths = historyRange === "year" ? buildMonthlyHistory(historyDays) : [];
+  const historyAreas = historyDays.reduce((sum, day) => sum + getCoveredCategoryCount(day.activities), 0);
 
   return (
     <div>
@@ -455,6 +543,110 @@ export default function WellCheck() {
             <p className="text-xs text-text-dim text-center">
               Complete activities throughout the day — they'll show up here.
             </p>
+          )}
+        </div>
+
+        {/* WELL Check History */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(42,109,217,0.15)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
+                <Calendar size={15} className="text-brand-light" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">History</p>
+                <p className="text-xs text-text-muted">
+                  {historyRange === "week" ? "Past 7 days" : historyRange === "month" ? "Past 30 days" : "Past 12 months"}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">
+              <Star size={11} className="fill-yellow-400" />
+              {history?.totals.totalPoints ?? 0} pts
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {HISTORY_RANGES.map((range) => (
+              <button
+                key={range.id}
+                onClick={() => setHistoryRange(range.id)}
+                className={`text-xs font-bold rounded-pill py-2 border transition-colors ${
+                  historyRange === range.id
+                    ? "gradient-brand text-white border-transparent"
+                    : "bg-surface-2 border-border text-text-muted"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
+              <p className="text-base font-extrabold text-brand-light">{history?.totals.completedDays ?? 0}</p>
+              <p className="text-[10px] text-text-dim font-semibold">Active days</p>
+            </div>
+            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
+              <p className="text-base font-extrabold text-brand-light">{historyAreas}</p>
+              <p className="text-[10px] text-text-dim font-semibold">WELL areas</p>
+            </div>
+            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
+              <p className="text-base font-extrabold text-brand-light">{history?.totals.activityCounts.length ?? 0}</p>
+              <p className="text-[10px] text-text-dim font-semibold">Activity types</p>
+            </div>
+          </div>
+
+          {historyLoading ? (
+            <p className="text-xs text-text-dim text-center py-3">Loading history...</p>
+          ) : historyDays.length === 0 ? (
+            <p className="text-xs text-text-dim text-center py-3">
+              No WELL Check activity in this range yet.
+            </p>
+          ) : historyRange === "year" ? (
+            <div className="flex flex-col">
+              {historyMonths.map((month) => (
+                <div key={month.key} className="flex items-center gap-3 py-2.5 border-t first:border-t-0 border-border">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-2 border border-border shrink-0">
+                    <Calendar size={13} className="text-brand-light" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-text">{formatHistoryMonth(month.key)}</p>
+                    <p className="text-[11px] text-text-muted truncate">
+                      {month.activeDays} active days • {month.areas} WELL areas
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">
+                    <Star size={11} className="fill-yellow-400" />
+                    {month.totalPoints}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {historyDays.map((day) => {
+                const areaCount = getCoveredCategoryCount(day.activities);
+                return (
+                  <div key={day.date} className="flex items-center gap-3 py-2.5 border-t first:border-t-0 border-border">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-2 border border-border shrink-0">
+                      <CheckCircle2 size={13} className="text-brand-light" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-text">{formatHistoryDate(day.date)}</p>
+                      <p className="text-[11px] text-text-muted truncate">
+                        {areaCount} WELL areas • {getTopActivityLabel(day.activities)}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">
+                      <Star size={11} className="fill-yellow-400" />
+                      {day.totalPoints}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
