@@ -203,6 +203,126 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
     description:
       "Start in a high plank with hands under your shoulders and body in a straight line. Drive one knee toward your chest, then quickly switch legs in a running motion, keeping your hips level and core tight throughout. Move at a steady, controlled pace.",
   },
+  {
+    name: "Bear Crawls",
+    sets: "3 sets x 20 steps",
+    description:
+      "Start on hands and knees, then lift your knees a few inches off the floor. Keeping your back flat and core engaged, crawl forward by moving opposite hand and foot together. Take small controlled steps and keep your hips low.",
+  },
+  {
+    name: "Bird Dogs",
+    sets: "3 sets x 10 reps per side",
+    description:
+      "Start in tabletop with hands under shoulders and knees under hips. Extend one arm forward and the opposite leg straight back while keeping your hips square to the floor. Pause, then return to center and switch sides.",
+  },
+  {
+    name: "Incline Push-Ups",
+    sets: "3 sets x 10 reps",
+    description:
+      "Place your hands on a sturdy elevated surface such as a bench, counter, or wall-height rail. Step your feet back into a straight line from head to heels. Bend your elbows to lower your chest toward the surface, then press back up.",
+  },
+  {
+    name: "Chair Squats",
+    sets: "3 sets x 12 reps",
+    description:
+      "Stand in front of a chair with feet hip-width apart. Push your hips back and bend your knees until you lightly tap the chair, keeping your chest lifted. Press through your heels to stand tall again.",
+  },
+  {
+    name: "Curtsy Lunges",
+    sets: "3 sets x 10 reps per side",
+    description:
+      "Stand tall, then step one foot diagonally behind the other as if making a curtsy. Bend both knees while keeping your front knee aligned with your toes. Push through the front heel to return to standing, then switch sides.",
+  },
+  {
+    name: "Split Squats",
+    sets: "3 sets x 10 reps per side",
+    description:
+      "Stand in a staggered stance with one foot forward and one foot back. Keeping your torso tall, bend both knees to lower straight down, then press through the front heel to rise. Complete all reps before switching legs.",
+  },
+  {
+    name: "Calf Raise Pulses",
+    sets: "3 sets x 20 pulses",
+    description:
+      "Stand tall with feet hip-width apart and rise onto the balls of your feet. Stay lifted and make small controlled pulses up and down, keeping your ankles steady and your core engaged. Lower your heels fully after each set.",
+  },
+  {
+    name: "Dumbbell Romanian Deadlifts",
+    sets: "3 sets x 12 reps",
+    description:
+      "Hold dumbbells in front of your thighs with a soft bend in your knees. Hinge from your hips and slide the weights down your legs while keeping your back flat. Stop when you feel your hamstrings stretch, then squeeze your glutes to stand.",
+  },
+  {
+    name: "Bent-Over Reverse Fly",
+    sets: "3 sets x 12 reps",
+    description:
+      "Hinge forward with a flat back and hold a light dumbbell in each hand. With a slight bend in your elbows, lift both arms out to the sides until they reach shoulder height. Squeeze your shoulder blades together, then lower slowly.",
+  },
+  {
+    name: "Front Raises",
+    sets: "3 sets x 12 reps",
+    description:
+      "Stand tall holding light dumbbells in front of your thighs. Keeping your arms mostly straight and core braced, lift the weights forward to shoulder height. Lower with control and avoid swinging your body.",
+  },
+  {
+    name: "Lateral Raises",
+    sets: "3 sets x 12 reps",
+    description:
+      "Stand tall with dumbbells at your sides and palms facing in. Keeping a soft bend in your elbows, lift both arms out to shoulder height. Pause briefly, then lower slowly without shrugging your shoulders.",
+  },
+  {
+    name: "Hammer Curls",
+    sets: "3 sets x 12 reps",
+    description:
+      "Hold dumbbells at your sides with palms facing each other. Keep your elbows close to your ribs as you curl the weights toward your shoulders. Squeeze at the top, then lower slowly with control.",
+  },
+  {
+    name: "Overhead Tricep Extension",
+    sets: "3 sets x 12 reps",
+    description:
+      "Hold one dumbbell with both hands overhead. Keep your elbows pointing forward as you bend them to lower the weight behind your head. Press the weight back up until your arms are straight, keeping your ribs pulled down.",
+  },
+  {
+    name: "Glute Bridge March",
+    sets: "3 sets x 10 marches per side",
+    description:
+      "Lift into a glute bridge with hips high and core engaged. Without letting your hips drop or rotate, lift one knee toward your chest, place it back down, then switch legs. Move slowly and keep your glutes active.",
+  },
+  {
+    name: "Fire Hydrants",
+    sets: "3 sets x 15 reps per side",
+    description:
+      "Start on hands and knees with your core engaged. Keeping your knee bent at 90 degrees, lift one leg out to the side until your thigh is near hip height. Lower with control and repeat before switching sides.",
+  },
+  {
+    name: "Clamshells",
+    sets: "3 sets x 15 reps per side",
+    description:
+      "Lie on your side with knees bent and feet stacked. Keeping your feet together and hips still, open your top knee like a clamshell, then lower slowly. Add a mini band above the knees for more resistance.",
+  },
+  {
+    name: "High Plank Shoulder Taps",
+    sets: "3 sets x 20 taps",
+    description:
+      "Start in a high plank with feet slightly wider than hip-width. Keeping your hips as still as possible, lift one hand to tap the opposite shoulder, then place it back down and switch sides.",
+  },
+  {
+    name: "Plank Jacks",
+    sets: "3 sets x 20 reps",
+    description:
+      "Start in a high plank with feet together. Keeping your shoulders over your wrists and core tight, jump or step both feet out wide, then back together. Keep your hips level throughout.",
+  },
+  {
+    name: "Standing Resistance Band Kickbacks",
+    sets: "3 sets x 12 reps per side",
+    description:
+      "Loop a resistance band around your ankles and stand tall while holding a wall or chair for balance. Keeping one leg straight, press it back behind you against the band, squeezing your glute. Return slowly and repeat before switching sides.",
+  },
+  {
+    name: "Wall Push-Ups",
+    sets: "3 sets x 12 reps",
+    description:
+      "Stand facing a wall and place your hands on it at chest height, slightly wider than your shoulders. Step your feet back, keep your body in one straight line, bend your elbows to bring your chest toward the wall, then press away.",
+  },
 ];
 
 export const STRETCHES: StretchExercise[] = [
@@ -325,6 +445,186 @@ export const STRETCHES: StretchExercise[] = [
     duration: "30 sec per side",
     description:
       "Sit or stand tall and reach one hand behind your back or hold your wrist with the opposite hand. Tilt your ear toward the opposite shoulder and gently apply light pressure with the hand on that side of your head. Feel a long stretch through the side of your neck into your shoulder.",
+  },
+  {
+    name: "Wrist Flexor Stretch",
+    duration: "30 sec per side",
+    description:
+      "Extend one arm in front of you with palm facing up. Use your other hand to gently draw the fingers down and back until you feel a stretch through the underside of your forearm. Keep your shoulder relaxed.",
+  },
+  {
+    name: "Wrist Extensor Stretch",
+    duration: "30 sec per side",
+    description:
+      "Extend one arm forward with palm facing down. Use your other hand to gently bend the wrist so your fingers point toward the floor. Hold a light stretch through the top of the forearm, then switch sides.",
+  },
+  {
+    name: "Cross-Body Shoulder Stretch",
+    duration: "30 sec per side",
+    description:
+      "Bring one arm across your chest at shoulder height. Use your other arm to gently pull it closer to your body without shrugging your shoulders. Hold, breathe, then switch sides.",
+  },
+  {
+    name: "Overhead Tricep Stretch",
+    duration: "30 sec per side",
+    description:
+      "Reach one arm overhead, bend the elbow, and let your hand rest behind your upper back. Use the opposite hand to gently guide the elbow inward until you feel a stretch along the back of the upper arm.",
+  },
+  {
+    name: "Lat Stretch",
+    duration: "30 sec per side",
+    description:
+      "Hold a door frame, counter, or sturdy surface with one hand and sit your hips back. Let your chest lower slightly as you lengthen through the side of your back and shoulder. Breathe into your ribs, then switch sides.",
+  },
+  {
+    name: "Side Bend Stretch",
+    duration: "30 sec per side",
+    description:
+      "Stand or sit tall and reach one arm overhead. Lean gently to the opposite side without collapsing forward, feeling a stretch from your hip through your ribs and shoulder. Return to center and switch sides.",
+  },
+  {
+    name: "Standing IT Band Stretch",
+    duration: "30 sec per side",
+    description:
+      "Cross one foot behind the other and shift your hips toward the crossed-back side. Reach the same-side arm overhead and lean away slightly, feeling a stretch along the outside of the hip and thigh.",
+  },
+  {
+    name: "Kneeling Adductor Stretch",
+    duration: "30 sec per side",
+    description:
+      "Start on hands and knees, then extend one leg straight out to the side with the foot flat. Slowly shift your hips back toward your heel until you feel a stretch through the inner thigh. Keep your back long.",
+  },
+  {
+    name: "Frog Stretch",
+    duration: "45 sec",
+    description:
+      "Start on hands and knees and slowly widen your knees apart, keeping your ankles in line with your knees. Sink your hips back gently until you feel a deep inner-thigh stretch. Keep the movement slow and comfortable.",
+  },
+  {
+    name: "Happy Baby",
+    duration: "45 sec",
+    description:
+      "Lie on your back and draw your knees toward your chest. Hold the outside edges of your feet or behind your thighs, keeping your ankles over your knees. Gently pull down to open your hips and relax your lower back.",
+  },
+  {
+    name: "Pigeon Pose",
+    duration: "30 sec per side",
+    description:
+      "From a plank or tabletop position, bring one knee forward behind your wrist and angle the shin across your mat. Extend the other leg behind you and fold forward as comfortable, feeling a stretch in the outer hip.",
+  },
+  {
+    name: "Half Split Stretch",
+    duration: "30 sec per side",
+    description:
+      "From a low lunge, shift your hips back and straighten your front leg. Flex the front foot and hinge forward from your hips, keeping your spine long, until you feel a stretch through the hamstring.",
+  },
+  {
+    name: "Seated Hamstring Fold",
+    duration: "45 sec",
+    description:
+      "Sit with both legs extended in front of you. Sit tall, then hinge from your hips and reach toward your shins, ankles, or feet. Keep a soft bend in the knees and let your breath deepen the stretch.",
+  },
+  {
+    name: "Standing Side Lunge Stretch",
+    duration: "30 sec per side",
+    description:
+      "Stand with feet wide and shift your weight into one knee while keeping the other leg straight. Sit your hips back and feel the stretch along the inner thigh of the straight leg. Switch sides slowly.",
+  },
+  {
+    name: "Ankle Circles",
+    duration: "30 sec per side",
+    description:
+      "Sit or stand with one foot slightly lifted. Slowly circle your ankle in one direction, exploring the full comfortable range, then reverse. Keep the movement smooth and controlled before switching feet.",
+  },
+  {
+    name: "Toe Touch Reach",
+    duration: "45 sec",
+    description:
+      "Stand tall, inhale to reach your arms overhead, then exhale and fold toward your toes with a soft bend in your knees. Let your head relax and slowly roll back up when finished.",
+  },
+  {
+    name: "Downward Dog Calf Pedal",
+    duration: "45 sec",
+    description:
+      "Start in a downward dog shape with hips lifted and hands pressing into the floor. Bend one knee while pressing the opposite heel toward the ground, then switch sides in a slow pedaling motion.",
+  },
+  {
+    name: "Cobra Stretch",
+    duration: "30 sec",
+    description:
+      "Lie face down with hands under your shoulders. Press lightly through your palms to lift your chest, keeping elbows close to your sides and shoulders away from your ears. Stop before any lower-back pinching.",
+  },
+  {
+    name: "Sphinx Pose",
+    duration: "45 sec",
+    description:
+      "Lie on your stomach and prop yourself up on your forearms with elbows under shoulders. Press your forearms into the floor, lift your chest, and lengthen through the front of your body while keeping your legs relaxed.",
+  },
+  {
+    name: "Kneeling Chest Opener",
+    duration: "45 sec",
+    description:
+      "Kneel and clasp your hands behind your back or hold a towel. Draw your shoulder blades together, lift your chest, and gently reach your knuckles toward the floor behind you. Keep your neck long.",
+  },
+  {
+    name: "Wall Pec Stretch",
+    duration: "30 sec per side",
+    description:
+      "Place one palm and forearm against a wall with your elbow near shoulder height. Slowly rotate your body away from the wall until you feel a stretch across your chest and front shoulder. Switch sides.",
+  },
+  {
+    name: "Scorpion Stretch",
+    duration: "30 sec per side",
+    description:
+      "Lie face down with arms extended out in a T. Bend one knee and gently rotate that leg across your body toward the opposite side, keeping your chest as open as possible. Return slowly and switch sides.",
+  },
+  {
+    name: "World's Greatest Stretch",
+    duration: "30 sec per side",
+    description:
+      "Step into a deep runner's lunge with both hands inside the front foot. Drop your hips, then rotate your front-side arm toward the ceiling to open your chest. Return the hand down and switch sides.",
+  },
+  {
+    name: "Prone Quad Stretch",
+    duration: "30 sec per side",
+    description:
+      "Lie on your stomach and bend one knee, reaching back to hold your ankle or foot. Gently draw the heel toward your glute while keeping your hips heavy on the floor. Switch sides.",
+  },
+  {
+    name: "Reclined Bound Angle",
+    duration: "1 min",
+    description:
+      "Lie on your back, bring the soles of your feet together, and let your knees fall open. Rest your hands on your belly or by your sides and breathe into the front of your hips and inner thighs.",
+  },
+  {
+    name: "Eagle Arms",
+    duration: "30 sec per side",
+    description:
+      "Reach both arms forward, cross one arm under the other, and bend your elbows. Bring palms or backs of hands together, then lift your elbows slightly while relaxing your shoulders. Switch the arm crossing halfway through.",
+  },
+  {
+    name: "Levator Scapulae Stretch",
+    duration: "30 sec per side",
+    description:
+      "Sit tall and turn your nose slightly toward one armpit. Gently nod your chin down and use the same-side hand to add light pressure to the back of your head. Feel the stretch along the back side of your neck.",
+  },
+  {
+    name: "Jaw Release Stretch",
+    duration: "45 sec",
+    description:
+      "Sit tall and relax your shoulders. Slowly open and close your jaw, then move it gently side to side within a comfortable range. Let your tongue rest and avoid forcing the movement.",
+  },
+  {
+    name: "Seated Side Reach",
+    duration: "30 sec per side",
+    description:
+      "Sit comfortably with one hand on the floor beside you. Reach the opposite arm overhead and lean gently toward the grounded hand, lengthening through your side body. Switch sides after several slow breaths.",
+  },
+  {
+    name: "Diaphragm Rib Stretch",
+    duration: "1 min",
+    description:
+      "Sit or stand tall and place your hands around the sides of your lower ribs. Inhale slowly into your hands, feeling the ribs expand outward, then exhale fully. Keep the shoulders relaxed and let the breath create the stretch.",
   },
 ];
 

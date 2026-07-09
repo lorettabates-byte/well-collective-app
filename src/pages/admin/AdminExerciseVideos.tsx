@@ -141,90 +141,90 @@ export default function AdminExerciseVideos() {
         ].map(({ label, items, assigned }) => {
           const isOpen = openSections[label];
           return (
-          <div key={label} className="mb-4">
-            <button
-              onClick={() => toggleSection(label)}
-              className="w-full flex items-center justify-between py-2 mb-2"
-            >
-              <div className="flex items-center gap-2">
-                {isOpen ? <ChevronDown size={14} className="text-text-dim" /> : <ChevronRight size={14} className="text-text-dim" />}
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">{label}</p>
-              </div>
-              <p className="text-[10px] text-text-muted">{assigned} / {items.length} assigned</p>
-            </button>
-            {isOpen && (
-            <div className="flex flex-col gap-3">
-              {items.map(({ name }) => {
-                const currentUrl = saved.get(name);
-                const isSaved2 = saved2 === name;
-                return (
-                  <div key={name} className="glass-card rounded-card p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${currentUrl ? "bg-green-400" : "bg-border"}`} />
-                      <p className="text-sm font-semibold text-text flex-1 min-w-0 truncate">{name}</p>
-                      {currentUrl && (
-                        <button
-                          onClick={() => { setPreviewUrl(currentUrl); setPreviewName(name); }}
-                          className="text-brand-light shrink-0"
-                          title="Preview current video"
-                        >
-                          <Play size={14} />
-                        </button>
-                      )}
-                      {currentUrl && (
-                        <button
-                          onClick={() => handleDelete(name)}
-                          disabled={deleting === name}
-                          className="text-red-400 shrink-0 disabled:opacity-40"
-                          title="Remove assignment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
+            <div key={label} className="mb-4">
+              <button
+                onClick={() => toggleSection(label)}
+                className="w-full flex items-center justify-between py-2 mb-2"
+              >
+                <div className="flex items-center gap-2">
+                  {isOpen ? <ChevronDown size={14} className="text-text-dim" /> : <ChevronRight size={14} className="text-text-dim" />}
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">{label}</p>
+                </div>
+                <p className="text-[10px] text-text-muted">{assigned} / {items.length} assigned</p>
+              </button>
+              {isOpen ? (
+                <div className="flex flex-col gap-3">
+                  {items.map(({ name }) => {
+                    const currentUrl = saved.get(name);
+                    const isSaved2 = saved2 === name;
+                    return (
+                      <div key={name} className="glass-card rounded-card p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${currentUrl ? "bg-green-400" : "bg-border"}`} />
+                          <p className="text-sm font-semibold text-text flex-1 min-w-0 truncate">{name}</p>
+                          {currentUrl && (
+                            <button
+                              onClick={() => { setPreviewUrl(currentUrl); setPreviewName(name); }}
+                              className="text-brand-light shrink-0"
+                              title="Preview current video"
+                            >
+                              <Play size={14} />
+                            </button>
+                          )}
+                          {currentUrl && (
+                            <button
+                              onClick={() => handleDelete(name)}
+                              disabled={deleting === name}
+                              className="text-red-400 shrink-0 disabled:opacity-40"
+                              title="Remove assignment"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
 
-                    {/* Search term */}
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        value={searchTerms[name] ?? ""}
-                        onChange={(e) => setSearchTerms((p) => ({ ...p, [name]: e.target.value }))}
-                        placeholder={`Search term (e.g. "${name.toLowerCase()}")`}
-                        className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
-                      />
-                      <button
-                        onClick={() => handleSearch(name)}
-                        disabled={searching === name}
-                        className="flex items-center gap-1 text-xs font-semibold bg-surface-2 border border-border text-text-muted rounded-card px-3 py-2 shrink-0 disabled:opacity-40"
-                      >
-                        {searching === name ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                        Find
-                      </button>
-                    </div>
+                        {/* Search term */}
+                        <div className="flex gap-2 mb-2">
+                          <input
+                            value={searchTerms[name] ?? ""}
+                            onChange={(e) => setSearchTerms((p) => ({ ...p, [name]: e.target.value }))}
+                            placeholder={`Search term (e.g. "${name.toLowerCase()}")`}
+                            className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                          />
+                          <button
+                            onClick={() => handleSearch(name)}
+                            disabled={searching === name}
+                            className="flex items-center gap-1 text-xs font-semibold bg-surface-2 border border-border text-text-muted rounded-card px-3 py-2 shrink-0 disabled:opacity-40"
+                          >
+                            {searching === name ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                            Find
+                          </button>
+                        </div>
 
-                    {/* Manual URL */}
-                    <div className="flex gap-2">
-                      <input
-                        value={customUrls[name] ?? ""}
-                        onChange={(e) => setCustomUrls((p) => ({ ...p, [name]: e.target.value }))}
-                        placeholder="Paste video URL directly…"
-                        className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
-                      />
-                      <button
-                        onClick={() => handleSave(name)}
-                        disabled={saving === name || !customUrls[name]?.trim()}
-                        className="flex items-center gap-1 text-xs font-semibold gradient-brand text-white rounded-card px-3 py-2 shrink-0 disabled:opacity-40"
-                      >
-                        {isSaved2 ? <CheckCircle2 size={12} /> : saving === name ? <Loader2 size={12} className="animate-spin" /> : null}
-                        {isSaved2 ? "Saved" : "Save"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                        {/* Manual URL */}
+                        <div className="flex gap-2">
+                          <input
+                            value={customUrls[name] ?? ""}
+                            onChange={(e) => setCustomUrls((p) => ({ ...p, [name]: e.target.value }))}
+                            placeholder="Paste video URL directly..."
+                            className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
+                          />
+                          <button
+                            onClick={() => handleSave(name)}
+                            disabled={saving === name || !customUrls[name]?.trim()}
+                            className="flex items-center gap-1 text-xs font-semibold gradient-brand text-white rounded-card px-3 py-2 shrink-0 disabled:opacity-40"
+                          >
+                            {isSaved2 ? <CheckCircle2 size={12} /> : saving === name ? <Loader2 size={12} className="animate-spin" /> : null}
+                            {isSaved2 ? "Saved" : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
-            )}
-          </div>
-        );
+          );
         })}
       </div>
     </div>
