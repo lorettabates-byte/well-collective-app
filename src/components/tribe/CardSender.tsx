@@ -1,6 +1,7 @@
 import { Award, Check, Feather, Gift, Heart, Sun, X, Zap } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
 import { createPortal } from "react-dom";
 import { CARD_OCCASIONS } from "../../data/cards";
 import type { CardOccasion, CardStyle } from "../../data/cards";

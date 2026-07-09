@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, UserCircle, Watch, X } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, Watch, X } from "lucide-react";
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
