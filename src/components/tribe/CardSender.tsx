@@ -609,11 +609,7 @@ export default function CardSender({
                 disabled={stage !== "viewing"}
                 className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-3 disabled:opacity-40 transition-opacity"
               >
-                {stage === "viewing"
-                  ? `Send to ${memberName}`
-                  : stage === "done"
-                  ? "Sent!"
-                  : "Opening card…"}
+                {stage === "viewing" ? `Send to ${memberName}` : "Opening card…"}
               </button>
             </div>
           )}
