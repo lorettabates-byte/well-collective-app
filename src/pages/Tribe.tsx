@@ -2,6 +2,7 @@ import {
   Cake, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
   Plus, Search, Sparkles, Trophy, UserMinus, Users, X, Zap,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { TRIBE_CHEERS } from "../data/cheers";
@@ -117,6 +118,73 @@ const REASON_CONFIG: Record<SuggestionReason, { icon: React.ReactNode; accent: s
   uncheerred:{ icon: <Heart size={12} />,    accent: "text-rose-400 bg-rose-400/10 border-rose-400/20",         label: "Needs a cheer" },
   inactive:  { icon: <Heart size={12} />,    accent: "text-text-muted bg-surface-2 border-border",              label: "Reconnect" },
 };
+
+const CHALLENGE_CATEGORY_CONFIG: Record<TribeChallenge["category"], {
+  label: string;
+  accent: string;
+  glow: string;
+  mine: string;
+  partner: string;
+  text: string;
+}> = {
+  fitness: {
+    label: "Movement",
+    accent: "linear-gradient(90deg, #FB923C, #FACC15)",
+    glow: "rgba(251,146,60,0.14)",
+    mine: "#FB923C",
+    partner: "#FACC15",
+    text: "#FDBA74",
+  },
+  nutrition: {
+    label: "Nourishment",
+    accent: "linear-gradient(90deg, #34D399, #84D8FD)",
+    glow: "rgba(52,211,153,0.12)",
+    mine: "#34D399",
+    partner: "#84D8FD",
+    text: "#6EE7B7",
+  },
+  mindfulness: {
+    label: "Mindfulness",
+    accent: "linear-gradient(90deg, #A78BFA, #84D8FD)",
+    glow: "rgba(167,139,250,0.13)",
+    mine: "#A78BFA",
+    partner: "#84D8FD",
+    text: "#C4B5FD",
+  },
+  wellness: {
+    label: "WELL Check",
+    accent: "linear-gradient(90deg, #84D8FD, #2A6DD9)",
+    glow: "rgba(132,216,253,0.13)",
+    mine: "#84D8FD",
+    partner: "#FACC15",
+    text: "#84D8FD",
+  },
+};
+
+function launchChallengeConfetti() {
+  confetti({
+    particleCount: 120,
+    spread: 78,
+    origin: { y: 0.72 },
+    colors: ["#84D8FD", "#FACC15", "#34D399", "#FB923C", "#FFFFFF"],
+  });
+  window.setTimeout(() => {
+    confetti({
+      particleCount: 70,
+      angle: 60,
+      spread: 70,
+      origin: { x: 0.15, y: 0.75 },
+      colors: ["#84D8FD", "#FACC15", "#FFFFFF"],
+    });
+    confetti({
+      particleCount: 70,
+      angle: 120,
+      spread: 70,
+      origin: { x: 0.85, y: 0.75 },
+      colors: ["#34D399", "#FB923C", "#FFFFFF"],
+    });
+  }, 180);
+}
 
 export default function Tribe() {
   useSectionTracking("tribe");
@@ -283,6 +351,7 @@ export default function Tribe() {
         setChallenges((prev) => prev.map((item) => (item.id === challenge.id ? data.challenge! : item)));
       }
       if (data.awarded && data.points) {
+        launchChallengeConfetti();
         setChallengeToast(`Challenge complete! You both earned ${data.points} bonus points.`);
         window.setTimeout(() => setChallengeToast(""), 3500);
       }
@@ -416,48 +485,92 @@ export default function Tribe() {
                   const partnerCount = challenge.partnerProgress.length;
                   const total = challenge.goals.length || 1;
                   const highlighted = challengeParam === String(challenge.id);
+                  const cfg = CHALLENGE_CATEGORY_CONFIG[challenge.category];
+                  const myPercent = Math.round((myCount / total) * 100);
+                  const partnerPercent = Math.round((partnerCount / total) * 100);
+                  const togetherPercent = Math.round(((myCount + partnerCount) / (total * 2)) * 100);
                   return (
                     <div
                       key={challenge.id}
                       id={`tribe-challenge-${challenge.id}`}
-                      className={`glass-card rounded-card p-4 border ${highlighted ? "border-brand-light/50" : "border-border"}`}
+                      className={`relative overflow-hidden glass-card rounded-card p-4 border ${highlighted ? "border-brand-light/60" : "border-border"}`}
+                      style={{ background: `linear-gradient(145deg, ${cfg.glow}, rgba(13,24,38,0.94) 42%, rgba(20,35,57,0.9))` }}
                     >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-9 h-9 rounded-full bg-brand-light/10 border border-brand-light/20 flex items-center justify-center shrink-0">
-                          <Zap size={16} className="text-brand-light" />
+                      <div className="absolute inset-x-0 top-0 h-1" style={{ background: cfg.accent }} />
+
+                      <div className="flex items-start gap-3 mb-4 pt-1">
+                        <div
+                          className="w-12 h-12 rounded-full p-0.5 shrink-0"
+                          style={{ background: `conic-gradient(${cfg.mine} ${togetherPercent}%, rgba(255,255,255,0.12) 0)` }}
+                        >
+                          <div className="w-full h-full rounded-full bg-surface flex flex-col items-center justify-center border border-border">
+                            <span className="text-[10px] font-extrabold leading-none" style={{ color: cfg.text }}>{togetherPercent}%</span>
+                            <span className="text-[8px] text-text-dim leading-none mt-0.5">done</span>
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-bold text-text">{challenge.title}</p>
-                            {challenge.completedAt && (
-                              <span className="text-[10px] font-bold text-brand-light bg-brand-light/10 rounded-pill px-2 py-0.5 shrink-0">
-                                Complete
-                              </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                <span
+                                  className="text-[9px] font-extrabold uppercase tracking-wide rounded-pill px-2 py-0.5 border"
+                                  style={{ color: cfg.text, background: cfg.glow, borderColor: cfg.text }}
+                                >
+                                  {cfg.label}
+                                </span>
+                                <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-300 bg-yellow-400/10 border border-yellow-400/20 rounded-pill px-2 py-0.5">
+                                  +{challenge.bonusPoints} bonus
+                                </span>
+                              </div>
+                              <p className="text-sm font-bold text-text leading-snug">{challenge.title}</p>
+                            </div>
+                            {challenge.completedAt ? (
+                              <Trophy size={18} className="text-yellow-300 shrink-0 mt-0.5" />
+                            ) : (
+                              <Zap size={17} className="shrink-0 mt-0.5" style={{ color: cfg.text }} />
                             )}
                           </div>
                           <p className="text-xs text-text-muted mt-0.5">{challenge.description}</p>
-                          <p className="text-[10px] font-bold text-text-dim uppercase tracking-wide mt-1">
-                            {challenge.duration} with {challenge.partner.name}
-                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Avatar src={challenge.partner.avatar || ""} alt={challenge.partner.name} size={22} />
+                            <p className="text-[10px] font-bold text-text-dim uppercase tracking-wide">
+                              {challenge.duration} with {challenge.partner.name}
+                            </p>
+                          </div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim mb-1">You</p>
+                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim">You</p>
+                            <p className="text-[10px] font-extrabold" style={{ color: cfg.mine }}>{myPercent}%</p>
+                          </div>
                           <div className="h-1.5 rounded-full bg-surface overflow-hidden mb-1.5">
-                            <div className="h-full rounded-full bg-brand-light" style={{ width: `${(myCount / total) * 100}%` }} />
+                            <div className="h-full rounded-full" style={{ width: `${myPercent}%`, background: cfg.mine }} />
                           </div>
                           <p className="text-xs font-bold text-text">{myCount}/{total}</p>
                         </div>
-                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim mb-1">{challenge.partner.name}</p>
+                        <div className="rounded-card bg-surface-2 border border-border px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim truncate">{challenge.partner.name}</p>
+                            <p className="text-[10px] font-extrabold" style={{ color: cfg.partner }}>{partnerPercent}%</p>
+                          </div>
                           <div className="h-1.5 rounded-full bg-surface overflow-hidden mb-1.5">
-                            <div className="h-full rounded-full bg-yellow-400" style={{ width: `${(partnerCount / total) * 100}%` }} />
+                            <div className="h-full rounded-full" style={{ width: `${partnerPercent}%`, background: cfg.partner }} />
                           </div>
                           <p className="text-xs font-bold text-text">{partnerCount}/{total}</p>
                         </div>
                       </div>
+
+                      {challenge.completedAt && (
+                        <div className="mb-3 rounded-card border border-yellow-400/25 bg-yellow-400/10 px-3 py-2 flex items-center gap-2">
+                          <Trophy size={15} className="text-yellow-300 shrink-0" />
+                          <p className="text-xs font-semibold text-yellow-100">
+                            Completed together. Bonus points were added to both WELL Cups.
+                          </p>
+                        </div>
+                      )}
 
                       <div className="flex flex-col gap-2">
                         {challenge.goals.map((goal) => {
@@ -469,16 +582,20 @@ export default function Tribe() {
                               key={goal.id}
                               onClick={() => toggleChallengeGoal(challenge, goal.id)}
                               disabled={!!challenge.completedAt || loadingGoal}
-                              className="w-full flex items-center gap-2 rounded-card bg-surface-2 border border-border px-3 py-2 text-left disabled:opacity-70"
+                              className="w-full flex items-center gap-2 rounded-card border px-3 py-2.5 text-left disabled:opacity-70 transition-colors"
+                              style={{
+                                background: mineDone ? cfg.glow : "rgba(20,35,57,0.78)",
+                                borderColor: mineDone ? cfg.text : "rgba(31,51,73,0.9)",
+                              }}
                             >
                               {mineDone ? (
-                                <CheckCircle2 size={16} className="text-brand-light shrink-0" />
+                                <CheckCircle2 size={16} className="shrink-0" style={{ color: cfg.text }} />
                               ) : (
                                 <Circle size={16} className="text-text-dim shrink-0" />
                               )}
                               <span className="flex-1 min-w-0 text-xs font-semibold text-text">{goal.label}</span>
                               {partnerDone && (
-                                <span className="text-[10px] font-bold text-yellow-400 shrink-0">Partner done</span>
+                                <span className="text-[10px] font-bold text-yellow-300 shrink-0 rounded-pill bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5">Partner done</span>
                               )}
                             </button>
                           );

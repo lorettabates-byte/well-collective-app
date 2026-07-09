@@ -1,6 +1,6 @@
 import {
-  Activity, BookOpen, Calendar, CheckCircle2, Dumbbell, Flame, Footprints, MapPin,
-  MessageSquare, Moon, Music, PenLine, Salad, Smartphone, Sparkles,
+  Activity, BarChart3, BookOpen, Calendar, CheckCircle2, Dumbbell, Flame, Footprints, Home, Lock,
+  MapPin, MessageSquare, Moon, Music, PenLine, PieChart, Salad, Smartphone, Sparkles,
   Star, Target, TrendingUp, UserPlus, Video, Wind, X, Zap,
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
@@ -10,6 +10,7 @@ import { logActivity } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 import { todayISO } from "../utils/format";
+import { syncWellCheckWidget } from "../utils/wellCheckWidget";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -20,11 +21,20 @@ interface ActivitySummary {
 }
 
 type HistoryRange = "week" | "month" | "year";
+type HistoryMetric = "wellAreas" | "sleepHours" | "energyOut" | "energyIn" | "steps";
 
 interface ActivityHistoryDay {
   date: string;
   totalPoints: number;
   activities: ActivitySummary[];
+  energyIn?: number;
+  energyOut?: number | null;
+  sleepHours?: number | null;
+  steps?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  wellAreas?: number;
 }
 
 interface ActivityHistoryResponse {
@@ -34,7 +44,33 @@ interface ActivityHistoryResponse {
     totalPoints: number;
     completedDays: number;
     activityCounts: ActivitySummary[];
+    averages?: {
+      sleepHours?: number | null;
+      energyIn?: number | null;
+      energyOut?: number | null;
+      steps?: number | null;
+      wellAreas?: number | null;
+    };
   };
+}
+
+interface HistoryChartPoint {
+  key: string;
+  title: string;
+  label: string;
+  subLabel: string;
+  days: ActivityHistoryDay[];
+  totalPoints: number;
+  activeDays: number;
+  wellAreas: number;
+  sleepHours: number | null;
+  energyIn: number;
+  energyOut: number | null;
+  steps: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  topActivity: string;
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -95,6 +131,21 @@ const HISTORY_RANGES: { id: HistoryRange; label: string }[] = [
   { id: "year", label: "Year" },
 ];
 
+const HISTORY_METRICS: {
+  id: HistoryMetric;
+  label: string;
+  shortLabel: string;
+  color: string;
+  glow: string;
+  Icon: LucideIcon;
+}[] = [
+  { id: "wellAreas", label: "WELL Areas", shortLabel: "Areas", color: "#84D8FD", glow: "rgba(132,216,253,0.22)", Icon: PieChart },
+  { id: "sleepHours", label: "Sleep", shortLabel: "Sleep", color: "#A78BFA", glow: "rgba(167,139,250,0.22)", Icon: Moon },
+  { id: "energyOut", label: "Energy Out", shortLabel: "Out", color: "#FB923C", glow: "rgba(251,146,60,0.22)", Icon: Flame },
+  { id: "energyIn", label: "Energy In", shortLabel: "In", color: "#34D399", glow: "rgba(52,211,153,0.2)", Icon: Salad },
+  { id: "steps", label: "Steps", shortLabel: "Steps", color: "#FACC15", glow: "rgba(250,204,21,0.18)", Icon: Footprints },
+];
+
 function parseHistoryDate(date: string): Date {
   const [year, month, day] = date.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -121,24 +172,108 @@ function getCoveredCategoryCount(activities: ActivitySummary[]): number {
   return CHECKIN_GRID.filter((item) => item.maps.some((m) => doneTypes.has(m))).length;
 }
 
+function getDayAreaCount(day: ActivityHistoryDay): number {
+  return day.wellAreas ?? getCoveredCategoryCount(day.activities);
+}
+
 function getTopActivityLabel(activities: ActivitySummary[]): string {
   const top = [...activities].sort((a, b) => b.points - a.points)[0];
   return top ? ACTIVITY_LABELS[top.type] ?? top.type : "No activities";
 }
 
-function buildMonthlyHistory(days: ActivityHistoryDay[]) {
-  const monthMap = new Map<string, { key: string; totalPoints: number; activeDays: number; areas: number }>();
+function averagePositive(values: (number | null | undefined)[], places = 0): number | null {
+  const filtered = values
+    .map((value) => Number(value ?? 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  if (filtered.length === 0) return null;
+  const factor = 10 ** places;
+  return Math.round((filtered.reduce((sum, value) => sum + value, 0) / filtered.length) * factor) / factor;
+}
+
+function sumMetric(values: (number | null | undefined)[]): number {
+  return values.reduce<number>((sum, value) => sum + Number(value ?? 0), 0);
+}
+
+function formatHistoryMetric(metric: HistoryMetric, value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) return "No data";
+  if (metric === "sleepHours") return `${Number(value).toFixed(1)}h`;
+  if (metric === "energyIn" || metric === "energyOut") return `${Math.round(value).toLocaleString()} kcal`;
+  if (metric === "steps") return Math.round(value).toLocaleString();
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
+}
+
+function getPointMetricValue(point: HistoryChartPoint, metric: HistoryMetric): number {
+  if (metric === "sleepHours") return point.sleepHours ?? 0;
+  if (metric === "energyIn") return point.energyIn;
+  if (metric === "energyOut") return point.energyOut ?? 0;
+  if (metric === "steps") return point.steps;
+  return point.wellAreas;
+}
+
+function getMetricConfig(metric: HistoryMetric) {
+  return HISTORY_METRICS.find((item) => item.id === metric) ?? HISTORY_METRICS[0];
+}
+
+function buildMonthlyHistory(days: ActivityHistoryDay[]): HistoryChartPoint[] {
+  const monthMap = new Map<string, ActivityHistoryDay[]>();
 
   for (const day of days) {
     const key = day.date.slice(0, 7);
-    const month = monthMap.get(key) ?? { key, totalPoints: 0, activeDays: 0, areas: 0 };
-    month.totalPoints += day.totalPoints;
-    month.activeDays += 1;
-    month.areas += getCoveredCategoryCount(day.activities);
-    monthMap.set(key, month);
+    const monthDays = monthMap.get(key) ?? [];
+    monthDays.push(day);
+    monthMap.set(key, monthDays);
   }
 
-  return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key)).slice(0, 12);
+  return Array.from(monthMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12)
+    .map(([key, monthDays]) => {
+      const date = new Date(`${key}-01T00:00:00`);
+      return {
+        key,
+        title: formatHistoryMonth(key),
+        label: date.toLocaleDateString(undefined, { month: "short" }),
+        subLabel: date.toLocaleDateString(undefined, { year: "2-digit" }),
+        days: monthDays,
+        totalPoints: sumMetric(monthDays.map((day) => day.totalPoints)),
+        activeDays: monthDays.length,
+        wellAreas: averagePositive(monthDays.map(getDayAreaCount), 1) ?? 0,
+        sleepHours: averagePositive(monthDays.map((day) => day.sleepHours), 1),
+        energyIn: Math.round(averagePositive(monthDays.map((day) => day.energyIn), 0) ?? 0),
+        energyOut: averagePositive(monthDays.map((day) => day.energyOut), 0),
+        steps: Math.round(averagePositive(monthDays.map((day) => day.steps), 0) ?? 0),
+        protein: Math.round(sumMetric(monthDays.map((day) => day.protein))),
+        carbs: Math.round(sumMetric(monthDays.map((day) => day.carbs))),
+        fat: Math.round(sumMetric(monthDays.map((day) => day.fat))),
+        topActivity: getTopActivityLabel(monthDays.flatMap((day) => day.activities)),
+      };
+    });
+}
+
+function buildDailyHistory(days: ActivityHistoryDay[]): HistoryChartPoint[] {
+  return [...days]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((day) => {
+      const date = parseHistoryDate(day.date);
+      return {
+        key: day.date,
+        title: formatHistoryDate(day.date),
+        label: date.toLocaleDateString(undefined, { day: "numeric" }),
+        subLabel: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
+        days: [day],
+        totalPoints: day.totalPoints,
+        activeDays: 1,
+        wellAreas: getDayAreaCount(day),
+        sleepHours: day.sleepHours ?? null,
+        energyIn: day.energyIn ?? 0,
+        energyOut: day.energyOut ?? null,
+        steps: day.steps ?? 0,
+        protein: day.protein ?? 0,
+        carbs: day.carbs ?? 0,
+        fat: day.fat ?? 0,
+        topActivity: getTopActivityLabel(day.activities),
+      };
+    });
 }
 
 // MET (Metabolic Equivalent of Task) values from the Compendium of Physical
@@ -271,6 +406,8 @@ export default function WellCheck() {
   const [historyRange, setHistoryRange] = useState<HistoryRange>("week");
   const [history, setHistory] = useState<ActivityHistoryResponse | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyMetric, setHistoryMetric] = useState<HistoryMetric>("wellAreas");
+  const [selectedHistoryKey, setSelectedHistoryKey] = useState<string | null>(null);
 
   // Steps
   const [stepsInput, setStepsInput] = useState("");
@@ -311,6 +448,10 @@ export default function WellCheck() {
       .catch(() => setHistory(null))
       .finally(() => setHistoryLoading(false));
   }, [user.email, historyRange]);
+
+  useEffect(() => {
+    setSelectedHistoryKey(null);
+  }, [historyRange, historyMetric]);
 
   useEffect(() => {
     if (!API_URL || !user.email) { setStepsLoading(false); return; }
@@ -407,8 +548,30 @@ export default function WellCheck() {
     item.maps.some((m) => doneTypes.has(m))
   ).length;
   const historyDays = history?.days ?? [];
-  const historyMonths = historyRange === "year" ? buildMonthlyHistory(historyDays) : [];
-  const historyAreas = historyDays.reduce((sum, day) => sum + getCoveredCategoryCount(day.activities), 0);
+  const historyChartPoints = historyRange === "year" ? buildMonthlyHistory(historyDays) : buildDailyHistory(historyDays);
+  const historyMetricConfig = getMetricConfig(historyMetric);
+  const maxHistoryValue = Math.max(1, ...historyChartPoints.map((point) => getPointMetricValue(point, historyMetric)));
+  const selectedHistoryPoint = historyChartPoints.find((point) => point.key === selectedHistoryKey) ?? historyChartPoints[historyChartPoints.length - 1] ?? null;
+  const historyAverages = history?.totals.averages;
+  const avgSleep = historyAverages?.sleepHours ?? averagePositive(historyDays.map((day) => day.sleepHours), 1);
+  const avgEnergyIn = historyAverages?.energyIn ?? averagePositive(historyDays.map((day) => day.energyIn));
+  const avgEnergyOut = historyAverages?.energyOut ?? averagePositive(historyDays.map((day) => day.energyOut));
+  const avgSteps = historyAverages?.steps ?? averagePositive(historyDays.map((day) => day.steps));
+  const HistoryMetricIcon = historyMetricConfig.Icon;
+  const widgetSleepValue = sleepData ? `${sleepData.hours}h` : "--";
+
+  useEffect(() => {
+    const updatedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    syncWellCheckWidget({
+      points: `${totalPoints} pts`,
+      areas: `${gridDoneCount}/${CHECKIN_GRID.length}`,
+      sleep: widgetSleepValue,
+      energyIn: todayCalories > 0 ? `In ${todayCalories.toLocaleString()}` : "In --",
+      energyOut: tdee !== null ? `Out ${tdee.toLocaleString()}` : "Out --",
+      steps: todaySteps ? todaySteps.steps.toLocaleString() : "--",
+      updatedAt,
+    });
+  }, [gridDoneCount, tdee, todayCalories, todaySteps, totalPoints, widgetSleepValue]);
 
   return (
     <div>
@@ -583,71 +746,209 @@ export default function WellCheck() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
-              <p className="text-base font-extrabold text-brand-light">{history?.totals.completedDays ?? 0}</p>
-              <p className="text-[10px] text-text-dim font-semibold">Active days</p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="rounded-card px-3 py-2.5" style={{ background: "rgba(132,216,253,0.08)", border: "0.5px solid rgba(132,216,253,0.18)" }}>
+              <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Avg Sleep</p>
+              <p className="text-lg font-extrabold text-brand-light">{avgSleep ? `${avgSleep.toFixed(1)}h` : "—"}</p>
             </div>
-            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
-              <p className="text-base font-extrabold text-brand-light">{historyAreas}</p>
-              <p className="text-[10px] text-text-dim font-semibold">WELL areas</p>
+            <div className="rounded-card px-3 py-2.5" style={{ background: "rgba(251,146,60,0.08)", border: "0.5px solid rgba(251,146,60,0.18)" }}>
+              <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Avg Energy Out</p>
+              <p className="text-lg font-extrabold text-orange-300">{avgEnergyOut ? Math.round(avgEnergyOut).toLocaleString() : "—"}</p>
             </div>
-            <div className="text-center rounded-card px-2 py-2" style={{ background: "rgba(42,109,217,0.08)" }}>
-              <p className="text-base font-extrabold text-brand-light">{history?.totals.activityCounts.length ?? 0}</p>
-              <p className="text-[10px] text-text-dim font-semibold">Activity types</p>
+            <div className="rounded-card px-3 py-2.5" style={{ background: "rgba(52,211,153,0.08)", border: "0.5px solid rgba(52,211,153,0.18)" }}>
+              <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Avg Energy In</p>
+              <p className="text-lg font-extrabold text-emerald-300">{avgEnergyIn ? Math.round(avgEnergyIn).toLocaleString() : "—"}</p>
+            </div>
+            <div className="rounded-card px-3 py-2.5" style={{ background: "rgba(250,204,21,0.08)", border: "0.5px solid rgba(250,204,21,0.18)" }}>
+              <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Avg Steps</p>
+              <p className="text-lg font-extrabold text-yellow-300">{avgSteps ? Math.round(avgSteps).toLocaleString() : "—"}</p>
             </div>
           </div>
 
-          {historyLoading ? (
-            <p className="text-xs text-text-dim text-center py-3">Loading history...</p>
-          ) : historyDays.length === 0 ? (
-            <p className="text-xs text-text-dim text-center py-3">
-              No WELL Check activity in this range yet.
-            </p>
-          ) : historyRange === "year" ? (
-            <div className="flex flex-col">
-              {historyMonths.map((month) => (
-                <div key={month.key} className="flex items-center gap-3 py-2.5 border-t first:border-t-0 border-border">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-2 border border-border shrink-0">
-                    <Calendar size={13} className="text-brand-light" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-text">{formatHistoryMonth(month.key)}</p>
-                    <p className="text-[11px] text-text-muted truncate">
-                      {month.activeDays} active days • {month.areas} WELL areas
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">
-                    <Star size={11} className="fill-yellow-400" />
-                    {month.totalPoints}
-                  </span>
+          <div className="rounded-card border border-border bg-surface-2 p-3">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: historyMetricConfig.glow }}>
+                  <HistoryMetricIcon size={15} style={{ color: historyMetricConfig.color }} />
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-text truncate">{historyMetricConfig.label}</p>
+                  <p className="text-[11px] text-text-muted">
+                    {historyRange === "year" ? "Tap a month for details" : "Tap a day for details"}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold text-text-dim shrink-0">
+                {history?.totals.completedDays ?? 0} active
+              </span>
             </div>
-          ) : (
-            <div className="flex flex-col">
-              {historyDays.map((day) => {
-                const areaCount = getCoveredCategoryCount(day.activities);
+
+            <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
+              {HISTORY_METRICS.map((metric) => {
+                const Icon = metric.Icon;
+                const active = historyMetric === metric.id;
                 return (
-                  <div key={day.date} className="flex items-center gap-3 py-2.5 border-t first:border-t-0 border-border">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-2 border border-border shrink-0">
-                      <CheckCircle2 size={13} className="text-brand-light" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-text">{formatHistoryDate(day.date)}</p>
-                      <p className="text-[11px] text-text-muted truncate">
-                        {areaCount} WELL areas • {getTopActivityLabel(day.activities)}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">
-                      <Star size={11} className="fill-yellow-400" />
-                      {day.totalPoints}
-                    </span>
-                  </div>
+                  <button
+                    key={metric.id}
+                    type="button"
+                    onClick={() => setHistoryMetric(metric.id)}
+                    className="shrink-0 flex items-center gap-1.5 rounded-pill border px-2.5 py-1.5 text-[11px] font-bold transition-colors"
+                    style={{
+                      borderColor: active ? metric.color : "rgba(91,163,245,0.18)",
+                      background: active ? metric.glow : "rgba(15,33,55,0.7)",
+                      color: active ? metric.color : "var(--color-text-muted)",
+                    }}
+                  >
+                    <Icon size={12} />
+                    {metric.shortLabel}
+                  </button>
                 );
               })}
             </div>
-          )}
+
+            {historyLoading ? (
+              <p className="text-xs text-text-dim text-center py-8">Loading history...</p>
+            ) : historyChartPoints.length === 0 ? (
+              <p className="text-xs text-text-dim text-center py-8">
+                No WELL Check activity in this range yet.
+              </p>
+            ) : (
+              <>
+                <div className="overflow-x-auto pb-1">
+                  <div
+                    className="h-44 flex items-end gap-1.5 px-0.5"
+                    style={{ minWidth: historyRange === "month" ? 560 : historyRange === "year" ? 360 : 260 }}
+                  >
+                    {historyChartPoints.map((point) => {
+                      const value = getPointMetricValue(point, historyMetric);
+                      const selected = selectedHistoryPoint?.key === point.key;
+                      const barHeight = value > 0 ? Math.max(12, Math.round((value / maxHistoryValue) * 118)) : 5;
+                      return (
+                        <button
+                          key={point.key}
+                          type="button"
+                          onClick={() => setSelectedHistoryKey(point.key)}
+                          className="flex-1 h-full min-w-0 flex flex-col items-center justify-end gap-1.5 group"
+                          aria-label={`Show ${historyMetricConfig.label} details for ${point.title}`}
+                        >
+                          <span className="text-[10px] font-bold text-text-dim opacity-0 group-hover:opacity-100 transition-opacity">
+                            {value > 0 ? formatHistoryMetric(historyMetric, value) : ""}
+                          </span>
+                          <span
+                            className="w-full max-w-7 rounded-t-pill border transition-all"
+                            style={{
+                              height: `${barHeight}px`,
+                              background: value > 0 ? historyMetricConfig.color : "rgba(148,163,184,0.18)",
+                              borderColor: selected ? "#ffffff" : "rgba(255,255,255,0.08)",
+                              boxShadow: selected ? `0 0 0 2px ${historyMetricConfig.glow}` : "none",
+                              opacity: selected || value > 0 ? 1 : 0.55,
+                            }}
+                          />
+                          <span className={`text-[10px] font-bold ${selected ? "text-text" : "text-text-dim"}`}>{point.label}</span>
+                          <span className="text-[9px] text-text-dim">{point.subLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedHistoryPoint && (
+                  <div className="mt-3 rounded-card border border-border bg-surface px-3 py-3">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-text">{selectedHistoryPoint.title}</p>
+                        <p className="text-[11px] text-text-muted">
+                          {selectedHistoryPoint.activeDays} active {selectedHistoryPoint.activeDays === 1 ? "day" : "days"} • {selectedHistoryPoint.topActivity}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold shrink-0" style={{ color: historyMetricConfig.color }}>
+                        {formatHistoryMetric(historyMetric, getPointMetricValue(selectedHistoryPoint, historyMetric))}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">WELL Areas</p>
+                        <p className="text-sm font-bold text-brand-light">{formatHistoryMetric("wellAreas", selectedHistoryPoint.wellAreas)}</p>
+                      </div>
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Points</p>
+                        <p className="text-sm font-bold text-yellow-300">{selectedHistoryPoint.totalPoints.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Sleep</p>
+                        <p className="text-sm font-bold text-violet-300">{formatHistoryMetric("sleepHours", selectedHistoryPoint.sleepHours)}</p>
+                      </div>
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Steps</p>
+                        <p className="text-sm font-bold text-yellow-300">{formatHistoryMetric("steps", selectedHistoryPoint.steps)}</p>
+                      </div>
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Energy In</p>
+                        <p className="text-sm font-bold text-emerald-300">{formatHistoryMetric("energyIn", selectedHistoryPoint.energyIn)}</p>
+                      </div>
+                      <div className="rounded-card bg-surface-2 border border-border px-3 py-2">
+                        <p className="text-[10px] text-text-dim font-bold uppercase tracking-wide">Energy Out</p>
+                        <p className="text-sm font-bold text-orange-300">{formatHistoryMetric("energyOut", selectedHistoryPoint.energyOut)}</p>
+                      </div>
+                    </div>
+
+                    {(selectedHistoryPoint.protein > 0 || selectedHistoryPoint.carbs > 0 || selectedHistoryPoint.fat > 0) && (
+                      <div className="mt-3 rounded-card px-3 py-2.5" style={{ background: "rgba(52,211,153,0.07)", border: "0.5px solid rgba(52,211,153,0.16)" }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-text-dim mb-2">Logged macros</p>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <p className="text-sm font-bold text-text">{Math.round(selectedHistoryPoint.protein)}g</p>
+                            <p className="text-[10px] text-text-dim">Protein</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-text">{Math.round(selectedHistoryPoint.carbs)}g</p>
+                            <p className="text-[10px] text-text-dim">Carbs</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-text">{Math.round(selectedHistoryPoint.fat)}g</p>
+                            <p className="text-[10px] text-text-dim">Fat</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Native Widget Setup */}
+        <div className="glass-card rounded-card p-4 border border-brand-light/15">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(132,216,253,0.12)", border: "0.5px solid rgba(132,216,253,0.25)" }}>
+              <Smartphone size={18} className="text-brand-light" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-text">WELL Check Widgets</p>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Native app users can pin a quick WELL Check snapshot to their iPhone Lock Screen, iPhone Home Screen, or Android Home Screen.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-card bg-surface-2 border border-border px-2.5 py-2.5 text-center">
+              <Lock size={15} className="text-brand-light mx-auto mb-1" />
+              <p className="text-[10px] font-bold text-text leading-tight">iPhone Lock</p>
+            </div>
+            <div className="rounded-card bg-surface-2 border border-border px-2.5 py-2.5 text-center">
+              <Home size={15} className="text-brand-light mx-auto mb-1" />
+              <p className="text-[10px] font-bold text-text leading-tight">iPhone Home</p>
+            </div>
+            <div className="rounded-card bg-surface-2 border border-border px-2.5 py-2.5 text-center">
+              <BarChart3 size={15} className="text-brand-light mx-auto mb-1" />
+              <p className="text-[10px] font-bold text-text leading-tight">Android Home</p>
+            </div>
+          </div>
+          <p className="text-[11px] text-text-dim mt-3 leading-relaxed">
+            After installing the native app, long-press your screen, choose Widgets, then add WELL Check.
+          </p>
         </div>
 
         {/* Step Tracker */}

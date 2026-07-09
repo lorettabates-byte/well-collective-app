@@ -5,4 +5,5 @@
     <string name="package_name">com.wellcollective.app</string>
     <string name="custom_url_scheme">com.wellcollective.app</string>
     <string name="health_connect_privacy_policy_url">https://lorettabates.com/privacy-policy/</string>
+    <string name="well_check_widget_description">WELL Check daily snapshot</string>
 </resources>
