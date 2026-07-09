@@ -502,17 +502,30 @@ export default function Nutrition() {
 
   // ── Water tracker ─────────────────────────────────────────────────────────
   const WATER_GOAL = 8;
-  const waterKey = `well-water-${new Date().toISOString().slice(0, 10)}-${user.email}`;
-  const [glasses, setGlasses] = useState<number>(() => {
-    try { return Math.min(WATER_GOAL, Math.max(0, parseInt(localStorage.getItem(waterKey) ?? "0", 10) || 0)); }
-    catch { return 0; }
+  const GLASS_OZ = 8;
+  const WATER_GOAL_OZ = WATER_GOAL * GLASS_OZ;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const waterKey = `well-water-${todayIso}-${user.email}`;
+  const waterOzKey = `well-water-oz-${todayIso}-${user.email}`;
+  const [waterOz, setWaterOz] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(waterOzKey);
+      if (stored !== null) return Math.max(0, parseFloat(stored) || 0);
+      // migrate from old glasses key
+      const oldGlasses = parseInt(localStorage.getItem(waterKey) ?? "0", 10) || 0;
+      if (oldGlasses > 0) { const oz = oldGlasses * GLASS_OZ; localStorage.setItem(waterOzKey, String(oz)); return oz; }
+      return 0;
+    } catch { return 0; }
   });
+  const [customOz, setCustomOz] = useState("");
 
-  const setGlassesPersist = (n: number) => {
-    const clamped = Math.min(WATER_GOAL, Math.max(0, n));
-    setGlasses(clamped);
-    try { localStorage.setItem(waterKey, String(clamped)); } catch { /* storage full */ }
+  const setWaterOzPersist = (n: number) => {
+    const val = Math.max(0, n);
+    setWaterOz(val);
+    try { localStorage.setItem(waterOzKey, String(val)); } catch { /* storage full */ }
   };
+
+  const glasses = Math.min(WATER_GOAL, Math.floor(waterOz / GLASS_OZ));
 
   const [activeFolderId, setActiveFolderId] = useState<number | "all" | "unsorted">("all");
   const [newFolderName, setNewFolderName] = useState("");
@@ -727,11 +740,12 @@ export default function Nutrition() {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-0.5">Hydration</p>
               <p className="text-sm font-bold text-text">
-                {glasses} of {WATER_GOAL} glasses
-                {glasses >= WATER_GOAL && (
+                {Math.round(waterOz)} / {WATER_GOAL_OZ} oz
+                {waterOz >= WATER_GOAL_OZ && (
                   <span className="ml-2 text-[11px] font-semibold text-blue-400">Goal reached!</span>
                 )}
               </p>
+              <p className="text-[11px] text-text-dim mt-0.5">{glasses} of {WATER_GOAL} glasses</p>
             </div>
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center border"
@@ -748,7 +762,7 @@ export default function Nutrition() {
               return (
                 <button
                   key={i}
-                  onClick={() => setGlassesPersist(filled ? i : i + 1)}
+                  onClick={() => setWaterOzPersist(filled ? i * GLASS_OZ : (i + 1) * GLASS_OZ)}
                   aria-label={filled ? `Remove glass ${i + 1}` : `Add glass ${i + 1}`}
                   className="transition-transform active:scale-90"
                 >
@@ -769,41 +783,76 @@ export default function Nutrition() {
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
-                width: `${(glasses / WATER_GOAL) * 100}%`,
-                background: glasses >= WATER_GOAL
+                width: `${Math.min(100, (waterOz / WATER_GOAL_OZ) * 100)}%`,
+                background: waterOz >= WATER_GOAL_OZ
                   ? "linear-gradient(90deg, #60a5fa, #34d399)"
                   : "linear-gradient(90deg, #60a5fa, #93c5fd)",
               }}
             />
           </div>
 
-          {/* Quick-add controls */}
+          {/* Quick-add oz chips */}
+          <div className="flex gap-1.5 mb-2 flex-wrap">
+            {[4, 8, 12, 16, 20].map((oz) => (
+              <button
+                key={oz}
+                onClick={() => setWaterOzPersist(waterOz + oz)}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-pill border border-blue-400/30 text-blue-400 bg-blue-400/8 active:scale-95 transition-transform"
+              >
+                +{oz} oz
+              </button>
+            ))}
+          </div>
+
+          {/* Custom oz input */}
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="number"
+              min="0"
+              max="500"
+              value={customOz}
+              onChange={(e) => setCustomOz(e.target.value)}
+              placeholder="Custom oz"
+              className="w-24 text-sm text-center bg-surface-2 border border-border rounded-lg px-2 py-1.5 text-text placeholder:text-text-dim"
+            />
+            <button
+              onClick={() => {
+                const oz = parseFloat(customOz);
+                if (oz > 0) { setWaterOzPersist(waterOz + oz); setCustomOz(""); }
+              }}
+              disabled={!customOz || parseFloat(customOz) <= 0}
+              className="flex-1 text-sm font-semibold text-blue-400 border border-blue-400/30 rounded-lg py-1.5 disabled:opacity-30 transition-opacity"
+            >
+              + Add
+            </button>
+          </div>
+
+          {/* Glass controls */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setGlassesPersist(glasses - 1)}
-              disabled={glasses === 0}
+              onClick={() => setWaterOzPersist(Math.max(0, waterOz - GLASS_OZ))}
+              disabled={waterOz === 0}
               className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-muted disabled:opacity-30 transition-opacity"
               aria-label="Remove one glass"
             >
               <Minus size={14} />
             </button>
             <button
-              onClick={() => setGlassesPersist(glasses + 1)}
-              disabled={glasses >= WATER_GOAL}
-              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2 disabled:opacity-40 transition-opacity"
+              onClick={() => setWaterOzPersist(waterOz + GLASS_OZ)}
+              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2 transition-opacity"
               aria-label="Add one glass"
             >
               <Plus size={14} />
-              Log a Glass
+              Log a Glass (8 oz)
             </button>
           </div>
 
-          {glasses > 0 && glasses < WATER_GOAL && (
+          {waterOz > 0 && waterOz < WATER_GOAL_OZ && (
             <p className="text-[11px] text-text-dim text-center mt-2">
-              {WATER_GOAL - glasses} more to hit your daily goal
+              {Math.round(WATER_GOAL_OZ - waterOz)} oz to go — you've got this!
             </p>
           )}
-          {glasses >= WATER_GOAL && (
+          {waterOz >= WATER_GOAL_OZ && (
             <p className="text-[11px] text-blue-400 text-center mt-2 font-semibold">
               Well done — you stayed hydrated today!
             </p>
