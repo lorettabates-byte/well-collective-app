@@ -45,6 +45,118 @@ const CONFETTI_SEEDS = [
 
 const CONFETTI_OCCASIONS = new Set(["birthday", "congratulations", "just-saying-hi"]);
 
+/* ─── Card Graphic Illustrations ──────────────────────────────────────────── */
+
+function BirthdayGraphic() {
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      <ellipse cx="35" cy="28" rx="16" ry="21" fill="white" fillOpacity="0.52"/>
+      <ellipse cx="30" cy="19" rx="5" ry="7" fill="white" fillOpacity="0.18"/>
+      <circle cx="35" cy="49" r="2.5" fill="white" fillOpacity="0.44"/>
+      <path d="M35 51.5 Q33 59 41 64" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.32"/>
+      <ellipse cx="70" cy="22" rx="20" ry="26" fill="white" fillOpacity="0.88"/>
+      <ellipse cx="63" cy="13" rx="6" ry="9" fill="white" fillOpacity="0.18"/>
+      <circle cx="70" cy="48" r="3" fill="white" fillOpacity="0.68"/>
+      <path d="M70 51 L70 64" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.38"/>
+      <ellipse cx="105" cy="30" rx="15" ry="20" fill="white" fillOpacity="0.52"/>
+      <ellipse cx="100" cy="22" rx="4.5" ry="6" fill="white" fillOpacity="0.18"/>
+      <circle cx="105" cy="50" r="2.5" fill="white" fillOpacity="0.44"/>
+      <path d="M105 52.5 Q107 59 99 64" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.32"/>
+      <path d="M41 64 Q70 68 99 64" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.28"/>
+    </svg>
+  );
+}
+
+function ThinkingGraphic() {
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      <path d="M70 60 C50 50 4 40 4 20 C4 4 32 4 70 22 C108 4 136 4 136 20 C136 40 90 50 70 60 Z"
+        fill="white" fillOpacity="0.80"/>
+      <circle cx="14" cy="52" r="3.5" fill="white" fillOpacity="0.26"/>
+      <circle cx="24" cy="63" r="2" fill="white" fillOpacity="0.20"/>
+      <circle cx="126" cy="52" r="3.5" fill="white" fillOpacity="0.26"/>
+      <circle cx="116" cy="63" r="2" fill="white" fillOpacity="0.20"/>
+    </svg>
+  );
+}
+
+function SayingHiGraphic() {
+  const cx = 70, cy = 34;
+  const rays = Array.from({ length: 8 }, (_, i) => {
+    const a = (i * 45 - 90) * Math.PI / 180;
+    const long = i % 2 === 0;
+    return { x1: cx + Math.cos(a) * 20, y1: cy + Math.sin(a) * 20, x2: cx + Math.cos(a) * (long ? 38 : 28), y2: cy + Math.sin(a) * (long ? 38 : 28), long };
+  });
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      {rays.map((r, i) => (
+        <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}
+          stroke="white" strokeWidth={r.long ? 3 : 1.8} strokeLinecap="round" strokeOpacity={r.long ? 0.72 : 0.48}/>
+      ))}
+      <circle cx={cx} cy={cy} r="17" fill="white" fillOpacity="0.88"/>
+      <circle cx="63" cy="27" r="4.5" fill="white" fillOpacity="0.22"/>
+    </svg>
+  );
+}
+
+function CondolencesGraphic() {
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      <path d="M70 68 Q52 52 28 42 Q15 36 10 22 Q26 26 44 40 Q58 50 70 68" fill="white" fillOpacity="0.40"/>
+      <path d="M70 68 Q62 50 60 30 Q61 14 70 6 Q79 14 80 30 Q78 50 70 68" fill="white" fillOpacity="0.65"/>
+      <path d="M70 68 Q88 52 112 42 Q125 36 130 22 Q114 26 96 40 Q82 50 70 68" fill="white" fillOpacity="0.40"/>
+      <circle cx="70" cy="14" r="6" fill="white" fillOpacity="0.78"/>
+      <circle cx="64" cy="20" r="5" fill="white" fillOpacity="0.56"/>
+      <circle cx="76" cy="20" r="5" fill="white" fillOpacity="0.56"/>
+      <circle cx="70" cy="6" r="5" fill="white" fillOpacity="0.56"/>
+    </svg>
+  );
+}
+
+function YouveGotThisGraphic() {
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      <path d="M0 68 L55 26 L90 52 L125 18 L140 68 Z" fill="white" fillOpacity="0.22"/>
+      <path d="M12 68 L70 8 L128 68 Z" fill="white" fillOpacity="0.58"/>
+      <path d="M70 8 L57 34 L70 30 L83 34 Z" fill="white" fillOpacity="0.92"/>
+      <path d="M70 1 L72.1 7.5 L79 7.5 L73.5 11.6 L75.6 18.1 L70 14 L64.4 18.1 L66.5 11.6 L61 7.5 L67.9 7.5 Z" fill="white" fillOpacity="0.96"/>
+      <circle cx="22" cy="18" r="1.5" fill="white" fillOpacity="0.42"/>
+      <circle cx="116" cy="14" r="1.5" fill="white" fillOpacity="0.42"/>
+      <circle cx="38" cy="8" r="1" fill="white" fillOpacity="0.36"/>
+      <circle cx="102" cy="7" r="1" fill="white" fillOpacity="0.36"/>
+    </svg>
+  );
+}
+
+function CongratsGraphic() {
+  return (
+    <svg viewBox="0 0 140 68" fill="none" style={{ width: "100%", height: "100%" }}>
+      <line x1="70" y1="2" x2="70" y2="14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.48"/>
+      <line x1="70" y1="54" x2="70" y2="66" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.48"/>
+      <line x1="6" y1="34" x2="18" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.48"/>
+      <line x1="122" y1="34" x2="134" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.48"/>
+      <line x1="20" y1="8" x2="28" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.38"/>
+      <line x1="112" y1="8" x2="120" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.38"/>
+      <line x1="20" y1="60" x2="28" y2="52" stroke="white" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.38"/>
+      <line x1="112" y1="60" x2="120" y2="52" stroke="white" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.38"/>
+      <path d="M26 22 L27.4 26 L31.5 26 L28.3 28.5 L29.6 32.5 L26 30 L22.4 32.5 L23.7 28.5 L20.5 26 L24.6 26 Z" fill="white" fillOpacity="0.42"/>
+      <path d="M114 22 L115.4 26 L119.5 26 L116.3 28.5 L117.6 32.5 L114 30 L110.4 32.5 L111.7 28.5 L108.5 26 L112.6 26 Z" fill="white" fillOpacity="0.42"/>
+      <path d="M26 46 L27.4 50 L31.5 50 L28.3 52.5 L29.6 56.5 L26 54 L22.4 56.5 L23.7 52.5 L20.5 50 L24.6 50 Z" fill="white" fillOpacity="0.32"/>
+      <path d="M114 46 L115.4 50 L119.5 50 L116.3 52.5 L117.6 56.5 L114 54 L110.4 56.5 L111.7 52.5 L108.5 50 L112.6 50 Z" fill="white" fillOpacity="0.32"/>
+      <path d="M70 10 L74.5 24.5 L90 24.5 L77.5 33.5 L82 48 L70 39 L58 48 L62.5 33.5 L50 24.5 L65.5 24.5 Z" fill="white" fillOpacity="0.88"/>
+    </svg>
+  );
+}
+
+const CARD_GRAPHICS: Record<string, ComponentType> = {
+  birthday: BirthdayGraphic,
+  "thinking-of-you": ThinkingGraphic,
+  "just-saying-hi": SayingHiGraphic,
+  condolences: CondolencesGraphic,
+  "youve-got-this": YouveGotThisGraphic,
+  congratulations: CongratsGraphic,
+};
+
 /* ---------- CardFace ---------- */
 function CardFace({
   style,
@@ -58,12 +170,13 @@ function CardFace({
   animate: boolean;
 }) {
   const IconComponent = CARD_ICONS[occasion.icon];
+  const GraphicComponent = CARD_GRAPHICS[occasion.id];
   const showConfetti = CONFETTI_OCCASIONS.has(occasion.id);
 
   return (
     <div
       className="w-full rounded-2xl overflow-hidden shadow-2xl relative select-none"
-      style={{ background: style.bg, minHeight: 210 }}
+      style={{ background: style.bg }}
     >
       {/* Scalloped border inset */}
       <div
@@ -100,18 +213,25 @@ function CardFace({
       {/* Animated watermark icon */}
       {IconComponent && (
         <div
-          className="absolute bottom-5 right-5 pointer-events-none"
+          className="absolute bottom-4 right-4 pointer-events-none"
           style={{
-            opacity: 0.12,
+            opacity: 0.10,
             animation: animate ? "cardIconFloat 3s ease-in-out infinite" : "none",
           }}
         >
-          <IconComponent size={64} strokeWidth={1.2} className="text-white" />
+          <IconComponent size={52} strokeWidth={1.2} className="text-white" />
+        </div>
+      )}
+
+      {/* Graphic illustration */}
+      {GraphicComponent && (
+        <div className="relative z-10 mx-5 mt-5" style={{ height: 60 }}>
+          <GraphicComponent />
         </div>
       )}
 
       {/* Content */}
-      <div className="relative z-10 p-6 pt-7 flex flex-col gap-3">
+      <div className="relative z-10 px-6 pb-5 pt-2 flex flex-col gap-2.5">
         {/* Occasion label row */}
         <div className="flex items-center gap-1.5">
           {IconComponent && (
@@ -129,7 +249,7 @@ function CardFace({
         </div>
 
         {/* Main message */}
-        <p className={`text-[19px] font-bold leading-snug ${style.textColor}`}>
+        <p className={`text-[18px] font-bold leading-snug ${style.textColor}`}>
           {style.message}
         </p>
 
@@ -149,7 +269,7 @@ function CardFace({
         </p>
 
         {/* From line */}
-        <p className={`text-[10px] opacity-45 mt-1 ${style.textColor}`}>
+        <p className={`text-[10px] opacity-45 mt-0.5 ${style.textColor}`}>
           — from {userName || "you"}
         </p>
       </div>
