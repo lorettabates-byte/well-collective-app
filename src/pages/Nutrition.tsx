@@ -500,6 +500,20 @@ export default function Nutrition() {
     }
   };
 
+  // ── Water tracker ─────────────────────────────────────────────────────────
+  const WATER_GOAL = 8;
+  const waterKey = `well-water-${new Date().toISOString().slice(0, 10)}-${user.email}`;
+  const [glasses, setGlasses] = useState<number>(() => {
+    try { return Math.min(WATER_GOAL, Math.max(0, parseInt(localStorage.getItem(waterKey) ?? "0", 10) || 0)); }
+    catch { return 0; }
+  });
+
+  const setGlassesPersist = (n: number) => {
+    const clamped = Math.min(WATER_GOAL, Math.max(0, n));
+    setGlasses(clamped);
+    try { localStorage.setItem(waterKey, String(clamped)); } catch { /* storage full */ }
+  };
+
   const [activeFolderId, setActiveFolderId] = useState<number | "all" | "unsorted">("all");
   const [newFolderName, setNewFolderName] = useState("");
   const [history, setHistory] = useState<Recipe[]>([]);
@@ -706,6 +720,95 @@ export default function Nutrition() {
             )}
           </div>
         )}
+
+        {/* Water Tracker */}
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-0.5">Hydration</p>
+              <p className="text-sm font-bold text-text">
+                {glasses} of {WATER_GOAL} glasses
+                {glasses >= WATER_GOAL && (
+                  <span className="ml-2 text-[11px] font-semibold text-blue-400">Goal reached!</span>
+                )}
+              </p>
+            </div>
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center border"
+              style={{ background: "rgba(96,165,250,0.12)", borderColor: "rgba(96,165,250,0.25)" }}
+            >
+              <Droplets size={18} className="text-blue-400" />
+            </div>
+          </div>
+
+          {/* Glass row — tap to fill/unfill */}
+          <div className="flex gap-1.5 mb-3 flex-wrap">
+            {Array.from({ length: WATER_GOAL }, (_, i) => {
+              const filled = i < glasses;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setGlassesPersist(filled ? i : i + 1)}
+                  aria-label={filled ? `Remove glass ${i + 1}` : `Add glass ${i + 1}`}
+                  className="transition-transform active:scale-90"
+                >
+                  <Droplets
+                    size={28}
+                    strokeWidth={1.8}
+                    className="transition-colors duration-200"
+                    style={{ color: filled ? "#60a5fa" : undefined }}
+                    fill={filled ? "rgba(96,165,250,0.28)" : "none"}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-1.5 rounded-full bg-surface-2 border border-border overflow-hidden mb-3">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${(glasses / WATER_GOAL) * 100}%`,
+                background: glasses >= WATER_GOAL
+                  ? "linear-gradient(90deg, #60a5fa, #34d399)"
+                  : "linear-gradient(90deg, #60a5fa, #93c5fd)",
+              }}
+            />
+          </div>
+
+          {/* Quick-add controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setGlassesPersist(glasses - 1)}
+              disabled={glasses === 0}
+              className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-muted disabled:opacity-30 transition-opacity"
+              aria-label="Remove one glass"
+            >
+              <Minus size={14} />
+            </button>
+            <button
+              onClick={() => setGlassesPersist(glasses + 1)}
+              disabled={glasses >= WATER_GOAL}
+              className="flex-1 flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2 disabled:opacity-40 transition-opacity"
+              aria-label="Add one glass"
+            >
+              <Plus size={14} />
+              Log a Glass
+            </button>
+          </div>
+
+          {glasses > 0 && glasses < WATER_GOAL && (
+            <p className="text-[11px] text-text-dim text-center mt-2">
+              {WATER_GOAL - glasses} more to hit your daily goal
+            </p>
+          )}
+          {glasses >= WATER_GOAL && (
+            <p className="text-[11px] text-blue-400 text-center mt-2 font-semibold">
+              Well done — you stayed hydrated today!
+            </p>
+          )}
+        </div>
 
         {/* Daily Meal Log */}
         <div className="glass-card rounded-card p-4">
