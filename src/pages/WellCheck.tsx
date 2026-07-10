@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { logActivity } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
@@ -397,7 +398,7 @@ function pickChallenges(doneTypes: Set<string>, poorSleep: boolean): Challenge[]
 
 export default function WellCheck() {
   useSectionTracking("well-check");
-  const { user } = useApp();
+  const { user, notifications } = useApp();
   const today = todayISO();
 
   const [activities, setActivities] = useState<ActivitySummary[]>([]);
@@ -559,6 +560,17 @@ export default function WellCheck() {
   const avgSteps = historyAverages?.steps ?? averagePositive(historyDays.map((day) => day.steps));
   const HistoryMetricIcon = historyMetricConfig.Icon;
   const widgetSleepValue = sleepData ? `${sleepData.hours}h` : "--";
+  const unreadNotifications = notifications.filter((notification) => !notification.read).length;
+  const remainingWidgetAreas = Math.max(CHECKIN_GRID.length - gridDoneCount, 0);
+  const widgetReminder = gridDoneCount >= CHECKIN_GRID.length
+    ? "Great job - WELL Check complete"
+    : !sleepData
+      ? "Tap to log sleep"
+      : !todaySteps
+        ? "Tap to add steps"
+        : todayCalories <= 0
+          ? "Tap to log energy in"
+          : `Tap to finish ${remainingWidgetAreas} area${remainingWidgetAreas === 1 ? "" : "s"}`;
 
   useEffect(() => {
     const updatedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -570,8 +582,10 @@ export default function WellCheck() {
       energyOut: tdee !== null ? `Out ${tdee.toLocaleString()}` : "Out --",
       steps: todaySteps ? todaySteps.steps.toLocaleString() : "--",
       updatedAt,
+      reminder: widgetReminder,
+      unreadCount: unreadNotifications.toString(),
     });
-  }, [gridDoneCount, tdee, todayCalories, todaySteps, totalPoints, widgetSleepValue]);
+  }, [gridDoneCount, tdee, todayCalories, todaySteps, totalPoints, widgetReminder, widgetSleepValue, unreadNotifications]);
 
   return (
     <div>
@@ -646,23 +660,24 @@ export default function WellCheck() {
           </div>
 
           {/* Sleep */}
-          <div className="glass-card rounded-card p-4 flex flex-col gap-1 col-span-2">
+          <Link to="/wellness?tab=activities" className="glass-card rounded-card p-4 flex flex-col gap-1 col-span-2 active:opacity-80">
             <div className="flex items-center gap-1.5 mb-1">
               <Moon size={13} className="text-brand-light shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Sleep</span>
+              <span className="ml-auto text-[10px] text-brand-light font-semibold">Log →</span>
             </div>
             {sleepData ? (
               <div className="flex items-end gap-3">
                 <p className="text-2xl font-extrabold text-brand-light leading-none">{sleepData.hours}h</p>
                 <p className="text-xs text-text-muted mb-0.5">
-                  {sleepData.quality === "enough" ? "Well rested 🌙" : sleepData.quality === "not_enough" ? "Could use more" : "Needed a bit more"}
+                  {sleepData.quality === "enough" ? "Well rested" : sleepData.quality === "not_enough" ? "Could use more" : "Needed a bit more"}
                 </p>
               </div>
             ) : (
               <p className="text-lg font-bold text-text-dim">Not logged</p>
             )}
-            <p className="text-[10px] text-text-muted">{sleepData ? "Logged via Sleep tracker" : "Log via Wellness → Sleep"}</p>
-          </div>
+            <p className="text-[10px] text-text-muted">{sleepData ? "Tap to update" : "Tap to log your sleep"}</p>
+          </Link>
         </div>
 
         {/* Today's Activity Log */}

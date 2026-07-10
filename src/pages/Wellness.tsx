@@ -1174,7 +1174,7 @@ export default function Wellness() {
 
   const TABS = [
     { id: "workout" as const,    label: "Workout" },
-    { id: "activities" as const, label: "Activities" },
+    { id: "activities" as const, label: "Restore" },
     { id: "streaks" as const,    label: "Streaks" },
   ];
 
@@ -1430,6 +1430,31 @@ export default function Wellness() {
               </div>
             </section>
         </div>
+
+        {/* Today's synced runs from Health Sync */}
+        {syncedRuns.length > 0 && (
+          <div className="glass-card rounded-card p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">Today's Runs</p>
+            <div className="flex flex-col gap-2.5">
+              {syncedRuns.map((run, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(42,109,217,0.15)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
+                    <Activity size={14} className="text-brand-light" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text capitalize">{run.workoutType || "Run"}</p>
+                    <p className="text-[11px] text-text-muted">
+                      {run.distanceKm.toFixed(2)} km · {run.durationMinutes} min
+                      {run.paceMinPerKm ? ` · ${formatPace(run.paceMinPerKm)}/km` : ""}
+                      {run.caloriesBurned ? ` · ~${run.caloriesBurned} cal` : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Custom workout + big complete button at bottom of workout tab */}
         {!completedToday && (

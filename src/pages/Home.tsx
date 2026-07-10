@@ -566,7 +566,9 @@ export default function Home() {
       {todaysInspiration && (
         <div className="mb-6">
           <SectionHeader title="Today's Inspiration" to="/inspirations" />
-          <InspirationCard inspiration={todaysInspiration} compact />
+          <Link to="/inspirations" className="block">
+            <InspirationCard inspiration={todaysInspiration} compact />
+          </Link>
         </div>
       )}
 
@@ -575,7 +577,9 @@ export default function Home() {
           <SectionHeader title="Upcoming Events" to="/events" />
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
             {upcomingEvents.map((event) => (
-              <EventCard key={event.id} event={event} compact />
+              <Link key={event.id} to="/events" className="shrink-0">
+                <EventCard event={event} compact />
+              </Link>
             ))}
           </div>
         </div>
