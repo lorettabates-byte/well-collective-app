@@ -1,4 +1,5 @@
 import { Camera, Mail, MessageCircle, Plus, Send, Edit2, Check, X, Heart, Image } from "lucide-react";
+import ImageLightbox from "../components/ui/ImageLightbox";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -102,6 +103,7 @@ function DirectMessage({
 }: DirectMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.body);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const isLiked = (message.likes || []).includes(currentUserId);
   const hasImage = !!message.image;
   const imagePending = message.image_status === "pending";
@@ -170,10 +172,12 @@ function DirectMessage({
                   <img
                     src={message.image}
                     alt="Photo"
-                    className="rounded-card object-cover w-full"
+                    className="rounded-card object-cover w-full cursor-pointer active:opacity-80"
                     style={{ maxHeight: 300 }}
+                    onClick={() => setLightboxSrc(message.image!)}
                   />
                 )}
+                {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
               </div>
             )}
             {message.body && message.body !== "📷 Photo" && (

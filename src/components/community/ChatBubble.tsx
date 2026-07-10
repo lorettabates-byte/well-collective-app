@@ -6,6 +6,7 @@ import { useApp } from "../../store/AppContext";
 import type { ThreadMessage } from "../../types";
 import { formatTime } from "../../utils/format";
 import Avatar from "../ui/Avatar";
+import ImageLightbox from "../ui/ImageLightbox";
 
 interface ChatBubbleProps {
   message: ThreadMessage;
@@ -21,6 +22,7 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
   const { user, toggleMessageLike, memberBadges, editMessage } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const hasLiked = message.likes.includes(user.id);
   const liveAuthor = memberBadges[message.authorId];
   const badgeId = resolveFeaturedBadge(liveAuthor ?? {});
@@ -95,10 +97,12 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
               <img
                 src={message.image}
                 alt=""
-                className="max-w-full rounded-bubble mb-1"
+                className="max-w-full rounded-bubble mb-1 cursor-pointer active:opacity-80"
                 style={{ maxHeight: 240 }}
+                onClick={() => setLightboxSrc(message.image!)}
               />
             )}
+            {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
             {message.text && (
               <div
                 className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
