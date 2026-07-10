@@ -39,7 +39,7 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
     name: "Glute Bridges",
     sets: "3 sets x 15 reps",
     description:
-      "Lie on your back with knees bent and feet flat on the floor, hip-width apart. Press through your heels to lift your hips toward the ceiling, squeezing your glutes at the top. Lower back down with control and repeat.",
+      "Lie on your back with knees bent and feet flat on the floor, hip-width apart. Gently engage your pelvic floor before you lift — think of drawing up and in. Press through your heels to raise your hips toward the ceiling, squeezing your glutes at the top. Lower back down with control and repeat, maintaining that pelvic floor connection throughout.",
   },
   {
     name: "Walking Lunges",
@@ -78,10 +78,10 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
       "Loop a resistance band around a sturdy anchor (or your feet if seated) and hold an end in each hand with arms extended. Pull both handles toward your torso, leading with your elbows and squeezing your shoulder blades together, then return slowly to start.",
   },
   {
-    name: "Bicycle Crunches",
-    sets: "3 sets x 20 reps",
+    name: "Pallof Press",
+    sets: "3 sets x 10 reps per side",
     description:
-      "Lie on your back with hands lightly behind your head and knees bent. Lift your shoulders off the floor and bring one knee toward your chest while rotating to touch it with the opposite elbow, then switch sides in a pedaling motion, keeping your lower back pressed into the floor.",
+      "Anchor a resistance band at chest height and stand sideways to the anchor, holding both ends at your sternum. Brace your core firmly, then press your hands straight out in front of you and hold for 1–2 seconds before pulling back. The band will try to rotate you — resist it entirely. Keep your hips square and breathe normally throughout. Switch sides.",
   },
   {
     name: "Sumo Squats",
@@ -99,7 +99,7 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
     name: "Tricep Dips",
     sets: "3 sets x 12 reps",
     description:
-      "Sit on the edge of a sturdy chair or bench with hands gripping the edge beside your hips. Slide your hips off and bend your elbows to lower your body straight down, keeping your back close to the chair. Press through your palms to straighten your arms and return to the start.",
+      "Sit on the edge of a sturdy chair with hands gripping the edge directly beside your hips, fingers forward. Slide your hips off and bend your elbows straight back — elbows should point behind you, not flare out to the sides. Lower only as far as feels comfortable in your shoulders, then press back up. If you feel any shoulder pinching, reduce your range of motion or substitute with Overhead Tricep Extension instead.",
   },
   {
     name: "Side-Lying Leg Lifts",
@@ -117,7 +117,7 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
     name: "Dead Bug",
     sets: "3 sets x 10 reps per side",
     description:
-      "Lie on your back with arms extended toward the ceiling and knees bent at 90 degrees, shins parallel to the floor. Slowly lower one arm overhead and extend the opposite leg straight, keeping your lower back pressed into the floor throughout. Return and alternate sides in a controlled, deliberate movement.",
+      "Lie on your back with arms extended toward the ceiling and knees bent at 90 degrees, shins parallel to the floor. Exhale to brace your core and gently engage your pelvic floor before each extension. Slowly lower one arm overhead and extend the opposite leg straight — your lower back must stay pressed into the floor the entire time. Inhale to return, then alternate sides. Slow and deliberate beats fast every time here.",
   },
   {
     name: "Lateral Band Walks",
@@ -171,7 +171,7 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
     name: "Hip Thrusts",
     sets: "3 sets x 15 reps",
     description:
-      "Sit on the floor with your upper back resting against a couch or bench and knees bent, feet flat. Drive through your heels to thrust your hips upward until your body forms a straight line from shoulders to knees. Squeeze your glutes hard at the top, then lower with control.",
+      "Sit on the floor with your upper back resting against a couch or bench and knees bent, feet flat. Engage your pelvic floor before each rep. Drive through your heels to thrust your hips upward until your body forms a straight line from shoulders to knees. Squeeze your glutes hard at the top, then lower with control. Add a dumbbell across your hips to increase the resistance and the bone-loading benefit.",
   },
   {
     name: "Side Plank",
@@ -306,10 +306,10 @@ export const RESISTANCE_EXERCISES: ResistanceExercise[] = [
       "Start in a high plank with feet slightly wider than hip-width. Keeping your hips as still as possible, lift one hand to tap the opposite shoulder, then place it back down and switch sides.",
   },
   {
-    name: "Plank Jacks",
-    sets: "3 sets x 20 reps",
+    name: "Band Pull-Aparts",
+    sets: "3 sets x 15 reps",
     description:
-      "Start in a high plank with feet together. Keeping your shoulders over your wrists and core tight, jump or step both feet out wide, then back together. Keep your hips level throughout.",
+      "Hold a resistance band in both hands at shoulder height with arms extended straight in front of you, hands about shoulder-width apart. Keeping your arms straight and shoulders pulled down away from your ears, pull the band apart until your arms are fully open in a T. Squeeze your shoulder blades together at the end, then slowly return to start. Move with control — this is not a speed exercise.",
   },
   {
     name: "Standing Resistance Band Kickbacks",
