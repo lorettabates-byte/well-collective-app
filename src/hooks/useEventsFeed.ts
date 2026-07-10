@@ -50,11 +50,37 @@ interface TribeEvent {
     city?: string;
     state?: string;
   };
-  image?: { url?: string } | false;
+  image?: { url?: string; sizes?: { medium?: { url?: string } } } | false;
 }
 
 interface TribeResponse {
   events?: TribeEvent[];
+}
+
+async function fetchLiveEventsPayload(): Promise<TribeResponse> {
+  try {
+    const res = await fetch(LIVE_API_URL);
+    if (res.ok) {
+      const data = await res.json() as TribeResponse;
+      if (Array.isArray(data.events) && data.events.length > 0) return data;
+    }
+  } catch {
+    // Fall back to the server proxy below.
+  }
+
+  if (SERVER_API_URL) {
+    try {
+      const serverRes = await fetch(`${SERVER_API_URL}/api/live-events`);
+      if (serverRes.ok) {
+        const data = await serverRes.json() as TribeResponse;
+        if (Array.isArray(data.events) && data.events.length > 0) return data;
+      }
+    } catch {
+      // Fall back to the public WordPress feed below.
+    }
+  }
+
+  return { events: [] };
 }
 
 export function useEventsFeed(): FeedState {
@@ -63,11 +89,7 @@ export function useEventsFeed(): FeedState {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(LIVE_API_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error("bad response");
-        return res.json();
-      })
+    fetchLiveEventsPayload()
       .then(async (data: TribeResponse) => {
         if (cancelled) return;
         const raw = Array.isArray(data.events) ? data.events : [];
@@ -80,7 +102,7 @@ export function useEventsFeed(): FeedState {
           location: [event.venue?.venue, event.venue?.city, event.venue?.state].filter(Boolean).join(", "),
           rsvps: [],
           color: COLORS[index % COLORS.length],
-          image: event.image && event.image.url ? event.image.url : undefined,
+          image: event.image ? event.image.sizes?.medium?.url ?? event.image.url : undefined,
           url: event.url,
           cost: event.cost || undefined,
           source: "live",

@@ -2,11 +2,17 @@ import { Calendar, Check, Loader2, MapPin, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useApp } from "../../store/AppContext";
+import { decodeEntities, stripHtml } from "../../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-const WP_EVENTS_URL = "https://lorettabates.com/wp-json/tribe/events/v1/events";
+const WP_EVENTS_URL = "https://lorettabates.com/wp-json/tribe/events/v1/events?per_page=50&status=publish";
 const APP_EVENT_TIMEOUT_MS = 4500;
-const WEBSITE_EVENT_TIMEOUT_MS = 3500;
+const WEBSITE_EVENT_TIMEOUT_MS = 6500;
+const WEBSITE_LOADING_NOTICE_MS = 3000;
+const LOCAL_ZUMBA_CLASS_IMAGE =
+  "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/Screen-Shot-2022-09-27-at-11.06.44-AM.png";
+const LOCAL_ZUMBA_LIVESTREAM_IMAGE =
+  "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/IMG_5168-scaled.jpg";
 
 interface AppEvent {
   id: string;
@@ -26,13 +32,18 @@ interface Props {
 
 async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<unknown> {
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const timeout = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
+  let timeout: number | null = null;
+  const timeoutPromise = new Promise<null>((resolve) => {
+    timeout = window.setTimeout(() => {
+      controller?.abort();
+      resolve(null);
+    }, timeoutMs);
+  });
+  const fetchPromise = fetch(url, controller ? { signal: controller.signal } : undefined)
+    .then((res) => (res.ok ? res.json() : null))
+    .catch(() => null);
   try {
-    const res = await fetch(url, controller ? { signal: controller.signal } : undefined);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } finally {
     if (timeout) window.clearTimeout(timeout);
   }
@@ -40,12 +51,21 @@ async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<unk
 
 async function fetchAppEvents(): Promise<AppEvent[]> {
   if (!API_URL) return [];
-  const data = await fetchJsonWithTimeout(`${API_URL}/api/events?upcoming=true&light=true&limit=100`, APP_EVENT_TIMEOUT_MS);
+  const data = await fetchJsonWithTimeout(`${API_URL}/api/events?upcoming=true&limit=100`, APP_EVENT_TIMEOUT_MS);
   return normalizeAppEvents(data);
 }
 
 async function fetchWebsiteEvents(): Promise<AppEvent[]> {
-  const data = await fetchJsonWithTimeout(`${WP_EVENTS_URL}?per_page=50&status=publish`, WEBSITE_EVENT_TIMEOUT_MS);
+  const [websiteData, fallbackData] = await Promise.all([
+    fetchJsonWithTimeout(WP_EVENTS_URL, WEBSITE_EVENT_TIMEOUT_MS),
+    API_URL ? fetchJsonWithTimeout(`${API_URL}/api/live-events`, WEBSITE_EVENT_TIMEOUT_MS) : Promise.resolve(null),
+  ]);
+  const websiteEvents = normalizeWebsiteEvents(websiteData);
+  if (websiteEvents.length > 0) return websiteEvents;
+  return normalizeWebsiteEvents(fallbackData);
+}
+
+function normalizeWebsiteEvents(data: unknown): AppEvent[] {
   if (!data || typeof data !== "object") return [];
   const events = Array.isArray((data as { events?: unknown[] }).events)
     ? (data as { events: unknown[] }).events
@@ -57,18 +77,20 @@ async function fetchWebsiteEvents(): Promise<AppEvent[]> {
       id: number;
       title?: { rendered?: string } | string;
       start_date: string;
+      end_date?: string;
+      url?: string;
       start_time?: string;
-      venue?: { venue?: string };
+      venue?: { venue?: string; city?: string; state?: string };
       image?: { url?: string; sizes?: { medium?: { url?: string } } };
     } => typeof e === "object" && e !== null && typeof (e as { start_date?: unknown }).start_date === "string")
     .map((e) => {
       const titleStr = typeof e.title === "string" ? e.title : e.title?.rendered ?? "";
       return {
         id: `wp-${e.id}`,
-        title: titleStr.replace(/&amp;/g, "&").replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"'),
+        title: decodeEntities(stripHtml(titleStr)),
         date: e.start_date.slice(0, 10),
-        time: e.start_date.slice(11, 16) || undefined,
-        location: e.venue?.venue,
+        time: formatWebsiteEventTime(e.start_date, e.end_date),
+        location: [e.venue?.venue, e.venue?.city, e.venue?.state].filter(Boolean).join(", ") || undefined,
         image: e.image?.sizes?.medium?.url ?? e.image?.url,
         source: "website" as const,
       };
@@ -88,7 +110,7 @@ function normalizeAppEvents(data: unknown): AppEvent[] {
       date,
       time: event.time,
       location: event.location,
-      image: event.image,
+      image: getLocalEventImage(event.title, event.location, event.image),
       source: "app" as const,
     };
   });
@@ -105,11 +127,19 @@ function normalizeLocalEvents(events: Array<{ id: string; title: string; date: s
       date,
       time: event.time,
       location: event.location,
-      image: event.image?.startsWith("data:") ? undefined : event.image,
+      image: getLocalEventImage(event.title, event.location, event.image),
       source: "app" as const,
     };
   });
   return normalized.filter((event): event is AppEvent => event !== null);
+}
+
+function getLocalEventImage(title: string, location?: string, image?: string): string | undefined {
+  const text = `${title} ${location ?? ""}`.toLowerCase();
+  if (text.includes("livestream") || text.includes("well app")) return LOCAL_ZUMBA_LIVESTREAM_IMAGE;
+  if (text.includes("zumba") || text.includes("dancer")) return LOCAL_ZUMBA_CLASS_IMAGE;
+  if (image?.trim()) return image;
+  return undefined;
 }
 
 function mergeEvents(existing: AppEvent[], incoming: AppEvent[], today: string): AppEvent[] {
@@ -117,7 +147,12 @@ function mergeEvents(existing: AppEvent[], incoming: AppEvent[], today: string):
   for (const event of [...existing, ...incoming]) {
     if (event.date < today) continue;
     const key = `${event.source}:${event.title.toLowerCase()}:${event.date}:${event.time ?? ""}`;
-    if (!byKey.has(key)) byKey.set(key, event);
+    const current = byKey.get(key);
+    if (!current) {
+      byKey.set(key, event);
+    } else if (!current.image && event.image) {
+      byKey.set(key, { ...current, ...event });
+    }
   }
   return Array.from(byKey.values()).sort((a, b) => `${a.date}${a.time ?? ""}`.localeCompare(`${b.date}${b.time ?? ""}`));
 }
@@ -129,45 +164,71 @@ function normalizeEventDate(date?: string): string {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
+function formatWebsiteEventTime(start: string, end?: string): string | undefined {
+  const startTime = formatWebsiteTime(start);
+  const endTime = end ? formatWebsiteTime(end) : "";
+  if (!startTime) return undefined;
+  if (!endTime || endTime === startTime) return startTime;
+  return `${startTime} - ${endTime}`;
+}
+
+function formatWebsiteTime(value: string): string {
+  const time = value.includes(" ") ? value.split(" ")[1] : value.slice(11, 19);
+  if (!time) return "";
+  const [hourStr, minute = "00"] = time.split(":");
+  const hour = Number(hourStr);
+  if (!Number.isFinite(hour)) return "";
+  if (hour === 0 && minute === "00") return "";
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:${minute} ${period}`;
+}
+
 export default function EventInvite({ memberId, memberName, onClose }: Props) {
   const { user, events: localEvents } = useApp();
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [websiteLoading, setWebsiteLoading] = useState(false);
+  const [showWebsiteLoadingNotice, setShowWebsiteLoadingNotice] = useState(false);
   const [selected, setSelected] = useState<AppEvent | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
     const today = new Date().toISOString().slice(0, 10);
     const immediateLocalEvents = normalizeLocalEvents(localEvents);
 
-    setEvents(mergeEvents([], immediateLocalEvents, today));
-    setLoading(true);
-    fetchAppEvents()
-      .then((appEvents) => {
-        if (cancelled) return;
-        setEvents((current) => mergeEvents(current, appEvents, today));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    setEvents((current) => mergeEvents(current, immediateLocalEvents, today));
+  }, [localEvents]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const today = new Date().toISOString().slice(0, 10);
+
+    setLoading(true);
     setWebsiteLoading(true);
-    fetchWebsiteEvents()
-      .then((websiteEvents) => {
+    setShowWebsiteLoadingNotice(true);
+    const websiteNoticeTimeout = window.setTimeout(() => {
+      if (!cancelled) setShowWebsiteLoadingNotice(false);
+    }, WEBSITE_LOADING_NOTICE_MS);
+    Promise.all([fetchAppEvents(), fetchWebsiteEvents()])
+      .then(([appEvents, websiteEvents]) => {
         if (cancelled) return;
-        setEvents((current) => mergeEvents(current, websiteEvents, today));
+        setEvents((current) => mergeEvents(current, [...appEvents, ...websiteEvents], today));
       })
       .finally(() => {
-        if (!cancelled) setWebsiteLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setWebsiteLoading(false);
+          setShowWebsiteLoadingNotice(false);
+        }
       });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(websiteNoticeTimeout);
     };
-  }, [localEvents]);
+  }, []);
 
   const handleSend = async () => {
     if (!API_URL || !user.email || !selected) return;
@@ -204,7 +265,7 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
 
         {/* Scrollable list */}
         <div className="overflow-y-auto flex-1 min-h-0 px-4 py-4 flex flex-col gap-3">
-          {loading && events.length === 0 ? (
+          {(loading || websiteLoading) && events.length === 0 ? (
             <div className="flex justify-center py-10">
               <Loader2 size={24} className="text-brand-light animate-spin" />
             </div>
@@ -212,7 +273,7 @@ export default function EventInvite({ memberId, memberName, onClose }: Props) {
             <p className="text-sm text-text-muted text-center py-10">No upcoming events right now.</p>
           ) : (
             <>
-              {(loading || websiteLoading) && (
+              {showWebsiteLoadingNotice && (
                 <div className="flex items-center justify-center gap-2 rounded-card bg-surface-2 border border-border px-3 py-2 text-[11px] font-semibold text-text-dim">
                   <Loader2 size={12} className="animate-spin text-brand-light" />
                   Loading more upcoming events...

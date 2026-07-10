@@ -6,8 +6,12 @@ struct WellCheckWidgetBundle: WidgetBundle {
     @WidgetBundleBuilder
     var body: some Widget {
         WellCheckHomeWidget()
-        if #available(iOSApplicationExtension 16.0, *) {
-            WellCheckLockWidget()
+        WellCheckHomeLightWidget()
+        if #available(iOS 16.1, *) {
+            WellCheckInlineLockWidget()
+            WellCheckProgressLockWidget()
+            WellCheckReminderLockWidget()
+            WellCheckAlertsLockWidget()
         }
     }
 }
