@@ -88,7 +88,7 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 }
 
 export default function NotificationSettings() {
-  const { user, notificationSettings, updateNotificationSettings } = useApp();
+  const { user, notificationSettings, updateNotificationSettings, updateProfile } = useApp();
   const [pushError, setPushError] = useState("");
   const [timezone, setTimezone] = useState(user.timezone || "America/New_York");
   const [notificationSchedule, setNotificationSchedule] = useState(
@@ -129,7 +129,8 @@ export default function NotificationSettings() {
       });
 
       if (res.ok) {
-        updateNotificationSettings({});
+        // Persist to local context so the toggles stay correct on next visit
+        updateProfile({ notificationSchedule, ...(timezone !== user.timezone ? { timezone } : {}) });
       }
     } catch (err) {
       console.error("Failed to save timezone settings:", err);
