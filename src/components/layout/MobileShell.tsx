@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import BottomNav from "./BottomNav";
+import MiniPlayer from "../music/MiniPlayer";
 
 const LOGO_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png";
 
@@ -12,6 +13,7 @@ export default function MobileShell({ children }: { children: ReactNode }) {
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-64 gradient-glow z-0" />
         <div className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pb-24">{children}</div>
+        <MiniPlayer />
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <BottomNav />
         </div>

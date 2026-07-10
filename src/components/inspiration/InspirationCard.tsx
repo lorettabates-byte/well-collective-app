@@ -5,6 +5,7 @@ import { useApp } from "../../store/AppContext";
 import type { Inspiration, InspirationCadence } from "../../types";
 import { timeAgo } from "../../utils/format";
 import ShareCardModal from "../ShareCardModal";
+import LinkifiedText from "../ui/LinkifiedText";
 
 const CADENCE_LABEL: Record<InspirationCadence, string> = {
   daily: "Daily Inspiration",
@@ -51,7 +52,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
             style={{ maxHeight: compact ? 140 : 220, objectFit: "cover" }}
           />
         )}
-        {!compact && <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap mb-3">{inspiration.body}</p>}
+        {!compact && <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap mb-3"><LinkifiedText text={inspiration.body} /></p>}
         {compact && <p className="text-sm text-text-muted leading-relaxed line-clamp-2 mb-3">{inspiration.body}</p>}
 
         <div className="flex items-center gap-4">

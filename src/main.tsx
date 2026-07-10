@@ -8,6 +8,7 @@ import "./index.css";
 import App from "./App.tsx";
 import AuthGate from "./components/AuthGate";
 import { AppProvider } from "./store/AppContext";
+import { MusicPlayerProvider } from "./store/MusicPlayerContext";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -42,7 +43,9 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <AuthGate>
           <AppProvider>
-            <App />
+            <MusicPlayerProvider>
+              <App />
+            </MusicPlayerProvider>
           </AppProvider>
         </AuthGate>
       </BrowserRouter>

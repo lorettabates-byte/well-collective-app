@@ -1,5 +1,6 @@
 import { Calendar, ChevronDown, ChevronUp, FileText, GripVertical, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMusicPlayer } from "../../store/MusicPlayerContext";
 import {
   DndContext,
   PointerSensor,
@@ -117,11 +118,7 @@ export default function AdminMusic() {
   const [hiddenBuiltins, setHiddenBuiltins] = useState<string[]>([]);
   const [hiddenLoading, setHiddenLoading] = useState(true);
 
-  const [playingSongId, setPlayingSongId] = useState<number | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [queueRepeatMode, setQueueRepeatMode] = useState<"off" | "one" | "all">("off");
-  const [playingFromQueue, setPlayingFromQueue] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const { currentSong, isPlaying, repeatMode, playAt, togglePlay, handleSkip, cycleRepeat, stop } = useMusicPlayer();
 
   // A small drag distance threshold keeps taps on the handle from being
   // mistaken for drags, while still working smoothly with touch.
@@ -612,101 +609,23 @@ export default function AdminMusic() {
     }
   };
 
-  const togglePlay = (song: Song) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playingSongId === song.id) {
-      if (isPlaying) {
-        audio.pause();
-      } else {
-        audio.play();
-      }
+  const handleSongPlay = (song: Song) => {
+    if (currentSong?.id === song.id) {
+      togglePlay();
     } else {
-      audio.src = song.url;
-      audio.currentTime = 0;
-      audio.play();
-      setPlayingSongId(song.id);
-      setPlayingFromQueue(false);
+      playAt([song], 0);
     }
   };
 
   const playQueueAll = () => {
     if (queuedSongs.length === 0) return;
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.src = queuedSongs[0].url;
-    audio.currentTime = 0;
-    audio.play();
-    setPlayingSongId(queuedSongs[0].id);
-    setPlayingFromQueue(true);
+    playAt(queuedSongs, 0);
   };
-
-  // Handle song end: repeat or play next
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleEnded = () => {
-      if (!playingFromQueue) return;
-      if (queueRepeatMode === "one") {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        // Play next song (both for "off" and "all" modes; "all" wraps with %)
-        const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
-        const nextIndex = queueRepeatMode === "all" ? (currentIndex + 1) % queuedSongs.length : currentIndex + 1;
-        if (nextIndex < queuedSongs.length) {
-          audio.src = queuedSongs[nextIndex].url;
-          audio.currentTime = 0;
-          audio.play();
-          setPlayingSongId(queuedSongs[nextIndex].id);
-        }
-      }
-    };
-
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [playingFromQueue, playingSongId, queueRepeatMode, queuedSongs]);
-
-  const stopPlayer = () => {
-    audioRef.current?.pause();
-    setPlayingSongId(null);
-    setIsPlaying(false);
-  };
-
-  const skipToNextQueueSong = () => {
-    if (!playingFromQueue || !audioRef.current) return;
-    const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < queuedSongs.length) {
-      const audio = audioRef.current;
-      audio.src = queuedSongs[nextIndex].url;
-      audio.currentTime = 0;
-      audio.play();
-      setPlayingSongId(queuedSongs[nextIndex].id);
-    }
-  };
-
-  const skipToPrevQueueSong = () => {
-    if (!playingFromQueue || !audioRef.current) return;
-    const currentIndex = queuedSongs.findIndex((s) => s.id === playingSongId);
-    const prevIndex = currentIndex - 1;
-    if (prevIndex >= 0) {
-      const audio = audioRef.current;
-      audio.src = queuedSongs[prevIndex].url;
-      audio.currentTime = 0;
-      audio.play();
-      setPlayingSongId(queuedSongs[prevIndex].id);
-    }
-  };
-
-  const allSongs = [...songs, ...queuedSongs];
-  const playingSong = allSongs.find((s) => s.id === playingSongId) ?? null;
 
   return (
     <div>
       <TopBar title="Music" subtitle="Manage the WELL Collective Playlist" showBack />
-      <div className={`px-4 pt-4 flex flex-col gap-4 ${playingSong ? "pb-24" : "pb-4"}`}>
+      <div className={`px-4 pt-4 flex flex-col gap-4 ${currentSong ? "pb-24" : "pb-4"}`}>
         <div className="glass-card rounded-card p-4">
           <h2 className="text-sm font-bold text-text mb-1.5">How it works</h2>
           <p className="text-xs text-text-muted leading-relaxed">
@@ -815,31 +734,31 @@ export default function AdminMusic() {
                     Play All
                   </button>
                   <button
-                    onClick={() => setQueueRepeatMode((m) => (m === "off" ? "one" : m === "one" ? "all" : "off"))}
+                    onClick={cycleRepeat}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-pill transition-colors ${
-                      queueRepeatMode === "off"
+                      repeatMode === "off"
                         ? "bg-surface-2 text-text-muted border border-border"
-                        : queueRepeatMode === "one"
+                        : repeatMode === "one"
                           ? "bg-brand-light text-white"
                           : "bg-brand text-white"
                     }`}
                   >
-                    {queueRepeatMode === "off" ? "Repeat: Off" : queueRepeatMode === "one" ? "Repeat: 1" : "Repeat: All"}
+                    {repeatMode === "off" ? "Repeat: Off" : repeatMode === "one" ? "Repeat: 1" : "Repeat: All"}
                   </button>
                 </div>
-                {playingSongId && (
+                {currentSong && (
                   <div className="flex gap-2 mb-2">
                     <button
-                      onClick={skipToPrevQueueSong}
-                      disabled={!playingFromQueue || queuedSongs.findIndex((s) => s.id === playingSongId) <= 0}
+                      onClick={() => handleSkip(-1)}
+                      disabled={!queuedSongs.some(s => s.id === currentSong?.id) || queuedSongs.findIndex(s => s.id === currentSong?.id) <= 0}
                       className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
                       title="Previous song (queue only)"
                     >
                       ⏮ Back
                     </button>
                     <button
-                      onClick={skipToNextQueueSong}
-                      disabled={!playingFromQueue || queuedSongs.findIndex((s) => s.id === playingSongId) >= queuedSongs.length - 1}
+                      onClick={() => handleSkip(1)}
+                      disabled={!queuedSongs.some(s => s.id === currentSong?.id) || queuedSongs.findIndex(s => s.id === currentSong?.id) >= queuedSongs.length - 1}
                       className="flex-1 text-xs font-semibold px-3 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted disabled:opacity-25"
                       title="Next song (queue only)"
                     >
@@ -876,15 +795,15 @@ export default function AdminMusic() {
                           })}
                       </span>
                       <button
-                        onClick={() => togglePlay(song)}
-                        aria-label={playingSongId === song.id && isPlaying ? "Pause" : "Play"}
+                        onClick={() => handleSongPlay(song)}
+                        aria-label={currentSong?.id === song.id && isPlaying ? "Pause" : "Play"}
                         className={`w-7 h-7 flex items-center justify-center rounded-full shrink-0 ${
-                          playingSongId === song.id
+                          currentSong?.id === song.id
                             ? "gradient-brand text-white"
                             : "border border-border text-text-dim"
                         }`}
                       >
-                        {playingSongId === song.id && isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                        {currentSong?.id === song.id && isPlaying ? <Pause size={12} /> : <Play size={12} />}
                       </button>
                       <button
                         onClick={() => openSongEditor(song)}
@@ -1073,15 +992,15 @@ export default function AdminMusic() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <DragHandle {...dragHandleProps} />
                       <button
-                        onClick={() => togglePlay(song)}
-                        aria-label={playingSongId === song.id && isPlaying ? "Pause" : "Play"}
+                        onClick={() => handleSongPlay(song)}
+                        aria-label={currentSong?.id === song.id && isPlaying ? "Pause" : "Play"}
                         className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                          playingSongId === song.id
+                          currentSong?.id === song.id
                             ? "gradient-brand text-white"
                             : "bg-surface-2 border border-border text-brand-light"
                         }`}
                       >
-                        {playingSongId === song.id && isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                        {currentSong?.id === song.id && isPlaying ? <Pause size={14} /> : <Play size={14} />}
                       </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-text truncate">{song.title}</p>
@@ -1458,29 +1377,20 @@ export default function AdminMusic() {
         </div>
       </div>
 
-      {/* Single audio element — always mounted so audioRef is never null */}
-      <audio
-        ref={audioRef}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-        className="hidden"
-      />
-
       {/* Sticky mini-player */}
-      {playingSong && (
+      {currentSong && (
         <div className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => togglePlay(playingSong)}
+            onClick={togglePlay}
             className="w-10 h-10 flex items-center justify-center rounded-full gradient-brand text-white shrink-0"
           >
             {isPlaying ? <Pause size={18} /> : <Play size={18} />}
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-text truncate">{playingSong.title}</p>
-            {playingSong.artist && <p className="text-xs text-text-dim truncate">{playingSong.artist}</p>}
+            <p className="text-sm font-semibold text-text truncate">{currentSong.title}</p>
+            {currentSong.artist && <p className="text-xs text-text-dim truncate">{currentSong.artist}</p>}
           </div>
-          <button onClick={stopPlayer} aria-label="Close player" className="text-text-dim shrink-0 p-1">
+          <button onClick={stop} aria-label="Close player" className="text-text-dim shrink-0 p-1">
             <X size={18} />
           </button>
         </div>

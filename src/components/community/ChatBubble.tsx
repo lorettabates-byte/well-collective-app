@@ -7,6 +7,7 @@ import type { ThreadMessage } from "../../types";
 import { formatTime } from "../../utils/format";
 import Avatar from "../ui/Avatar";
 import ImageLightbox from "../ui/ImageLightbox";
+import LinkifiedText from "../ui/LinkifiedText";
 
 interface ChatBubbleProps {
   message: ThreadMessage;
@@ -105,13 +106,13 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
             {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
             {message.text && (
               <div
-                className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
                   isOwn
                     ? "gradient-brand text-white rounded-bubble rounded-br-md"
                     : "bg-surface-2 text-text rounded-bubble rounded-bl-md"
                 }`}
               >
-                {message.text}
+                <LinkifiedText text={message.text} />
               </div>
             )}
             <div className="flex items-center gap-2 mt-1 px-1">

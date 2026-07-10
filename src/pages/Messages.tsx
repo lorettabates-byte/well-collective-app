@@ -1,5 +1,6 @@
 import { Camera, Mail, MessageCircle, Plus, Send, Edit2, Check, X, Heart, Image } from "lucide-react";
 import ImageLightbox from "../components/ui/ImageLightbox";
+import LinkifiedText from "../components/ui/LinkifiedText";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -182,11 +183,11 @@ function DirectMessage({
             )}
             {message.body && message.body !== "📷 Photo" && (
               <div
-                className={`max-w-xs rounded-card px-3 py-2 text-sm whitespace-pre-wrap ${
+                className={`max-w-xs rounded-card px-3 py-2 text-sm whitespace-pre-wrap break-words ${
                   isOwn ? "gradient-brand text-white" : "bg-surface-2 text-text"
                 }`}
               >
-                {message.body}
+                <LinkifiedText text={message.body} />
               </div>
             )}
             <div className="flex items-center gap-2 mt-1 text-[10px] text-text-dim px-1">

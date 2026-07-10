@@ -15,8 +15,9 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useMusicPlayer } from "../../store/MusicPlayerContext";
 import {
   DndContext,
   closestCenter,
@@ -29,16 +30,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { formatSeconds } from "../../utils/format";
-import { logActivity } from "../../utils/wellCup";
-import { deleteDownload, downloadSong, getPlaybackUrl, isDownloaded } from "../../utils/musicOffline";
+import { deleteDownload, downloadSong } from "../../utils/musicOffline";
 
 const FAVORITES_KEY = "well-music-favorites";
 const FAVORITES_ORDER_KEY = "well-music-favorites-order";
 const ORDER_KEY = "well-music-order";
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const FREE_SONG_COUNT = 5;
-
-type RepeatMode = "off" | "all" | "one";
 
 function loadFavorites(): Set<number> {
   try {
@@ -140,16 +138,14 @@ export default function Playlist({
   initialFavoritesOnly?: boolean;
   userEmail?: string;
 }) {
+  const { currentSong, isPlaying, progress, repeatMode, playAt, togglePlay, handleSkip, handleSeek, cycleRepeat } = useMusicPlayer();
+
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [favoritesOrder, setFavoritesOrder] = useState<number[]>(() => loadFavoritesOrder());
   const [downloadingIds, setDownloadingIds] = useState<Set<number>>(new Set());
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
-  const [progress, setProgress] = useState({ current: 0, duration: 0 });
   const [lockedReason, setLockedReason] = useState<"play" | "download" | null>(null);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
 
@@ -214,15 +210,6 @@ export default function Playlist({
     return locked;
   }, [songs, downloadsLocked]);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const queueRef = useRef<Song[]>([]);
-  const queueIndexRef = useRef(0);
-  const repeatModeRef = useRef<RepeatMode>("off");
-  repeatModeRef.current = repeatMode;
-  // Prevents onended and onerror from both advancing the queue in the same
-  // moment (e.g. CDN closes the connection exactly as the song finishes).
-  const advancingRef = useRef(false);
-
   // Reconcile saved order with the current song list. If the server order
   // has changed (admin reordered), use the new server order and clear the
   // user's custom order. Otherwise, keep user's custom order and append new songs.
@@ -246,69 +233,6 @@ export default function Playlist({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songs]);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.onended = () => handleEnded();
-      audio.ontimeupdate = () => setProgress({ current: audio.currentTime, duration: audio.duration || 0 });
-      audio.onloadedmetadata = () => setProgress({ current: audio.currentTime, duration: audio.duration || 0 });
-      // Keep the play/pause icon honest if playback is interrupted externally
-      // (lock screen controls, a phone call, the browser backgrounding the tab).
-      audio.onpause = () => setIsPlaying(false);
-      audio.onplay = () => setIsPlaying(true);
-      // On load error, retry once with the streaming URL (catches the case where
-      // a local offline file was deleted by the OS). If it still fails, advance.
-      audio.onerror = () => {
-        const streaming = queueRef.current[queueIndexRef.current]?.url;
-        if (streaming && audio.src !== streaming) {
-          audio.src = streaming;
-          audio.play().catch(() => handleEnded());
-        } else {
-          handleEnded();
-        }
-      };
-      audioRef.current = audio;
-    }
-    return () => {
-      audioRef.current?.pause();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Update lock screen metadata via Media Session API
-  useEffect(() => {
-    if (!currentSong || !("mediaSession" in navigator)) return;
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentSong.title,
-      artist: currentSong.artist || "WELL Collective",
-      album: "WELL Collective Playlist",
-    });
-
-    navigator.mediaSession.setActionHandler("play", () => {
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-        setIsPlaying(true);
-      }
-    });
-
-    navigator.mediaSession.setActionHandler("pause", () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    });
-
-    navigator.mediaSession.setActionHandler("nexttrack", () => handleSkip(1));
-    navigator.mediaSession.setActionHandler("previoustrack", () => handleSkip(-1));
-  }, [currentSong]);
-
-  // Update playback state on lock screen
-  useEffect(() => {
-    if (!("mediaSession" in navigator)) return;
-    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
-  }, [isPlaying]);
 
   const orderedSongs = order.map((id) => songs.find((s) => s.id === id)).filter((s): s is Song => !!s);
   const featuredSong = orderedSongs.find((s) => s.featured);
@@ -344,96 +268,22 @@ export default function Playlist({
     ...orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id)),
   ];
 
-  async function playAt(queue: Song[], index: number) {
-    if (index < 0 || index >= queue.length) return;
-    queueRef.current = queue;
-    queueIndexRef.current = index;
-    const song = queue[index];
-    const audio = audioRef.current!;
-
-    // Set the streaming URL immediately — no async gap between tracks keeps the
-    // iOS audio session alive. For downloaded songs, resolve the local file path
-    // and switch to it after (starts streaming briefly, then upgrades to local).
-    audio.src = song.url;
-    if (isDownloaded(song.id)) {
-      const localUrl = await getPlaybackUrl(song);
-      // Guard: if another track started while we were resolving the local path, bail.
-      if (queueIndexRef.current !== index) return;
-      audio.src = localUrl;
-    }
-
-    audio.play().catch((err: unknown) => {
-      console.warn("[Music] playback failed:", err);
-      setIsPlaying(false);
-    });
-    setCurrentSong(song);
-    setIsPlaying(true);
-    if (userEmail) logActivity(userEmail, "song_play", { songId: song.id, title: song.title });
-  }
-
-  function handleEnded() {
-    // Guard against onended and onerror both firing within the same moment,
-    // which causes two overlapping playAt calls and an AbortError on the first.
-    if (advancingRef.current) return;
-    advancingRef.current = true;
-    setTimeout(() => { advancingRef.current = false; }, 600);
-
-    if (repeatModeRef.current === "one") {
-      const audio = audioRef.current!;
-      audio.currentTime = 0;
-      audio.play().catch(() => setIsPlaying(false));
-      return;
-    }
-    const nextIndex = queueIndexRef.current + 1;
-    if (nextIndex >= queueRef.current.length) {
-      if (repeatModeRef.current === "all") {
-        playAt(queueRef.current, 0);
-      } else {
-        setIsPlaying(false);
-      }
-      return;
-    }
-    playAt(queueRef.current, nextIndex);
-  }
-
   const togglePlaySong = (song: Song) => {
     if (lockedSongIds.has(song.id)) {
       showLocked("play");
       return;
     }
     if (currentSong?.id === song.id) {
-      if (isPlaying) {
-        audioRef.current?.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current?.play().catch(() => {});
-        setIsPlaying(true);
-      }
+      togglePlay();
       return;
     }
     const startIndex = playableSongs.findIndex((s) => s.id === song.id);
-    playAt(playableSongs, startIndex);
+    playAt(playableSongs, startIndex, userEmail);
   };
 
   const handlePlayAll = () => {
     if (playableSongs.length === 0) return;
-    playAt(playableSongs, 0);
-  };
-
-  const handleSkip = (direction: 1 | -1) => {
-    const nextIndex = queueIndexRef.current + direction;
-    if (nextIndex < 0) return;
-    if (nextIndex >= queueRef.current.length) {
-      if (repeatModeRef.current === "all") playAt(queueRef.current, 0);
-      return;
-    }
-    playAt(queueRef.current, nextIndex);
-  };
-
-  const handleSeek = (value: number) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = value;
-    setProgress((p) => ({ ...p, current: value }));
+    playAt(playableSongs, 0, userEmail);
   };
 
   const toggleFavorite = (id: number) => {
@@ -493,10 +343,6 @@ export default function Playlist({
       saveOrder(next);
       return next;
     });
-  };
-
-  const cycleRepeat = () => {
-    setRepeatMode((prev) => (prev === "off" ? "all" : prev === "all" ? "one" : "off"));
   };
 
   if (loading) {
