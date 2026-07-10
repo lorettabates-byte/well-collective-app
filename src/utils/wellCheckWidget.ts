@@ -8,6 +8,8 @@ interface WellCheckWidgetSnapshot {
   energyOut: string;
   steps: string;
   updatedAt: string;
+  reminder: string;
+  unreadCount: string;
 }
 
 interface WellCheckWidgetPlugin {
