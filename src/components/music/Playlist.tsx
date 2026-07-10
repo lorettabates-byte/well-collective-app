@@ -30,7 +30,7 @@ import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { formatSeconds } from "../../utils/format";
 import { logActivity } from "../../utils/wellCup";
-import { deleteDownload, downloadSong, getPlaybackUrl } from "../../utils/musicOffline";
+import { deleteDownload, downloadSong, getPlaybackUrl, isDownloaded } from "../../utils/musicOffline";
 
 const FAVORITES_KEY = "well-music-favorites";
 const FAVORITES_ORDER_KEY = "well-music-favorites-order";
@@ -254,6 +254,8 @@ export default function Playlist({
       // (lock screen controls, a phone call, the browser backgrounding the tab).
       audio.onpause = () => setIsPlaying(false);
       audio.onplay = () => setIsPlaying(true);
+      // Auto-advance past songs that fail to load (bad URL, network error, etc.)
+      audio.onerror = () => handleEnded();
       audioRef.current = audio;
     }
     return () => {
@@ -336,10 +338,22 @@ export default function Playlist({
     queueIndexRef.current = index;
     const song = queue[index];
     const audio = audioRef.current!;
-    // Prefers the locally downloaded file (if this song was favorited and
-    // cached for offline playback) over streaming from the CDN.
-    audio.src = await getPlaybackUrl(song);
-    audio.play();
+
+    // Set the streaming URL immediately — no async gap between tracks keeps the
+    // iOS audio session alive. For downloaded songs, resolve the local file path
+    // and switch to it after (starts streaming briefly, then upgrades to local).
+    audio.src = song.url;
+    if (isDownloaded(song.id)) {
+      const localUrl = await getPlaybackUrl(song);
+      // Guard: if another track started while we were resolving the local path, bail.
+      if (queueIndexRef.current !== index) return;
+      audio.src = localUrl;
+    }
+
+    audio.play().catch((err: unknown) => {
+      console.warn("[Music] playback failed:", err);
+      setIsPlaying(false);
+    });
     setCurrentSong(song);
     setIsPlaying(true);
     if (userEmail) logActivity(userEmail, "song_play", { songId: song.id, title: song.title });
@@ -349,7 +363,7 @@ export default function Playlist({
     if (repeatModeRef.current === "one") {
       const audio = audioRef.current!;
       audio.currentTime = 0;
-      audio.play();
+      audio.play().catch(() => setIsPlaying(false));
       return;
     }
     const nextIndex = queueIndexRef.current + 1;
