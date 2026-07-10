@@ -27,12 +27,28 @@ export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string; icon: string }
 ];
 
 let sharedCtx: AudioContext | null = null;
+
+// Suspend the AudioContext when the app backgrounds, resume when it comes back.
+// Without this, iOS fights with a running AudioContext during WebView suspension
+// and the app freezes when returning from background.
+function setupVisibilityHandler() {
+  document.addEventListener("visibilitychange", () => {
+    if (!sharedCtx) return;
+    if (document.hidden) {
+      sharedCtx.suspend().catch(() => {});
+    } else if (sharedCtx.state === "suspended") {
+      sharedCtx.resume().catch(() => {});
+    }
+  });
+}
+
 function getContext(): AudioContext {
   if (!sharedCtx) {
     sharedCtx = new AudioContext();
+    setupVisibilityHandler();
   }
   if (sharedCtx.state === "suspended") {
-    sharedCtx.resume();
+    sharedCtx.resume().catch(() => {});
   }
   return sharedCtx;
 }

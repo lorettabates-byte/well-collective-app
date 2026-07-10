@@ -1432,29 +1432,57 @@ export default function Wellness() {
         </div>
 
         {/* Today's synced runs from Health Sync */}
-        {syncedRuns.length > 0 && (
-          <div className="glass-card rounded-card p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-3">Today's Runs</p>
-            <div className="flex flex-col gap-2.5">
+        <div className="glass-card rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+            <Activity size={15} className="text-brand-light shrink-0" />
+            <h3 className="text-sm font-bold text-text">Today's {syncedRuns.length === 1 ? "Run" : "Runs"}</h3>
+            {syncedRuns.length > 0 && (
+              <span className="ml-auto text-xs text-text-dim">{syncedRuns.length} {syncedRuns.length === 1 ? "run" : "runs"} synced</span>
+            )}
+          </div>
+          {syncedRuns.length === 0 ? (
+            <p className="text-xs text-text-muted text-center py-3">
+              No runs synced today. Enable Health Sync in{" "}
+              <Link to="/profile" className="text-brand-light font-semibold">Profile</Link> to auto-import runs.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
               {syncedRuns.map((run, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(42,109,217,0.15)", border: "0.5px solid rgba(91,163,245,0.2)" }}>
-                    <Activity size={14} className="text-brand-light" />
+                <div key={i} className="rounded-card bg-surface-2 border border-border px-3 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-light mb-2">
+                    {run.workoutType === "runningTreadmill" ? "Treadmill Run" : "Outdoor Run"}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col items-center">
+                      <p className="text-lg font-extrabold text-text leading-none">{run.distanceKm.toFixed(1)}</p>
+                      <p className="text-[10px] text-text-dim">km</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <p className="text-lg font-extrabold text-text leading-none">{run.durationMinutes}</p>
+                      <p className="text-[10px] text-text-dim">min</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      {run.paceMinPerKm != null ? (
+                        <>
+                          <p className="text-lg font-extrabold text-text leading-none">{run.paceMinPerKm.toFixed(1)}</p>
+                          <p className="text-[10px] text-text-dim">min/km</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-extrabold text-text-dim leading-none">—</p>
+                          <p className="text-[10px] text-text-dim">pace</p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-text capitalize">{run.workoutType || "Run"}</p>
-                    <p className="text-[11px] text-text-muted">
-                      {run.distanceKm.toFixed(2)} km · {run.durationMinutes} min
-                      {run.paceMinPerKm ? ` · ${formatPace(run.paceMinPerKm)}/km` : ""}
-                      {run.caloriesBurned ? ` · ~${run.caloriesBurned} cal` : ""}
-                    </p>
-                  </div>
+                  {run.caloriesBurned != null && (
+                    <p className="text-[11px] text-text-muted text-center mt-2">{run.caloriesBurned} kcal burned</p>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Custom workout + big complete button at bottom of workout tab */}
         {!completedToday && (
@@ -1638,59 +1666,6 @@ export default function Wellness() {
             </>
           )}
         </div>
-        {/* Run Tracking */}
-        <div className="glass-card rounded-card p-4">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-            <Activity size={15} className="text-brand-light shrink-0" />
-            <h3 className="text-sm font-bold text-text">Today's {syncedRuns.length === 1 ? "Run" : "Runs"}</h3>
-            {syncedRuns.length > 0 && (
-              <span className="ml-auto text-xs text-text-dim">{syncedRuns.length} {syncedRuns.length === 1 ? "run" : "runs"} synced</span>
-            )}
-          </div>
-          {syncedRuns.length === 0 ? (
-            <p className="text-xs text-text-muted text-center py-3">
-              No runs synced today. Enable Health Sync in{" "}
-              <Link to="/profile" className="text-brand-light font-semibold">Profile</Link> to auto-import runs.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {syncedRuns.map((run, i) => (
-                <div key={i} className="rounded-card bg-surface-2 border border-border px-3 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-light mb-2">
-                    {run.workoutType === "runningTreadmill" ? "Treadmill Run" : "Outdoor Run"}
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col items-center">
-                      <p className="text-lg font-extrabold text-text leading-none">{run.distanceKm.toFixed(1)}</p>
-                      <p className="text-[10px] text-text-dim">km</p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <p className="text-lg font-extrabold text-text leading-none">{run.durationMinutes}</p>
-                      <p className="text-[10px] text-text-dim">min</p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      {run.paceMinPerKm != null ? (
-                        <>
-                          <p className="text-lg font-extrabold text-text leading-none">{run.paceMinPerKm.toFixed(1)}</p>
-                          <p className="text-[10px] text-text-dim">min/km</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-lg font-extrabold text-text-dim leading-none">—</p>
-                          <p className="text-[10px] text-text-dim">pace</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {run.caloriesBurned != null && (
-                    <p className="text-[11px] text-text-muted text-center mt-2">{run.caloriesBurned} kcal burned</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Calm Toolkit */}
         <div className="glass-card rounded-card p-4">
           <div className="flex items-center gap-2 mb-1 pb-2 border-b border-border">
