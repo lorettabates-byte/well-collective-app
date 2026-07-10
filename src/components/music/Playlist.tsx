@@ -219,6 +219,9 @@ export default function Playlist({
   const queueIndexRef = useRef(0);
   const repeatModeRef = useRef<RepeatMode>("off");
   repeatModeRef.current = repeatMode;
+  // Prevents onended and onerror from both advancing the queue in the same
+  // moment (e.g. CDN closes the connection exactly as the song finishes).
+  const advancingRef = useRef(false);
 
   // Reconcile saved order with the current song list. If the server order
   // has changed (admin reordered), use the new server order and clear the
@@ -254,8 +257,17 @@ export default function Playlist({
       // (lock screen controls, a phone call, the browser backgrounding the tab).
       audio.onpause = () => setIsPlaying(false);
       audio.onplay = () => setIsPlaying(true);
-      // Auto-advance past songs that fail to load (bad URL, network error, etc.)
-      audio.onerror = () => handleEnded();
+      // On load error, retry once with the streaming URL (catches the case where
+      // a local offline file was deleted by the OS). If it still fails, advance.
+      audio.onerror = () => {
+        const streaming = queueRef.current[queueIndexRef.current]?.url;
+        if (streaming && audio.src !== streaming) {
+          audio.src = streaming;
+          audio.play().catch(() => handleEnded());
+        } else {
+          handleEnded();
+        }
+      };
       audioRef.current = audio;
     }
     return () => {
@@ -276,7 +288,7 @@ export default function Playlist({
 
     navigator.mediaSession.setActionHandler("play", () => {
       if (audioRef.current) {
-        audioRef.current.play();
+        audioRef.current.play().catch(() => {});
         setIsPlaying(true);
       }
     });
@@ -360,6 +372,12 @@ export default function Playlist({
   }
 
   function handleEnded() {
+    // Guard against onended and onerror both firing within the same moment,
+    // which causes two overlapping playAt calls and an AbortError on the first.
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setTimeout(() => { advancingRef.current = false; }, 600);
+
     if (repeatModeRef.current === "one") {
       const audio = audioRef.current!;
       audio.currentTime = 0;
@@ -388,7 +406,7 @@ export default function Playlist({
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play();
+        audioRef.current?.play().catch(() => {});
         setIsPlaying(true);
       }
       return;
