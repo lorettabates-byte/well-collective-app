@@ -54,7 +54,7 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 function App() {
   useStaleVersionGuard();
   const navigate = useNavigate();
-  const { user, updateProfile } = useApp();
+  const { user, updateProfile, profileReady } = useApp();
   const [goalsDismissed, setGoalsDismissed] = useState(false);
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
@@ -65,7 +65,8 @@ function App() {
   // Don't show if: already dismissed this session, no user, already shown this month
   // (localStorage), OR the server confirms they already completed/skipped this month.
   const serverDismissed = !!user.goalsRefreshPeriod && user.goalsRefreshPeriod === currentPeriod;
-  const showGoals = !goalsDismissed && !!user.email && !periodShown && !serverDismissed;
+  // Also gate on profileReady so we don't show before the server's goalsRefreshPeriod has loaded.
+  const showGoals = profileReady && !goalsDismissed && !!user.email && !periodShown && !serverDismissed;
 
   // When the server says they've already seen it this month, stamp localStorage
   // so subsequent renders don't flicker on re-mount.
@@ -107,6 +108,7 @@ function App() {
       {showGoals && <GoalsQuestionnaire
         onComplete={() => handleDismiss({ goalsRefreshPeriod: currentPeriod })}
         onSkip={() => handleDismiss({ goalsRefreshPeriod: currentPeriod })}
+        currentPeriod={currentPeriod}
       />}
       <MobileShell>
       <Routes>

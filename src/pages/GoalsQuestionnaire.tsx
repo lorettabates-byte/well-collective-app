@@ -90,7 +90,7 @@ function OptionCard<T extends string>({
   );
 }
 
-export default function GoalsQuestionnaire({ onComplete, onSkip }: { onComplete: () => void; onSkip?: () => void }) {
+export default function GoalsQuestionnaire({ onComplete, onSkip, currentPeriod }: { onComplete: () => void; onSkip?: () => void; currentPeriod?: string }) {
   const { user, updateProfile } = useApp();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -128,6 +128,7 @@ export default function GoalsQuestionnaire({ onComplete, onSkip }: { onComplete:
           notificationTone: primaryTone,
           movementTarget: answers.movementTarget,
           goalsCompleted: true,
+          goalsRefreshPeriod: currentPeriod,
         }),
       });
       await fetch(`${API_URL}/api/members/notification-settings`, {
@@ -286,9 +287,9 @@ export default function GoalsQuestionnaire({ onComplete, onSkip }: { onComplete:
           {onSkip && (
             <button
               onClick={onSkip}
-              className="text-xs text-text-muted hover:text-text transition-colors"
+              className="text-xs font-semibold text-text-muted border border-border rounded-pill px-3 py-1 hover:text-text hover:border-text-muted transition-colors"
             >
-              Skip
+              Skip for now
             </button>
           )}
         </div>

@@ -386,6 +386,7 @@ interface ServerNotification {
 }
 
 interface AppContextValue extends PersistedState {
+  profileReady: boolean;
   updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "goalsRefreshPeriod" | "notificationSchedule">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
@@ -2278,6 +2279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppContextValue = {
     ...state,
+    profileReady: restoreGate > 0,
     updateProfile,
     updateNotificationSettings,
     addThread,
