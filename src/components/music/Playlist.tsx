@@ -594,7 +594,7 @@ export default function Playlist({
 
       {currentSong &&
         createPortal(
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2 shadow-glow">
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-[398px] z-30 glass-card rounded-card p-3 flex flex-col gap-2" style={{ border: "1px solid rgba(1, 145, 206, 0.35)", boxShadow: "0 0 0 1px rgba(1, 145, 206, 0.15), 0 8px 30px -10px rgba(1, 145, 206, 0.55)" }}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold text-text truncate flex-1">{currentSong.title}</p>
               {currentSong.lyrics && (
