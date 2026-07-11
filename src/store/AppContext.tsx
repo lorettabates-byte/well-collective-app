@@ -386,7 +386,7 @@ interface ServerNotification {
 }
 
 interface AppContextValue extends PersistedState {
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "notificationSchedule">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "goalsRefreshPeriod" | "notificationSchedule">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
   addMessage: (threadId: string, text: string, image?: string, replyToId?: string) => void;
@@ -2191,6 +2191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             notificationTone: prev.user.notificationTone ?? member.notificationTone,
             movementTarget: prev.user.movementTarget ?? member.movementTarget,
             goalsCompleted: prev.user.goalsCompleted || member.goalsCompleted,
+            goalsRefreshPeriod: member.goalsRefreshPeriod ?? prev.user.goalsRefreshPeriod,
           },
         }));
       })

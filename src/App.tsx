@@ -49,21 +49,47 @@ import AdminTribe from "./pages/admin/AdminTribe";
 import AdminExerciseVideos from "./pages/admin/AdminExerciseVideos";
 import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
 function App() {
   useStaleVersionGuard();
   const navigate = useNavigate();
-  const { user } = useApp();
+  const { user, updateProfile } = useApp();
   const [goalsDismissed, setGoalsDismissed] = useState(false);
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
-  // Key is per-user so different accounts on the same device each get their own
-  // tracking, and a user logging back in on a fresh session will see the
-  // questionnaire if they haven't completed it on this device this month.
   const periodKey = user.email
     ? `well-goals-period-${user.email}-${currentPeriod}`
     : null;
   const periodShown = periodKey ? localStorage.getItem(periodKey) === "1" : false;
-  const showGoals = !goalsDismissed && !!user.email && !periodShown;
+  // Don't show if: already dismissed this session, no user, already shown this month
+  // (localStorage), OR the server confirms they already completed/skipped this month.
+  const serverDismissed = !!user.goalsRefreshPeriod && user.goalsRefreshPeriod === currentPeriod;
+  const showGoals = !goalsDismissed && !!user.email && !periodShown && !serverDismissed;
+
+  // When the server says they've already seen it this month, stamp localStorage
+  // so subsequent renders don't flicker on re-mount.
+  useEffect(() => {
+    if (serverDismissed && periodKey && !periodShown) {
+      localStorage.setItem(periodKey, "1");
+    }
+  }, [serverDismissed, periodKey, periodShown]);
+
+  const handleDismiss = (opts?: { goalsRefreshPeriod?: string }) => {
+    if (periodKey) localStorage.setItem(periodKey, "1");
+    if (opts?.goalsRefreshPeriod) {
+      updateProfile({ goalsRefreshPeriod: opts.goalsRefreshPeriod });
+      // Persist to server so the guard works across devices / localStorage wipes.
+      if (user.email && API_URL) {
+        fetch(`${API_URL}/api/members/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, name: user.name, goalsRefreshPeriod: opts.goalsRefreshPeriod }),
+        }).catch(() => {});
+      }
+    }
+    setGoalsDismissed(true);
+  };
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -78,10 +104,10 @@ function App() {
 
   return (
     <>
-      {showGoals && <GoalsQuestionnaire onComplete={() => {
-        if (periodKey) localStorage.setItem(periodKey, "1");
-        setGoalsDismissed(true);
-      }} />}
+      {showGoals && <GoalsQuestionnaire
+        onComplete={() => handleDismiss({ goalsRefreshPeriod: currentPeriod })}
+        onSkip={() => handleDismiss({ goalsRefreshPeriod: currentPeriod })}
+      />}
       <MobileShell>
       <Routes>
         <Route path="/" element={<Home />} />

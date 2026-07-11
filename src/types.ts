@@ -38,6 +38,7 @@ export interface User {
   notificationTone?: "motivation" | "accountability" | "gentle" | "education";
   movementTarget?: "sedentary" | "light" | "moderate" | "active";
   goalsCompleted?: boolean;
+  goalsRefreshPeriod?: string; // "YYYY-MM" of last questionnaire completion or skip
   hiddenFromCommunity?: boolean; // opt-out of appearing in member lists / discovery
   showOnLeaderboard?: boolean;
 }

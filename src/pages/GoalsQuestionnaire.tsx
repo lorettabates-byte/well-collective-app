@@ -90,7 +90,7 @@ function OptionCard<T extends string>({
   );
 }
 
-export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => void }) {
+export default function GoalsQuestionnaire({ onComplete, onSkip }: { onComplete: () => void; onSkip?: () => void }) {
   const { user, updateProfile } = useApp();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -279,9 +279,19 @@ export default function GoalsQuestionnaire({ onComplete }: { onComplete: () => v
             />
           ))}
         </div>
-        <p className="text-xs text-text-dim uppercase tracking-widest font-semibold mb-1">
-          Question {step + 1} of {steps.length}
-        </p>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs text-text-dim uppercase tracking-widest font-semibold">
+            Question {step + 1} of {steps.length}
+          </p>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="text-xs text-text-muted hover:text-text transition-colors"
+            >
+              Skip
+            </button>
+          )}
+        </div>
         <h2 className="text-xl font-extrabold text-text leading-tight">{current.q}</h2>
         <p className="text-sm text-text-muted mt-1">{current.sub}</p>
       </div>
