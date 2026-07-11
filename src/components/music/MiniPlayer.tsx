@@ -52,12 +52,12 @@ export default function MiniPlayer() {
   return (
     <div
       ref={playerRef}
-      style={style}
+      style={{ ...style, boxShadow: "0 4px 24px -4px rgba(1, 145, 206, 0.65), 0 2px 8px rgba(0,0,0,0.4)" }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      title="Drag to move"
       className="flex items-center gap-2 gradient-brand rounded-pill px-3 py-2 w-[208px]"
-      style={{ boxShadow: "0 4px 24px -4px rgba(1, 145, 206, 0.65), 0 2px 8px rgba(0,0,0,0.4)" }}
     >
       {/* Song title — tap navigates to music page */}
       <button
