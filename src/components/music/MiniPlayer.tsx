@@ -56,7 +56,8 @@ export default function MiniPlayer() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className="flex items-center gap-2 glass-card rounded-pill shadow-glow px-3 py-2 w-[208px]"
+      className="flex items-center gap-2 gradient-brand rounded-pill px-3 py-2 w-[208px]"
+      style={{ boxShadow: "0 4px 24px -4px rgba(1, 145, 206, 0.65), 0 2px 8px rgba(0,0,0,0.4)" }}
     >
       {/* Song title — tap navigates to music page */}
       <button
@@ -67,14 +68,14 @@ export default function MiniPlayer() {
         className="flex-1 min-w-0 text-left"
         aria-label="Open music player"
       >
-        <p className="text-xs font-semibold text-text truncate">{currentSong.title}</p>
+        <p className="text-xs font-semibold text-white truncate">{currentSong.title}</p>
       </button>
 
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={togglePlay}
         aria-label={isPlaying ? "Pause" : "Play"}
-        className="shrink-0 text-text w-7 h-7 flex items-center justify-center"
+        className="shrink-0 text-white w-7 h-7 flex items-center justify-center"
       >
         {isPlaying ? <Pause size={15} /> : <Play size={15} />}
       </button>
@@ -83,7 +84,7 @@ export default function MiniPlayer() {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => handleSkip(1)}
         aria-label="Next track"
-        className="shrink-0 text-text w-7 h-7 flex items-center justify-center"
+        className="shrink-0 text-white w-7 h-7 flex items-center justify-center"
       >
         <SkipForward size={15} />
       </button>
@@ -92,7 +93,7 @@ export default function MiniPlayer() {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={stop}
         aria-label="Close player"
-        className="shrink-0 text-text-muted w-6 h-6 flex items-center justify-center"
+        className="shrink-0 text-white/60 w-6 h-6 flex items-center justify-center"
       >
         <X size={13} />
       </button>
