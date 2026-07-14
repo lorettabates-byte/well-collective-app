@@ -96,6 +96,42 @@ export async function subscribeToPush(userEmail?: string): Promise<PushSubscribe
   return { success: true };
 }
 
+/**
+ * Called silently on app startup when pushEnabled=true.
+ * On Android the OS can kill the WebView at midnight, which invalidates the
+ * push subscription. This re-registers silently so the user doesn't lose
+ * notifications and doesn't need to reinstall.
+ */
+export async function revalidatePushSubscription(userEmail?: string): Promise<void> {
+  if (!isPushSupported() || !API_URL || !VAPID_PUBLIC_KEY) return;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      // Subscription was dropped (Android OS killed it) — re-subscribe silently.
+      // Only possible if permission is already granted; never prompts here.
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+        });
+      } else {
+        return;
+      }
+    }
+    // Always re-POST the subscription so the server has the latest endpoint
+    // (Android FCM rotates endpoints after a force-kill).
+    const payload = { ...subscription.toJSON(), userEmail: userEmail || undefined };
+    await fetch(`${API_URL}/api/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn("Push revalidation failed (non-fatal):", err);
+  }
+}
+
 export async function unsubscribeFromPush(): Promise<void> {
   if (!isPushSupported() || !API_URL) return;
 

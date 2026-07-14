@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
 import { checkHealthPermissions, runDailyHealthSync } from "../utils/healthSync";
+import { revalidatePushSubscription } from "../lib/push";
 import {
   CATEGORIES,
   CURRENT_USER,
@@ -536,6 +537,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberEmail: state.user.email, type: "app_open" }),
     }).catch(() => {});
+
+    // Silently re-register push subscription if it was dropped (common on Android
+    // when the OS kills the WebView at midnight — prevents needing a reinstall).
+    if (state.notificationSettings.pushEnabled) {
+      revalidatePushSubscription(state.user.email).catch(() => {});
+    }
 
     // One-time founding member badge claim for all full members during the
     // first 6 months after launch. The server checks eligibility and is idempotent.

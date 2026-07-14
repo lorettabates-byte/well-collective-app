@@ -76,6 +76,10 @@ export default function MemberProfile() {
 
   const [showCheerPicker, setShowCheerPicker] = useState(false);
   const [cheerSent, setCheerSent] = useState("");
+  const WELCOMED_KEY = `well-welcomed-${user.email || ""}`;
+  const [welcomedMembers, setWelcomedMembers] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(WELCOMED_KEY) || "{}"); } catch { return {}; }
+  });
 
   const [birthdayCelebrated, setBirthdayCelebrated] = useState(false);
 
@@ -137,6 +141,16 @@ export default function MemberProfile() {
     if (!API_URL || !user.email || !memberId) return;
     setShowCheerPicker(false);
     setCheerSent(cheerId);
+    const isNewMember = (member?.workoutLog?.length ?? 0) === 0;
+    if (isNewMember) {
+      setWelcomedMembers((prev) => {
+        const next = { ...prev, [memberId]: true };
+        try { localStorage.setItem(WELCOMED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    } else {
+      setTimeout(() => setCheerSent(""), 2500);
+    }
     try {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
@@ -144,7 +158,6 @@ export default function MemberProfile() {
         body: JSON.stringify({ email: user.email, cheerId }),
       });
     } catch { /* no-op */ }
-    setTimeout(() => setCheerSent(""), 2500);
   };
 
   const handleCelebrateBirthday = async () => {
@@ -274,7 +287,12 @@ export default function MemberProfile() {
                 {inTribe ? "In Your Tribe" : "Add to Tribe"}
               </button>
 
-              {cheerSent ? (
+              {memberId && (member?.workoutLog?.length ?? 0) === 0 && welcomedMembers[memberId] ? (
+                <div className="flex items-center justify-center gap-2 rounded-pill py-2.5 text-sm font-semibold glass-card border border-border text-text-dim opacity-60">
+                  <Check size={15} />
+                  Welcome Sent
+                </div>
+              ) : cheerSent ? (
                 <div className="flex items-center justify-center gap-2 rounded-pill py-2.5 text-sm font-semibold glass-card border border-border text-brand-light">
                   <Check size={15} />
                   Cheer Sent!

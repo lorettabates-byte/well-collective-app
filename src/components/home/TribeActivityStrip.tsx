@@ -101,10 +101,13 @@ export default function TribeActivityStrip() {
   const navigate = useNavigate();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
-  const SENT_CHEERS_KEY = `well-sent-cheers-${user.email || ""}`;
-  const [sentCheer, setSentCheer] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(SENT_CHEERS_KEY) || "{}"); } catch { return {}; }
+  // Permanently tracks members who received the "Say Welcome" cheer
+  const WELCOMED_KEY = `well-welcomed-${user.email || ""}`;
+  const [welcomedMembers, setWelcomedMembers] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(WELCOMED_KEY) || "{}"); } catch { return {}; }
   });
+  // Transient: shows "Sent!" for 2.5s after any non-welcome cheer
+  const [recentlySent, setRecentlySent] = useState<string | null>(null);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -114,14 +117,19 @@ export default function TribeActivityStrip() {
       .catch(() => setTribe([]));
   }, [user.email]);
 
-  const sendCheer = async (memberId: string, cheerId: string) => {
+  const sendCheer = async (memberId: string, cheerId: string, isWelcome: boolean) => {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
-    setSentCheer((prev) => {
-      const next = { ...prev, [memberId]: true };
-      try { localStorage.setItem(SENT_CHEERS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    if (isWelcome) {
+      setWelcomedMembers((prev) => {
+        const next = { ...prev, [memberId]: true };
+        try { localStorage.setItem(WELCOMED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    } else {
+      setRecentlySent(memberId);
+      setTimeout(() => setRecentlySent(null), 2500);
+    }
     try {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
@@ -148,7 +156,9 @@ export default function TribeActivityStrip() {
         {suggestions.map(({ member, reason, reasonLabel, ctaCopy }) => {
           const cfg = REASON_STYLES[reason];
           const isCheering = cheeringFor === member.id;
-          const justSent = sentCheer[member.id];
+          const isWelcome = ctaCopy === "Say Welcome";
+          const alreadyWelcomed = isWelcome && !!welcomedMembers[member.id];
+          const justSentOther = !isWelcome && recentlySent === member.id;
 
           return (
             <div
@@ -173,16 +183,20 @@ export default function TribeActivityStrip() {
               </span>
 
               {/* Action area */}
-              {justSent ? (
+              {alreadyWelcomed ? (
                 <div className="text-[11px] font-semibold text-text-dim border border-border rounded-pill px-2.5 py-1 w-full text-center opacity-60">
-                  Cheer Sent
+                  Welcome Sent
+                </div>
+              ) : justSentOther ? (
+                <div className="text-[11px] font-semibold text-brand-light rounded-pill px-2.5 py-1 w-full text-center">
+                  Sent!
                 </div>
               ) : isCheering ? (
                 <div className="flex flex-wrap justify-center gap-1">
                   {TRIBE_CHEERS.slice(0, 4).map((cheer) => (
                     <button
                       key={cheer.id}
-                      onClick={() => sendCheer(member.id, cheer.id)}
+                      onClick={() => sendCheer(member.id, cheer.id, isWelcome)}
                       title={cheer.label}
                       className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-xs"
                     >
