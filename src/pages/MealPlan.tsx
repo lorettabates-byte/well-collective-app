@@ -250,7 +250,7 @@ export default function MealPlan() {
       ...manualItems.map((item) => `• ${item}`),
     ];
     const text = `Shopping List\n\n${allItems.join("\n")}`;
-    if (navigator.share) {
+    if ("share" in navigator) {
       try { await navigator.share({ title: "Shopping List", text }); } catch { /* dismissed */ }
     } else {
       const win = window.open("", "_blank");
@@ -375,8 +375,8 @@ export default function MealPlan() {
                 className="flex items-center gap-1 text-[11px] font-semibold text-brand-light border border-brand-light/30 rounded-pill px-2.5 py-1 hover:bg-brand/10 transition-colors"
                 aria-label="Share or print shopping list"
               >
-                {navigator.share ? <Share2 size={12} /> : <Printer size={12} />}
-                {navigator.share ? "Share" : "Print"}
+                {"share" in navigator ? <Share2 size={12} /> : <Printer size={12} />}
+                {"share" in navigator ? "Share" : "Print"}
               </button>
             )}
           </div>
