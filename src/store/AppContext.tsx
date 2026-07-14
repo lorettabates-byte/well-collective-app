@@ -21,6 +21,7 @@ export interface MemberDirectoryEntry extends BadgeHolder {
   name?: string;
   avatar?: string;
   username?: string;
+  moodStatus?: string | null;
 }
 import type {
   AppNotification,
@@ -416,6 +417,7 @@ interface AppContextValue extends PersistedState {
   moveRecipeToFolder: (savedRecipeId: number, folderId: number | null) => void;
   fetchRecipeHistory: (before?: string, limit?: number) => Promise<Recipe[]>;
   mealPlan: MealPlanEntry[];
+  refreshMealPlan: () => void;
   setMealPlanRecipe: (planDate: string, mealType: string, recipe: Recipe) => void;
   removeMealPlanEntry: (entryId: number) => void;
   toggleRsvp: (eventId: string) => void;
@@ -500,6 +502,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             bonusBadges: m.bonusBadges,
             grantedBadges: m.grantedBadges,
             featuredBadge: m.featuredBadge,
+            moodStatus: m.moodStatus ?? null,
           };
         }
         setMemberBadges(map);
@@ -1090,6 +1093,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? getRecipePhotoByCategory(recipe.imageCategory, recipe.name)
           : getRecipePhoto(recipe.name, recipe.ingredients)),
     }));
+  };
+
+  const refreshMealPlan = () => {
+    const email = state.user.email;
+    if (!API_URL || !email) return;
+    fetch(`${API_URL}/api/meal-plan?email=${email}`)
+      .then((res) => (res.ok ? res.json() : { entries: [] }))
+      .then((data) => setMealPlan(data.entries || []))
+      .catch((err) => console.error("Failed to refresh meal plan:", err));
   };
 
   const setMealPlanRecipe: AppContextValue["setMealPlanRecipe"] = (planDate, mealType, recipe) => {
@@ -2306,6 +2318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     moveRecipeToFolder,
     fetchRecipeHistory,
     mealPlan,
+    refreshMealPlan,
     setMealPlanRecipe,
     removeMealPlanEntry,
     addInspiration,

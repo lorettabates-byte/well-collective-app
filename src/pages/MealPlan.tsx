@@ -1,4 +1,4 @@
-import { Bookmark, Calendar, Check, ChefHat, ChevronDown, ChevronUp, History, Plus, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Bookmark, Calendar, Check, ChefHat, ChevronDown, ChevronUp, History, Plus, Printer, Share2, ShoppingCart, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -159,11 +159,13 @@ function RecipePicker({ onPick, onClose, mealLabel }: PickerProps) {
 }
 
 export default function MealPlan() {
-  const { mealPlan, setMealPlanRecipe, removeMealPlanEntry } = useApp();
+  const { mealPlan, refreshMealPlan, setMealPlanRecipe, removeMealPlanEntry } = useApp();
   const [pickerFor, setPickerFor] = useState<{ date: string; mealType: string; label: string } | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(() => loadCheckedItems());
   const [manualItems, setManualItems] = useState<string[]>(() => loadManualItems());
   const [manualInput, setManualInput] = useState("");
+
+  useEffect(() => { refreshMealPlan(); }, []);
 
   const weekDates = useMemo(getThisWeekDates, []);
   const todayStr = useMemo(() => toLocalISODate(new Date()), []);
@@ -240,6 +242,24 @@ export default function MealPlan() {
       try { localStorage.setItem(CHECKED_ITEMS_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
+  };
+
+  const shareShoppingList = async () => {
+    const allItems = [
+      ...shoppingList.map((item) => `• ${item.label}${item.count > 1 ? ` (×${item.count})` : ""}`),
+      ...manualItems.map((item) => `• ${item}`),
+    ];
+    const text = `Shopping List\n\n${allItems.join("\n")}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "Shopping List", text }); } catch { /* dismissed */ }
+    } else {
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.write(`<pre style="font-family:sans-serif;padding:24px">${text}</pre>`);
+        win.document.close();
+        win.print();
+      }
+    }
   };
 
   return (
@@ -348,7 +368,17 @@ export default function MealPlan() {
         <div className="glass-card rounded-card p-4 mt-1.5">
           <div className="flex items-center gap-1.5 mb-3">
             <ShoppingCart size={16} className="text-brand-light" />
-            <h2 className="text-sm font-bold text-text">Shopping List</h2>
+            <h2 className="text-sm font-bold text-text flex-1">Shopping List</h2>
+            {(shoppingList.length > 0 || manualItems.length > 0) && (
+              <button
+                onClick={shareShoppingList}
+                className="flex items-center gap-1 text-[11px] font-semibold text-brand-light border border-brand-light/30 rounded-pill px-2.5 py-1 hover:bg-brand/10 transition-colors"
+                aria-label="Share or print shopping list"
+              >
+                {navigator.share ? <Share2 size={12} /> : <Printer size={12} />}
+                {navigator.share ? "Share" : "Print"}
+              </button>
+            )}
           </div>
 
           <div className="flex gap-2 mb-3">

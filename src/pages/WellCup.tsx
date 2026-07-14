@@ -3,8 +3,10 @@ import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
+import Avatar from "../components/ui/Avatar";
 import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
+import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 
 function deriveMemberId(email: string): string {
@@ -22,17 +24,8 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 interface WinnerInfo {
   name: string;
   avatar: string | null;
+  email?: string;
   total_points: number;
-}
-
-function MemberAvatar({ name, avatar, size = 36 }: { name: string; avatar: string | null; size?: number }) {
-  if (avatar) return <img src={avatar} alt={name} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
-  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  return (
-    <div className="rounded-full bg-brand/20 border border-brand-light/30 flex items-center justify-center shrink-0 font-bold text-brand-light" style={{ width: size, height: size, fontSize: size * 0.35 }}>
-      {initials}
-    </div>
-  );
 }
 
 function WinnerBanner({
@@ -52,13 +45,15 @@ function WinnerBanner({
   period: SharePeriod;
   periodLabel: string;
 }) {
+  const { memberBadges } = useApp();
   const [showShare, setShowShare] = useState(false);
+  const winnerMoodStatus = winner?.email ? memberBadges[deriveMemberId(winner.email)]?.moodStatus : undefined;
   return (
     <div className={`rounded-card px-4 py-3 border ${accent}`}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">{label}</p>
       {winner ? (
         <div className="flex items-center gap-3">
-          <MemberAvatar name={winner.name} avatar={winner.avatar} size={40} />
+          <Avatar src={winner.avatar ?? ""} alt={winner.name} size={40} moodStatus={winnerMoodStatus} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-text truncate">{winner.name}</p>
             <p className="text-xs text-text-muted">{sublabel} · {winner.total_points.toLocaleString()} pts</p>
@@ -129,6 +124,7 @@ const POINTS_GUIDE = [
 export default function WellCup() {
   useSectionTracking("well-cup");
   const navigate = useNavigate();
+  const { memberBadges } = useApp();
   const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
   const [resetAt, setResetAt] = useState("");
   const [yesterday, setYesterday] = useState<WinnerInfo | null>(null);
@@ -185,7 +181,7 @@ export default function WellCup() {
             {leader ? (
               <div className="rounded-card p-4 border border-yellow-400/40 flex items-center gap-3" style={{ background: "rgba(250,204,21,0.07)" }}>
                 <div className="relative shrink-0">
-                  <MemberAvatar name={leader.name} avatar={leader.avatar} size={52} />
+                  <Avatar src={leader.avatar ?? ""} alt={leader.name} size={52} moodStatus={memberBadges[deriveMemberId(leader.email)]?.moodStatus} />
                   <span className="absolute -top-1 -right-1 text-lg leading-none">🏆</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -285,7 +281,7 @@ export default function WellCup() {
                   className="flex items-center gap-3 px-4 py-3 bg-yellow-400/5 w-full text-left"
                 >
                   <span className="text-base w-5 shrink-0 text-center">🏆</span>
-                  <MemberAvatar name={leader.name} avatar={leader.avatar} size={34} />
+                  <Avatar src={leader.avatar ?? ""} alt={leader.name} size={34} moodStatus={memberBadges[deriveMemberId(leader.email)]?.moodStatus} />
                   <span className="text-sm font-bold text-yellow-300 flex-1 min-w-0 truncate">{leader.name}</span>
                   <span className="text-sm font-bold text-yellow-300 shrink-0">{leader.points} pts</span>
                 </button>
@@ -297,7 +293,7 @@ export default function WellCup() {
                   className="flex items-center gap-3 px-4 py-3 w-full text-left"
                 >
                   <span className="text-xs text-text-dim w-5 shrink-0 text-center">{i + 2}</span>
-                  <MemberAvatar name={entry.name} avatar={entry.avatar} size={32} />
+                  <Avatar src={entry.avatar ?? ""} alt={entry.name} size={32} moodStatus={memberBadges[deriveMemberId(entry.email)]?.moodStatus} />
                   <span className="text-sm text-text flex-1 min-w-0 truncate font-medium">{entry.name}</span>
                   <span className="text-xs font-bold text-brand-light shrink-0">{entry.points} pts</span>
                 </button>

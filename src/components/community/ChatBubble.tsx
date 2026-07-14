@@ -42,7 +42,7 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
             <Avatar src={user.avatar || authorAvatar} alt={user.name || authorName} size={28} badgeId={badgeId} />
           ) : (
             <Link to={`/member/${message.authorId}`}>
-              <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
+              <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} moodStatus={liveAuthor?.moodStatus} />
             </Link>
           ))}
       </div>

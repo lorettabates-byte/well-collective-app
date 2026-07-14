@@ -87,6 +87,7 @@ interface DirectMessageProps {
   onApproveImage: (messageId: number) => Promise<void>;
   currentUserId: string;
   otherMember: DirectoryMember | undefined;
+  otherMoodStatus?: string | null;
   selectedUserId: string;
   navigate: ReturnType<typeof useNavigate>;
 }
@@ -99,6 +100,7 @@ function DirectMessage({
   onApproveImage,
   currentUserId,
   otherMember,
+  otherMoodStatus,
   selectedUserId,
   navigate,
 }: DirectMessageProps) {
@@ -118,6 +120,7 @@ function DirectMessage({
             alt={otherMember?.name || "Member"}
             size={28}
             badgeId={resolveFeaturedBadge(otherMember ?? {})}
+            moodStatus={otherMoodStatus}
           />
         </button>
       )}
@@ -220,7 +223,7 @@ function DirectMessage({
 }
 
 export default function Messages() {
-  const { user, blockedUserIds } = useApp();
+  const { user, blockedUserIds, memberBadges } = useApp();
   const navigate = useNavigate();
   const { userId: selectedUserId } = useParams<{ userId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -471,7 +474,7 @@ export default function Messages() {
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/member/${conv.user_id}`); }}
                         className="shrink-0"
                       >
-                        <Avatar src={member?.avatar || ""} alt={name} size={44} badgeId={resolveFeaturedBadge(member ?? {})} />
+                        <Avatar src={member?.avatar || ""} alt={name} size={44} badgeId={resolveFeaturedBadge(member ?? {})} moodStatus={memberBadges[conv.user_id]?.moodStatus} />
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
@@ -519,6 +522,7 @@ export default function Messages() {
                 alt={otherMember.name}
                 size={32}
                 badgeId={resolveFeaturedBadge(otherMember)}
+                moodStatus={memberBadges[selectedUserId ?? ""]?.moodStatus}
               />
             </button>
           )
@@ -539,6 +543,7 @@ export default function Messages() {
               onApproveImage={handleApproveImage}
               currentUserId={user.id}
               otherMember={otherMember}
+              otherMoodStatus={memberBadges[selectedUserId ?? ""]?.moodStatus}
               selectedUserId={selectedUserId}
               navigate={navigate}
             />

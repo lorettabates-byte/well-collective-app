@@ -101,7 +101,10 @@ export default function TribeActivityStrip() {
   const navigate = useNavigate();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
-  const [sentCheer, setSentCheer] = useState<Record<string, boolean>>({});
+  const SENT_CHEERS_KEY = `well-sent-cheers-${user.email || ""}`;
+  const [sentCheer, setSentCheer] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(SENT_CHEERS_KEY) || "{}"); } catch { return {}; }
+  });
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -114,7 +117,11 @@ export default function TribeActivityStrip() {
   const sendCheer = async (memberId: string, cheerId: string) => {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
-    setSentCheer((prev) => ({ ...prev, [memberId]: true }));
+    setSentCheer((prev) => {
+      const next = { ...prev, [memberId]: true };
+      try { localStorage.setItem(SENT_CHEERS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     try {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
@@ -122,7 +129,6 @@ export default function TribeActivityStrip() {
         body: JSON.stringify({ email: user.email, cheerId }),
       });
     } catch { /* no-op */ }
-    setTimeout(() => setSentCheer((prev) => ({ ...prev, [memberId]: false })), 2500);
   };
 
   if (tribe.length === 0) return null;
@@ -168,7 +174,9 @@ export default function TribeActivityStrip() {
 
               {/* Action area */}
               {justSent ? (
-                <p className="text-[10px] font-semibold text-brand-light">Sent!</p>
+                <div className="text-[11px] font-semibold text-text-dim border border-border rounded-pill px-2.5 py-1 w-full text-center opacity-60">
+                  Cheer Sent
+                </div>
               ) : isCheering ? (
                 <div className="flex flex-wrap justify-center gap-1">
                   {TRIBE_CHEERS.slice(0, 4).map((cheer) => (
