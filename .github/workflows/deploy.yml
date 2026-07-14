@@ -41,5 +41,6 @@ jobs:
       - name: Set build version
         run: npm version --no-git-tag-version "1.0.${{ github.run_number }}"
 
-      - name: Deploy to Capgo (native app live update)
-        run: npx @capgo/cli@latest bundle upload --apikey ${{ secrets.CAPGO_TOKEN }} --channel production
+      # Capgo disabled during App Store review — re-enable after approval
+      # - name: Deploy to Capgo (native app live update)
+      #   run: npx @capgo/cli@latest bundle upload --apikey ${{ secrets.CAPGO_TOKEN }} --channel production
