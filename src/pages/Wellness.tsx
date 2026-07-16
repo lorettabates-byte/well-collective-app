@@ -853,7 +853,7 @@ export default function Wellness() {
     if (calmDone) {
       localStorage.removeItem(`well-calm-done-${today}`);
       setCalmDone(false);
-      if (user.email) unlogActivity(user.email, "well_activity").catch(() => {});
+      if (user.email) unlogActivity(user.email, "breathwork_calm_kit").catch(() => {});
       return;
     }
     localStorage.setItem(`well-calm-done-${today}`, "1");
@@ -861,7 +861,7 @@ export default function Wellness() {
     stopBoxBreath(); stopHumming(); stopBodyScan();
     stopCalmSound();
     setOpenCalmCard(null);
-    if (user.email) logActivity(user.email, "well_activity").catch(() => {});
+    if (user.email) logActivity(user.email, "breathwork_calm_kit").catch(() => {});
   };
 
   const CalmSoundPicker = () => (
@@ -1768,7 +1768,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -1829,7 +1829,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -1887,7 +1887,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -1945,7 +1945,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2059,7 +2059,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2109,7 +2109,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2197,7 +2197,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2254,7 +2254,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2322,7 +2322,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2383,7 +2383,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2443,7 +2443,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}
@@ -2511,7 +2511,7 @@ export default function Wellness() {
                         onClick={handleCalmDone}
                         className={`mt-3 w-full text-xs font-semibold rounded-pill py-2 ${calmDone ? "bg-brand-light/10 border border-brand-light text-brand-light" : "gradient-brand text-white"}`}
                       >
-                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +5 pts"}
+                        {calmDone ? "✓ Marked Done — tap to uncheck" : "Mark Done · +10 pts"}
                       </button>
                     </div>
                   )}

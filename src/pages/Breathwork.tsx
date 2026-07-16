@@ -200,9 +200,10 @@ export default function Breathwork() {
     if (isTrialUser) return;
     if (playing !== sessionId) {
       setPlaying(sessionId);
-      // Mark breathwork complete and award points when a deeper session starts.
-      // logBreathworkCompletion is a no-op if already completed today;
-      // logActivity is capped at 1/day server-side so no double-award risk.
+      // Award extended-session points when a deeper session starts (separate
+      // category from the daily 5-min session, each capped at 1/day server-side).
+      if (user.email) logActivity(user.email, "breathwork_extended").catch(() => {});
+      // Also mark the daily streak complete — doing a deep session counts.
       logBreathworkCompletion();
       return;
     }

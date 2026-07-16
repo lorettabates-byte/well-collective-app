@@ -83,7 +83,9 @@ const ACTIVITY_LABELS: Record<string, string> = {
   blog_open: "Read the blog",
   meal_log: "Logged a meal",
   sleep_log: "Logged sleep",
-  breathwork: "Completed breathwork",
+  breathwork: "Completed daily breathwork",
+  breathwork_extended: "Completed extended breathwork",
+  breathwork_calm_kit: "Used a Calm Toolkit tool",
   stretching: "Did stretching",
   resistance_training: "Resistance training",
   cardio: "Cardio",
@@ -105,6 +107,8 @@ const ACTIVITY_ICON: Record<string, LucideIcon> = {
   meal_log: Salad,
   sleep_log: Moon,
   breathwork: Wind,
+  breathwork_extended: Wind,
+  breathwork_calm_kit: Wind,
   stretching: Activity,
   resistance_training: Dumbbell,
   cardio: TrendingUp,
@@ -121,9 +125,9 @@ const CHECKIN_GRID = [
   { key: "workout",    label: "Workout",    Icon: Dumbbell,  maps: ["resistance_training", "cardio"] },
   { key: "sleep",      label: "Sleep",      Icon: Moon,      maps: ["sleep_log"] },
   { key: "nutrition",  label: "Nutrition",  Icon: Salad,     maps: ["meal_log"] },
-  { key: "breathwork", label: "Breathwork", Icon: Wind,      maps: ["breathwork"] },
+  { key: "breathwork", label: "Breathwork", Icon: Wind,      maps: ["breathwork", "breathwork_extended", "breathwork_calm_kit"] },
   { key: "stretching", label: "Stretching", Icon: Activity,  maps: ["stretching"] },
-  { key: "mindset",    label: "Mindset",    Icon: Sparkles,  maps: ["class_watch", "blog_open", "well_activity"] },
+  { key: "mindset",    label: "Mindset",    Icon: Sparkles,  maps: ["class_watch", "blog_open", "well_activity", "breathwork_calm_kit"] },
 ];
 
 const HISTORY_RANGES: { id: HistoryRange; label: string }[] = [
