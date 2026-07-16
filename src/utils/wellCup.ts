@@ -10,6 +10,8 @@ export type ActivityType =
   | "meal_log"
   | "sleep_log"
   | "breathwork"
+  | "breathwork_extended"
+  | "breathwork_calm_kit"
   | "stretching"
   | "resistance_training"
   | "well_activity"
