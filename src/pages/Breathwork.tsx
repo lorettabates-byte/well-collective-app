@@ -8,6 +8,7 @@ import { useApp } from "../store/AppContext";
 import { computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { formatSeconds, todayISO } from "../utils/format";
+import { logActivity } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -69,6 +70,7 @@ export default function Breathwork() {
     const milestone = getStreakMilestone(computeStreak([...breathworkLog, today]));
     if (milestone) setCelebration(milestone);
     logBreathworkCompletion();
+    if (user.email) logActivity(user.email, "breathwork").catch(() => {});
     confetti({ particleCount: 100, spread: 70 });
   };
 
