@@ -435,6 +435,7 @@ interface AppContextValue extends PersistedState {
   unlogWorkoutCompletion: () => void;
   logCustomWorkout: (note: string) => void;
   logBreathworkCompletion: () => void;
+  unlogBreathworkCompletion: () => void;
   logResistanceCompletion: () => void;
   logStretchingCompletion: () => void;
   logWellActivityCompletion: () => void;
@@ -1401,6 +1402,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const unlogBreathworkCompletion: AppContextValue["unlogBreathworkCompletion"] = () => {
+    setState((prev) => {
+      const today = todayISO();
+      const log = prev.user.breathworkLog ?? [];
+      return { ...prev, user: { ...prev.user, breathworkLog: log.filter((d) => d !== today) } };
+    });
+  };
+
   const logResistanceCompletion: AppContextValue["logResistanceCompletion"] = () => {
     setState((prev) => {
       const today = todayISO();
@@ -2342,6 +2351,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     unlogWorkoutCompletion,
     logCustomWorkout,
     logBreathworkCompletion,
+    unlogBreathworkCompletion,
     logResistanceCompletion,
     logStretchingCompletion,
     logWellActivityCompletion,

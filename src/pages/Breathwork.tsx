@@ -8,7 +8,7 @@ import { useApp } from "../store/AppContext";
 import { computeStreak, getStreakMilestone } from "../utils/streaks";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
 import { formatSeconds, todayISO } from "../utils/format";
-import { logActivity } from "../utils/wellCup";
+import { logActivity, unlogActivity } from "../utils/wellCup";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -55,7 +55,7 @@ function fadedMusicVolume(currentTime: number, duration: number): number {
 }
 
 export default function Breathwork() {
-  const { user, logBreathworkCompletion } = useApp();
+  const { user, logBreathworkCompletion, unlogBreathworkCompletion } = useApp();
   const navigate = useNavigate();
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const isTrialUser = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
@@ -70,9 +70,24 @@ export default function Breathwork() {
     const milestone = getStreakMilestone(computeStreak([...breathworkLog, today]));
     if (milestone) setCelebration(milestone);
     logBreathworkCompletion();
-    if (user.email) logActivity(user.email, "breathwork").catch(() => {});
     confetti({ particleCount: 100, spread: 70 });
   };
+
+  const handleUnmark = () => {
+    if (!completedToday) return;
+    unlogBreathworkCompletion();
+    if (user.email) unlogActivity(user.email, "breathwork").catch(() => {});
+  };
+
+  // Award points whenever completedToday becomes true — covers new completions,
+  // extended-session completions, and retroactive recovery for members who marked
+  // complete before the points fix was deployed. Server caps at 1 per day so
+  // this is safe to call from multiple paths.
+  useEffect(() => {
+    if (completedToday && user.email) {
+      logActivity(user.email, "breathwork").catch(() => {});
+    }
+  }, [completedToday, user.email]);
 
   const [todayBreathwork, setTodayBreathwork] = useState<Breathwork | null>(null);
   const [storedSessions, setStoredSessions] = useState<StoredSession[]>([]);
@@ -185,6 +200,10 @@ export default function Breathwork() {
     if (isTrialUser) return;
     if (playing !== sessionId) {
       setPlaying(sessionId);
+      // Mark breathwork complete and award points when a deeper session starts.
+      // logBreathworkCompletion is a no-op if already completed today;
+      // logActivity is capped at 1/day server-side so no double-award risk.
+      logBreathworkCompletion();
       return;
     }
     // Same session: toggle pause/resume so members don't lose their place.
@@ -313,18 +332,28 @@ export default function Breathwork() {
           </div>
         )}
 
-        <button
-          onClick={handleComplete}
-          disabled={completedToday}
-          className={`w-full flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 mb-4 transition-colors ${
-            completedToday
-              ? "bg-surface-2 border border-border text-brand-light"
-              : "gradient-brand text-white"
-          }`}
-        >
-          <CheckCircle2 size={14} />
-          {completedToday ? "Breathwork Completed ✓" : "Mark Complete"}
-        </button>
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={handleComplete}
+            disabled={completedToday}
+            className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold rounded-pill py-2 transition-colors ${
+              completedToday
+                ? "bg-surface-2 border border-border text-brand-light"
+                : "gradient-brand text-white"
+            }`}
+          >
+            <CheckCircle2 size={14} />
+            {completedToday ? "Breathwork Completed ✓" : "Mark Complete"}
+          </button>
+          {completedToday && (
+            <button
+              onClick={handleUnmark}
+              className="text-[11px] text-text-dim border border-border rounded-pill px-3 py-2 shrink-0 hover:text-text-muted transition-colors"
+            >
+              Undo
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 mb-6">
           <Wind size={14} className="text-brand-light shrink-0" />
