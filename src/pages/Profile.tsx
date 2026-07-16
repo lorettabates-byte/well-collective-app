@@ -1,4 +1,4 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trophy, Users, Watch, X } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
@@ -135,6 +135,31 @@ export default function Profile() {
     localStorage.removeItem("adminEmail");
     localStorage.removeItem("admin");
     window.location.reload();
+  };
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!API_URL || !user.email) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`${API_URL}/api/members/self`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+      // Clear all local data then reload to the login screen
+      localStorage.clear();
+      window.location.reload();
+    } catch {
+      setDeleteError("Something went wrong. Please try again or contact support.");
+      setDeleting(false);
+    }
   };
 
   return (
@@ -393,12 +418,55 @@ export default function Profile() {
 
       <button
         onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-red-400 border border-red-400/30 rounded-pill py-3 mb-4"
+        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-red-400 border border-red-400/30 rounded-pill py-3"
       >
         <LogOut size={16} />
         Log Out
       </button>
+
+      <button
+        onClick={() => { setShowDeleteConfirm(true); setDeleteInput(""); setDeleteError(""); }}
+        className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-text-dim mt-2 mb-6 py-2"
+      >
+        <Trash2 size={13} />
+        Delete Account
+      </button>
     </div>
+
+    {/* Delete account confirmation modal */}
+    {showDeleteConfirm && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
+        <div className="w-full max-w-sm glass-card rounded-card p-6 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-base font-bold text-text">Delete Account</p>
+              <p className="text-xs text-text-muted mt-1">This permanently deletes your account and all your data. This cannot be undone.</p>
+            </div>
+            <button onClick={() => setShowDeleteConfirm(false)} className="text-text-dim shrink-0 mt-0.5">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-semibold text-text-muted">Type <span className="text-red-400 font-bold">DELETE</span> to confirm</p>
+            <input
+              type="text"
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value)}
+              placeholder="DELETE"
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-red-400"
+            />
+          </div>
+          {deleteError && <p className="text-xs text-red-400">{deleteError}</p>}
+          <button
+            onClick={handleDeleteAccount}
+            disabled={deleteInput !== "DELETE" || deleting}
+            className="w-full py-2.5 rounded-pill text-sm font-bold bg-red-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {deleting ? "Deleting…" : "Permanently Delete My Account"}
+          </button>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
