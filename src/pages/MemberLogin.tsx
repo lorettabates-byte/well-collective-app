@@ -266,6 +266,17 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
       <button type="button" onClick={onSwitchToResume} className="text-[11px] text-text-dim text-center underline">
         Already started a free trial? Log back in instead.
       </button>
+      <p className="text-[11px] text-text-dim text-center">
+        Manage your membership at{" "}
+        <a
+          href="https://lorettabates.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          lorettabates.com
+        </a>
+      </p>
     </form>
   );
 }
