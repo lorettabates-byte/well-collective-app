@@ -434,17 +434,6 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
           )}
         </div>
 
-        <p className="text-xs text-text-muted text-center">
-          Want the full membership now?{" "}
-          <a
-            href="https://lorettabates.com/videolibrary.lorettabates.com/subscription-plan/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand-light underline"
-          >
-            Join WELL Collective.
-          </a>
-        </p>
       </div>
     </div>
   );
