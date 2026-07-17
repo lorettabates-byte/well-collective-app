@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Song } from "../types";
 import { logActivity } from "../utils/wellCup";
 import { getPlaybackUrl, isDownloaded } from "../utils/musicOffline";
@@ -42,6 +42,9 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   // Persists the last known user email across auto-advances so activity logging
   // continues working when handleEnded fires without a direct user interaction.
   const userEmailRef = useRef<string | undefined>(undefined);
+  // Tracks whether audio was playing when the app went to the background (phone
+  // call, lock screen, notification overlay) so we can auto-resume on return.
+  const wasPlayingBeforeBackground = useRef(false);
 
   // Create the single Audio element once — it persists for the lifetime of
   // the provider and is never recreated, so playback survives navigation.
@@ -180,6 +183,45 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     queueRef.current = [];
     queueIndexRef.current = 0;
   };
+
+  // Auto-resume after phone calls, notification overlays, or lock screen.
+  // `visibilitychange` covers both web and Capacitor native foreground/background
+  // transitions. Capacitor also fires document-level `pause` and `resume` events
+  // on iOS/Android, which catch call interruptions that don't fully background the
+  // app (e.g. an incoming call the user declines without leaving the app).
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        wasPlayingBeforeBackground.current = !audio.paused;
+      } else if (wasPlayingBeforeBackground.current && audio.paused) {
+        setTimeout(() => audio.play().catch(() => {}), 400);
+        wasPlayingBeforeBackground.current = false;
+      }
+    };
+
+    // Capacitor fires these on the document when the app moves to/from background.
+    const onDocPause = () => {
+      wasPlayingBeforeBackground.current = !audio.paused;
+    };
+    const onDocResume = () => {
+      if (wasPlayingBeforeBackground.current && audio.paused) {
+        setTimeout(() => audio.play().catch(() => {}), 400);
+      }
+      wasPlayingBeforeBackground.current = false;
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("pause", onDocPause);
+    document.addEventListener("resume", onDocResume);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("pause", onDocPause);
+      document.removeEventListener("resume", onDocResume);
+    };
+  }, []);
 
   return (
     <MusicPlayerContext.Provider
