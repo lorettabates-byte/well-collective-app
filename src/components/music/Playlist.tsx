@@ -22,6 +22,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -95,7 +96,7 @@ function SortableFavoriteSong({ song, isPlaying, isDownloading, onPlay, onFavori
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2 group">
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-text-muted hover:text-brand-light">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-text-muted hover:text-brand-light touch-none select-none">
         <GripVertical size={16} />
       </div>
       <button
@@ -179,11 +180,8 @@ export default function Playlist({
   }, [userEmail]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
   );
 
   const showLocked = (reason: "play" | "download") => {
@@ -321,16 +319,18 @@ export default function Playlist({
 
   const handleDragEndFavorites = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setFavoritesOrder((prev) => {
-        const oldIndex = prev.indexOf(Number(active.id));
-        const newIndex = prev.indexOf(Number(over.id));
-        if (oldIndex < 0 || newIndex < 0) return prev;
-        const next = arrayMove(prev, oldIndex, newIndex);
-        saveFavoritesOrder(next);
-        return next;
-      });
-    }
+    if (!over || active.id === over.id) return;
+    // Use the current display order (orderedVisibleSongs) as the source of
+    // truth — the raw favoritesOrder state may be incomplete if songs were
+    // recently favorited and never dragged before, causing indexOf to return
+    // -1 and silently leaving the order unchanged.
+    const ids = orderedVisibleSongs.map((s) => s.id);
+    const oldIndex = ids.indexOf(Number(active.id));
+    const newIndex = ids.indexOf(Number(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(ids, oldIndex, newIndex);
+    setFavoritesOrder(next);
+    saveFavoritesOrder(next);
   };
 
   const moveSong = (id: number, direction: 1 | -1) => {

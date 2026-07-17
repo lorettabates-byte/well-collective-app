@@ -4,6 +4,7 @@ import { useMusicPlayer } from "../../store/MusicPlayerContext";
 import {
   DndContext,
   PointerSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -57,7 +58,7 @@ function DragHandle({ attributes, listeners }: { attributes: Record<string, unkn
       {...attributes}
       {...listeners}
       aria-label="Drag to reorder"
-      className="text-text-dim shrink-0 cursor-grab active:cursor-grabbing touch-none"
+      className="text-text-dim shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
     >
       <GripVertical size={16} />
     </button>
@@ -85,6 +86,7 @@ export default function AdminMusic() {
   const [editingUrl, setEditingUrl] = useState("");
   const [editingLyricsInline, setEditingLyricsInline] = useState("");
   const [savingSong, setSavingSong] = useState(false);
+  const [saveSongError, setSaveSongError] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<SongCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -122,7 +124,10 @@ export default function AdminMusic() {
 
   // A small drag distance threshold keeps taps on the handle from being
   // mistaken for drags, while still working smoothly with touch.
-  const dragSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  );
 
   const fetchHiddenBuiltins = async () => {
     if (!API_URL) return;
@@ -295,6 +300,7 @@ export default function AdminMusic() {
   const handleSaveSong = async (song: Song) => {
     if (!API_URL || !editingTitle.trim() || !editingUrl.trim()) return;
     setSavingSong(true);
+    setSaveSongError(null);
     try {
       const [res] = await Promise.all([
         fetch(`${API_URL}/api/songs/${song.id}`, {
@@ -316,11 +322,16 @@ export default function AdminMusic() {
       ]);
       if (res.ok) {
         setEditingSongId(null);
+        setSaveSongError(null);
         fetchSongs();
         fetchQueue();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setSaveSongError(body.error || `Save failed (${res.status})`);
       }
     } catch (err) {
       console.error("Save song error:", err);
+      setSaveSongError("Network error — check connection and try again.");
     } finally {
       setSavingSong(false);
     }
@@ -868,13 +879,16 @@ export default function AdminMusic() {
                             ))}
                           </div>
                         )}
+                        {saveSongError && (
+                          <p className="text-xs text-red-400">{saveSongError}</p>
+                        )}
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleSaveSong(song)}
                             disabled={savingSong || !editingTitle.trim() || !editingUrl.trim()}
                             className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2 disabled:opacity-50"
                           >
-                            Save Changes
+                            {savingSong ? "Saving…" : "Save Changes"}
                           </button>
                           <button
                             onClick={() => setEditingSongId(null)}
