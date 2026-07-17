@@ -624,13 +624,17 @@ export default function AdminMusic() {
     if (currentSong?.id === song.id) {
       togglePlay();
     } else {
-      playAt([song], 0);
+      const startIndex = queuedSongs.findIndex((s) => s.id === song.id);
+      playAt(queuedSongs, startIndex >= 0 ? startIndex : 0);
     }
   };
 
   const playQueueAll = () => {
     if (queuedSongs.length === 0) return;
-    playAt(queuedSongs, 0);
+    const startIndex = currentSong
+      ? Math.max(0, queuedSongs.findIndex((s) => s.id === currentSong.id))
+      : 0;
+    playAt(queuedSongs, startIndex);
   };
 
   return (

@@ -281,7 +281,10 @@ export default function Playlist({
 
   const handlePlayAll = () => {
     if (playableSongs.length === 0) return;
-    playAt(playableSongs, 0, userEmail);
+    const startIndex = currentSong
+      ? Math.max(0, playableSongs.findIndex((s) => s.id === currentSong.id))
+      : 0;
+    playAt(playableSongs, startIndex, userEmail);
   };
 
   const toggleFavorite = (id: number) => {
