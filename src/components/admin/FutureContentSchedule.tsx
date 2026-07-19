@@ -1,4 +1,4 @@
-import { ChevronDown, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { ContentBatchEntry } from "../../types";
 import { formatDateLong } from "../../utils/format";
@@ -8,6 +8,7 @@ interface FutureContentScheduleProps {
   entries: ContentBatchEntry[];
   onEdit: (entry: ContentBatchEntry) => void;
   onDelete: (date: string) => void;
+  onRegenerate?: (date: string) => Promise<void>;
   onRegeneratePhoto?: (entry: ContentBatchEntry) => void;
   title?: string;
 }
@@ -16,10 +17,12 @@ export default function FutureContentSchedule({
   entries,
   onEdit,
   onDelete,
+  onRegenerate,
   onRegeneratePhoto,
   title = "Upcoming Content",
 }: FutureContentScheduleProps) {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [regenerating, setRegenerating] = useState<Set<string>>(new Set());
 
   const toggleExpand = (date: string) => {
     const newExpanded = new Set(expandedDates);
@@ -85,6 +88,32 @@ export default function FutureContentSchedule({
 
               {/* Action buttons */}
               <div className="flex gap-1 shrink-0 ml-2">
+                {onRegenerate && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setRegenerating((prev) => new Set(prev).add(entry.date));
+                      try {
+                        await onRegenerate(entry.date);
+                      } finally {
+                        setRegenerating((prev) => {
+                          const next = new Set(prev);
+                          next.delete(entry.date);
+                          return next;
+                        });
+                      }
+                    }}
+                    disabled={regenerating.has(entry.date)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface border border-border text-brand-light hover:bg-brand-light hover:text-white transition-colors disabled:opacity-40"
+                    aria-label="Regenerate AI content"
+                    title="Regenerate AI content"
+                  >
+                    {regenerating.has(entry.date)
+                      ? <RefreshCw size={14} className="animate-spin" />
+                      : <Sparkles size={14} />
+                    }
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

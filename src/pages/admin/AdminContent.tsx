@@ -370,6 +370,16 @@ export default function AdminContent() {
     if (synced) await refreshSchedule();
   };
 
+  const handleRegenerateContent = async (date: string) => {
+    if (!API_URL) return;
+    const res = await fetch(`${API_URL}/api/content-schedule/${date}/regenerate`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: ["daily_inspiration", "well_activity", "recipe", "motivation_boost", "nutrition_tip"] }),
+    });
+    if (res.ok) await refreshSchedule();
+  };
+
   const handleBackfillNutrition = async () => {
     if (!API_URL) return;
     setBackfilling(true);
@@ -524,8 +534,9 @@ export default function AdminContent() {
             entries={futureContent}
             onEdit={setEditingEntry}
             onDelete={handleRemove}
+            onRegenerate={handleRegenerateContent}
             onRegeneratePhoto={handleRegeneratePhoto}
-            title="📅 Upcoming Content (Next 7+ Days)"
+            title="Upcoming Content (Next 7+ Days)"
           />
         )}
 
