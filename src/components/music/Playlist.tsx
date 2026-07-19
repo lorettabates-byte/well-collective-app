@@ -260,11 +260,15 @@ export default function Playlist({
     return merged.map((id) => merged_map.get(id)!).filter(Boolean);
   }, [visibleSongs, favoritesOrder, favoritesOnly]);
 
-  // For Play All: start with the Music Monday featured song, then the rest
-  const playableSongs = [
-    ...(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : []),
-    ...orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id)),
-  ];
+  // In favorites view, play only the user's ordered favorites (featured song
+  // is already included in orderedVisibleSongs if it was favorited).
+  // In main view, always lead with the featured/Music Monday song.
+  const playableSongs = favoritesOnly
+    ? orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id))
+    : [
+        ...(featuredSong && !lockedSongIds.has(featuredSong.id) ? [featuredSong] : []),
+        ...orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id)),
+      ];
 
   const togglePlaySong = (song: Song) => {
     if (lockedSongIds.has(song.id)) {
