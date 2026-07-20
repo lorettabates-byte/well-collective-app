@@ -75,24 +75,34 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
 
   const applyCrop = () => {
     if (!cropSrc) return;
+    const src = cropSrc;
+    const rect = { ...cropRect };
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      const cropX = (cropRect.x / 100) * img.naturalWidth;
-      const cropY = (cropRect.y / 100) * img.naturalHeight;
-      const cropW = (cropRect.w / 100) * img.naturalWidth;
-      const cropH = (cropRect.h / 100) * img.naturalHeight;
-      const maxWidth = 1200;
-      const scale = Math.min(1, maxWidth / cropW);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(cropW * scale);
-      canvas.height = Math.round(cropH * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-      setImage(canvas.toDataURL("image/jpeg", 0.85));
-      setCropSrc(null);
+      try {
+        const cropX = (rect.x / 100) * img.naturalWidth;
+        const cropY = (rect.y / 100) * img.naturalHeight;
+        const cropW = (rect.w / 100) * img.naturalWidth;
+        const cropH = (rect.h / 100) * img.naturalHeight;
+        const maxWidth = 1200;
+        const scale = Math.min(1, maxWidth / cropW);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(cropW * scale);
+        canvas.height = Math.round(cropH * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { setImage(src); setCropSrc(null); return; }
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        setImage(canvas.toDataURL("image/jpeg", 0.85));
+      } catch {
+        // CORS-tainted canvas (URL-based image) — keep the original
+        setImage(src);
+      } finally {
+        setCropSrc(null);
+      }
     };
-    img.src = cropSrc;
+    img.onerror = () => { setImage(src); setCropSrc(null); };
+    img.src = src;
   };
 
   const startDrag = (e: React.PointerEvent, type: NonNullable<typeof dragRef.current>["type"]) => {
@@ -159,13 +169,13 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
         <p className="text-white text-sm font-semibold tracking-wide">Drag corners to crop</p>
         <div
           ref={cropContainerRef}
-          className="relative w-full max-w-lg select-none touch-none overflow-hidden rounded-card"
+          className="relative w-full max-w-lg select-none touch-none"
           style={{ userSelect: "none" }}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
         >
-          <img src={cropSrc} alt="" className="w-full block" draggable={false} />
+          <img src={cropSrc} alt="" className="w-full block rounded-card" draggable={false} />
           {/* crop rectangle with dark overlay outside via box-shadow */}
           <div
             className="absolute border-2 border-white/90 cursor-move"
