@@ -153,6 +153,7 @@ export default function Nutrition() {
   const [photoScanning, setPhotoScanning] = useState(false);
   const [photoScanError, setPhotoScanError] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const mealFormRef = useRef<HTMLDivElement>(null);
 
   const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -324,8 +325,19 @@ export default function Nutrition() {
 
   const updateMealItemServings = (index: number, delta: number) => {
     setMealItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, servings: Math.max(1, Math.min(20, item.servings + delta)) } : item))
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const next = Math.round((item.servings + delta * 0.25) * 100) / 100;
+        return { ...item, servings: Math.max(0.25, Math.min(20, next)) };
+      })
     );
+  };
+
+  const formatServings = (s: number) => {
+    const whole = Math.floor(s);
+    const frac = Math.round((s - whole) * 4);
+    const fracStr = frac === 1 ? "¼" : frac === 2 ? "½" : frac === 3 ? "¾" : "";
+    return whole === 0 ? `${fracStr}×` : fracStr ? `${whole}${fracStr}×` : `${whole}×`;
   };
 
   useEffect(() => {
@@ -436,7 +448,9 @@ export default function Nutrition() {
     setEstimatedCalories(meal.estimated_calories != null ? String(meal.estimated_calories) : "");
     setEstimateError("");
     setShowMealForm(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => {
+      mealFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const handleDeleteMeal = async (mealId: number) => {
@@ -857,7 +871,7 @@ export default function Nutrition() {
         </div>
 
         {/* Daily Meal Log */}
-        <div className="glass-card rounded-card p-4">
+        <div ref={mealFormRef} className="glass-card rounded-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-0.5">Food Log</p>
@@ -1026,18 +1040,19 @@ export default function Nutrition() {
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             onClick={() => updateMealItemServings(i, -1)}
-                            disabled={item.servings <= 1}
+                            disabled={item.servings <= 0.25}
                             className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim disabled:opacity-30"
                             aria-label="Fewer servings"
                           >
                             <Minus size={10} />
                           </button>
                           <span className="text-xs font-semibold text-text w-8 text-center" title="Servings">
-                            {item.servings}×
+                            {formatServings(item.servings)}
                           </span>
                           <button
                             onClick={() => updateMealItemServings(i, 1)}
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim"
+                            disabled={item.servings >= 20}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-surface border border-border text-text-dim disabled:opacity-30"
                             aria-label="More servings"
                           >
                             <Plus size={10} />
