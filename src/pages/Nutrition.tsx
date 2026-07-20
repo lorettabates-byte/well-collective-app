@@ -965,14 +965,6 @@ export default function Nutrition() {
                 ))}
               </div>
 
-              {/* What was eaten */}
-              <input
-                value={mealNotes}
-                onChange={(e) => setMealNotes(e.target.value)}
-                placeholder="What did you eat? (e.g. grilled chicken, rice, salad)"
-                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-              />
-
               {/* Wellness questions — compact tappable chips */}
               <div>
                 <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide mb-2">What did you purposefully include today?</p>
