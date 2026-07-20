@@ -1193,18 +1193,18 @@ export default function Nutrition() {
                   <div key={meal.id} className="rounded-card p-3 flex items-start gap-3 transition-colors"
                     style={{ background: ms.bg, border: `0.5px solid ${ms.border}` }}>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full shrink-0"
                           style={{ background: ms.border, color: ms.accent }}>
                           {meal.meal_type}
                         </span>
-                        <span className="text-[10px] text-text-dim">
+                        {meal.notes && (
+                          <span className="text-xs text-text font-medium truncate flex-1 min-w-0">{meal.notes}</span>
+                        )}
+                        <span className="text-[10px] text-text-dim shrink-0 ml-auto">
                           {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
-                      {meal.notes && (
-                        <p className="text-xs text-text font-medium mb-1.5 leading-snug">{meal.notes}</p>
-                      )}
                       {meal.estimated_calories != null && (
                         <div className="flex items-end gap-1.5 mb-1">
                           <p className="text-2xl font-extrabold leading-none text-brand-light">
