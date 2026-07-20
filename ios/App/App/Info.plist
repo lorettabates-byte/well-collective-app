@@ -35,6 +35,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>WELL Collective uses your camera to scan food photos so you can quickly log meals by taking a picture.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WELL Collective accesses your photo library so you can upload food photos for meal logging.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>WELL Collective reads your steps, sleep, and workouts from Apple Health so they can automatically show up in your wellness log.</string>
 	<key>NSHealthUpdateUsageDescription</key>
