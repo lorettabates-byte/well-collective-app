@@ -126,6 +126,7 @@ export default function Nutrition() {
   const [hadFruit, setHadFruit] = useState(false);
   const [hadWholeFoods, setHadWholeFoods] = useState(false);
   const [estimatedCalories, setEstimatedCalories] = useState("");
+  const [mealNotes, setMealNotes] = useState("");
   const [savingMeal, setSavingMeal] = useState(false);
 
   // Calorie estimator — add one food item at a time, USDA-backed lookup fills
@@ -307,7 +308,11 @@ export default function Nutrition() {
         const rows = data.items?.length
           ? data.items.map((i) => ({ description: i.label, calories: i.calories, protein: i.protein, carbs: i.carbs, fat: i.fat, verified: i.verified, servings: 1 }))
           : [{ description: mealItemInput.trim(), calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, verified: data.verified, servings: 1 }];
-        setMealItems((prev) => [...prev, ...rows]);
+        setMealItems((prev) => {
+          const next = [...prev, ...rows];
+          setMealNotes(next.map((i) => i.description).join(", "));
+          return next;
+        });
         setMealItemInput("");
       } else {
         setEstimateError("Couldn't estimate that item — try being more specific, or enter calories manually below.");
@@ -320,7 +325,11 @@ export default function Nutrition() {
   };
 
   const removeMealItem = (index: number) => {
-    setMealItems((prev) => prev.filter((_, i) => i !== index));
+    setMealItems((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setMealNotes(next.map((i) => i.description).join(", "));
+      return next;
+    });
   };
 
   const updateMealItemServings = (index: number, delta: number) => {
@@ -433,6 +442,7 @@ export default function Nutrition() {
     setHadProtein(false); setHadVegetable(false);
     setHadWater(false); setHadFruit(false);
     setHadWholeFoods(false); setEstimatedCalories("");
+    setMealNotes("");
     setMealItemInput(""); setMealItems([]); setEstimateError("");
   };
 
@@ -445,6 +455,7 @@ export default function Nutrition() {
     setHadFruit(meal.had_fruit);
     setHadWholeFoods(meal.had_whole_foods);
     setMealItems([]);
+    setMealNotes(meal.notes ?? "");
     setEstimatedCalories(meal.estimated_calories != null ? String(meal.estimated_calories) : "");
     setEstimateError("");
     setShowMealForm(true);
@@ -470,6 +481,9 @@ export default function Nutrition() {
     const isEdit = editingMealId != null;
     // Fresh estimator rows win; otherwise keep whatever calories are in the
     // manual field (which is prefilled from the meal when editing).
+    const notesValue = mealItems.length > 0
+      ? mealItems.map((i) => i.description).join(", ")
+      : mealNotes.trim() || undefined;
     const nutritionBody = mealItems.length > 0
       ? {
           estimatedCalories: Math.round(totalEstimated.calories),
@@ -493,6 +507,7 @@ export default function Nutrition() {
           hadWater,
           hadFruit,
           hadWholeFoods,
+          notes: notesValue,
           ...nutritionBody,
         }),
       });
@@ -945,6 +960,14 @@ export default function Nutrition() {
                 ))}
               </div>
 
+              {/* What was eaten */}
+              <input
+                value={mealNotes}
+                onChange={(e) => setMealNotes(e.target.value)}
+                placeholder="What did you eat? (e.g. grilled chicken, rice, salad)"
+                className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+              />
+
               {/* Wellness questions — compact tappable chips */}
               <div>
                 <p className="text-[11px] font-semibold text-text-dim uppercase tracking-wide mb-2">What did you purposefully include today?</p>
@@ -1165,7 +1188,7 @@ export default function Nutrition() {
                   <div key={meal.id} className="rounded-card p-3 flex items-start gap-3 transition-colors"
                     style={{ background: ms.bg, border: `0.5px solid ${ms.border}` }}>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
                           style={{ background: ms.border, color: ms.accent }}>
                           {meal.meal_type}
@@ -1174,6 +1197,9 @@ export default function Nutrition() {
                           {new Date(meal.logged_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
+                      {meal.notes && (
+                        <p className="text-xs text-text font-medium mb-1.5 leading-snug">{meal.notes}</p>
+                      )}
                       {meal.estimated_calories != null && (
                         <div className="flex items-end gap-1.5 mb-1">
                           <p className="text-2xl font-extrabold leading-none text-brand-light">
