@@ -262,6 +262,9 @@ export default function Tribe() {
 
   useEffect(() => {
     loadChallenges();
+    const onVisible = () => { if (document.visibilityState === "visible") loadChallenges(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.email]);
 
