@@ -184,18 +184,22 @@ export default function Nutrition() {
       if (!res.ok || !data.items?.length) {
         setPhotoScanError(data.error ?? "No food detected — try a clearer photo or enter food manually.");
       } else {
-        setMealItems((prev) => [
-          ...prev,
-          ...data.items!.map((i) => ({
-            description: i.label,
-            calories: Math.round(i.calories),
-            protein: Math.round(i.protein),
-            carbs: Math.round(i.carbs),
-            fat: Math.round(i.fat),
-            verified: false,
-            servings: 1,
-          })),
-        ]);
+        setMealItems((prev) => {
+          const next = [
+            ...prev,
+            ...data.items!.map((i) => ({
+              description: i.label,
+              calories: Math.round(i.calories),
+              protein: Math.round(i.protein),
+              carbs: Math.round(i.carbs),
+              fat: Math.round(i.fat),
+              verified: false,
+              servings: 1,
+            })),
+          ];
+          setMealNotes(next.map((i) => i.description).join(", "));
+          return next;
+        });
         if (!showMealForm) setShowMealForm(true);
       }
     } catch {
@@ -263,10 +267,11 @@ export default function Nutrition() {
       const protein = n["proteins_serving"] ?? n["proteins_100g"] ?? 0;
       const carbs = n["carbohydrates_serving"] ?? n["carbohydrates_100g"] ?? 0;
       const fat = n["fat_serving"] ?? n["fat_100g"] ?? 0;
-      setMealItems((prev) => [
-        ...prev,
-        { description: name, calories: Math.round(cal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat), verified: true, servings: 1 },
-      ]);
+      setMealItems((prev) => {
+        const next = [...prev, { description: name, calories: Math.round(cal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat), verified: true, servings: 1 }];
+        setMealNotes(next.map((i) => i.description).join(", "));
+        return next;
+      });
       setEstimatedCalories(String(Math.round(cal)));
       if (!showMealForm) setShowMealForm(true);
     } catch (err) {
