@@ -814,7 +814,7 @@ export default function AdminMusic() {
                         aria-label={currentSong?.id === song.id && isPlaying ? "Pause" : "Play"}
                         className={`w-7 h-7 flex items-center justify-center rounded-full shrink-0 ${
                           currentSong?.id === song.id
-                            ? "gradient-brand text-white"
+                            ? "btn-brand text-white"
                             : "border border-border text-text-dim"
                         }`}
                       >
@@ -1014,7 +1014,7 @@ export default function AdminMusic() {
                         aria-label={currentSong?.id === song.id && isPlaying ? "Pause" : "Play"}
                         className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                           currentSong?.id === song.id
-                            ? "gradient-brand text-white"
+                            ? "btn-brand text-white"
                             : "bg-surface-2 border border-border text-brand-light"
                         }`}
                       >
@@ -1400,7 +1400,7 @@ export default function AdminMusic() {
         <div className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border px-4 py-3 flex items-center gap-3">
           <button
             onClick={togglePlay}
-            className="w-10 h-10 flex items-center justify-center rounded-full gradient-brand text-white shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-full btn-brand text-white shrink-0"
           >
             {isPlaying ? <Pause size={18} /> : <Play size={18} />}
           </button>

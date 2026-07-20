@@ -101,7 +101,7 @@ function SortableFavoriteSong({ song, isPlaying, isDownloading, onPlay, onFavori
       </div>
       <button
         onClick={onPlay}
-        className="w-8 h-8 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0"
+        className="w-8 h-8 rounded-full btn-brand shadow-glow flex items-center justify-center shrink-0"
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white" />}
@@ -448,7 +448,7 @@ export default function Playlist({
           <div className="w-full bg-surface rounded-card px-3 py-2.5 flex items-center gap-2.5">
             <button
               onClick={() => togglePlaySong(featuredSong)}
-              className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-full btn-brand shadow-glow flex items-center justify-center shrink-0"
               aria-label={currentSong?.id === featuredSong.id && isPlaying ? "Pause" : "Play"}
             >
               {currentSong?.id === featuredSong.id && isPlaying ? (
@@ -641,7 +641,7 @@ export default function Playlist({
               <button
                 onClick={() => togglePlaySong(currentSong)}
                 aria-label={isPlaying ? "Pause" : "Play"}
-                className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center"
+                className="w-10 h-10 rounded-full btn-brand flex items-center justify-center"
               >
                 {isPlaying ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
               </button>

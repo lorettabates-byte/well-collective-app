@@ -55,6 +55,12 @@ body {
   background: linear-gradient(135deg, #01519d 0%, #0191ce 55%, #84d8fd 100%);
 }
 
+/* For small circular buttons — skips the dark-navy start so the full
+   circle reads as clearly blue even at 32–40px. */
+.btn-brand {
+  background: linear-gradient(135deg, #0191ce 0%, #84d8fd 100%);
+}
+
 .gradient-surface {
   background: linear-gradient(160deg, #0d1826 0%, #050b14 100%);
 }
