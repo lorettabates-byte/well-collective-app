@@ -1,5 +1,5 @@
-import { AlertCircle, Brain, ClipboardList, Dumbbell, Gift, Loader2, Moon, Trophy, Utensils } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Brain, ClipboardList, Dumbbell, Loader2, Moon, Trophy, Utensils } from "lucide-react";
+import { useEffect, useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { uid } from "../store/AppContext";
 
@@ -97,10 +97,16 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [showReferral, setShowReferral] = useState(false);
   const [referralValid, setReferralValid] = useState<boolean | null>(null);
   const [referralName, setReferralName] = useState("");
   const [validatingReferral, setValidatingReferral] = useState(false);
+
+  useEffect(() => {
+    if (!referralCode.trim()) { setReferralValid(null); setReferralName(""); return; }
+    const t = setTimeout(() => validateReferralCode(referralCode), 600);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referralCode]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -206,52 +212,38 @@ function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; on
         />
       </div>
 
-      {!showReferral ? (
-        <button
-          type="button"
-          onClick={() => setShowReferral(true)}
-          className="flex items-center gap-1.5 text-xs text-brand-light font-medium -mt-1"
-        >
-          <Gift size={13} />
-          Have a friend's referral code?
-        </button>
-      ) : (
-        <div>
-          <label className="text-xs font-semibold text-text mb-1.5 block">Referral Code</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={referralCode}
-              onChange={(e) => {
-                setReferralCode(e.target.value.toUpperCase());
-                setReferralValid(null);
-              }}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); validateReferralCode(referralCode); } }}
-              placeholder="WELL-XXXX-XXXX"
-              autoCapitalize="characters"
-              className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-            />
-            <button
-              type="button"
-              onClick={() => validateReferralCode(referralCode)}
-              disabled={!referralCode.trim() || validatingReferral}
-              className="shrink-0 px-3 py-2 text-xs font-semibold rounded-card gradient-brand text-white disabled:opacity-40"
-            >
-              {validatingReferral ? "…" : "Apply"}
-            </button>
-          </div>
-          {referralValid === true && (
-            <p className="text-[11px] text-green-400 mt-1">
-              Referred by {referralName} — you'll get a 30-day free trial!
-            </p>
-          )}
-          {referralValid === false && referralCode.trim() && (
-            <p className="text-[11px] text-red-400 mt-1">
-              Code not recognized. Check with your friend and try again.
-            </p>
-          )}
-        </div>
-      )}
+      <div>
+        <label className="text-xs font-semibold text-text mb-1.5 block">
+          Referral Code <span className="text-text-dim font-normal">(optional — unlocks 30 days free)</span>
+        </label>
+        <input
+          type="text"
+          value={referralCode}
+          onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+          placeholder="WELL-XXXX-XXXX"
+          autoCapitalize="characters"
+          className={`w-full bg-surface-2 border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none transition-colors ${
+            referralValid === true
+              ? "border-green-500 focus:border-green-400"
+              : referralValid === false
+              ? "border-red-500 focus:border-red-400"
+              : "border-border focus:border-brand-light"
+          }`}
+        />
+        {validatingReferral && (
+          <p className="text-[11px] text-text-dim mt-1">Checking code…</p>
+        )}
+        {referralValid === true && (
+          <p className="text-[11px] text-green-400 mt-1">
+            Referred by {referralName} — you'll get a 30-day free trial!
+          </p>
+        )}
+        {referralValid === false && referralCode.trim() && !validatingReferral && (
+          <p className="text-[11px] text-red-400 mt-1">
+            Code not recognized. Check with your friend and try again.
+          </p>
+        )}
+      </div>
 
       <button
         type="submit"
