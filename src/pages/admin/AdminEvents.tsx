@@ -1,5 +1,5 @@
-import { AlertTriangle, CalendarX, ChevronDown, ChevronUp, ImagePlus, Pencil, Plus, Save, Star, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, CalendarX, ChevronDown, ChevronUp, Crop, ImagePlus, Pencil, Plus, Save, Star, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
 import { useApp } from "../../store/AppContext";
@@ -42,6 +42,17 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   const [imageError, setImageError] = useState("");
   const [soldOut, setSoldOut] = useState(initial?.soldOut ?? false);
 
+  // Crop modal state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropRect, setCropRect] = useState({ x: 0, y: 0, w: 100, h: 100 });
+  const cropContainerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    type: "move" | "nw" | "ne" | "sw" | "se";
+    startX: number;
+    startY: number;
+    startRect: { x: number; y: number; w: number; h: number };
+  } | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -56,25 +67,72 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string") return;
-      const img = new Image();
-      img.onload = () => {
-        const maxWidth = 1200;
-        const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setImage(reader.result as string);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        setImage(canvas.toDataURL("image/jpeg", 0.85));
-      };
-      img.src = reader.result;
+      setCropSrc(reader.result);
+      setCropRect({ x: 0, y: 0, w: 100, h: 100 });
     };
     reader.readAsDataURL(file);
   };
+
+  const applyCrop = () => {
+    if (!cropSrc) return;
+    const img = new Image();
+    img.onload = () => {
+      const cropX = (cropRect.x / 100) * img.naturalWidth;
+      const cropY = (cropRect.y / 100) * img.naturalHeight;
+      const cropW = (cropRect.w / 100) * img.naturalWidth;
+      const cropH = (cropRect.h / 100) * img.naturalHeight;
+      const maxWidth = 1200;
+      const scale = Math.min(1, maxWidth / cropW);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(cropW * scale);
+      canvas.height = Math.round(cropH * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+      setImage(canvas.toDataURL("image/jpeg", 0.85));
+      setCropSrc(null);
+    };
+    img.src = cropSrc;
+  };
+
+  const startDrag = (e: React.PointerEvent, type: NonNullable<typeof dragRef.current>["type"]) => {
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { type, startX: e.clientX, startY: e.clientY, startRect: { ...cropRect } };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag || !cropContainerRef.current) return;
+    const cw = cropContainerRef.current.offsetWidth;
+    const ch = cropContainerRef.current.offsetHeight;
+    const dx = ((e.clientX - drag.startX) / cw) * 100;
+    const dy = ((e.clientY - drag.startY) / ch) * 100;
+    const { x, y, w, h } = drag.startRect;
+    const MIN = 10;
+    let next = { x, y, w, h };
+    if (drag.type === "move") {
+      next.x = Math.max(0, Math.min(100 - w, x + dx));
+      next.y = Math.max(0, Math.min(100 - h, y + dy));
+    } else if (drag.type === "se") {
+      next.w = Math.max(MIN, Math.min(100 - x, w + dx));
+      next.h = Math.max(MIN, Math.min(100 - y, h + dy));
+    } else if (drag.type === "sw") {
+      const nx = Math.max(0, Math.min(x + w - MIN, x + dx));
+      next.x = nx; next.w = x + w - nx;
+      next.h = Math.max(MIN, Math.min(100 - y, h + dy));
+    } else if (drag.type === "nw") {
+      const nx = Math.max(0, Math.min(x + w - MIN, x + dx));
+      const ny = Math.max(0, Math.min(y + h - MIN, y + dy));
+      next.x = nx; next.y = ny; next.w = x + w - nx; next.h = y + h - ny;
+    } else if (drag.type === "ne") {
+      const ny = Math.max(0, Math.min(y + h - MIN, y + dy));
+      next.y = ny; next.w = Math.max(MIN, Math.min(100 - x, w + dx)); next.h = y + h - ny;
+    }
+    setCropRect(next);
+  };
+
+  const handlePointerUp = () => { dragRef.current = null; };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +153,68 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   };
 
   return (
+    <>
+    {cropSrc && (
+      <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 gap-4">
+        <p className="text-white text-sm font-semibold tracking-wide">Drag corners to crop</p>
+        <div
+          ref={cropContainerRef}
+          className="relative w-full max-w-lg select-none touch-none overflow-hidden rounded-card"
+          style={{ userSelect: "none" }}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        >
+          <img src={cropSrc} alt="" className="w-full block" draggable={false} />
+          {/* crop rectangle with dark overlay outside via box-shadow */}
+          <div
+            className="absolute border-2 border-white/90 cursor-move"
+            style={{
+              left: `${cropRect.x}%`,
+              top: `${cropRect.y}%`,
+              width: `${cropRect.w}%`,
+              height: `${cropRect.h}%`,
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
+            }}
+            onPointerDown={(e) => startDrag(e, "move")}
+          >
+            {/* rule-of-thirds grid lines */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.2) 1px,transparent 1px)",
+              backgroundSize: "33.33% 33.33%",
+            }} />
+            {/* corner handles */}
+            {([["nw", "0%", "0%", "nw-resize"], ["ne", "100%", "0%", "ne-resize"], ["sw", "0%", "100%", "sw-resize"], ["se", "100%", "100%", "se-resize"]] as const).map(
+              ([pos, left, top, cur]) => (
+                <div
+                  key={pos}
+                  className="absolute w-5 h-5 bg-white rounded-sm shadow-md"
+                  style={{ left, top, transform: "translate(-50%,-50%)", cursor: cur, touchAction: "none" }}
+                  onPointerDown={(e) => startDrag(e, pos)}
+                />
+              )
+            )}
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setCropSrc(null)}
+            className="px-5 py-2 rounded-pill border border-white/30 text-white text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={applyCrop}
+            className="px-5 py-2 rounded-pill gradient-brand text-white text-sm font-semibold flex items-center gap-1.5"
+          >
+            <Crop size={14} />
+            Apply Crop
+          </button>
+        </div>
+      </div>
+    )}
     <form onSubmit={handleSubmit} className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
       <div>
         <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Title</label>
@@ -146,14 +266,24 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
         {image ? (
           <div className="relative">
             <img src={image} alt="" className="w-full h-32 object-cover rounded-card" />
-            <button
-              type="button"
-              onClick={() => setImage("")}
-              className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
-              aria-label="Remove image"
-            >
-              <X size={14} />
-            </button>
+            <div className="absolute top-2 right-2 flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setCropSrc(image); setCropRect({ x: 0, y: 0, w: 100, h: 100 }); }}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+                aria-label="Crop image"
+              >
+                <Crop size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setImage("")}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white"
+                aria-label="Remove image"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
         ) : (
           <label className="flex items-center justify-center gap-2 w-full h-20 border border-dashed border-border rounded-card text-sm text-text-muted cursor-pointer hover:border-brand-blue">
@@ -209,6 +339,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
         )}
       </div>
     </form>
+    </>
   );
 }
 
