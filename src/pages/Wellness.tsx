@@ -957,6 +957,7 @@ export default function Wellness() {
     const milestone = getStreakMilestone(computeStreak([...wellActivityLog, today]));
     if (milestone) setCelebration({ days: milestone, label: "Well Activity" });
     logWellActivityCompletion();
+    if (user.email) logActivity(user.email, "well_activity").catch(() => {});
     confetti({ particleCount: 100, spread: 70 });
   };
 
