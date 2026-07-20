@@ -354,7 +354,6 @@ export default function Profile() {
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Watch size={16} />} label="Health Sync" to="/profile/health-sync" />
-        <MenuRow icon={<Moon size={16} />} label="Sleep Analysis" to="/profile/sleep-analysis" />
         <MenuRow icon={<HelpCircle size={16} />} label="Help & FAQ" to="/profile/help" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations?filter=saved" badge={savedCount} />
         <MenuRow

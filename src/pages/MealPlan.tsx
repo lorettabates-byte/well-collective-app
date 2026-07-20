@@ -1,4 +1,4 @@
-import { Bookmark, Calendar, Check, ChefHat, ChevronDown, ChevronUp, History, Plus, Printer, Share2, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Bookmark, Calendar, Check, ChefHat, ChevronDown, ChevronUp, History, Pencil, Plus, Printer, Share2, ShoppingCart, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -59,9 +59,11 @@ interface PickerProps {
 
 function RecipePicker({ onPick, onClose, mealLabel }: PickerProps) {
   const { todaysRecipe, savedRecipes, fetchRecipeHistory } = useApp();
-  const [tab, setTab] = useState<"today" | "saved" | "history">("today");
+  const [tab, setTab] = useState<"today" | "saved" | "history" | "custom">("today");
   const [history, setHistory] = useState<Recipe[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customIngredients, setCustomIngredients] = useState("");
 
   useEffect(() => {
     if (tab !== "history" || history.length > 0) return;
@@ -71,10 +73,29 @@ function RecipePicker({ onPick, onClose, mealLabel }: PickerProps) {
       .finally(() => setHistoryLoading(false));
   }, [tab, history.length, fetchRecipeHistory]);
 
+  const handleAddCustom = () => {
+    const name = customName.trim();
+    if (!name) return;
+    const ingredients = customIngredients
+      .split(",")
+      .map((i) => i.trim())
+      .filter(Boolean);
+    onPick({
+      id: `custom-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      name,
+      description: "Custom meal",
+      ingredients,
+      steps: [],
+      image: "",
+    } as unknown as Recipe);
+  };
+
   const TABS = [
     { id: "today" as const, label: "Today", icon: ChefHat },
     { id: "saved" as const, label: "Saved", icon: Bookmark },
     { id: "history" as const, label: "Past", icon: History },
+    { id: "custom" as const, label: "Custom", icon: Pencil },
   ];
 
   return (
@@ -151,6 +172,40 @@ function RecipePicker({ onPick, onClose, mealLabel }: PickerProps) {
                 </button>
               ))
             )
+          )}
+          {tab === "custom" && (
+            <div className="flex flex-col gap-3 pt-1">
+              <p className="text-xs text-text-muted">Add any meal you like. List ingredients so they show up on your shopping list.</p>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Meal Name</label>
+                <input
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="e.g. Cheeseburgers"
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim outline-none focus:border-brand-light"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+                  Ingredients <span className="normal-case font-normal text-text-dim">(comma-separated, optional)</span>
+                </label>
+                <textarea
+                  value={customIngredients}
+                  onChange={(e) => setCustomIngredients(e.target.value)}
+                  placeholder="e.g. ground beef, buns, cheese, lettuce, tomato"
+                  rows={3}
+                  className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim outline-none focus:border-brand-light resize-none"
+                />
+              </div>
+              <button
+                onClick={handleAddCustom}
+                disabled={!customName.trim()}
+                className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 disabled:opacity-40"
+              >
+                Add to Plan
+              </button>
+            </div>
           )}
         </div>
       </div>

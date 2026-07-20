@@ -664,24 +664,31 @@ export default function WellCheck() {
           </div>
 
           {/* Sleep */}
-          <Link to="/wellness?tab=activities" className="glass-card rounded-card p-4 flex flex-col gap-1 col-span-2 active:opacity-80">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Moon size={13} className="text-brand-light shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Sleep</span>
-              <span className="ml-auto text-[10px] text-brand-light font-semibold">Log →</span>
-            </div>
-            {sleepData ? (
-              <div className="flex items-end gap-3">
-                <p className="text-2xl font-extrabold text-brand-light leading-none">{sleepData.hours}h</p>
-                <p className="text-xs text-text-muted mb-0.5">
-                  {sleepData.quality === "enough" ? "Well rested" : sleepData.quality === "not_enough" ? "Could use more" : "Needed a bit more"}
-                </p>
+          <div className="glass-card rounded-card col-span-2 overflow-hidden">
+            <Link to="/wellness?tab=activities" className="p-4 flex flex-col gap-1 block active:opacity-80">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Moon size={13} className="text-brand-light shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Sleep</span>
+                <span className="ml-auto text-[10px] text-brand-light font-semibold">Log →</span>
               </div>
-            ) : (
-              <p className="text-lg font-bold text-text-dim">Not logged</p>
-            )}
-            <p className="text-[10px] text-text-muted">{sleepData ? "Tap to update" : "Tap to log your sleep"}</p>
-          </Link>
+              {sleepData ? (
+                <div className="flex items-end gap-3">
+                  <p className="text-2xl font-extrabold text-brand-light leading-none">{sleepData.hours}h</p>
+                  <p className="text-xs text-text-muted mb-0.5">
+                    {sleepData.quality === "enough" ? "Well rested" : sleepData.quality === "not_enough" ? "Could use more" : "Needed a bit more"}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-text-dim">Not logged</p>
+              )}
+              <p className="text-[10px] text-text-muted">{sleepData ? "Tap to update" : "Tap to log your sleep"}</p>
+            </Link>
+            <div className="border-t border-white/5 px-4 py-2">
+              <Link to="/profile/sleep-analysis" className="text-[10px] text-brand-light font-semibold active:opacity-60">
+                View sleep trends →
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Today's Activity Log */}

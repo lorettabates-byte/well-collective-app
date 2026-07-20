@@ -96,8 +96,8 @@ function SortableFavoriteSong({ song, isPlaying, isDownloading, onPlay, onFavori
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2 group">
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-text-muted hover:text-brand-light touch-none select-none">
-        <GripVertical size={16} />
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing px-3 py-4 -mx-1 -my-2 text-text-muted hover:text-brand-light touch-none select-none">
+        <GripVertical size={22} />
       </div>
       <button
         onClick={onPlay}

@@ -1,7 +1,6 @@
-import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
+import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Salad, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import SectionIntroModal from "../components/SectionIntroModal";
-import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -702,10 +701,9 @@ export default function Nutrition() {
 
   return (
     <div>
-      <TopBar title="Nutrition" subtitle="Recipes inspired by this week's theme" icon={ChefHat} iconColor="#0191CE" showBack />
+      <TopBar title="Nutrition" subtitle="Track meals, hydration & this week's recipe" icon={ChefHat} iconColor="#0191CE" showBack />
       <SectionIntroModal sectionKey="nutrition" />
       <div className="px-4 pt-4 flex flex-col gap-4">
-        <WeeklyThemeBar theme={currentWeeklyTheme} />
 
         {/* Energy In — daily macro summary */}
         {todaysMeals.length > 0 && (
@@ -861,9 +859,20 @@ export default function Nutrition() {
 
         {/* Daily Meal Log */}
         <div className="glass-card rounded-card p-4">
-          <p className="text-sm font-bold text-text mb-3">
-            Log what you ate <span className="text-text-muted font-normal">· 10 pts per meal</span>
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-0.5">Food Log</p>
+              <p className="text-sm font-bold text-text">
+                Log what you ate <span className="text-text-muted font-normal">· 10 pts per meal</span>
+              </p>
+            </div>
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center border"
+              style={{ background: "rgba(1,145,206,0.12)", borderColor: "rgba(1,145,206,0.25)" }}
+            >
+              <Salad size={18} className="text-brand-light" />
+            </div>
+          </div>
           {/* Hidden file input for photo scan */}
           <input
             ref={photoInputRef}
@@ -1201,6 +1210,14 @@ export default function Nutrition() {
 
         </div>
 
+        <a
+          href="/nutrition/meal-plan"
+          className="flex items-center justify-center gap-1.5 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
+        >
+          <Calendar size={15} />
+          Plan This Week's Meals
+        </a>
+
         <div className="glass-card rounded-card overflow-hidden">
           <img src={todaysRecipe.image} alt={todaysRecipe.name} className="w-full h-48 object-cover" />
           <div className="p-4">
@@ -1275,13 +1292,6 @@ export default function Nutrition() {
           </button>
         </div>
 
-        <a
-          href="/nutrition/meal-plan"
-          className="flex items-center justify-center gap-1.5 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
-        >
-          <Calendar size={15} />
-          Plan This Week's Meals
-        </a>
 
         {historyOpen && selectedHistoryRecipe && (
           <div className="glass-card rounded-card overflow-hidden">
