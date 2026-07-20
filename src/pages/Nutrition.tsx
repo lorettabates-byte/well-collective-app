@@ -103,7 +103,6 @@ function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; ve
 export default function Nutrition() {
   useSectionTracking("nutrition");
   const {
-    currentWeeklyTheme,
     todaysRecipe,
     toggleRecipeSave,
     savedRecipes,
