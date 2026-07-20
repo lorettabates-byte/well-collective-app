@@ -1,6 +1,6 @@
 import { Home, MessageCircle, Trophy, User, Waves } from "lucide-react";
-import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useApp } from "../../store/AppContext";
 import { todayISO } from "../../utils/format";
 import { useUnreadMessageCount } from "../../hooks/useUnreadMessageCount";
@@ -8,34 +8,40 @@ import { useUnreadMessageCount } from "../../hooks/useUnreadMessageCount";
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 const CACHE_KEY = "well-cup-today-pts";
-const CACHE_TTL = 90_000; // 90 seconds
+const POLL_INTERVAL = 60_000; // 60 seconds
 
 function useTodayPoints(email?: string) {
+  const location = useLocation();
   const [points, setPoints] = useState<number>(() => {
     try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}") as { pts?: number; at?: number; date?: string };
-      if (cached.date === todayISO() && Date.now() - (cached.at ?? 0) < CACHE_TTL) return cached.pts ?? 0;
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}") as { pts?: number; date?: string };
+      if (cached.date === todayISO()) return cached.pts ?? 0;
     } catch { /* ignore */ }
     return 0;
   });
+  const latestEmail = useRef(email);
+  latestEmail.current = email;
 
   useEffect(() => {
     if (!API_URL || !email) return;
     const refresh = () => {
-      fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(email)}`)
+      fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(latestEmail.current ?? "")}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
           if (!d) return;
           const pts = d.totalPoints ?? 0;
           setPoints(pts);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ pts, at: Date.now(), date: todayISO() }));
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ pts, date: todayISO() }));
         })
         .catch(() => {});
     };
     refresh();
-    const id = setInterval(refresh, CACHE_TTL);
-    return () => clearInterval(id);
-  }, [email]);
+    const id = setInterval(refresh, POLL_INTERVAL);
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, location.pathname]);
 
   return points;
 }
