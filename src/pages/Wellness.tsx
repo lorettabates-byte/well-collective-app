@@ -141,6 +141,7 @@ export default function Wellness() {
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const [dailyBreathwork, setDailyBreathwork] = useState<DailyBreathwork | null>(null);
   const [celebration, setCelebration] = useState<{ days: number; label: string } | null>(null);
+  const [wellActivityPtsToast, setWellActivityPtsToast] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [customWorkoutText, setCustomWorkoutText] = useState("");
   const [customWorkoutMinutes, setCustomWorkoutMinutes] = useState(30);
@@ -957,7 +958,16 @@ export default function Wellness() {
     const milestone = getStreakMilestone(computeStreak([...wellActivityLog, today]));
     if (milestone) setCelebration({ days: milestone, label: "Well Activity" });
     logWellActivityCompletion();
-    if (user.email) logActivity(user.email, "well_activity").catch(() => {});
+    if (user.email) {
+      logActivity(user.email, "well_activity")
+        .then((result) => {
+          if (result.awarded) {
+            setWellActivityPtsToast(true);
+            setTimeout(() => setWellActivityPtsToast(false), 3000);
+          }
+        })
+        .catch(() => {});
+    }
     confetti({ particleCount: 100, spread: 70 });
   };
 
@@ -1603,6 +1613,9 @@ export default function Wellness() {
               <CheckCircle2 size={14} />
               {wellActivityCompleted ? "Activity Completed ✓" : "Mark Complete · +15 pts"}
             </button>
+            {wellActivityPtsToast && (
+              <p className="text-center text-xs font-semibold text-brand-light mt-2">+15 pts added to your WELL Cup!</p>
+            )}
           </div>
         </div>
 

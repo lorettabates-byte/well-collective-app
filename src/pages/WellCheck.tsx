@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { logActivity } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
@@ -403,6 +403,7 @@ function pickChallenges(doneTypes: Set<string>, poorSleep: boolean): Challenge[]
 export default function WellCheck() {
   useSectionTracking("well-check");
   const { user, notifications } = useApp();
+  const location = useLocation();
   const today = todayISO();
 
   const [activities, setActivities] = useState<ActivitySummary[]>([]);
@@ -442,7 +443,10 @@ export default function WellCheck() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user.email]);
+  // Re-fetch every time the user navigates back to this page so points
+  // earned in Wellness (or anywhere else) show up immediately without a reload.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.email, location.pathname]);
 
   useEffect(() => {
     if (!API_URL || !user.email) { setHistoryLoading(false); return; }
