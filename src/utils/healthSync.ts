@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 // 'workouts' must be requested explicitly or queryWorkouts() returns empty.
 // 'totalCalories' = full-day calorie burn from the tracker (replaces BMR estimate).
 // 'distance' = walking/running distance aggregated by HealthKit/Health Connect.
-const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts", "weight", "totalCalories", "distance"];
+const READ_TYPES: HealthDataType[] = ["steps", "sleep", "workouts"];
 
 export interface SyncedRun {
   workoutType: string;
