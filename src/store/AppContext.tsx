@@ -1803,6 +1803,90 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  // One-time fetch of the past 60 days of daily inspirations, weekly themes,
+  // and motivation boosts. Without this, only the static mockData entries
+  // (June 2026) and today's content ever appear in the Inspirations feed —
+  // everything created in between is invisible until this history load runs.
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+    if (!apiUrl) return;
+    fetch(`${apiUrl}/api/content-history`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const entries = data?.entries as { date: string; dailyInspiration?: { title: string; body: string }; weeklyTheme?: { title: string; body: string }; motivationBoost?: { title: string; body: string } }[] | undefined;
+        if (!entries?.length) return;
+        setState((prev) => {
+          const now = new Date();
+          const newInspirations: Inspiration[] = [];
+          for (const entry of entries) {
+            if (entry.dailyInspiration) {
+              const id = `daily-${entry.date}`;
+              if (!prev.inspirations.some((i) => i.id === id)) {
+                newInspirations.push({
+                  id,
+                  title: entry.dailyInspiration.title,
+                  body: entry.dailyInspiration.body,
+                  cadence: "daily",
+                  author: "WELL Collective",
+                  sentAt: new Date(entry.date + "T07:00:00").toISOString(),
+                  likes: prev.user.likedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                  savedBy: prev.user.savedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                });
+              }
+            }
+            // Weekly themes: add the entry for its Monday date
+            if (entry.weeklyTheme) {
+              const entryDate = new Date(entry.date + "T00:00:00");
+              const dow = entryDate.getDay();
+              const isMonday = dow === 1;
+              if (isMonday) {
+                const id = `weekly-${entry.date}`;
+                if (!prev.inspirations.some((i) => i.id === id)) {
+                  newInspirations.push({
+                    id,
+                    title: entry.weeklyTheme.title,
+                    body: entry.weeklyTheme.body,
+                    cadence: "weekly",
+                    author: "Loretta Bates",
+                    sentAt: new Date(entry.date + "T07:00:00").toISOString(),
+                    likes: prev.user.likedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                    savedBy: prev.user.savedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                  });
+                }
+              }
+            }
+            // Motivation boosts: only add if it's past 3pm on that date
+            if (entry.motivationBoost) {
+              const boostDate = new Date(entry.date + "T15:00:00");
+              if (now >= boostDate) {
+                const id = `motivation-${entry.date}`;
+                if (!prev.inspirations.some((i) => i.id === id)) {
+                  newInspirations.push({
+                    id,
+                    title: entry.motivationBoost.title,
+                    body: entry.motivationBoost.body,
+                    cadence: "motivational",
+                    author: "WELL Collective",
+                    sentAt: new Date(entry.date + "T15:00:00").toISOString(),
+                    likes: prev.user.likedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                    savedBy: prev.user.savedInspirationIds?.includes(id) ? [prev.user.id] : [],
+                  });
+                }
+              }
+            }
+          }
+          if (!newInspirations.length) return prev;
+          return {
+            ...prev,
+            inspirations: [...prev.inspirations, ...newInspirations].sort((a, b) =>
+              b.sentAt.localeCompare(a.sentAt)
+            ),
+          };
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   // Sync the Community forum (categories + threads/messages) from the shared
   // backend so posts are visible across everyone's devices, not just the one
   // they were created on. Polls on an interval (rather than fetching once on
