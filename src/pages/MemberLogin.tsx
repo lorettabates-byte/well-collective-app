@@ -1,5 +1,6 @@
-import { AlertCircle, Brain, ClipboardList, Dumbbell, Loader2, Moon, Trophy, Utensils } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Browser } from "@capacitor/browser";
+import { AlertCircle, ArrowUpRight, Brain, ClipboardList, Dumbbell, Loader2, Moon, Trophy, Utensils } from "lucide-react";
+import { useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { uid } from "../store/AppContext";
 
@@ -93,172 +94,24 @@ function ResumeTrial({ onSuccess, onSwitchToStart }: { onSuccess: () => void; on
   );
 }
 
-function StartTrial({ onSuccess, onSwitchToResume }: { onSuccess: () => void; onSwitchToResume: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [referralCode, setReferralCode] = useState("");
-  const [referralValid, setReferralValid] = useState<boolean | null>(null);
-  const [referralName, setReferralName] = useState("");
-  const [validatingReferral, setValidatingReferral] = useState(false);
-
-  useEffect(() => {
-    if (!referralCode.trim()) { setReferralValid(null); setReferralName(""); return; }
-    const t = setTimeout(() => validateReferralCode(referralCode), 600);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [referralCode]);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const validateReferralCode = async (code: string) => {
-    if (!code.trim() || !API_URL) {
-      setReferralValid(null);
-      return;
-    }
-    setValidatingReferral(true);
-    try {
-      const res = await fetch(`${API_URL}/api/referrals/validate?code=${encodeURIComponent(code.trim())}`);
-      const data = (await res.json()) as { valid: boolean; referrerName?: string };
-      setReferralValid(data.valid);
-      if (data.valid && data.referrerName) setReferralName(data.referrerName);
-    } catch {
-      setReferralValid(null);
-    } finally {
-      setValidatingReferral(false);
-    }
-  };
-
-  const handleStartTrial = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!API_URL) {
-      setError("Backend not configured");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const body: Record<string, string> = { name: name.trim(), email: email.trim() };
-      if (referralCode.trim() && referralValid) {
-        body.referralCode = referralCode.trim();
-      }
-
-      const res = await fetch(`${API_URL}/api/auth/start-trial`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean; referralApplied?: boolean; trialDays?: number };
-
-      if (!res.ok || !data.trialEndsAt) {
-        setError(data.error || "Failed to start trial. Please try again.");
-        return;
-      }
-
-      localStorage.setItem("memberToken", `trial_${uid("local")}`);
-      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: data.name || name.trim() }));
-      localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
-
-      onSuccess();
-    } catch {
-      setError("Failed to start trial. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const trialLabel = referralValid ? "Start My 30-Day Free Trial" : "Start My 7-Day Free Trial";
-
+function JoinOnWeb({ onSwitchToResume }: { onSwitchToResume: () => void }) {
   return (
-    <form onSubmit={handleStartTrial} className="flex flex-col gap-4">
-      {error && (
-        <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
-          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-red-400">{error}</p>
-        </div>
-      )}
-
-      <div>
-        <label className="text-xs font-semibold text-text mb-1.5 block">Your Name</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Jane Doe"
-          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-        />
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="jane@example.com"
-          autoCapitalize="none"
-          autoCorrect="off"
-          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-        />
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-text mb-1.5 block">
-          Referral Code <span className="text-text-dim font-normal">(optional — unlocks 30 days free)</span>
-        </label>
-        <input
-          type="text"
-          value={referralCode}
-          onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-          placeholder="WELL-XXXX-XXXX"
-          autoCapitalize="characters"
-          className={`w-full bg-surface-2 border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none transition-colors ${
-            referralValid === true
-              ? "border-green-500 focus:border-green-400"
-              : referralValid === false
-              ? "border-red-500 focus:border-red-400"
-              : "border-border focus:border-brand-light"
-          }`}
-        />
-        {validatingReferral && (
-          <p className="text-[11px] text-text-dim mt-1">Checking code…</p>
-        )}
-        {referralValid === true && (
-          <p className="text-[11px] text-green-400 mt-1">
-            Referred by {referralName} — you'll get a 30-day free trial!
-          </p>
-        )}
-        {referralValid === false && referralCode.trim() && !validatingReferral && (
-          <p className="text-[11px] text-red-400 mt-1">
-            Code not recognized. Check with your friend and try again.
-          </p>
-        )}
-      </div>
-
+    <div className="flex flex-col gap-4">
       <button
-        type="submit"
-        disabled={submitting}
-        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow disabled:opacity-50"
+        type="button"
+        onClick={() => Browser.open({ url: "https://lorettabates.com/membership" })}
+        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow flex items-center justify-center gap-2"
       >
-        {submitting ? "Starting…" : trialLabel}
+        Start My Free Trial at lorettabates.com
+        <ArrowUpRight size={15} />
       </button>
-      <p className="text-[11px] text-text-dim text-center -mt-1">
-        No credit card needed.
+      <p className="text-[11px] text-text-dim text-center">
+        Memberships are managed at lorettabates.com. After signing up, come back here and log in.
       </p>
       <button type="button" onClick={onSwitchToResume} className="text-[11px] text-text-dim text-center underline">
-        Already started a free trial? Log back in instead.
+        Already have an account? Log back in instead.
       </button>
-    </form>
+    </div>
   );
 }
 
@@ -413,7 +266,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
                   </div>
                 ))}
               </div>
-              <StartTrial onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
+              <JoinOnWeb onSwitchToResume={() => setTrialView("resume")} />
             </>
           ) : (
             <>

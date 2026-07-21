@@ -80,6 +80,20 @@ export default function HealthSyncSettings() {
     <div>
       <TopBar title="Health Sync" showBack />
       <div className="px-4 pt-4 flex flex-col gap-2.5">
+        {/* Apple Health / Health Connect platform badge */}
+        <div className="glass-card rounded-card px-4 py-3 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0">
+            <span className="text-red-400 font-bold text-base leading-none">♥</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-text">Powered by Apple Health &amp; Google Health Connect</p>
+            <p className="text-[11px] text-text-muted mt-0.5">
+              This app reads health data from Apple Health (iOS) and Health Connect (Android).
+              Data accessed: Steps, Sleep, Exercise.
+            </p>
+          </div>
+        </div>
+
         {available === false && (
           <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
             <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
@@ -97,10 +111,10 @@ export default function HealthSyncSettings() {
         )}
         <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-text">Connect Smart Watch</p>
+            <p className="text-sm font-semibold text-text">Connect Apple Health / Health Connect</p>
             <p className="text-xs text-text-muted mt-0.5">
-              Auto-fill today's steps, sleep, workouts, and weight from Apple Health or Health
-              Connect each time you open the app
+              Auto-fill today's steps, sleep, and workouts from Apple Health or Health Connect
+              each time you open the app
             </p>
           </div>
           <Toggle enabled={!!user.healthSyncEnabled} onToggle={handleToggle} />
@@ -118,6 +132,9 @@ export default function HealthSyncSettings() {
         {lastSynced && !syncing && (
           <p className="text-xs text-text-muted text-center">Last synced at {lastSynced}</p>
         )}
+        <p className="text-[11px] text-text-dim text-center px-2 mt-1">
+          Health data is used only to auto-populate your daily WELL Check and is never shared with third parties.
+        </p>
       </div>
     </div>
   );
