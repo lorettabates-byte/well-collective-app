@@ -6,10 +6,14 @@ export function getTrendingThreads(threads: ForumThread[], pinnedCount: number =
     .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""))
     .slice(0, pinnedCount);
 
-  const mostRecentNonPinned = [...threads]
+  const recentThreads = [...threads]
     .filter((t) => !t.pinnedAt)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, recentCount);
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  return [...pinnedThreads, ...mostRecentNonPinned];
+  // No pins — show the most recent threads up to the total slot count
+  if (pinnedThreads.length === 0) {
+    return recentThreads.slice(0, pinnedCount + recentCount);
+  }
+
+  return [...pinnedThreads, ...recentThreads.slice(0, recentCount)];
 }
