@@ -459,10 +459,26 @@ export default function Nutrition() {
     setHadWater(meal.had_water);
     setHadFruit(meal.had_fruit);
     setHadWholeFoods(meal.had_whole_foods);
-    setMealItems([]);
     setMealNotes(meal.notes ?? "");
-    setEstimatedCalories(meal.estimated_calories != null ? String(meal.estimated_calories) : "");
     setEstimateError("");
+
+    // Restore a synthetic item from stored nutrition so the form is never blank
+    if (meal.estimated_calories != null) {
+      setMealItems([{
+        description: meal.notes?.trim() || meal.meal_type,
+        calories: meal.estimated_calories,
+        protein: meal.estimated_protein_g ?? 0,
+        carbs: meal.estimated_carbs_g ?? 0,
+        fat: meal.estimated_fat_g ?? 0,
+        servings: 1,
+        verified: meal.nutrition_verified ?? false,
+      }]);
+      setEstimatedCalories("");
+    } else {
+      setMealItems([]);
+      setEstimatedCalories("");
+    }
+
     setShowMealForm(true);
     setTimeout(() => {
       mealFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

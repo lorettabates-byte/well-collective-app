@@ -106,15 +106,27 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     // Set streaming URL synchronously — no async gap between tracks keeps the
     // iOS audio session alive. Downloaded songs upgrade to the local path after.
     audio.src = song.url;
+    let usingLocalFile = false;
     if (isDownloaded(song.id)) {
       const localUrl = await getPlaybackUrl(song);
       if (queueIndexRef.current !== index) return;
-      audio.src = localUrl;
+      // Only switch to local if it's actually a different (local) URL
+      if (localUrl !== song.url) {
+        audio.src = localUrl;
+        usingLocalFile = true;
+      }
     }
 
     audio.play().catch((err: unknown) => {
       console.warn("[Music] playback failed:", err);
-      setIsPlaying(false);
+      // If the local file failed (corrupted/moved), fall back to streaming
+      if (usingLocalFile) {
+        console.warn("[Music] local file failed, falling back to stream");
+        audio.src = song.url;
+        audio.play().catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(false);
+      }
     });
     setCurrentSong(song);
     setIsPlaying(true);
