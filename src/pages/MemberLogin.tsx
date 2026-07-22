@@ -99,7 +99,7 @@ function JoinOnWeb({ onSwitchToResume }: { onSwitchToResume: () => void }) {
     <div className="flex flex-col gap-4">
       <button
         type="button"
-        onClick={() => Browser.open({ url: "https://lorettabates.com/membership" })}
+        onClick={() => Browser.open({ url: "https://lorettabates.com/videolibrary.lorettabates.com/member-login/" })}
         className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow flex items-center justify-center gap-2"
       >
         Start My Free Trial at lorettabates.com
