@@ -1,4 +1,5 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Crown, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
+import { openMemberLink } from "../utils/ssoLink";
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
@@ -350,6 +351,24 @@ export default function Profile() {
       </Link>
 
       <div className="flex flex-col gap-2.5 mb-6">
+        {!!localStorage.getItem("memberTrialEndsAt") && (
+          <button
+            onClick={() => openMemberLink(
+              "https://lorettabates.com/videolibrary.lorettabates.com/checkout-page/?lid=4",
+              user.email
+            )}
+            className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 text-left"
+          >
+            <div className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
+              <Crown size={16} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">Upgrade to Full Membership</p>
+              <p className="text-xs text-text-muted">Keep everything after your trial ends</p>
+            </div>
+            <ChevronRight size={16} className="text-text-dim shrink-0" />
+          </button>
+        )}
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
