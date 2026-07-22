@@ -1,9 +1,5 @@
-import { Gift, Loader2, LogOut, RefreshCw } from "lucide-react";
-import { useState } from "react";
-import { openMemberLink } from "../utils/ssoLink";
+import { Loader2, LogOut, RefreshCw } from "lucide-react";
 import { LOGO_URL } from "./layout/MobileShell";
-
-const CHECKOUT_URL = "https://lorettabates.com/videolibrary.lorettabates.com/checkout-page/?lid=4";
 
 export default function SubscribeGate({
   checking,
@@ -14,20 +10,6 @@ export default function SubscribeGate({
   onRecheck: () => void;
   onLogout: () => void;
 }) {
-  const [opening, setOpening] = useState(false);
-
-  const handleSubscribe = async () => {
-    setOpening(true);
-    try {
-      const member = JSON.parse(localStorage.getItem("memberUser") || "{}") as { email?: string };
-      // SSO-signed link logs them into WordPress first so checkout never
-      // hits a login wall (trial members don't know their WP password).
-      await openMemberLink(CHECKOUT_URL, member.email);
-    } finally {
-      setOpening(false);
-    }
-  };
-
   return (
     <div className="min-h-screen w-full bg-bg flex items-center justify-center px-4">
       <div className="w-full max-w-sm flex flex-col gap-6">
@@ -36,22 +18,11 @@ export default function SubscribeGate({
         </div>
 
         <div className="glass-card rounded-card p-6 text-center">
-          <div className="w-12 h-12 rounded-full gradient-brand shadow-glow flex items-center justify-center mx-auto mb-4">
-            <Gift size={22} className="text-white" />
-          </div>
           <h1 className="text-xl font-bold text-text mb-2">Your Free Trial Has Ended</h1>
-          <p className="text-sm text-text-muted mb-5">
-            Subscribe to WELL Collective to keep full access to community, classes, wellness tools, and more.
+          <p className="text-sm text-text-muted mb-1">
+            To continue your WELL Collective membership, visit
           </p>
-
-          <button
-            onClick={handleSubscribe}
-            disabled={opening}
-            className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow mb-3 disabled:opacity-60"
-          >
-            {opening ? <Loader2 size={14} className="animate-spin" /> : null}
-            {opening ? "Opening checkout…" : "Subscribe Now"}
-          </button>
+          <p className="text-sm font-semibold text-brand-light mb-5">lorettabates.com</p>
 
           <button
             onClick={onRecheck}
