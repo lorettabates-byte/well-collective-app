@@ -124,40 +124,58 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Log a member straight into their trial using just their email — used by
+  // both the wellcollective:// deep link (native) and the ?trialEmail= query
+  // param (web app at app.lorettabates.com).
+  const resumeTrialByEmail = async (email: string) => {
+    if (!API_URL) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/api/auth/start-trial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string };
+      if (!res.ok || !data.trialEndsAt) {
+        setError(data.error || "We couldn't find your trial. Please log in with the email you signed up with.");
+        return;
+      }
+      localStorage.setItem("memberToken", `trial_${uid("local")}`);
+      localStorage.setItem("memberUser", JSON.stringify({ email, name: data.name || "" }));
+      localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+      onSuccess();
+    } catch {
+      setError("We couldn't reach the server. Please log in with the email you signed up with.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // After signing up on the website, the trial page deep-links back here as
   // wellcollective://trial?email=... — log them straight into their new trial.
   useEffect(() => {
     const sub = CapApp.addListener("appUrlOpen", async ({ url }) => {
       if (!url.startsWith("wellcollective://trial")) return;
       const email = new URL(url.replace("wellcollective://", "https://app/")).searchParams.get("email")?.trim();
-      if (!email || !API_URL) return;
+      if (!email) return;
       Browser.close().catch(() => {});
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(`${API_URL}/api/auth/start-trial`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string };
-        if (!res.ok || !data.trialEndsAt) {
-          setError(data.error || "We couldn't find your trial. Please log in with the email you signed up with.");
-          return;
-        }
-        localStorage.setItem("memberToken", `trial_${uid("local")}`);
-        localStorage.setItem("memberUser", JSON.stringify({ email, name: data.name || "" }));
-        localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
-        onSuccess();
-      } catch {
-        setError("We couldn't reach the server. Please log in with the email you signed up with.");
-      } finally {
-        setLoading(false);
-      }
+      await resumeTrialByEmail(email);
     });
     return () => {
       sub.then((s) => s.remove()).catch(() => {});
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Web app entry: the trial signup page redirects to
+  // app.lorettabates.com/?trialEmail=... — log them in automatically.
+  useEffect(() => {
+    const trialEmail = new URLSearchParams(window.location.search).get("trialEmail")?.trim();
+    if (!trialEmail) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    resumeTrialByEmail(trialEmail);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
