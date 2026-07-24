@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { checkMembershipStatus } from "../lib/membership";
+import { checkIAPStatus, initIAP } from "../utils/iap";
 import { getTrialStatus } from "../utils/trial";
 import MemberLogin from "../pages/MemberLogin";
 import SubscribeGate from "./SubscribeGate";
@@ -23,7 +24,12 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     setChecking(true);
     try {
       const member = JSON.parse(localStorage.getItem("memberUser") || "{}") as { email?: string };
-      const active = member.email ? await checkMembershipStatus(member.email) : true;
+      // Check UMP membership (web subscribers) and IAP (App Store subscribers) in parallel
+      const [umpActive, iapActive] = await Promise.all([
+        member.email ? checkMembershipStatus(member.email) : Promise.resolve(true),
+        checkIAPStatus(),
+      ]);
+      const active = umpActive || iapActive;
       const cached: CachedMembershipStatus = { active, checkedAt: new Date().toISOString() };
       localStorage.setItem("memberMembershipStatus", JSON.stringify(cached));
       setMembershipActive(active);
@@ -36,6 +42,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!authed) return;
+    // Initialize IAP and identify user so RevenueCat knows who this is
+    const member = JSON.parse(localStorage.getItem("memberUser") || "{}") as { email?: string };
+    if (member.email) initIAP(member.email).catch(() => {});
 
     const raw = localStorage.getItem("memberMembershipStatus");
     if (raw) {
