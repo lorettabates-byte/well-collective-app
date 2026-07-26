@@ -1,5 +1,9 @@
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Crown, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Crown, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, Loader2, LogOut, Pencil, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
 import { openMemberLink } from "../utils/ssoLink";
+import { initIAP, purchaseMembership } from "../utils/iap";
+
+const isNative = Capacitor.isNativePlatform();
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
 import type { ReactNode } from "react";
@@ -142,6 +146,7 @@ export default function Profile() {
   const [deleteInput, setDeleteInput] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!API_URL || !user.email) return;
@@ -353,14 +358,27 @@ export default function Profile() {
       <div className="flex flex-col gap-2.5 mb-6">
         {!!localStorage.getItem("memberTrialEndsAt") && (
           <button
-            onClick={() => openMemberLink(
-              "https://lorettabates.com/videolibrary.lorettabates.com/checkout-page/?lid=4",
-              user.email
-            )}
-            className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 text-left"
+            disabled={upgrading}
+            onClick={async () => {
+              if (isNative) {
+                setUpgrading(true);
+                try {
+                  await initIAP(user.email ?? "");
+                  await purchaseMembership();
+                } finally {
+                  setUpgrading(false);
+                }
+              } else {
+                openMemberLink(
+                  "https://lorettabates.com/videolibrary.lorettabates.com/checkout-page/?lid=4",
+                  user.email
+                );
+              }
+            }}
+            className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 text-left disabled:opacity-60"
           >
             <div className="w-9 h-9 rounded-full gradient-brand shadow-glow flex items-center justify-center shrink-0">
-              <Crown size={16} className="text-white" />
+              {upgrading ? <Loader2 size={16} className="text-white animate-spin" /> : <Crown size={16} className="text-white" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-text">Upgrade to Full Membership</p>
