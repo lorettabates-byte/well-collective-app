@@ -1,9 +1,13 @@
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
 import { AlertCircle, ArrowUpRight, Brain, ClipboardList, Dumbbell, Loader2, Moon, Trophy, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import { uid } from "../store/AppContext";
+import { checkIAPStatus, initIAP, purchaseMembership } from "../utils/iap";
+
+const isNative = Capacitor.isNativePlatform();
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -35,19 +39,38 @@ function ResumeTrial({ onSuccess, onSwitchToStart }: { onSuccess: () => void; on
       });
       const data = (await res.json()) as { error?: string; trialEndsAt?: string; name?: string; resumed?: boolean };
 
-      if (!res.ok || !data.trialEndsAt) {
-        setError(
-          data.error ||
-            "We couldn't find a free trial for that email. Try starting a new trial instead."
-        );
+      if (res.ok && data.trialEndsAt) {
+        localStorage.setItem("memberToken", `trial_${uid("local")}`);
+        localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: data.name || "" }));
+        localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+        onSuccess();
         return;
       }
 
-      localStorage.setItem("memberToken", `trial_${uid("local")}`);
-      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: data.name || "" }));
-      localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+      // On native, also check if they have an active IAP subscription
+      if (isNative) {
+        await initIAP(email.trim());
+        const iapActive = await checkIAPStatus();
+        if (iapActive) {
+          const regRes = await fetch(`${API_URL}/api/iap/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim() }),
+          });
+          const regData = (await regRes.json()) as { token?: string; user?: { email: string; name: string } };
+          if (regRes.ok && regData.token && regData.user) {
+            localStorage.setItem("memberToken", regData.token);
+            localStorage.setItem("memberUser", JSON.stringify(regData.user));
+            onSuccess();
+            return;
+          }
+        }
+      }
 
-      onSuccess();
+      setError(
+        data.error ||
+          "We couldn't find an account for that email. Try starting a new trial instead."
+      );
     } catch {
       setError("Failed to log in. Please try again.");
     } finally {
@@ -110,6 +133,91 @@ function JoinOnWeb({ onSwitchToResume }: { onSwitchToResume: () => void }) {
         Memberships are managed at lorettabates.com. After signing up, come back here and log in.
       </p>
       <button type="button" onClick={onSwitchToResume} className="text-[11px] text-text-dim text-center underline">
+        Already have an account? Log back in instead.
+      </button>
+    </div>
+  );
+}
+
+function StartTrialNative({ onSuccess, onSwitchToResume }: { onSuccess: () => void; onSwitchToResume: () => void }) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [purchasing, setPurchasing] = useState(false);
+
+  const handleStartTrial = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setError("");
+    setPurchasing(true);
+    try {
+      await initIAP(email.trim());
+      const result = await purchaseMembership();
+      if (result.userCancelled) return;
+      if (!result.success) {
+        setError(result.error || "Purchase failed. Please try again.");
+        return;
+      }
+      if (API_URL) {
+        const res = await fetch(`${API_URL}/api/iap/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const data = (await res.json()) as { token?: string; user?: { email: string; name: string }; error?: string };
+        if (res.ok && data.token && data.user) {
+          localStorage.setItem("memberToken", data.token);
+          localStorage.setItem("memberUser", JSON.stringify(data.user));
+          onSuccess();
+          return;
+        }
+      }
+      localStorage.setItem("memberToken", `iap_${uid("local")}`);
+      localStorage.setItem("memberUser", JSON.stringify({ email: email.trim(), name: "" }));
+      onSuccess();
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {error && (
+        <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
+          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-red-400">{error}</p>
+        </div>
+      )}
+      <div>
+        <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="jane@example.com"
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={handleStartTrial}
+        disabled={purchasing || !email}
+        className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        {purchasing ? <Loader2 size={14} className="animate-spin" /> : null}
+        {purchasing ? "Processing…" : "Start 7-Day Free Trial"}
+      </button>
+      <p className="text-[11px] text-text-dim text-center">
+        Then $30/month. Cancel anytime in your Apple ID settings.
+      </p>
+      <button
+        type="button"
+        onClick={onSwitchToResume}
+        className="text-[11px] text-text-dim text-center underline"
+      >
         Already have an account? Log back in instead.
       </button>
     </div>
@@ -322,7 +430,11 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
                   </div>
                 ))}
               </div>
-              <JoinOnWeb onSwitchToResume={() => setTrialView("resume")} />
+              {isNative ? (
+                <StartTrialNative onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
+              ) : (
+                <JoinOnWeb onSwitchToResume={() => setTrialView("resume")} />
+              )}
             </>
           ) : (
             <>
