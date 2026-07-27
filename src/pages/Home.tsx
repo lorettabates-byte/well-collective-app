@@ -577,7 +577,11 @@ export default function Home() {
           <SectionHeader title="Upcoming Events" to="/events" />
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
             {upcomingEvents.map((event) => (
-              <Link key={event.id} to="/events" className="shrink-0">
+              <Link
+                key={event.id}
+                to="/events"
+                className={`shrink-0 rounded-card ${event.id === featuredEventId ? "ring-2 ring-yellow-400/70 shadow-[0_0_14px_rgba(250,204,21,0.22)]" : ""}`}
+              >
                 <EventCard event={event} compact />
               </Link>
             ))}
