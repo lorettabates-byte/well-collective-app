@@ -183,15 +183,27 @@ export default function EventCard({ event, compact }: EventCardProps) {
                 </span>
               )}
             </div>
-            <button
-              onClick={() => toggleRsvp(event.id)}
-              disabled={soldOut && !isGoing}
-              className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
-              }`}
-            >
-              {isGoing ? "Going ✓" : soldOut ? "Sold Out" : "Going"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleRsvp(event.id)}
+                disabled={soldOut && !isGoing}
+                className={`text-xs font-semibold px-4 py-1.5 rounded-pill transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isGoing ? "bg-surface-3 text-brand-light border border-brand-light/30" : "gradient-brand text-white"
+                }`}
+              >
+                {isGoing ? "Going ✓" : soldOut ? "Sold Out" : "Going"}
+              </button>
+              {event.url && (
+                <button
+                  type="button"
+                  onClick={() => event.url && openMemberLink(event.url, user.email)}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-pill bg-surface-2 border border-border text-text-muted"
+                >
+                  Info
+                  <ExternalLink size={12} />
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>

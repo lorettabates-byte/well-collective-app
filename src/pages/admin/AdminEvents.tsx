@@ -19,7 +19,7 @@ interface LivestreamCancellation {
 
 type EventFormValues = Pick<
   CommunityEvent,
-  "title" | "description" | "date" | "time" | "location" | "color" | "image" | "soldOut"
+  "title" | "description" | "date" | "time" | "location" | "color" | "image" | "soldOut" | "url"
 >;
 
 interface EventFormProps {
@@ -41,6 +41,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   const [image, setImage] = useState(initial?.image ?? "");
   const [imageError, setImageError] = useState("");
   const [soldOut, setSoldOut] = useState(initial?.soldOut ?? false);
+  const [url, setUrl] = useState(initial?.url ?? "");
 
   // Crop modal state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -157,6 +158,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
         color,
         image,
         soldOut,
+        url: url.trim() || undefined,
       },
       repeatsWeekly ? { frequency: "weekly" } : undefined
     );
@@ -269,6 +271,16 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text focus:outline-none focus:border-brand-blue"
+        />
+      </div>
+      <div>
+        <label className="block text-[11px] font-semibold text-text-muted mb-1.5">Link (optional)</label>
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://..."
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue"
         />
       </div>
       <div>

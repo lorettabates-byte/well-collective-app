@@ -1,9 +1,18 @@
 import { Capacitor } from "@capacitor/core";
-import { Gift, Loader2, LogOut, RefreshCw, RotateCcw } from "lucide-react";
+import { Brain, Dumbbell, Gift, Loader2, LogOut, Moon, RefreshCw, RotateCcw, Trophy, Utensils, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { purchaseMembership, restoreIAPPurchases } from "../utils/iap";
 import { openMemberLink } from "../utils/ssoLink";
 import { LOGO_URL } from "./layout/MobileShell";
+
+const FEATURES = [
+  { Icon: Brain, name: "Guided Calm Toolkit", desc: "Grounding, breathing & mindset sessions" },
+  { Icon: Dumbbell, name: "Workout Plans", desc: "Daily resistance, cardio & stretch routines" },
+  { Icon: Utensils, name: "Nutrition Tracking", desc: "Log meals, scan barcodes & track macros" },
+  { Icon: Moon, name: "Sleep & Recovery", desc: "Log sleep quality & guided breathwork" },
+  { Icon: ClipboardList, name: "WELL Check", desc: "Daily wellness score across 6 categories" },
+  { Icon: Trophy, name: "WELL Cup Points", desc: "Earn points, climb the leaderboard & win prizes" },
+];
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const CHECKOUT_URL = "https://lorettabates.com/videolibrary.lorettabates.com/checkout-page/?lid=4";
@@ -88,21 +97,40 @@ export default function SubscribeGate({
             <Gift size={22} className="text-white" />
           </div>
           <h1 className="text-xl font-bold text-text mb-2">Your Free Trial Has Ended</h1>
-          <p className="text-sm text-text-muted mb-5">
-            Subscribe to WELL Collective to keep full access to community, classes, wellness tools, and more.
+          <p className="text-sm text-text-muted mb-4">
+            Subscribe to keep full access to everything in WELL Collective.
           </p>
+
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {FEATURES.map(({ Icon, name, desc }) => (
+              <div
+                key={name}
+                className="rounded-[14px] p-3 text-left"
+                style={{ background: "rgba(20,35,57,0.7)", border: "1px solid rgba(132,216,253,0.07)" }}
+              >
+                <Icon size={16} className="text-brand-blue mb-1.5" />
+                <div className="text-[11px] font-bold text-text leading-tight mb-0.5">{name}</div>
+                <div className="text-[10px] text-text-dim leading-snug">{desc}</div>
+              </div>
+            ))}
+          </div>
 
           {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
           {isNative ? (
-            <button
-              onClick={handleIAPPurchase}
-              disabled={purchasing}
-              className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow mb-3 disabled:opacity-60"
-            >
-              {purchasing ? <Loader2 size={14} className="animate-spin" /> : null}
-              {purchasing ? "Processing…" : "Subscribe Now — $30/month"}
-            </button>
+            <>
+              <button
+                onClick={handleIAPPurchase}
+                disabled={purchasing}
+                className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow mb-2 disabled:opacity-60"
+              >
+                {purchasing ? <Loader2 size={14} className="animate-spin" /> : null}
+                {purchasing ? "Processing…" : "Subscribe Now — $30/month"}
+              </button>
+              <p className="text-[11px] text-text-dim text-center mb-3">
+                7-day free trial included · Cancel anytime in Apple ID settings
+              </p>
+            </>
           ) : (
             <button
               onClick={handleWebCheckout}
