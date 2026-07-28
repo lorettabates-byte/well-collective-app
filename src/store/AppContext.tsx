@@ -1896,28 +1896,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!API_URL) return;
 
+    // Local watermark for this effect's lifetime. Starts undefined so the
+    // first call fetches all threads; after that, only threads with new
+    // activity since the last successful sync are returned.
+    let since: string | undefined = undefined;
+
     const syncForum = () => {
+      const threadsUrl = since
+        ? `${API_URL}/api/forum/threads?since=${encodeURIComponent(since)}`
+        : `${API_URL}/api/forum/threads`;
+
       Promise.all([
         fetch(`${API_URL}/api/forum/categories`).then((res) => (res.ok ? res.json() : null)),
-        fetch(`${API_URL}/api/forum/threads`).then((res) => (res.ok ? res.json() : null)),
+        fetch(threadsUrl).then((res) => (res.ok ? res.json() : null)),
       ])
         .then(([categoriesData, threadsData]) => {
-          setState((prev) => {
-            const newThreads: ForumThread[] = threadsData?.threads ?? prev.threads;
+          const incoming: ForumThread[] = threadsData?.threads ?? [];
 
-            // Bell-notification reconciliation: turn newly-arrived posts/replies
-            // into AppNotification entries (the bell was otherwise only ever
-            // populated by weekly theme/daily inspiration — community activity
-            // never showed up there even though its push notification fired).
-            // `lastForumNotifiedAt` is a watermark, not a per-item dedupe set,
-            // so a device seeing this for the first time establishes a baseline
-            // instead of generating a notification for the entire forum history.
+          // Advance the watermark to the newest timestamp seen in this batch
+          // so the next poll only requests activity after this point.
+          for (const thread of incoming) {
+            if (thread.createdAt > (since ?? "")) since = thread.createdAt;
+            for (const message of thread.messages) {
+              if (message.createdAt > (since ?? "")) since = message.createdAt;
+            }
+          }
+
+          setState((prev) => {
+            // Merge: update threads that came back, append brand-new ones.
+            // When `since` was undefined (first load) incoming is all threads
+            // so this is equivalent to a full replace.
+            const updatedById = new Map(incoming.map((t) => [t.id, t]));
+            const merged = prev.threads.map((t) => updatedById.get(t.id) ?? t);
+            const existingIds = new Set(prev.threads.map((t) => t.id));
+            const brandNew = incoming.filter((t) => !existingIds.has(t.id));
+            const newThreads = [...brandNew, ...merged];
+
+            // Bell-notification reconciliation
             let next = { ...prev, categories: categoriesData?.categories ?? prev.categories, threads: newThreads };
             const baseline = prev.lastForumNotifiedAt;
             let newest = baseline ?? "";
             const newNotifications: AppNotification[] = [];
 
-            for (const thread of newThreads) {
+            for (const thread of incoming) {
               if (thread.createdAt > newest) newest = thread.createdAt;
               const isOwn = thread.authorId === prev.user.id;
               const postId = `n-thread-${thread.id}`;
@@ -1939,8 +1960,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 });
               }
 
-              // messages[0] is the thread's own opening post (already handled
-              // above as a "post" notification) — only replies after it count.
               for (const message of thread.messages.slice(1)) {
                 if (message.createdAt > newest) newest = message.createdAt;
                 const replyId = `n-msg-${message.id}`;
@@ -1965,10 +1984,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
 
             if (newNotifications.length > 0) {
-              next = {
-                ...next,
-                notifications: [...newNotifications, ...prev.notifications],
-              };
+              next = { ...next, notifications: [...newNotifications, ...prev.notifications] };
             }
             if (newest && newest !== baseline) {
               next = { ...next, lastForumNotifiedAt: newest };
@@ -1977,12 +1993,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         })
         .catch(() => {
-          // offline or backend unreachable — fall back to whatever local content exists
+          // offline or backend unreachable — keep existing content
         });
     };
 
     syncForum();
-    const interval = setInterval(syncForum, 20000);
+    const interval = setInterval(syncForum, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -2005,7 +2021,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     syncEvents();
-    const interval = setInterval(syncEvents, 20000);
+    const interval = setInterval(syncEvents, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -2075,7 +2091,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     syncNotes();
-    const interval = setInterval(syncNotes, 20000);
+    const interval = setInterval(syncNotes, 60000);
     return () => clearInterval(interval);
   }, []);
 
