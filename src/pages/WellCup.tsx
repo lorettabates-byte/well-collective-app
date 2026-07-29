@@ -116,6 +116,8 @@ const POINTS_GUIDE = [
   { emoji: "⭐", label: "Well Activity", pts: 15 },
   { emoji: "📅", label: "Attend an event", pts: 25 },
   { emoji: "🤝", label: "Add a tribe member", pts: 5 },
+  { emoji: "📣", label: "Send a Tribe cheer", pts: 5 },
+  { emoji: "💌", label: "Send a Tribe card", pts: 10 },
   { emoji: "⚡", label: "Complete a Tribe challenge with a friend", pts: 25 },
   { emoji: "🎯", label: "Accept a daily challenge", pts: 10 },
   { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
