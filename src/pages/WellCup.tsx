@@ -100,6 +100,36 @@ function Countdown({ resetAt }: { resetAt: string }) {
 }
 
 
+const ACTIVITY_META: Record<string, { emoji: string; label: string }> = {
+  app_open:                 { emoji: "📱", label: "Opened the app" },
+  forum_post:               { emoji: "✍️", label: "Posted in community" },
+  forum_comment:            { emoji: "💬", label: "Commented in community" },
+  class_watch:              { emoji: "🎥", label: "Completed a class" },
+  cardio:                   { emoji: "🏃", label: "Completed cardio" },
+  song_play:                { emoji: "🎵", label: "Listened to music" },
+  blog_open:                { emoji: "📖", label: "Read the blog" },
+  meal_log:                 { emoji: "🥗", label: "Logged a meal" },
+  sleep_log:                { emoji: "😴", label: "Logged sleep" },
+  breathwork:               { emoji: "🌬️", label: "Breathwork" },
+  breathwork_extended:      { emoji: "🌬️", label: "Breathwork (extended)" },
+  breathwork_calm_kit:      { emoji: "🌬️", label: "Calm kit" },
+  stretching:               { emoji: "🧘", label: "Stretching" },
+  resistance_training:      { emoji: "💪", label: "Resistance training" },
+  well_activity:            { emoji: "⭐", label: "Well Activity" },
+  event_attend:             { emoji: "📅", label: "Attended an event" },
+  tribe_add:                { emoji: "🤝", label: "Added a tribe member" },
+  tribe_cheer:              { emoji: "📣", label: "Sent a Tribe cheer" },
+  tribe_card:               { emoji: "💌", label: "Sent a Tribe card" },
+  tribe_challenge_complete: { emoji: "⚡", label: "Tribe challenge complete" },
+  daily_challenge_accept:   { emoji: "🎯", label: "Accepted a daily challenge" },
+  well_escape:              { emoji: "🌟", label: "Attended a WELL Escape" },
+  login_streak_bonus:       { emoji: "🔥", label: "Login streak bonus" },
+  steps:                    { emoji: "👣", label: "Step count" },
+  tutorial_complete:        { emoji: "🎓", label: "Completed tutorial" },
+  notifications_enabled:    { emoji: "🔔", label: "Enabled notifications" },
+  add_to_homescreen:        { emoji: "📲", label: "Added to home screen" },
+};
+
 const POINTS_GUIDE = [
   { emoji: "📱", label: "Open the app", pts: 5 },
   { emoji: "✍️", label: "Post in community", pts: 10 },
@@ -123,10 +153,12 @@ const POINTS_GUIDE = [
   { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
 ];
 
+interface TodayActivity { type: string; points: number; count: number; }
+
 export default function WellCup() {
   useSectionTracking("well-cup");
   const navigate = useNavigate();
-  const { memberBadges } = useApp();
+  const { memberBadges, user } = useApp();
   const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
   const [resetAt, setResetAt] = useState("");
   const [yesterday, setYesterday] = useState<WinnerInfo | null>(null);
@@ -137,6 +169,9 @@ export default function WellCup() {
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [guideExpanded, setGuideExpanded] = useState(false);
+  const [todayActivities, setTodayActivities] = useState<TodayActivity[]>([]);
+  const [todayTotal, setTodayTotal] = useState(0);
+  const [todayExpanded, setTodayExpanded] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -153,6 +188,18 @@ export default function WellCup() {
       if (yr?.yearResetAt) setYearResetAt(yr.yearResetAt);
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(user.email)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        setTodayActivities(data.activities ?? []);
+        setTodayTotal(data.totalPoints ?? 0);
+      })
+      .catch(() => {});
+  }, [user.email]);
 
   const expandToAll = async () => {
     setLoadingAll(true);
@@ -317,6 +364,52 @@ export default function WellCup() {
             </div>
           )}
         </div>
+        {/* Today's points breakdown */}
+        <div className="glass-card rounded-card p-4">
+          <button
+            onClick={() => setTodayExpanded((v) => !v)}
+            className="w-full flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Trophy size={14} className="text-yellow-400 shrink-0" />
+              <span className="text-sm font-bold text-text">My points today</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
+              {todayExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+            </div>
+          </button>
+          {todayExpanded && (
+            <div className="mt-3 pt-3 border-t border-border">
+              {todayActivities.length === 0 ? (
+                <p className="text-xs text-text-dim text-center py-1">No points earned yet today — start logging!</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {todayActivities
+                    .sort((a, b) => b.points - a.points)
+                    .map((act) => {
+                      const meta = ACTIVITY_META[act.type];
+                      return (
+                        <div key={act.type} className="flex items-center gap-2">
+                          <span className="text-base w-6 text-center shrink-0">{meta?.emoji ?? "⚡"}</span>
+                          <span className="text-xs text-text-muted flex-1">
+                            {meta?.label ?? act.type.replace(/_/g, " ")}
+                            {act.count > 1 && <span className="text-text-dim"> ×{act.count}</span>}
+                          </span>
+                          <span className="text-xs font-bold text-brand-light shrink-0">+{act.points}</span>
+                        </div>
+                      );
+                    })}
+                  <div className="flex items-center justify-between pt-2 mt-1 border-t border-border">
+                    <span className="text-xs font-bold text-text">Total</span>
+                    <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Points guide */}
         <div className="glass-card rounded-card p-4">
           <button
