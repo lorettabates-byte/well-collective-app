@@ -1,5 +1,5 @@
 import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, Info, MessageCircle, Music, Phone, Play, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
-import { Browser } from "@capacitor/browser";
+
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
@@ -68,6 +68,7 @@ export default function Home() {
   const [showWalkthroughPrompt, setShowWalkthroughPrompt] = useState(
     () => !localStorage.getItem("well-walkthrough-seen-v1")
   );
+  const [showWalkthroughVideo, setShowWalkthroughVideo] = useState(false);
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
   const [showWinShare, setShowWinShare] = useState(false);
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
@@ -246,8 +247,38 @@ export default function Home() {
       .catch(() => {});
   }, [user.email]);
 
+  const WALKTHROUGH_URL = "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a";
+
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
+
+      {/* Full-screen in-app walkthrough video */}
+      {showWalkthroughVideo && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setShowWalkthroughVideo(false)}
+        >
+          <button
+            onClick={() => setShowWalkthroughVideo(false)}
+            className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-white text-lg leading-none"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <div
+            className="h-full"
+            style={{ aspectRatio: "9/16", maxWidth: "100%" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              src={WALKTHROUGH_URL}
+              className="w-full h-full border-0"
+              allow="autoplay; fullscreen"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <img src={LOGO_URL} alt="WELL Collective" className="h-24" />
         <div className="flex items-center gap-3">
@@ -371,7 +402,7 @@ export default function Home() {
         <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3">
           <button
             onClick={() => {
-              Browser.open({ url: "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a" });
+              setShowWalkthroughVideo(true);
               localStorage.setItem("well-walkthrough-seen-v1", "1");
               setShowWalkthroughPrompt(false);
             }}

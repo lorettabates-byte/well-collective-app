@@ -13,10 +13,10 @@ import {
   Watch,
 } from "lucide-react";
 import { useState } from "react";
-import { Browser } from "@capacitor/browser";
 import TopBar from "../components/layout/TopBar";
 
 const WALKTHROUGH_URL = "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a";
+const WALKTHROUGH_THUMBNAIL = "https://lorettabates.com/wp-content/uploads/2026/07/IMG_2542.jpeg";
 
 interface FAQItem {
   q: string;
@@ -210,20 +210,57 @@ function FAQEntry({ item }: { item: FAQItem }) {
 }
 
 export default function HelpFAQ() {
+  const [showVideo, setShowVideo] = useState(false);
+
   return (
     <div className="min-h-screen bg-surface pb-24">
       <TopBar title="Help & FAQ" subtitle="Common questions answered" showBack />
       <div className="px-4 pt-4 space-y-4">
 
+        {/* Full-screen in-app video overlay */}
+        {showVideo && (
+          <div
+            className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+            onClick={() => setShowVideo(false)}
+          >
+            <button
+              onClick={() => setShowVideo(false)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 border border-white/40 flex items-center justify-center text-white text-lg leading-none"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            {/* 9:16 container — video fills height, centered horizontally */}
+            <div
+              className="h-full"
+              style={{ aspectRatio: "9/16", maxWidth: "100%" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <iframe
+                src={WALKTHROUGH_URL}
+                className="w-full h-full border-0"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
+
         {/* Walkthrough video card */}
         <button
-          onClick={() => Browser.open({ url: WALKTHROUGH_URL })}
+          onClick={() => setShowVideo(true)}
           className="w-full glass-card rounded-card overflow-hidden text-left"
         >
-          <div className="relative bg-gradient-to-br from-[#01519d] via-[#0191ce] to-[#84d8fd] flex items-center justify-center"
+          <div className="relative flex items-center justify-center overflow-hidden bg-black"
             style={{ height: 140 }}
           >
-            <div className="absolute inset-0 bg-black/20" />
+            <img
+              src={WALKTHROUGH_THUMBNAIL}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <div className="absolute inset-0 bg-black/40" />
             <div className="relative flex flex-col items-center gap-2">
               <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/60 flex items-center justify-center backdrop-blur-sm">
                 <Play size={24} className="text-white ml-1" fill="white" />
