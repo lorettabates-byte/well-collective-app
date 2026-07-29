@@ -6,13 +6,17 @@ import {
   Clock,
   Dumbbell,
   KeyRound,
+  Play,
   ScanLine,
   Trophy,
   Volume2,
   Watch,
 } from "lucide-react";
 import { useState } from "react";
+import { Browser } from "@capacitor/browser";
 import TopBar from "../components/layout/TopBar";
+
+const WALKTHROUGH_URL = "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a";
 
 interface FAQItem {
   q: string;
@@ -210,6 +214,29 @@ export default function HelpFAQ() {
     <div className="min-h-screen bg-surface pb-24">
       <TopBar title="Help & FAQ" subtitle="Common questions answered" showBack />
       <div className="px-4 pt-4 space-y-4">
+
+        {/* Walkthrough video card */}
+        <button
+          onClick={() => Browser.open({ url: WALKTHROUGH_URL })}
+          className="w-full glass-card rounded-card overflow-hidden text-left"
+        >
+          <div className="relative bg-gradient-to-br from-[#01519d] via-[#0191ce] to-[#84d8fd] flex items-center justify-center"
+            style={{ height: 140 }}
+          >
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="relative flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/60 flex items-center justify-center backdrop-blur-sm">
+                <Play size={24} className="text-white ml-1" fill="white" />
+              </div>
+              <span className="text-white text-xs font-semibold tracking-wide opacity-90">Tap to watch</span>
+            </div>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-sm font-bold text-text">App Walkthrough</p>
+            <p className="text-xs text-text-muted mt-0.5">See everything WELL Collective can do — the full tour with Loretta</p>
+          </div>
+        </button>
+
         {FAQ_SECTIONS.map((section) => (
           <div key={section.title} className="glass-card rounded-card px-4 py-2">
             <div className="flex items-center gap-2 py-3 border-b border-border mb-1">

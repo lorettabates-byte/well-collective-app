@@ -1,4 +1,5 @@
-import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, Info, MessageCircle, Music, Phone, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, Info, MessageCircle, Music, Phone, Play, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Browser } from "@capacitor/browser";
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useState } from "react";
@@ -64,6 +65,9 @@ export default function Home() {
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [showWalkthroughPrompt, setShowWalkthroughPrompt] = useState(
+    () => !localStorage.getItem("well-walkthrough-seen-v1")
+  );
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
   const [showWinShare, setShowWinShare] = useState(false);
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
@@ -361,6 +365,38 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>
         <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
       </div>
+
+      {/* One-time walkthrough video prompt */}
+      {showWalkthroughPrompt && (
+        <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3">
+          <button
+            onClick={() => {
+              Browser.open({ url: "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a" });
+              localStorage.setItem("well-walkthrough-seen-v1", "1");
+              setShowWalkthroughPrompt(false);
+            }}
+            className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          >
+            <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0 shadow-glow">
+              <Play size={16} className="text-white ml-0.5" fill="white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-text">New here? Watch the walkthrough</p>
+              <p className="text-xs text-text-muted">Loretta walks you through everything in the app</p>
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              localStorage.setItem("well-walkthrough-seen-v1", "1");
+              setShowWalkthroughPrompt(false);
+            }}
+            className="shrink-0 text-text-dim p-1"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Combined WELL Check home widget */}
       {(() => {
