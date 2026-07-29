@@ -1,5 +1,5 @@
 import { Info, Pause, Play, RotateCcw, Timer, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getExerciseDemoVideo } from "../data/exerciseDemoVideos";
 
 interface ExerciseInfoModalProps {
@@ -120,6 +120,10 @@ function ExerciseTimer({ meta }: { meta: string }) {
 export default function ExerciseInfoModal({ name, meta, description, onClose }: ExerciseInfoModalProps) {
   const [videoError, setVideoError] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [playing, setPlaying] = useState(true);
+  const [showControls, setShowControls] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoVideo = getExerciseDemoVideo(name);
   const videoUrl = demoVideo ? `/exercise-videos/${demoVideo.file}` : null;
 
@@ -131,6 +135,23 @@ export default function ExerciseInfoModal({ name, meta, description, onClose }: 
     }
     setShowVideo(true);
   };
+
+  const revealControls = () => {
+    setShowControls(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setShowControls(false), 2500);
+  };
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) { vid.play(); setPlaying(true); }
+    else { vid.pause(); setPlaying(false); }
+    revealControls();
+  };
+
+  useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current); }, []);
 
   return (
     <div
@@ -157,14 +178,29 @@ export default function ExerciseInfoModal({ name, meta, description, onClose }: 
 
           {/* Video section */}
           {showVideo && videoUrl ? (
-            <div className="rounded-card overflow-hidden bg-black">
+            <div
+              className="relative rounded-card overflow-hidden bg-black cursor-pointer"
+              onClick={togglePlay}
+            >
               <video
+                ref={videoRef}
                 src={videoUrl}
-                controls
                 autoPlay
+                loop
                 playsInline
                 className="w-full max-h-52 object-cover"
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
               />
+              {/* Tap-to-reveal play/pause overlay */}
+              <div
+                className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+                style={{ opacity: showControls || !playing ? 1 : 0 }}
+              >
+                <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                  {playing ? <Pause size={20} className="text-white" /> : <Play size={20} className="text-white ml-0.5" />}
+                </div>
+              </div>
             </div>
           ) : (
             <button
