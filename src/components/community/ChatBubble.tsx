@@ -1,4 +1,4 @@
-import { Heart, Edit2, Check, X, CornerUpLeft } from "lucide-react";
+import { Heart, Edit2, Check, X, CornerUpLeft, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { resolveFeaturedBadge } from "../../data/badges";
@@ -8,6 +8,8 @@ import { formatTime } from "../../utils/format";
 import Avatar from "../ui/Avatar";
 import ImageLightbox from "../ui/ImageLightbox";
 import LinkifiedText from "../ui/LinkifiedText";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 interface ChatBubbleProps {
   message: ThreadMessage;
@@ -24,6 +26,27 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [reported, setReported] = useState(false);
+  const [showReportConfirm, setShowReportConfirm] = useState(false);
+
+  const handleReport = async () => {
+    setShowReportConfirm(false);
+    if (!API_URL || !user.email) return;
+    try {
+      await fetch(`${API_URL}/api/forum/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reporterEmail: user.email,
+          contentType: "message",
+          contentId: message.id,
+          threadId,
+          reason: "user_report",
+        }),
+      });
+    } catch { /* fire and forget */ }
+    setReported(true);
+  };
   const hasLiked = message.likes.includes(user.id);
   const liveAuthor = memberBadges[message.authorId];
   const badgeId = resolveFeaturedBadge(liveAuthor ?? {});
@@ -36,6 +59,20 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
 
   return (
     <div className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : ""} animate-fade-in-up`}>
+      {/* Report confirmation modal */}
+      {showReportConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6" onClick={() => setShowReportConfirm(false)}>
+          <div className="bg-surface rounded-card p-5 w-full max-w-xs text-center" onClick={e => e.stopPropagation()}>
+            <Flag size={20} className="text-red-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-text mb-1">Report this message?</p>
+            <p className="text-xs text-text-muted mb-4">We'll review it and take action if it violates our community guidelines.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowReportConfirm(false)} className="flex-1 text-sm text-text-muted border border-border rounded-pill py-2">Cancel</button>
+              <button onClick={handleReport} className="flex-1 text-sm font-semibold text-white bg-red-500 rounded-pill py-2">Report</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="w-7 shrink-0">
         {showAvatar &&
           (isOwn ? (
@@ -144,6 +181,16 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
                 <Heart size={12} className={hasLiked ? "fill-brand-light text-brand-light" : ""} />
                 {message.likes.length > 0 && message.likes.length}
               </button>
+              {!isOwn && (
+                <button
+                  onClick={() => !reported && setShowReportConfirm(true)}
+                  className={`text-text-dim transition-colors p-0.5 ${reported ? "opacity-40 cursor-default" : "hover:text-red-400"}`}
+                  aria-label={reported ? "Reported" : "Report message"}
+                  title={reported ? "Reported" : "Report"}
+                >
+                  <Flag size={11} className={reported ? "fill-text-dim" : ""} />
+                </button>
+              )}
             </div>
           </>
         )}

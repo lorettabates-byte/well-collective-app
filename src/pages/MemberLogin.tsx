@@ -139,14 +139,22 @@ function JoinOnWeb({ onSwitchToResume }: { onSwitchToResume: () => void }) {
   );
 }
 
+const TERMS_URL = "https://lorettabates.com/terms-of-use/";
+const PRIVACY_URL = "https://lorettabates.com/privacy-policy/";
+
 function StartTrialNative({ onSuccess, onSwitchToResume }: { onSuccess: () => void; onSwitchToResume: () => void }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [purchasing, setPurchasing] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleStartTrial = async () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Please enter a valid email address.");
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Use and Privacy Policy to continue.");
       return;
     }
     setError("");
@@ -201,17 +209,34 @@ function StartTrialNative({ onSuccess, onSwitchToResume }: { onSuccess: () => vo
           className="w-full bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
         />
       </div>
+      {/* EULA acceptance — required by Apple guideline 1.2 */}
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={agreedToTerms}
+          onChange={(e) => setAgreedToTerms(e.target.checked)}
+          className="mt-0.5 shrink-0 accent-brand-light"
+        />
+        <span className="text-[11px] text-text-muted leading-relaxed">
+          I agree to the{" "}
+          <button type="button" onClick={() => Browser.open({ url: TERMS_URL })} className="underline text-brand-light">Terms of Use</button>
+          {" "}and{" "}
+          <button type="button" onClick={() => Browser.open({ url: PRIVACY_URL })} className="underline text-brand-light">Privacy Policy</button>
+          . I am 13 years of age or older.
+        </span>
+      </label>
+
       <button
         type="button"
         onClick={handleStartTrial}
-        disabled={purchasing || !email}
+        disabled={purchasing || !email || !agreedToTerms}
         className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow flex items-center justify-center gap-2 disabled:opacity-50"
       >
         {purchasing ? <Loader2 size={14} className="animate-spin" /> : null}
         {purchasing ? "Processing…" : "Start 7-Day Free Trial"}
       </button>
       <p className="text-[11px] text-text-dim text-center">
-        Then $30/month. Cancel anytime in your Apple ID settings.
+        Then $30/month · Auto-renews monthly · Cancel anytime in Apple ID settings
       </p>
       <button
         type="button"

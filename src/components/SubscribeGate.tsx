@@ -4,6 +4,10 @@ import { useState } from "react";
 import { purchaseMembership, restoreIAPPurchases } from "../utils/iap";
 import { openMemberLink } from "../utils/ssoLink";
 import { LOGO_URL } from "./layout/MobileShell";
+import { Browser } from "@capacitor/browser";
+
+const TERMS_URL = "https://lorettabates.com/terms-of-use/";
+const PRIVACY_URL = "https://lorettabates.com/privacy-policy/";
 
 const FEATURES = [
   { Icon: Brain, name: "Guided Calm Toolkit", desc: "Grounding, breathing & mindset sessions" },
@@ -161,6 +165,13 @@ export default function SubscribeGate({
               {restoring ? "Restoring…" : "Restore Purchases"}
             </button>
           )}
+
+          <p className="text-[10px] text-text-dim text-center mt-2 leading-relaxed">
+            Subscription auto-renews monthly until cancelled in Apple ID settings.{" "}
+            <button onClick={() => Browser.open({ url: TERMS_URL })} className="underline">Terms of Use</button>
+            {" "}·{" "}
+            <button onClick={() => Browser.open({ url: PRIVACY_URL })} className="underline">Privacy Policy</button>
+          </p>
         </div>
 
         <p className="text-xs text-text-muted text-center">
