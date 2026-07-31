@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, Info, MessageCircle, Music, Phone, Play, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, GripVertical, Info, MessageCircle, Music, Play, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
@@ -59,6 +59,19 @@ function getQuickLinks(goalPlan?: string) {
   return [...priorityLinks, ...rest];
 }
 
+type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"];
+// Section display names — used by Profile layout picker and future drag-handle labels
+export const SECTION_LABELS: Record<SectionId, string> = {
+  "daily-plan": "Daily Plan",
+  "well-cup": "WELL Cup",
+  "weekly-theme": "Weekly Theme",
+  "inspiration": "Today's Inspiration",
+  "events": "Upcoming Events",
+  "tribe": "Tribe Activity",
+  "community": "From the Community",
+};
+
 const GOAL_TAGLINES: Record<string, string> = {
   stress:    "Your calm toolkit is ready.",
   energy:    "Let's keep your energy high today.",
@@ -103,6 +116,26 @@ export default function Home() {
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
   const [headerStreak, setHeaderStreak] = useState<number | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
+
+  const [homeLayout, setHomeLayout] = useState(() => localStorage.getItem("well-home-layout") ?? "classic");
+  useEffect(() => {
+    const handler = () => setHomeLayout(localStorage.getItem("well-home-layout") ?? "classic");
+    window.addEventListener("well-layout-changed", handler);
+    return () => window.removeEventListener("well-layout-changed", handler);
+  }, []);
+
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(() => {
+    try {
+      const saved = localStorage.getItem("well-section-order-v1");
+      if (saved) {
+        const parsed = JSON.parse(saved) as SectionId[];
+        if (Array.isArray(parsed) && parsed.length === DEFAULT_SECTION_ORDER.length) return parsed;
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_SECTION_ORDER;
+  });
+  const [editMode, setEditMode] = useState(false);
+  const [dragging, setDragging] = useState<SectionId | null>(null);
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -610,95 +643,210 @@ export default function Home() {
         );
       })()}
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {getQuickLinks(user.goalPlan).map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to} className="flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
-              <Icon size={20} className="text-white" />
-            </div>
-            <span className="text-[11px] text-text-muted text-center leading-tight">{label}</span>
-          </Link>
-        ))}
-      </div>
-
-      <a
-        href="sms:+17863093356"
-        className="flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow mb-6"
-      >
-        <Phone size={16} />
-        Contact Loretta
-      </a>
-
-      <div className="mb-6">
-        <SectionHeader title="WELL Cup" to="/well-cup" />
-        <WellCupLeaderboard />
-      </div>
-
-      {user.goalsCompleted && user.goalPlan && (() => {
-        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-        const plan = getDailyPlan(user.goalPlan, dayOfYear);
+      {homeLayout === "focus" ? (() => {
+        const links = getQuickLinks(user.goalPlan);
+        const savedBig = (() => {
+          try {
+            const s = localStorage.getItem("well-focus-shortcuts-v1");
+            if (s) return JSON.parse(s) as string[];
+          } catch { /* ignore */ }
+          return null;
+        })();
+        const bigIds = savedBig ?? links.slice(0, 4).map((l) => l.id);
+        const bigLinks = links.filter((l) => bigIds.includes(l.id));
+        const smallLinks = links.filter((l) => !bigIds.includes(l.id));
         return (
-          <Link to="/wellness?tab=activities" className="block glass-card rounded-card p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={14} className="text-brand-light shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-light">Your Daily Plan</span>
-              <ChevronRight size={13} className="ml-auto text-text-dim" />
-            </div>
-            <h3 className="text-base font-extrabold text-text leading-tight mb-0.5">{plan.title}</h3>
-            <p className="text-xs text-brand-light font-semibold mb-2">{plan.focus}</p>
-            <div className="flex flex-col gap-1.5 mb-3">
-              {plan.tasks.map((t, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <CheckCircle2 size={12} className="text-brand-light shrink-0 mt-0.5" />
-                  <p className="text-xs text-text-muted leading-tight">{t}</p>
-                </div>
+          <div className="mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {bigLinks.map(({ to, label, icon: Icon }) => (
+                <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-6">
+                  <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                    <Icon size={28} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-text">{label}</span>
+                </Link>
               ))}
             </div>
-            <p className="text-[11px] text-text-dim italic leading-relaxed">"{plan.affirmation}"</p>
-          </Link>
-        );
-      })()}
-
-      <div className="mb-6">
-        <WeeklyThemeBar theme={currentWeeklyTheme} />
-      </div>
-
-      {todaysInspiration && (
-        <div className="mb-6">
-          <SectionHeader title="Today's Inspiration" to="/inspirations" />
-          <Link to="/inspirations" className="block">
-            <InspirationCard inspiration={todaysInspiration} compact />
-          </Link>
-        </div>
-      )}
-
-      {upcomingEvents.length > 0 && (
-        <div className="mb-6">
-          <SectionHeader title="Upcoming Events" to="/events" />
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
-            {upcomingEvents.map((event) => (
-              <Link
-                key={event.id}
-                to="/events"
-                className={`shrink-0 rounded-card ${event.id === featuredEventId ? "ring-2 ring-yellow-400/70 shadow-[0_0_14px_rgba(250,204,21,0.22)]" : ""}`}
-              >
-                <EventCard event={event} compact />
-              </Link>
-            ))}
+            <div className="grid grid-cols-4 gap-2">
+              {smallLinks.map(({ to, label, icon: Icon }) => (
+                <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
+                  <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-80">
+                    <Icon size={18} className="text-white" />
+                  </div>
+                  <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      <TribeActivityStrip />
-
-      <div className="mb-6">
-        <SectionHeader title="From the Community" to="/community" />
-        <div className="flex flex-col gap-3">
-          {latestThreads.map((thread) => (
-            <ThreadPreviewCard key={thread.id} thread={thread} />
+        );
+      })() : (
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {getQuickLinks(user.goalPlan).map(({ to, label, icon: Icon }) => (
+            <Link key={to} to={to} className="flex flex-col items-center gap-2">
+              <div className="w-16 h-16 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                <Icon size={26} className="text-white" />
+              </div>
+              <span className="text-[11px] text-text-muted text-center leading-tight">{label}</span>
+            </Link>
           ))}
         </div>
+      )}
+
+      <div className="flex items-center justify-end mb-4">
+        <button
+          onClick={() => setEditMode((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-3 py-1.5"
+        >
+          <GripVertical size={12} />
+          {editMode ? "Done" : "Arrange"}
+        </button>
       </div>
+
+      {sectionOrder.map((sectionId) => {
+        const handleDragStart = (e: React.DragEvent) => {
+          setDragging(sectionId);
+          e.dataTransfer.effectAllowed = "move";
+        };
+        const handleDragOver = (e: React.DragEvent) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        };
+        const handleDrop = (e: React.DragEvent) => {
+          e.preventDefault();
+          if (!dragging || dragging === sectionId) { setDragging(null); return; }
+          const next = [...sectionOrder];
+          const fromIdx = next.indexOf(dragging);
+          const toIdx = next.indexOf(sectionId);
+          next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, dragging);
+          setSectionOrder(next);
+          localStorage.setItem("well-section-order-v1", JSON.stringify(next));
+          setDragging(null);
+        };
+        const handleDragEnd = () => setDragging(null);
+
+        const isDraggingThis = dragging === sectionId;
+
+        const wrapSection = (content: React.ReactNode) => (
+          <div
+            key={sectionId}
+            draggable={editMode}
+            onDragStart={editMode ? handleDragStart : undefined}
+            onDragOver={editMode ? handleDragOver : undefined}
+            onDrop={editMode ? handleDrop : undefined}
+            onDragEnd={editMode ? handleDragEnd : undefined}
+            className={`relative ${isDraggingThis ? "opacity-40" : ""}`}
+          >
+            {editMode && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center pr-2 text-text-dim cursor-grab active:cursor-grabbing">
+                <GripVertical size={16} />
+              </div>
+            )}
+            <div className={editMode ? "pl-6" : ""}>{content}</div>
+          </div>
+        );
+
+        if (sectionId === "well-cup") {
+          return wrapSection(
+            <div className="mb-6">
+              <SectionHeader title="WELL Cup" to="/well-cup" />
+              <WellCupLeaderboard />
+            </div>
+          );
+        }
+
+        if (sectionId === "daily-plan") {
+          if (!user.goalsCompleted || !user.goalPlan) return null;
+          const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+          const plan = getDailyPlan(user.goalPlan, dayOfYear);
+          return wrapSection(
+            <Link to="/wellness?tab=activities" className="block glass-card rounded-card p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-brand-light shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-light">Your Daily Plan</span>
+                <ChevronRight size={13} className="ml-auto text-text-dim" />
+              </div>
+              <h3 className="text-base font-extrabold text-text leading-tight mb-0.5">{plan.title}</h3>
+              <p className="text-xs text-brand-light font-semibold mb-2">{plan.focus}</p>
+              <div className="flex flex-col gap-1.5 mb-3">
+                {plan.tasks.map((t, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 size={12} className="text-brand-light shrink-0 mt-0.5" />
+                    <p className="text-xs text-text-muted leading-tight">{t}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-text-dim italic leading-relaxed">"{plan.affirmation}"</p>
+            </Link>
+          );
+        }
+
+        if (sectionId === "weekly-theme") {
+          return wrapSection(
+            <div className="mb-6">
+              <WeeklyThemeBar theme={currentWeeklyTheme} />
+            </div>
+          );
+        }
+
+        if (sectionId === "inspiration") {
+          if (!todaysInspiration) return null;
+          return wrapSection(
+            <div className="mb-6">
+              <SectionHeader title="Today's Inspiration" to="/inspirations" />
+              <Link to="/inspirations" className="block">
+                <InspirationCard inspiration={todaysInspiration} compact />
+              </Link>
+            </div>
+          );
+        }
+
+        if (sectionId === "events") {
+          if (!upcomingEvents.length) return null;
+          return wrapSection(
+            <div className="mb-6">
+              <SectionHeader title="Upcoming Events" to="/events" />
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
+                {upcomingEvents.map((event) => (
+                  event.id === featuredEventId ? (
+                    <div key={event.id} className="shrink-0 relative">
+                      <div className="absolute -top-2 left-3 z-10 flex items-center gap-1 gradient-brand text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-glow pointer-events-none">
+                        <Sparkles size={8} /> Featured
+                      </div>
+                      <Link to="/events" className="block rounded-card ring-1 ring-brand-light/50 shadow-glow">
+                        <EventCard event={event} compact />
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link key={event.id} to="/events" className="shrink-0 rounded-card">
+                      <EventCard event={event} compact />
+                    </Link>
+                  )
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        if (sectionId === "tribe") {
+          return wrapSection(<TribeActivityStrip key={sectionId} />);
+        }
+
+        if (sectionId === "community") {
+          return wrapSection(
+            <div className="mb-6">
+              <SectionHeader title="From the Community" to="/community" />
+              <div className="flex flex-col gap-3">
+                {latestThreads.map((thread) => (
+                  <ThreadPreviewCard key={thread.id} thread={thread} />
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        return null;
+      })}
 
       {showBirthday && <BirthdayModal name={user.name} email={user.email} onClose={() => setShowBirthday(false)} />}
       {!showBirthday && showTour && <FeatureTourModal userEmail={user.email} onClose={handleCloseTour} />}
