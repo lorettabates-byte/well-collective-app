@@ -159,11 +159,13 @@ export default function Home() {
 
   // Touch-based drag refs (avoid re-renders during move)
   const touchDraggingId = useRef<SectionId | null>(null);
+  const touchLastOverId = useRef<SectionId | null>(null);
   const sectionOrderRef = useRef<HTMLDivElement>(null);
 
   const handleGripTouchStart = (e: React.TouchEvent, id: SectionId) => {
-    e.preventDefault(); // blocks text selection
+    e.preventDefault();
     touchDraggingId.current = id;
+    touchLastOverId.current = id;
     setDragging(id);
   };
 
@@ -175,7 +177,10 @@ export default function Home() {
     const sectionEl = el?.closest("[data-section-id]");
     if (!sectionEl) return;
     const overId = sectionEl.getAttribute("data-section-id") as SectionId | null;
-    if (!overId || overId === touchDraggingId.current) return;
+    // Only update when finger enters a NEW section — prevents 60fps re-renders
+    if (!overId || overId === touchLastOverId.current) return;
+    touchLastOverId.current = overId;
+    if (overId === touchDraggingId.current) return;
     setSectionOrder((prev) => {
       const next = [...prev];
       const fromIdx = next.indexOf(touchDraggingId.current!);
@@ -190,6 +195,7 @@ export default function Home() {
 
   const handleTouchEnd = () => {
     touchDraggingId.current = null;
+    touchLastOverId.current = null;
     setDragging(null);
   };
 
