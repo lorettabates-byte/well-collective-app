@@ -1,6 +1,7 @@
 import { Bookmark, Heart, Share2 } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { useApp } from "../../store/AppContext";
 import type { Inspiration, InspirationCadence } from "../../types";
 import { timeAgo } from "../../utils/format";
@@ -26,36 +27,43 @@ const CADENCE_BG: Record<InspirationCadence, string> = {
 interface InspirationCardProps {
   inspiration: Inspiration;
   compact?: boolean;
+  to?: string;
 }
 
-export default function InspirationCard({ inspiration, compact }: InspirationCardProps) {
+export default function InspirationCard({ inspiration, compact, to }: InspirationCardProps) {
   const { user, toggleInspirationLike, toggleInspirationSave } = useApp();
   const hasLiked = inspiration.likes.includes(user.id);
   const hasSaved = inspiration.savedBy.includes(user.id);
   const [showShareCard, setShowShareCard] = useState(false);
 
+  const cardBody = (
+    <>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
+          {CADENCE_LABEL[inspiration.cadence]}
+        </span>
+        <span className="text-[11px] text-text-dim">{timeAgo(inspiration.sentAt)}</span>
+      </div>
+      <h3 className="text-base font-bold text-text mb-1.5">{inspiration.title}</h3>
+      {inspiration.image && (
+        <img
+          src={inspiration.image}
+          alt=""
+          className="w-full rounded-card mb-3"
+          style={{ maxHeight: compact ? 140 : 220, objectFit: "cover" }}
+        />
+      )}
+      {!compact && <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap mb-3"><LinkifiedText text={inspiration.body} /></p>}
+      {compact && <p className="text-sm text-text-muted leading-relaxed line-clamp-2 mb-3">{inspiration.body}</p>}
+    </>
+  );
+
   return (
     <div className="gradient-brand p-[1px] rounded-card animate-fade-in-up">
       <div className={`${CADENCE_BG[inspiration.cadence]} rounded-card p-4`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-light">
-            {CADENCE_LABEL[inspiration.cadence]}
-          </span>
-          <span className="text-[11px] text-text-dim">{timeAgo(inspiration.sentAt)}</span>
-        </div>
-        <h3 className="text-base font-bold text-text mb-1.5">{inspiration.title}</h3>
-        {inspiration.image && (
-          <img
-            src={inspiration.image}
-            alt=""
-            className="w-full rounded-card mb-3"
-            style={{ maxHeight: compact ? 140 : 220, objectFit: "cover" }}
-          />
-        )}
-        {!compact && <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap mb-3"><LinkifiedText text={inspiration.body} /></p>}
-        {compact && <p className="text-sm text-text-muted leading-relaxed line-clamp-2 mb-3">{inspiration.body}</p>}
+        {to ? <Link to={to} className="block">{cardBody}</Link> : cardBody}
 
-        <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-4">
           <button
             onClick={() => toggleInspirationLike(inspiration.id)}
             className="flex items-center gap-1.5 text-xs font-medium text-text-muted"

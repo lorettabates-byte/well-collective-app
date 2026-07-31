@@ -1374,9 +1374,7 @@ export default function Home() {
           return wrapSection(
             <div className="mb-6">
               <SectionHeader title="Today's Inspiration" to="/inspirations" />
-              <Link to="/inspirations" className="block">
-                <InspirationCard inspiration={todaysInspiration} compact />
-              </Link>
+              <InspirationCard inspiration={todaysInspiration} compact to="/inspirations" />
             </div>
           );
         }
