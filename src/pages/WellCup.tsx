@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Info, Share2, Trophy } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, Flame, Info, Share2, Trophy, Zap } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,21 @@ interface WinnerInfo {
   avatar: string | null;
   email?: string;
   total_points: number;
+}
+
+interface SpotlightInfo {
+  name: string;
+  avatar: string | null;
+  email?: string;
+  stat: string;
+}
+
+interface MyStats {
+  bestDay: number;
+  activeDaysThisMonth: number;
+  currentStreak: number;
+  longestStreak: number;
+  categoriesThisWeek: number;
 }
 
 function WinnerBanner({
@@ -77,6 +92,47 @@ function WinnerBanner({
           periodLabel={periodLabel}
           onClose={() => setShowShare(false)}
         />
+      )}
+    </div>
+  );
+}
+
+function SpotlightBanner({
+  label,
+  description,
+  winner,
+  accent,
+  icon: Icon,
+  empty,
+}: {
+  label: string;
+  description: string;
+  winner: SpotlightInfo | null;
+  accent: string;
+  icon: React.ElementType;
+  empty: string;
+}) {
+  const navigate = useNavigate();
+  return (
+    <div className={`rounded-card px-4 py-3 border ${accent}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={12} className="text-text-dim shrink-0" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">{label}</p>
+      </div>
+      <p className="text-[10px] text-text-dim/70 mb-2 leading-snug">{description}</p>
+      {winner ? (
+        <button
+          onClick={() => winner.email ? navigate(`/member/${deriveMemberId(winner.email)}`) : undefined}
+          className="flex items-center gap-3 w-full text-left"
+        >
+          <Avatar src={winner.avatar ?? ""} alt={winner.name} size={36} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-text truncate">{winner.name}</p>
+            <p className="text-xs text-text-muted">{winner.stat}</p>
+          </div>
+        </button>
+      ) : (
+        <p className="text-xs text-text-dim italic">{empty}</p>
       )}
     </div>
   );
@@ -165,6 +221,9 @@ export default function WellCup() {
   const [monthly, setMonthly] = useState<WinnerInfo | null>(null);
   const [yearly, setYearly] = useState<WinnerInfo | null>(null);
   const [yearResetAt, setYearResetAt] = useState("");
+  const [mostConsistent, setMostConsistent] = useState<SpotlightInfo | null>(null);
+  const [mostRounded, setMostRounded] = useState<SpotlightInfo | null>(null);
+  const [myStats, setMyStats] = useState<MyStats | null>(null);
   const [view, setView] = useState<"top10" | "all">("top10");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -179,15 +238,33 @@ export default function WellCup() {
       fetchYesterdayWinner(),
       API_URL ? fetch(`${API_URL}/api/leaderboard/monthly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/yearly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-    ]).then(([lb, winner, mon, yr]) => {
+      API_URL ? fetch(`${API_URL}/api/leaderboard/most-consistent`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+      API_URL ? fetch(`${API_URL}/api/leaderboard/most-rounded`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+    ]).then(([lb, winner, mon, yr, consistent, rounded]) => {
       setAllEntries(lb.leaderboard);
       setResetAt(lb.resetAt);
       setYesterday(winner);
       setMonthly(mon?.leader ?? null);
       setYearly(yr?.leader ?? null);
       if (yr?.yearResetAt) setYearResetAt(yr.yearResetAt);
+      if (consistent?.leader) {
+        const l = consistent.leader;
+        setMostConsistent({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.active_days} active day${l.active_days !== 1 ? "s" : ""} this month` });
+      }
+      if (rounded?.leader) {
+        const l = rounded.leader;
+        setMostRounded({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.category_count} activity type${l.category_count !== 1 ? "s" : ""} this week` });
+      }
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/stats/me?email=${encodeURIComponent(user.email)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setMyStats(data); })
+      .catch(() => {});
+  }, [user.email]);
 
   useEffect(() => {
     if (!API_URL || !user.email) return;
@@ -277,6 +354,62 @@ export default function WellCup() {
               period="yearly"
               periodLabel={`${year} WELL Crown`}
             />
+          </div>
+        )}
+
+        {/* Spotlight awards — different dimensions, anyone can win */}
+        {!loading && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Spotlight Awards</p>
+            <div className="flex flex-col gap-3">
+              <SpotlightBanner
+                label="Most Consistent — This Month"
+                description="Who showed up the most days this month, regardless of total points."
+                winner={mostConsistent}
+                accent="border-teal-400/30 bg-teal-400/5"
+                icon={Flame}
+                empty="No activity logged yet this month"
+              />
+              <SpotlightBanner
+                label="Most Well-Rounded — This Week"
+                description="Who logged the most distinct activity types this week (workout, sleep, nutrition, breathwork, and more)."
+                winner={mostRounded}
+                accent="border-emerald-400/30 bg-emerald-400/5"
+                icon={Zap}
+                empty="No activity logged yet this week"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Personal achievements — your own stats, no comparison */}
+        {myStats && (
+          <div className="glass-card rounded-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Award size={14} className="text-brand-light shrink-0" />
+              <p className="text-sm font-bold text-text">My Achievements</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-surface-2 rounded-card px-3 py-2.5">
+                <p className="text-[10px] text-text-dim mb-0.5">Personal Best Day</p>
+                <p className="text-base font-extrabold text-text">{myStats.bestDay} <span className="text-xs font-normal text-text-dim">pts</span></p>
+              </div>
+              <div className="bg-surface-2 rounded-card px-3 py-2.5">
+                <p className="text-[10px] text-text-dim mb-0.5">Active Days This Month</p>
+                <p className="text-base font-extrabold text-text">{myStats.activeDaysThisMonth} <span className="text-xs font-normal text-text-dim">days</span></p>
+              </div>
+              <div className="bg-surface-2 rounded-card px-3 py-2.5">
+                <p className="text-[10px] text-text-dim mb-0.5">Current Login Streak</p>
+                <p className="text-base font-extrabold text-orange-300">{myStats.currentStreak} <span className="text-xs font-normal text-text-dim">days</span></p>
+              </div>
+              <div className="bg-surface-2 rounded-card px-3 py-2.5">
+                <p className="text-[10px] text-text-dim mb-0.5">Activity Types This Week</p>
+                <p className="text-base font-extrabold text-brand-light">{myStats.categoriesThisWeek} <span className="text-xs font-normal text-text-dim">/ 13</span></p>
+              </div>
+            </div>
+            {myStats.longestStreak > 0 && (
+              <p className="text-[10px] text-text-dim mt-2 text-center">Your longest streak ever: <span className="font-semibold text-text">{myStats.longestStreak} days</span></p>
+            )}
           </div>
         )}
 
