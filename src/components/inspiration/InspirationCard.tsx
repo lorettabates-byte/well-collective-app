@@ -55,7 +55,7 @@ export default function InspirationCard({ inspiration, compact }: InspirationCar
         {!compact && <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap mb-3"><LinkifiedText text={inspiration.body} /></p>}
         {compact && <p className="text-sm text-text-muted leading-relaxed line-clamp-2 mb-3">{inspiration.body}</p>}
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => toggleInspirationLike(inspiration.id)}
             className="flex items-center gap-1.5 text-xs font-medium text-text-muted"
