@@ -124,6 +124,15 @@ export default function Home() {
     return () => window.removeEventListener("well-layout-changed", handler);
   }, []);
 
+  const [showFocusPicker, setShowFocusPicker] = useState(false);
+  const [focusBigIds, setFocusBigIds] = useState<string[]>(() => {
+    try {
+      const s = localStorage.getItem("well-focus-shortcuts-v1");
+      if (s) return JSON.parse(s) as string[];
+    } catch { /* ignore */ }
+    return [];
+  });
+
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>(() => {
     try {
       const saved = localStorage.getItem("well-section-order-v1");
@@ -647,18 +656,81 @@ export default function Home() {
         const links = getQuickLinks(user.goalPlan);
 
         if (homeLayout === "focus") {
-          const savedBig = (() => {
-            try {
-              const s = localStorage.getItem("well-focus-shortcuts-v1");
-              if (s) return JSON.parse(s) as string[];
-            } catch { /* ignore */ }
-            return null;
-          })();
-          const bigIds = savedBig ?? links.slice(0, 4).map((l) => l.id);
-          const bigLinks = links.filter((l) => bigIds.includes(l.id));
-          const smallLinks = links.filter((l) => !bigIds.includes(l.id));
+          const effectiveBigIds = focusBigIds.length === 4 ? focusBigIds : links.slice(0, 4).map((l) => l.id);
+          const bigLinks = links.filter((l) => effectiveBigIds.includes(l.id));
+          const smallLinks = links.filter((l) => !effectiveBigIds.includes(l.id));
+
+          const toggleFocusSection = (id: string) => {
+            setFocusBigIds((prev) => {
+              const cur = prev.length === 4 ? prev : links.slice(0, 4).map((l) => l.id);
+              if (cur.includes(id)) return cur.filter((x) => x !== id);
+              if (cur.length < 4) return [...cur, id];
+              return cur;
+            });
+          };
+
+          const saveFocusPicker = () => {
+            const cur = focusBigIds.length > 0 ? focusBigIds : effectiveBigIds;
+            localStorage.setItem("well-focus-shortcuts-v1", JSON.stringify(cur));
+            setShowFocusPicker(false);
+          };
+
+          if (showFocusPicker) {
+            const pickerIds = focusBigIds.length > 0 ? focusBigIds : effectiveBigIds;
+            const remaining = 4 - pickerIds.length;
+            return (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-text">Choose your 4 featured sections</p>
+                  <button
+                    onClick={saveFocusPicker}
+                    disabled={pickerIds.length !== 4}
+                    className="text-xs font-semibold text-brand-light disabled:opacity-40"
+                  >
+                    {pickerIds.length === 4 ? "Done" : `${remaining} more to go`}
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {links.map(({ id, label, icon: Icon }) => {
+                    const selected = pickerIds.includes(id);
+                    const disabled = !selected && pickerIds.length >= 4;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => toggleFocusSection(id)}
+                        disabled={disabled}
+                        className={`flex flex-col items-center gap-1.5 transition-opacity ${disabled ? "opacity-30" : ""}`}
+                      >
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative shadow-glow ${selected ? "gradient-brand" : "bg-surface-2 border border-border"}`}>
+                          <Icon size={22} className={selected ? "text-white" : "text-text-dim"} />
+                          {selected && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-light border border-surface flex items-center justify-center">
+                              <CheckCircle2 size={10} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-[10px] text-center leading-tight ${selected ? "text-brand-light font-semibold" : "text-text-muted"}`}>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="mb-6">
+              <div className="flex items-center justify-end mb-2">
+                <button
+                  onClick={() => {
+                    if (focusBigIds.length === 0) setFocusBigIds(effectiveBigIds);
+                    setShowFocusPicker(true);
+                  }}
+                  className="text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-3 py-1.5"
+                >
+                  Choose your 4
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 {bigLinks.map(({ to, label, icon: Icon }) => (
                   <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-6">
