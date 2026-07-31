@@ -44,28 +44,87 @@ function MenuRow({
   );
 }
 
-const LAYOUTS: { id: string; label: string; description: string }[] = [
-  { id: "classic",   label: "Classic",     description: "Quick links + all your sections" },
-  { id: "focus",     label: "Focus",       description: "Your 4 chosen sections, featured large" },
-  { id: "flow",      label: "Flow",        description: "Guided morning · afternoon · evening routine" },
-  { id: "dashboard", label: "Dashboard",   description: "Stats, streak, and progress at a glance" },
-  { id: "inspire",   label: "Inspire",     description: "Inspiration and content front and center" },
-  { id: "together",  label: "Together",    description: "Community activity front and center" },
+type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community";
+
+const LAYOUTS: { id: string; label: string; description: string; sectionOrder: SectionId[] }[] = [
+  {
+    id: "classic",
+    label: "Classic",
+    description: "All sections in your default order",
+    sectionOrder: ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"],
+  },
+  {
+    id: "focus",
+    label: "Focus",
+    description: "Your 4 chosen sections featured large — tap to customize",
+    sectionOrder: ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"],
+  },
+  {
+    id: "community",
+    label: "Community",
+    description: "Tribe activity and community threads front and center",
+    sectionOrder: ["tribe", "community", "events", "weekly-theme", "inspiration", "daily-plan", "well-cup"],
+  },
+  {
+    id: "exercise",
+    label: "Exercise",
+    description: "WELL Cup, daily plan, and events for workout accountability",
+    sectionOrder: ["daily-plan", "well-cup", "events", "tribe", "inspiration", "weekly-theme", "community"],
+  },
+  {
+    id: "nutrition",
+    label: "Nutrition",
+    description: "Daily plan and inspiration to stay on track with nourishment",
+    sectionOrder: ["daily-plan", "inspiration", "well-cup", "weekly-theme", "events", "tribe", "community"],
+  },
+  {
+    id: "inspire",
+    label: "Inspire",
+    description: "Inspiration and weekly theme rise to the top — spark something new",
+    sectionOrder: ["inspiration", "weekly-theme", "daily-plan", "events", "tribe", "community", "well-cup"],
+  },
+  {
+    id: "flow",
+    label: "Flow",
+    description: "Guided morning · afternoon · evening — structured calm",
+    sectionOrder: ["daily-plan", "inspiration", "weekly-theme", "events", "tribe", "well-cup", "community"],
+  },
 ];
+
+// "dashboard" and "together" are legacy IDs — map them to their new equivalents
+const LAYOUT_ID_ALIASES: Record<string, string> = {
+  dashboard: "exercise",
+  together: "community",
+};
 
 const GOAL_RECOMMENDED_LAYOUT: Record<string, string> = {
   stress:    "flow",
-  energy:    "dashboard",
-  strength:  "dashboard",
-  weight:    "dashboard",
+  energy:    "exercise",
+  strength:  "exercise",
+  weight:    "nutrition",
   rut:       "inspire",
-  community: "together",
+  community: "community",
 };
 
 function LayoutPicker() {
   const { user } = useApp();
-  const [current, setCurrent] = useState(() => localStorage.getItem("well-home-layout") ?? "classic");
+  const [current, setCurrent] = useState(() => {
+    const saved = localStorage.getItem("well-home-layout") ?? "classic";
+    return LAYOUT_ID_ALIASES[saved] ?? saved;
+  });
   const recommended = user.goalPlan ? (GOAL_RECOMMENDED_LAYOUT[user.goalPlan] ?? null) : null;
+
+  const selectLayout = (id: string, sectionOrder: SectionId[]) => {
+    localStorage.setItem("well-home-layout", id);
+    // Auto-set section order to match the layout's content priority
+    // (Focus layout preserves whatever order the user already has)
+    if (id !== "focus") {
+      localStorage.setItem("well-section-order-v1", JSON.stringify(sectionOrder));
+      window.dispatchEvent(new Event("well-section-order-changed"));
+    }
+    window.dispatchEvent(new Event("well-layout-changed"));
+    setCurrent(id);
+  };
 
   return (
     <div className="glass-card rounded-card px-4 py-3 mb-3">
@@ -74,17 +133,13 @@ function LayoutPicker() {
         <p className="text-[11px] text-text-dim mb-3">Based on your goal, we highlighted the best fit for you.</p>
       )}
       <div className="flex flex-col gap-2">
-        {LAYOUTS.map(({ id, label, description }) => {
+        {LAYOUTS.map(({ id, label, description, sectionOrder }) => {
           const isActive = current === id;
           const isRecommended = recommended === id;
           return (
             <button
               key={id}
-              onClick={() => {
-                localStorage.setItem("well-home-layout", id);
-                window.dispatchEvent(new Event("well-layout-changed"));
-                setCurrent(id);
-              }}
+              onClick={() => selectLayout(id, sectionOrder)}
               className={`flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl border transition-all ${
                 isActive
                   ? "gradient-brand text-white border-transparent shadow-glow"
@@ -94,7 +149,7 @@ function LayoutPicker() {
               }`}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs font-bold ${isActive ? "text-white" : "text-text"}`}>{label}</span>
                   {isRecommended && !isActive && (
                     <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-brand-light/20 text-brand-light">For you</span>

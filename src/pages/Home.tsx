@@ -117,11 +117,17 @@ export default function Home() {
   const [headerStreak, setHeaderStreak] = useState<number | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
 
-  const [homeLayout, setHomeLayout] = useState(() => localStorage.getItem("well-home-layout") ?? "classic");
+  const resolveLayout = (raw: string): string => ({ dashboard: "exercise", together: "community" }[raw] ?? raw);
+  const [homeLayout, setHomeLayout] = useState(() => resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
   useEffect(() => {
-    const handler = () => setHomeLayout(localStorage.getItem("well-home-layout") ?? "classic");
-    window.addEventListener("well-layout-changed", handler);
-    return () => window.removeEventListener("well-layout-changed", handler);
+    const onLayoutChange = () => setHomeLayout(resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
+    const onOrderChange = () => setSectionOrder(readSectionOrder());
+    window.addEventListener("well-layout-changed", onLayoutChange);
+    window.addEventListener("well-section-order-changed", onOrderChange);
+    return () => {
+      window.removeEventListener("well-layout-changed", onLayoutChange);
+      window.removeEventListener("well-section-order-changed", onOrderChange);
+    };
   }, []);
 
   const [showFocusPicker, setShowFocusPicker] = useState(false);
@@ -133,7 +139,7 @@ export default function Home() {
     return [];
   });
 
-  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(() => {
+  const readSectionOrder = (): SectionId[] => {
     try {
       const saved = localStorage.getItem("well-section-order-v1");
       if (saved) {
@@ -142,7 +148,9 @@ export default function Home() {
       }
     } catch { /* ignore */ }
     return DEFAULT_SECTION_ORDER;
-  });
+  };
+
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(readSectionOrder);
   const [editMode, setEditMode] = useState(false);
   const [dragging, setDragging] = useState<SectionId | null>(null);
 
@@ -771,18 +779,58 @@ export default function Home() {
           );
         }
 
-        if (homeLayout === "dashboard") {
-          // Compact 4×2 grid — all 8 visible at once, smaller icons
+        if (homeLayout === "exercise") {
+          // Compact 4×2 grid — all 8 at a glance, performance-dashboard feel
           return (
-            <div className="grid grid-cols-4 gap-2 mb-6">
-              {links.map(({ to, label, icon: Icon }) => (
-                <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
-                  <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center">
-                    <Icon size={18} className="text-white" />
+            <div className="mb-6">
+              {(workoutLog.includes(today) || resistanceLog.includes(today)) && (
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <CheckCircle2 size={13} className="text-brand-light shrink-0" />
+                  <span className="text-[11px] text-brand-light font-semibold">Workout logged today — great work!</span>
+                </div>
+              )}
+              <div className="grid grid-cols-4 gap-2">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
+                    <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center">
+                      <Icon size={18} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        if (homeLayout === "nutrition") {
+          // Nutrition-forward: macro summary nudge + horizontal icon scroll
+          const hasTracked = homeMacros != null;
+          return (
+            <div className="mb-6">
+              <div className={`flex items-center gap-3 rounded-card px-3 py-2.5 mb-3 border ${hasTracked ? "border-brand-light/30 bg-brand-light/5" : "border-border bg-surface-2"}`}>
+                <Salad size={16} className={hasTracked ? "text-brand-light shrink-0" : "text-text-dim shrink-0"} />
+                {hasTracked && homeMacros ? (
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <span className="font-bold text-text">{Math.round(homeMacros.calories).toLocaleString()} kcal</span>
+                    <span className="text-text-dim">P <span className="text-text font-semibold">{Math.round(homeMacros.protein)}g</span></span>
+                    <span className="text-text-dim">C <span className="text-text font-semibold">{Math.round(homeMacros.carbs)}g</span></span>
+                    <span className="text-text-dim">F <span className="text-text font-semibold">{Math.round(homeMacros.fat)}g</span></span>
                   </div>
-                  <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
-                </Link>
-              ))}
+                ) : (
+                  <span className="text-[11px] text-text-dim">No meals logged yet today — tap Nutrition to start</span>
+                )}
+              </div>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                      <Icon size={22} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           );
         }
@@ -805,8 +853,8 @@ export default function Home() {
           );
         }
 
-        if (homeLayout === "together") {
-          // Community-first: top row of 4 shown as larger pill cards with gradient border
+        if (homeLayout === "community") {
+          // Community-first: top 4 shown as full-width pill cards with gradient border
           const top4 = links.slice(0, 4);
           const bottom4 = links.slice(4);
           return (
