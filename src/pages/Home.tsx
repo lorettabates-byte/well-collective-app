@@ -643,54 +643,143 @@ export default function Home() {
         );
       })()}
 
-      {homeLayout === "focus" ? (() => {
+      {(() => {
         const links = getQuickLinks(user.goalPlan);
-        const savedBig = (() => {
-          try {
-            const s = localStorage.getItem("well-focus-shortcuts-v1");
-            if (s) return JSON.parse(s) as string[];
-          } catch { /* ignore */ }
-          return null;
-        })();
-        const bigIds = savedBig ?? links.slice(0, 4).map((l) => l.id);
-        const bigLinks = links.filter((l) => bigIds.includes(l.id));
-        const smallLinks = links.filter((l) => !bigIds.includes(l.id));
-        return (
-          <div className="mb-6">
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              {bigLinks.map(({ to, label, icon: Icon }) => (
-                <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-6">
-                  <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
-                    <Icon size={28} className="text-white" />
+
+        if (homeLayout === "focus") {
+          const savedBig = (() => {
+            try {
+              const s = localStorage.getItem("well-focus-shortcuts-v1");
+              if (s) return JSON.parse(s) as string[];
+            } catch { /* ignore */ }
+            return null;
+          })();
+          const bigIds = savedBig ?? links.slice(0, 4).map((l) => l.id);
+          const bigLinks = links.filter((l) => bigIds.includes(l.id));
+          const smallLinks = links.filter((l) => !bigIds.includes(l.id));
+          return (
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {bigLinks.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-6">
+                    <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                      <Icon size={28} className="text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-text">{label}</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {smallLinks.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
+                    <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-80">
+                      <Icon size={18} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        if (homeLayout === "flow") {
+          // Two-column pill rows: icon left, label right — easier to scan and tap
+          return (
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              {links.map(({ to, label, icon: Icon }) => (
+                <Link key={to} to={to} className="flex items-center gap-3 glass-card rounded-pill px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
+                    <Icon size={18} className="text-white" />
                   </div>
-                  <span className="text-sm font-semibold text-text">{label}</span>
+                  <span className="text-sm font-semibold text-text leading-tight">{label}</span>
                 </Link>
               ))}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {smallLinks.map(({ to, label, icon: Icon }) => (
+          );
+        }
+
+        if (homeLayout === "dashboard") {
+          // Compact 4×2 grid — all 8 visible at once, smaller icons
+          return (
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              {links.map(({ to, label, icon: Icon }) => (
                 <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
-                  <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-80">
+                  <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center">
                     <Icon size={18} className="text-white" />
                   </div>
                   <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
                 </Link>
               ))}
             </div>
+          );
+        }
+
+        if (homeLayout === "inspire") {
+          // Single horizontal scroll strip — minimal, clean, inspiration-forward
+          return (
+            <div className="mb-6">
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                      <Icon size={22} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        if (homeLayout === "together") {
+          // Community-first: top row of 4 shown as larger pill cards with gradient border
+          const top4 = links.slice(0, 4);
+          const bottom4 = links.slice(4);
+          return (
+            <div className="mb-6">
+              <div className="flex flex-col gap-2 mb-3">
+                {top4.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex items-center gap-4 gradient-brand p-[1px] rounded-card">
+                    <div className="flex items-center gap-4 bg-surface rounded-card px-4 py-3 w-full">
+                      <div className="w-10 h-10 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
+                        <Icon size={20} className="text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-text">{label}</span>
+                      <ChevronRight size={14} className="ml-auto text-text-dim" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {bottom4.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
+                    <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-70">
+                      <Icon size={18} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // Classic (default)
+        return (
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            {links.map(({ to, label, icon: Icon }) => (
+              <Link key={to} to={to} className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
+                  <Icon size={26} className="text-white" />
+                </div>
+                <span className="text-[11px] text-text-muted text-center leading-tight">{label}</span>
+              </Link>
+            ))}
           </div>
         );
-      })() : (
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          {getQuickLinks(user.goalPlan).map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} className="flex flex-col items-center gap-2">
-              <div className="w-16 h-16 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
-                <Icon size={26} className="text-white" />
-              </div>
-              <span className="text-[11px] text-text-muted text-center leading-tight">{label}</span>
-            </Link>
-          ))}
-        </div>
-      )}
+      })()}
 
       <div className="flex items-center justify-end mb-4">
         <button
@@ -806,11 +895,11 @@ export default function Home() {
           return wrapSection(
             <div className="mb-6">
               <SectionHeader title="Upcoming Events" to="/events" />
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pt-1 -mx-4 px-4">
                 {upcomingEvents.map((event) => (
                   event.id === featuredEventId ? (
-                    <div key={event.id} className="shrink-0 relative">
-                      <div className="absolute -top-2 left-3 z-10 flex items-center gap-1 gradient-brand text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-glow pointer-events-none">
+                    <div key={event.id} className="shrink-0">
+                      <div className="flex items-center gap-1 gradient-brand text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-glow mb-1.5 w-fit">
                         <Sparkles size={8} /> Featured
                       </div>
                       <Link to="/events" className="block rounded-card ring-1 ring-brand-light/50 shadow-glow">
@@ -818,7 +907,7 @@ export default function Home() {
                       </Link>
                     </div>
                   ) : (
-                    <Link key={event.id} to="/events" className="shrink-0 rounded-card">
+                    <Link key={event.id} to="/events" className="shrink-0 rounded-card self-end">
                       <EventCard event={event} compact />
                     </Link>
                   )
