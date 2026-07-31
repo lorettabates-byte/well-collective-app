@@ -1,10 +1,10 @@
 import {
-  Cake, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
-  Plus, Search, Sparkles, Trophy, UserMinus, Users, X, Zap,
+  Cake, Calendar, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
+  Mail, MessageCircle, Plus, Search, Sparkles, Trophy, UserMinus, Users, X, Zap,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { TRIBE_CHEERS } from "../data/cheers";
 import { resolveFeaturedBadge } from "../data/badges";
 import type { TribeChallenge } from "../data/challenges";
@@ -320,6 +320,14 @@ export default function Tribe() {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
     setSentCheers((prev) => ({ ...prev, [memberId]: true }));
+    // Persist welcome sends so TribeActivityStrip never re-offers them
+    if (cheerId === "welcome") {
+      const key = `well-welcomed-${user.email}`;
+      try {
+        const current = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, boolean>;
+        localStorage.setItem(key, JSON.stringify({ ...current, [memberId]: true }));
+      } catch { /* ignore */ }
+    }
     try {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
@@ -379,10 +387,39 @@ export default function Tribe() {
   const visibleTribe = listExpanded ? filteredTribe : filteredTribe.slice(0, COLLAPSED_COUNT);
   const hiddenCount = filteredTribe.length - COLLAPSED_COUNT;
 
+  const { pathname } = useLocation();
+  const COMMUNITY_NAV = [
+    { to: "/community",  label: "Feed",     icon: MessageCircle },
+    { to: "/tribe",      label: "Tribe",    icon: Users },
+    { to: "/events",     label: "Events",   icon: Calendar },
+    { to: "/trending",   label: "Trending", icon: Sparkles },
+    { to: "/messages",   label: "Messages", icon: Mail },
+  ];
+
   return (
     <div>
       <TopBar title="WELL Tribe" subtitle="Your circle of support" showBack />
       <div className="px-4 pt-4 pb-8">
+        {/* Community nav strip */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 mb-5">
+          {COMMUNITY_NAV.map(({ to, label, icon: Icon }) => {
+            const active = pathname === to || (to !== "/community" && pathname.startsWith(to));
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3.5 py-1.5 border transition-colors ${
+                  active
+                    ? "gradient-brand text-white border-transparent shadow-glow"
+                    : "glass-card text-text-muted border-border"
+                }`}
+              >
+                <Icon size={13} />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
 
         {/* Stats banner */}
         {!loading && tribe.length > 0 && (

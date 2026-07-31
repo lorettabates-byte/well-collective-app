@@ -1,11 +1,9 @@
 import { Calendar, Mail, MessageCircle, PenSquare, Sparkles, Trophy, Users } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
-import { Link } from "react-router-dom";
-import CategoryCard from "../components/community/CategoryCard";
+import { Link, useLocation } from "react-router-dom";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
-import SectionHeader from "../components/ui/SectionHeader";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
 import EventCard from "../components/events/EventCard";
 import { useApp } from "../store/AppContext";
@@ -14,9 +12,42 @@ import { useEventsFeed } from "../hooks/useEventsFeed";
 import { getTrendingThreads } from "../utils/threadUtils";
 import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
+const COMMUNITY_NAV = [
+  { to: "/community",  label: "Feed",    icon: MessageCircle },
+  { to: "/tribe",      label: "Tribe",   icon: Users },
+  { to: "/events",     label: "Events",  icon: Calendar },
+  { to: "/trending",   label: "Trending",icon: Sparkles },
+  { to: "/messages",   label: "Messages",icon: Mail },
+];
+
+function CommunityNavStrip() {
+  const { pathname } = useLocation();
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 mb-5">
+      {COMMUNITY_NAV.map(({ to, label, icon: Icon }) => {
+        const active = pathname === to || (to !== "/community" && pathname.startsWith(to));
+        return (
+          <Link
+            key={to}
+            to={to}
+            className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3.5 py-1.5 border transition-colors ${
+              active
+                ? "gradient-brand text-white border-transparent shadow-glow"
+                : "glass-card text-text-muted border-border"
+            }`}
+          >
+            <Icon size={13} />
+            {label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Community() {
   useSectionTracking("community");
-  const { categories, threads, events, user, currentWeeklyTheme, featuredEventId } = useApp();
+  const { threads, events, user, currentWeeklyTheme, featuredEventId } = useApp();
   const { events: liveEvents } = useEventsFeed();
   const unreadMessageCount = useUnreadMessageCount(user.email);
   const communityThreads = getTrendingThreads(threads, 5, 1);
@@ -38,7 +69,7 @@ export default function Community() {
         <WeeklyThemeBar theme={currentWeeklyTheme} />
 
         {/* Action buttons */}
-        <div className="grid grid-cols-3 gap-3 mb-6 mt-3">
+        <div className="grid grid-cols-3 gap-3 mb-4 mt-3">
           <Link
             to="/community/new"
             className="flex items-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 px-4 shadow-glow justify-center"
@@ -67,6 +98,9 @@ export default function Community() {
           </Link>
         </div>
 
+        {/* Quick nav strip */}
+        <CommunityNavStrip />
+
         {/* From the Community — thread feed with author info */}
         {communityThreads.length > 0 && (
           <div className="mb-6">
@@ -87,10 +121,8 @@ export default function Community() {
           </div>
         )}
 
-        {/* WELL Tribe activity */}
-        <div className="mb-6">
-          <TribeActivityStrip />
-        </div>
+        {/* WELL Tribe — 3×3 grid */}
+        <TribeActivityStrip grid />
 
         {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
@@ -125,19 +157,9 @@ export default function Community() {
           </div>
         )}
 
-        {/* Categories */}
-        <div className="mb-4">
-          <SectionHeader title="Categories" />
-          <div className="flex flex-col gap-3">
-            {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </div>
-        </div>
-
         <Link
           to="/well-cup"
-          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mt-4"
+          className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 mt-2 mb-6"
         >
           <div className="w-9 h-9 rounded-full bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center shrink-0">
             <Trophy size={16} className="text-yellow-400" />
