@@ -1,4 +1,4 @@
-import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, MessageCircle, Moon, Music, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Trophy, Utensils, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, MessageCircle, Moon, Music, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
