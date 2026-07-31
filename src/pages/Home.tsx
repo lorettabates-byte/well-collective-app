@@ -28,16 +28,45 @@ import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-const QUICK_LINKS = [
-  { to: "/community", label: "Community", icon: MessageCircle },
-  { to: "/wellness", label: "Wellness", icon: Waves },
-  { to: "/videos", label: "Classes", icon: Video },
-  { to: "/music", label: "Music", icon: Music },
-  { to: "/events", label: "Events", icon: Calendar },
-  { to: "/inspirations", label: "Inspiration", icon: Sparkles },
-  { to: "/nutrition", label: "Nutrition", icon: Salad },
-  { to: "/blog", label: "Blog", icon: Rss },
+const ALL_QUICK_LINKS = [
+  { id: "community",   to: "/community",    label: "Community",  icon: MessageCircle },
+  { id: "wellness",    to: "/wellness",     label: "Wellness",   icon: Waves },
+  { id: "videos",      to: "/videos",       label: "Classes",    icon: Video },
+  { id: "music",       to: "/music",        label: "Music",      icon: Music },
+  { id: "events",      to: "/events",       label: "Events",     icon: Calendar },
+  { id: "inspirations",to: "/inspirations", label: "Inspiration",icon: Sparkles },
+  { id: "nutrition",   to: "/nutrition",    label: "Nutrition",  icon: Salad },
+  { id: "blog",        to: "/blog",         label: "Blog",       icon: Rss },
 ];
+
+// Order the first 4 quick links by goal so the most relevant sections surface first.
+// The remaining 4 keep their default order.
+const GOAL_LINK_ORDER: Record<string, string[]> = {
+  stress:    ["wellness", "music", "community", "inspirations"],
+  energy:    ["wellness", "nutrition", "videos", "community"],
+  strength:  ["videos", "wellness", "nutrition", "community"],
+  weight:    ["nutrition", "wellness", "videos", "community"],
+  rut:       ["inspirations", "videos", "community", "events"],
+  community: ["community", "events", "inspirations", "videos"],
+};
+
+function getQuickLinks(goalPlan?: string) {
+  const priority = goalPlan ? (GOAL_LINK_ORDER[goalPlan] ?? []) : [];
+  const priorityLinks = priority
+    .map((id) => ALL_QUICK_LINKS.find((l) => l.id === id))
+    .filter(Boolean) as typeof ALL_QUICK_LINKS;
+  const rest = ALL_QUICK_LINKS.filter((l) => !priority.includes(l.id));
+  return [...priorityLinks, ...rest];
+}
+
+const GOAL_TAGLINES: Record<string, string> = {
+  stress:    "Your calm toolkit is ready.",
+  energy:    "Let's keep your energy high today.",
+  strength:  "Build something stronger today.",
+  weight:    "Every choice today is a step forward.",
+  rut:       "One new thing can change everything.",
+  community: "Your tribe is here for you.",
+};
 
 export default function Home() {
   const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
@@ -394,7 +423,11 @@ export default function Home() {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text mb-1">Hi {user.name.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-text-muted">Welcome back to the WELL COLLECTIVE.</p>
+        <p className="text-sm text-text-muted">
+          {user.goalPlan && GOAL_TAGLINES[user.goalPlan]
+            ? GOAL_TAGLINES[user.goalPlan]
+            : "Welcome back to the WELL COLLECTIVE."}
+        </p>
       </div>
 
       {/* One-time walkthrough video prompt */}
@@ -578,7 +611,7 @@ export default function Home() {
       })()}
 
       <div className="grid grid-cols-4 gap-3 mb-6">
-        {QUICK_LINKS.map(({ to, label, icon: Icon }) => (
+        {getQuickLinks(user.goalPlan).map(({ to, label, icon: Icon }) => (
           <Link key={to} to={to} className="flex flex-col items-center gap-2">
             <div className="w-12 h-12 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
               <Icon size={20} className="text-white" />
