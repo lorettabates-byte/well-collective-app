@@ -1,4 +1,4 @@
-import { Award, ChevronDown, ChevronUp, Flame, Info, Share2, TrendingUp, Trophy, Zap } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, Flame, Info, RotateCcw, Share2, Star, Sun, TrendingUp, Trophy, Zap } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -224,6 +224,9 @@ export default function WellCup() {
   const [mostConsistent, setMostConsistent] = useState<SpotlightInfo | null>(null);
   const [mostRounded, setMostRounded] = useState<SpotlightInfo | null>(null);
   const [mostImproved, setMostImproved] = useState<SpotlightInfo | null>(null);
+  const [comeback, setComeback] = useState<SpotlightInfo | null>(null);
+  const [weekendWarrior, setWeekendWarrior] = useState<SpotlightInfo | null>(null);
+  const [luckyDraw, setLuckyDraw] = useState<SpotlightInfo | null>(null);
   const [myStats, setMyStats] = useState<MyStats | null>(null);
   const [view, setView] = useState<"top10" | "all">("top10");
   const [loadingAll, setLoadingAll] = useState(false);
@@ -242,7 +245,10 @@ export default function WellCup() {
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-consistent`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-rounded`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-improved`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-    ]).then(([lb, winner, mon, yr, consistent, rounded, improved]) => {
+      API_URL ? fetch(`${API_URL}/api/leaderboard/comeback`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+      API_URL ? fetch(`${API_URL}/api/leaderboard/weekend-warrior`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+      API_URL ? fetch(`${API_URL}/api/leaderboard/lucky-draw`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+    ]).then(([lb, winner, mon, yr, consistent, rounded, improved, cb, weekend, lucky]) => {
       setAllEntries(lb.leaderboard);
       setResetAt(lb.resetAt);
       setYesterday(winner);
@@ -260,6 +266,18 @@ export default function WellCup() {
       if (improved?.leader) {
         const l = improved.leader;
         setMostImproved({ name: l.name, avatar: l.avatar, email: l.email, stat: `+${l.improvement} pts vs last week` });
+      }
+      if (cb?.leader) {
+        const l = cb.leader;
+        setComeback({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.this_week_pts} pts — back after a break` });
+      }
+      if (weekend?.leader) {
+        const l = weekend.leader;
+        setWeekendWarrior({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.weekend_pts} pts on weekends this month` });
+      }
+      if (lucky?.leader) {
+        const l = lucky.leader;
+        setLuckyDraw({ name: l.name, avatar: l.avatar, email: l.email, stat: "This week's lucky draw winner" });
       }
     }).finally(() => setLoading(false));
   }, []);
@@ -391,6 +409,30 @@ export default function WellCup() {
                 accent="border-sky-400/30 bg-sky-400/5"
                 icon={TrendingUp}
                 empty="Keep logging — this resets every Monday"
+              />
+              <SpotlightBanner
+                label="Comeback Story — This Week"
+                description="Highest points this week among members who were inactive last week. Always-active members can never qualify."
+                winner={comeback}
+                accent="border-violet-400/30 bg-violet-400/5"
+                icon={RotateCcw}
+                empty="No returning members logged points yet this week"
+              />
+              <SpotlightBanner
+                label="Weekend Warrior — This Month"
+                description="Most points earned specifically on Saturdays and Sundays. Your weekday grind doesn't count here."
+                winner={weekendWarrior}
+                accent="border-amber-400/30 bg-amber-400/5"
+                icon={Sun}
+                empty="No weekend points logged yet this month"
+              />
+              <SpotlightBanner
+                label="Weekly Lucky Draw"
+                description="One member randomly selected from everyone who earned 20+ pts this week. Resets every Monday — equal chance for all."
+                winner={luckyDraw}
+                accent="border-pink-400/30 bg-pink-400/5"
+                icon={Star}
+                empty="Earn 20+ pts this week to enter the draw"
               />
             </div>
           </div>
