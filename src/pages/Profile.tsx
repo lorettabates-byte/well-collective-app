@@ -51,13 +51,13 @@ const LAYOUTS: { id: string; label: string; description: string; sectionOrder: S
     id: "classic",
     label: "Classic",
     description: "All sections in your default order",
-    sectionOrder: ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"],
+    sectionOrder: ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup"],
   },
   {
     id: "focus",
     label: "Focus",
     description: "Your 4 chosen sections featured large — tap to customize",
-    sectionOrder: ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"],
+    sectionOrder: ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup"],
   },
   {
     id: "connection",

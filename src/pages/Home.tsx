@@ -60,7 +60,7 @@ function getQuickLinks(goalPlan?: string) {
 }
 
 type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"];
+const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup"];
 // Section display names — used by Profile layout picker and future drag-handle labels
 export const SECTION_LABELS: Record<SectionId, string> = {
   "daily-plan": "Daily Plan",
@@ -1318,11 +1318,11 @@ export default function Home() {
             className={`relative ${isDraggingThis ? "opacity-40" : ""}`}
           >
             {editMode && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center pr-2 text-text-dim cursor-grab active:cursor-grabbing">
-                <GripVertical size={16} />
+              <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center cursor-grab active:cursor-grabbing" style={{ width: 44, touchAction: "none" }}>
+                <GripVertical size={24} className="text-text-dim" />
               </div>
             )}
-            <div className={editMode ? "pl-6" : ""}>{content}</div>
+            <div className={editMode ? "pl-12" : ""}>{content}</div>
           </div>
         );
 
