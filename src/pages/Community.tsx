@@ -1,7 +1,7 @@
 import { Calendar, Mail, MessageCircle, PenSquare, Sparkles, Trophy, Users } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
@@ -11,39 +11,6 @@ import { useSectionTracking } from "../hooks/useSectionTracking";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { getTrendingThreads } from "../utils/threadUtils";
 import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
-
-const COMMUNITY_NAV = [
-  { to: "/community",  label: "Feed",    icon: MessageCircle },
-  { to: "/tribe",      label: "Tribe",   icon: Users },
-  { to: "/events",     label: "Events",  icon: Calendar },
-  { to: "/trending",   label: "Trending",icon: Sparkles },
-  { to: "/messages",   label: "Messages",icon: Mail },
-];
-
-function CommunityNavStrip() {
-  const { pathname } = useLocation();
-  return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 mb-5">
-      {COMMUNITY_NAV.map(({ to, label, icon: Icon }) => {
-        const active = pathname === to || (to !== "/community" && pathname.startsWith(to));
-        return (
-          <Link
-            key={to}
-            to={to}
-            className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3.5 py-1.5 border transition-colors ${
-              active
-                ? "gradient-brand text-white border-transparent shadow-glow"
-                : "glass-card text-text-muted border-border"
-            }`}
-          >
-            <Icon size={13} />
-            {label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function Community() {
   useSectionTracking("community");
@@ -97,9 +64,6 @@ export default function Community() {
             My Tribe
           </Link>
         </div>
-
-        {/* Quick nav strip */}
-        <CommunityNavStrip />
 
         {/* From the Community — thread feed with author info */}
         {communityThreads.length > 0 && (

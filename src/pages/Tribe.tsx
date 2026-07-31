@@ -1,10 +1,10 @@
 import {
-  Cake, Calendar, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
-  Mail, MessageCircle, Plus, Search, Sparkles, Trophy, UserMinus, Users, X, Zap,
+  Cake, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
+  Plus, Search, Sparkles, Trash2, Trophy, UserMinus, Users, X, Zap,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { TRIBE_CHEERS } from "../data/cheers";
 import { resolveFeaturedBadge } from "../data/badges";
 import type { TribeChallenge } from "../data/challenges";
@@ -202,6 +202,7 @@ export default function Tribe() {
 
   const [addError, setAddError] = useState("");
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
+  const [cheerNote, setCheerNote] = useState("");
   const [sentCheers, setSentCheers] = useState<Record<string, boolean>>({});
   const [challenges, setChallenges] = useState<ActiveTribeChallenge[]>([]);
   const [challengeLoading, setChallengeLoading] = useState(true);
@@ -316,11 +317,11 @@ export default function Tribe() {
     } catch { loadTribe(); }
   };
 
-  const sendCheer = async (memberId: string, cheerId: string) => {
+  const sendCheer = async (memberId: string, cheerId: string, note?: string) => {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
+    setCheerNote("");
     setSentCheers((prev) => ({ ...prev, [memberId]: true }));
-    // Persist welcome sends so TribeActivityStrip never re-offers them
     if (cheerId === "welcome") {
       const key = `well-welcomed-${user.email}`;
       try {
@@ -332,10 +333,20 @@ export default function Tribe() {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, cheerId }),
+        body: JSON.stringify({ email: user.email, cheerId, note: note || undefined }),
       });
     } catch { /* no-op */ }
     setTimeout(() => setSentCheers((prev) => ({ ...prev, [memberId]: false })), 2500);
+  };
+
+  const cancelChallenge = async (challengeId: number) => {
+    if (!API_URL || !user.email) return;
+    setChallenges((prev) => prev.filter((c) => c.id !== challengeId));
+    try {
+      await fetch(`${API_URL}/api/tribe/challenges/${challengeId}?email=${encodeURIComponent(user.email)}`, {
+        method: "DELETE",
+      });
+    } catch { loadChallenges(); }
   };
 
   const closeReceivedCard = () => {
@@ -387,39 +398,10 @@ export default function Tribe() {
   const visibleTribe = listExpanded ? filteredTribe : filteredTribe.slice(0, COLLAPSED_COUNT);
   const hiddenCount = filteredTribe.length - COLLAPSED_COUNT;
 
-  const { pathname } = useLocation();
-  const COMMUNITY_NAV = [
-    { to: "/community",  label: "Feed",     icon: MessageCircle },
-    { to: "/tribe",      label: "Tribe",    icon: Users },
-    { to: "/events",     label: "Events",   icon: Calendar },
-    { to: "/trending",   label: "Trending", icon: Sparkles },
-    { to: "/messages",   label: "Messages", icon: Mail },
-  ];
-
   return (
     <div>
       <TopBar title="WELL Tribe" subtitle="Your circle of support" showBack />
       <div className="px-4 pt-4 pb-8">
-        {/* Community nav strip */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 mb-5">
-          {COMMUNITY_NAV.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || (to !== "/community" && pathname.startsWith(to));
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-pill px-3.5 py-1.5 border transition-colors ${
-                  active
-                    ? "gradient-brand text-white border-transparent shadow-glow"
-                    : "glass-card text-text-muted border-border"
-                }`}
-              >
-                <Icon size={13} />
-                {label}
-              </Link>
-            );
-          })}
-        </div>
 
         {/* Stats banner */}
         {!loading && tribe.length > 0 && (
@@ -641,6 +623,16 @@ export default function Tribe() {
                           );
                         })}
                       </div>
+
+                      {!challenge.completedAt && (
+                        <button
+                          onClick={() => cancelChallenge(challenge.id)}
+                          className="flex items-center gap-1.5 text-xs text-red-400/70 mt-3 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 size={12} />
+                          Cancel challenge
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -730,24 +722,33 @@ export default function Tribe() {
                         </span>
 
                         {justSent ? (
-                          <p className="text-[11px] font-semibold text-brand-light py-0.5">Cheer sent!</p>
+                          <p className="text-xs font-semibold text-brand-light py-0.5">Cheer sent!</p>
                         ) : isCheering ? (
-                          <div className="flex items-center flex-wrap justify-center gap-1 mt-0.5">
-                            {TRIBE_CHEERS.map((cheer) => (
-                              <button
-                                key={cheer.id}
-                                onClick={() => sendCheer(member.id, cheer.id)}
-                                title={cheer.label}
-                                aria-label={`Send ${cheer.label} cheer to ${member.name}`}
-                                className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-xs"
-                              >
-                                {cheer.emoji}
-                              </button>
-                            ))}
+                          <div className="w-full mt-0.5">
+                            <input
+                              type="text"
+                              value={cheerNote}
+                              onChange={(e) => setCheerNote(e.target.value)}
+                              placeholder="Add a personal note… (optional)"
+                              className="w-full bg-surface-2 border border-border rounded-pill px-3 py-1.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue mb-2"
+                            />
+                            <div className="flex items-center flex-wrap justify-center gap-1">
+                              {TRIBE_CHEERS.map((cheer) => (
+                                <button
+                                  key={cheer.id}
+                                  onClick={() => sendCheer(member.id, cheer.id, cheerNote)}
+                                  title={cheer.label}
+                                  aria-label={`Send ${cheer.label} cheer to ${member.name}`}
+                                  className="w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center text-sm"
+                                >
+                                  {cheer.emoji}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <button
-                            onClick={() => setCheeringFor(member.id)}
+                            onClick={() => { setCheeringFor(member.id); setCheerNote(""); }}
                             className="text-xs font-semibold gradient-brand text-white rounded-pill px-3 py-1.5 w-full"
                           >
                             Send a Cheer

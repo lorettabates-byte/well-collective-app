@@ -120,7 +120,10 @@ export default function Home() {
   const resolveLayout = (raw: string): string => ({ dashboard: "exercise", together: "community" }[raw] ?? raw);
   const [homeLayout, setHomeLayout] = useState(() => resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
   useEffect(() => {
-    const onLayoutChange = () => setHomeLayout(resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
+    const onLayoutChange = () => {
+      setHomeLayout(resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
     const onOrderChange = () => setSectionOrder(readSectionOrder());
     window.addEventListener("well-layout-changed", onLayoutChange);
     window.addEventListener("well-section-order-changed", onOrderChange);
@@ -989,7 +992,7 @@ export default function Home() {
               border: "rgba(251,191,36,0.30)",
               iconColor: "text-yellow-400",
               headline: "Morning ritual",
-              sub: "Breathwork · Daily plan · Set your intention",
+              sub: "Breathwork · Daily focus · Set your intention",
               to: "/wellness?tab=activities",
               done: bwDone,
             },
@@ -1000,9 +1003,9 @@ export default function Home() {
               color: "rgba(59,130,246,0.10)",
               border: "rgba(59,130,246,0.28)",
               iconColor: "text-blue-400",
-              headline: "Midday reset",
-              sub: "Calm toolkit · Mindful moment · Breathe",
-              to: "/wellness?tab=activities",
+              headline: "Tribe check-in",
+              sub: "Connect with your tribe · Send a cheer · Encourage someone",
+              to: "/tribe",
               done: false,
             },
             {
@@ -1024,27 +1027,27 @@ export default function Home() {
           return (
             <div className="mb-6">
               {/* Current time block — hero */}
-              <Link to={current.to} className="block rounded-card px-4 py-5 mb-3 border" style={{ background: current.color, borderColor: current.border }}>
+              <Link to={current.to} className="block rounded-card px-5 py-6 mb-4 border" style={{ background: current.color, borderColor: current.border }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <current.Icon size={14} className={current.iconColor} />
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${current.iconColor}`}>Right Now · {current.label}</span>
-                  {current.done && <CheckCircle2 size={12} className="text-brand-light ml-auto" />}
+                  <current.Icon size={16} className={current.iconColor} />
+                  <span className={`text-xs font-bold uppercase tracking-widest ${current.iconColor}`}>Right Now · {current.label}</span>
+                  {current.done && <CheckCircle2 size={14} className="text-brand-light ml-auto" />}
                 </div>
-                <p className="text-lg font-extrabold text-text mb-1">{plan ? plan.title : current.headline}</p>
-                <p className="text-xs text-text-muted">{plan ? plan.tasks[0] : current.sub}</p>
+                <p className="text-xl font-extrabold text-text mb-2">{current.headline}</p>
+                <p className="text-sm text-text-muted">{current.sub}</p>
               </Link>
 
               {/* Other time blocks */}
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-dim mb-2 px-1">More sections</p>
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-dim mb-3 px-1">Also today</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {others.map((b) => (
-                  <Link key={b.id} to={b.to} className="rounded-card px-3 py-3 border" style={{ background: b.color, borderColor: b.border }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <b.Icon size={12} className={b.iconColor} />
-                      <span className={`text-[10px] font-bold ${b.iconColor}`}>{b.label}</span>
+                  <Link key={b.id} to={b.to} className="rounded-card px-4 py-4 border" style={{ background: b.color, borderColor: b.border }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <b.Icon size={16} className={b.iconColor} />
+                      <span className={`text-xs font-bold ${b.iconColor}`}>{b.label}</span>
                     </div>
-                    <p className="text-xs font-semibold text-text">{b.headline}</p>
-                    <p className="text-[10px] text-text-dim leading-tight mt-0.5">{b.sub}</p>
+                    <p className="text-sm font-semibold text-text mb-1">{b.headline}</p>
+                    <p className="text-xs text-text-dim leading-snug">{b.sub}</p>
                   </Link>
                 ))}
               </div>
@@ -1053,10 +1056,10 @@ export default function Home() {
               <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
                 {links.map(({ to, label, icon: Icon }) => (
                   <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
-                    <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
-                      <Icon size={16} className="text-text-dim" />
+                    <div className="w-11 h-11 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
+                      <Icon size={18} className="text-text-dim" />
                     </div>
-                    <span className="text-[10px] text-text-dim text-center leading-tight">{label}</span>
+                    <span className="text-xs text-text-dim text-center leading-tight">{label}</span>
                   </Link>
                 ))}
               </div>
@@ -1214,19 +1217,22 @@ export default function Home() {
         if (homeLayout === "community") {
           return (
             <div className="mb-6">
-              {/* Community threads */}
+              {/* From the Community — thread feed */}
               {latestThreads.length > 0 && (
-                <div className="mb-3">
+                <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-text">From the Community</span>
-                    <Link to="/community" className="text-[11px] text-brand-light font-semibold">See all</Link>
+                    <span className="text-sm font-bold text-text flex items-center gap-2">
+                      <Sparkles size={14} className="text-brand-light" />
+                      From the Community
+                    </span>
+                    <Link to="/community" className="text-xs text-brand-light font-semibold">See all</Link>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {latestThreads.map((thread) => (
+                    {latestThreads.slice(0, 4).map((thread) => (
                       <Link key={thread.id} to="/community" className="glass-card rounded-card px-4 py-3 border border-border">
-                        <p className="text-xs font-semibold text-text leading-snug mb-1 line-clamp-2">{thread.title}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-text-dim">
-                          <MessageCircle size={10} />
+                        <p className="text-sm font-semibold text-text leading-snug mb-1.5 line-clamp-2">{thread.title}</p>
+                        <div className="flex items-center gap-2 text-xs text-text-dim">
+                          <MessageCircle size={12} />
                           <span>{thread.messages.length} {thread.messages.length === 1 ? "reply" : "replies"}</span>
                           <span>·</span>
                           <span>{thread.authorName}</span>
@@ -1237,38 +1243,23 @@ export default function Home() {
                 </div>
               )}
 
+              {/* WELL Tribe — 3×2 grid */}
+              <TribeActivityStrip grid maxCount={6} />
+
               {/* Upcoming event */}
               {upcomingEvents[0] && (
-                <Link to="/events" className="flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+                <Link to="/events" className="flex items-center gap-3 glass-card rounded-card px-4 py-3 border border-border">
                   <div className="w-10 h-10 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
                     <Calendar size={18} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-brand-light font-bold uppercase tracking-wide mb-0.5">Next Event</p>
-                    <p className="text-xs font-bold text-text line-clamp-1">{upcomingEvents[0].title}</p>
-                    <p className="text-[10px] text-text-muted">{upcomingEvents[0].date}</p>
+                    <p className="text-xs text-brand-light font-bold uppercase tracking-wide mb-0.5">Next Event</p>
+                    <p className="text-sm font-bold text-text line-clamp-1">{upcomingEvents[0].title}</p>
+                    <p className="text-xs text-text-muted">{upcomingEvents[0].date}</p>
                   </div>
                   <ChevronRight size={14} className="text-text-dim shrink-0" />
                 </Link>
               )}
-
-              {/* Community quick nav — full-width pill links */}
-              <div className="flex flex-col gap-2">
-                {[
-                  { to: "/community", label: "Community Forums", icon: MessageCircle },
-                  { to: "/events", label: "Events & Meetups", icon: Calendar },
-                  { to: "/inspirations", label: "Inspiration Board", icon: Sparkles },
-                  { to: "/well-cup", label: "WELL Cup Leaderboard", icon: Trophy },
-                ].map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="flex items-center gap-4 gradient-brand p-[1px] rounded-card">
-                    <div className="flex items-center gap-4 bg-surface rounded-card px-4 py-3 w-full">
-                      <Icon size={18} className="text-brand-light" />
-                      <span className="text-sm font-semibold text-text">{label}</span>
-                      <ChevronRight size={14} className="ml-auto text-text-dim" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
             </div>
           );
         }

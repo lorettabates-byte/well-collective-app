@@ -97,13 +97,15 @@ const REASON_STYLES: Record<SuggestionReason, { icon: React.ReactNode; accent: s
 
 interface Props {
   grid?: boolean;
+  maxCount?: number;
 }
 
-export default function TribeActivityStrip({ grid = false }: Props) {
+export default function TribeActivityStrip({ grid = false, maxCount }: Props) {
   const { user } = useApp();
   const navigate = useNavigate();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [cheeringFor, setCheeringFor] = useState<string | null>(null);
+  const [cheerNote, setCheerNote] = useState("");
   // Load welcomed members AFTER user.email is available to ensure the correct localStorage key
   const [welcomedMembers, setWelcomedMembers] = useState<Record<string, boolean>>({});
   const [recentlySent, setRecentlySent] = useState<string | null>(null);
@@ -124,9 +126,10 @@ export default function TribeActivityStrip({ grid = false }: Props) {
       .catch(() => setTribe([]));
   }, [user.email]);
 
-  const sendCheer = async (memberId: string, cheerId: string, isWelcome: boolean) => {
+  const sendCheer = async (memberId: string, cheerId: string, isWelcome: boolean, note?: string) => {
     if (!API_URL || !user.email) return;
     setCheeringFor(null);
+    setCheerNote("");
     if (isWelcome) {
       const key = `well-welcomed-${user.email}`;
       setWelcomedMembers((prev) => {
@@ -142,14 +145,14 @@ export default function TribeActivityStrip({ grid = false }: Props) {
       await fetch(`${API_URL}/api/tribe/${memberId}/cheer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, cheerId }),
+        body: JSON.stringify({ email: user.email, cheerId, note: note || undefined }),
       });
     } catch { /* no-op */ }
   };
 
   if (tribe.length === 0) return null;
 
-  const limit = grid ? 9 : 6;
+  const limit = maxCount ?? (grid ? 9 : 6);
   const suggestions = [...tribe]
     .map(scoreMember)
     .filter((s): s is ScoredMember => s !== null)
@@ -167,53 +170,62 @@ export default function TribeActivityStrip({ grid = false }: Props) {
     return (
       <div
         key={member.id}
-        className={`glass-card rounded-card flex flex-col items-center border border-border text-center ${compact ? "p-2 gap-1.5" : "p-3.5 gap-2"}`}
+        className={`glass-card rounded-card flex flex-col items-center border border-border text-center ${compact ? "p-2.5 gap-2" : "p-3.5 gap-2"}`}
       >
-        <Link to={`/member/${member.id}`} className="flex flex-col items-center gap-1 w-full">
+        <Link to={`/member/${member.id}`} className="flex flex-col items-center gap-1.5 w-full">
           <Avatar
             src={member.avatar || ""}
             alt={member.name}
-            size={compact ? 38 : 48}
+            size={compact ? 40 : 48}
             badgeId={resolveFeaturedBadge(member)}
             moodStatus={member.moodStatus}
           />
-          <p className={`font-semibold text-text truncate w-full ${compact ? "text-[11px]" : "text-xs"}`}>{firstName}</p>
+          <p className="text-xs font-semibold text-text truncate w-full">{firstName}</p>
         </Link>
 
-        <span className={`flex items-center gap-0.5 font-semibold rounded-full border ${cfg.accent} ${compact ? "text-[9px] px-1 py-0.5" : "text-[10px] px-1.5 py-0.5"}`}>
+        <span className={`flex items-center gap-0.5 font-semibold rounded-full border ${cfg.accent} ${compact ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"}`}>
           {cfg.icon}
           <span className="truncate max-w-[60px]">{reasonLabel}</span>
         </span>
 
         {alreadyWelcomed ? (
-          <div className={`font-semibold text-text-dim border border-border rounded-pill text-center opacity-60 w-full ${compact ? "text-[10px] px-1.5 py-0.5" : "text-[11px] px-2.5 py-1"}`}>
+          <div className="text-xs font-semibold text-text-dim border border-border rounded-pill text-center opacity-60 w-full px-2 py-1">
             Welcomed
           </div>
         ) : justSentOther ? (
-          <div className={`font-semibold text-brand-light text-center w-full ${compact ? "text-[10px] py-0.5" : "text-[11px] py-1"}`}>
+          <div className="text-xs font-semibold text-brand-light text-center w-full py-1">
             Sent!
           </div>
         ) : isCheering ? (
-          <div className="flex flex-wrap justify-center gap-1">
-            {TRIBE_CHEERS.slice(0, compact ? 3 : 4).map((cheer) => (
-              <button
-                key={cheer.id}
-                onClick={() => sendCheer(member.id, cheer.id, isWelcome)}
-                title={cheer.label}
-                className="w-6 h-6 rounded-full bg-surface-2 border border-border flex items-center justify-center text-[11px]"
-              >
-                {cheer.emoji}
-              </button>
-            ))}
+          <div className="w-full">
+            <input
+              type="text"
+              value={cheerNote}
+              onChange={(e) => setCheerNote(e.target.value)}
+              placeholder="Note (optional)"
+              className="w-full bg-surface-2 border border-border rounded-pill px-2.5 py-1 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue mb-1.5"
+            />
+            <div className="flex flex-wrap justify-center gap-1">
+              {TRIBE_CHEERS.slice(0, compact ? 4 : 4).map((cheer) => (
+                <button
+                  key={cheer.id}
+                  onClick={() => sendCheer(member.id, cheer.id, isWelcome, cheerNote)}
+                  title={cheer.label}
+                  className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-sm"
+                >
+                  {cheer.emoji}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <button
-            onClick={() =>
-              reason === "birthday"
-                ? navigate(`/member/${member.id}`)
-                : setCheeringFor(member.id)
-            }
-            className={`font-semibold gradient-brand text-white rounded-pill w-full ${compact ? "text-[10px] px-1.5 py-1" : "text-[11px] px-2.5 py-1"}`}
+            onClick={() => {
+              if (reason === "birthday") { navigate(`/member/${member.id}`); return; }
+              setCheeringFor(member.id);
+              setCheerNote("");
+            }}
+            className="text-xs font-semibold gradient-brand text-white rounded-pill w-full px-2 py-1.5"
           >
             {ctaCopy}
           </button>
