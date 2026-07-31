@@ -2,7 +2,7 @@ import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, 
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link } from "react-router-dom";
@@ -156,6 +156,42 @@ export default function Home() {
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>(readSectionOrder);
   const [editMode, setEditMode] = useState(false);
   const [dragging, setDragging] = useState<SectionId | null>(null);
+
+  // Touch-based drag refs (avoid re-renders during move)
+  const touchDraggingId = useRef<SectionId | null>(null);
+  const sectionOrderRef = useRef<HTMLDivElement>(null);
+
+  const handleGripTouchStart = (e: React.TouchEvent, id: SectionId) => {
+    e.preventDefault(); // blocks text selection
+    touchDraggingId.current = id;
+    setDragging(id);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchDraggingId.current) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const sectionEl = el?.closest("[data-section-id]");
+    if (!sectionEl) return;
+    const overId = sectionEl.getAttribute("data-section-id") as SectionId | null;
+    if (!overId || overId === touchDraggingId.current) return;
+    setSectionOrder((prev) => {
+      const next = [...prev];
+      const fromIdx = next.indexOf(touchDraggingId.current!);
+      const toIdx = next.indexOf(overId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, touchDraggingId.current!);
+      localStorage.setItem("well-section-order-v1", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleTouchEnd = () => {
+    touchDraggingId.current = null;
+    setDragging(null);
+  };
 
   useEffect(() => {
     if (!user.birthday) return;
@@ -1282,6 +1318,12 @@ export default function Home() {
         </button>
       </div>
 
+      <div
+        ref={sectionOrderRef}
+        onTouchMove={editMode ? handleTouchMove : undefined}
+        onTouchEnd={editMode ? handleTouchEnd : undefined}
+        style={editMode ? { userSelect: "none", touchAction: "none" } : undefined}
+      >
       {sectionOrder.map((sectionId) => {
         const handleDragStart = (e: React.DragEvent) => {
           setDragging(sectionId);
@@ -1310,6 +1352,7 @@ export default function Home() {
         const wrapSection = (content: React.ReactNode) => (
           <div
             key={sectionId}
+            data-section-id={sectionId}
             draggable={editMode}
             onDragStart={editMode ? handleDragStart : undefined}
             onDragOver={editMode ? handleDragOver : undefined}
@@ -1318,7 +1361,11 @@ export default function Home() {
             className={`relative ${isDraggingThis ? "opacity-40" : ""}`}
           >
             {editMode && (
-              <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center cursor-grab active:cursor-grabbing" style={{ width: 44, touchAction: "none" }}>
+              <div
+                className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                style={{ width: 44, touchAction: "none" }}
+                onTouchStart={(e) => handleGripTouchStart(e, sectionId)}
+              >
                 <GripVertical size={24} className="text-text-dim" />
               </div>
             )}
@@ -1427,6 +1474,7 @@ export default function Home() {
 
         return null;
       })}
+      </div>
 
       {showBirthday && <BirthdayModal name={user.name} email={user.email} onClose={() => setShowBirthday(false)} />}
       {!showBirthday && showTour && <FeatureTourModal userEmail={user.email} onClose={handleCloseTour} />}

@@ -11,6 +11,7 @@ import Thread from "./pages/Thread";
 import Trending from "./pages/Trending";
 import NewThread from "./pages/NewThread";
 import NewMessage from "./pages/NewMessage";
+import NewPostPicker from "./pages/NewPostPicker";
 import Inspirations from "./pages/Inspirations";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
@@ -115,7 +116,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
-        <Route path="/community/new" element={<NewMessage />} />
+        <Route path="/community/new" element={<NewPostPicker />} />
         <Route path="/new-message" element={<NewMessage />} />
         <Route path="/trending" element={<Trending />} />
         <Route path="/community/:categoryId" element={<CategoryThreads />} />
