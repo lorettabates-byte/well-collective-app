@@ -1,4 +1,4 @@
-import { Award, ChevronDown, ChevronUp, Flame, Info, Share2, Trophy, Zap } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, Flame, Info, Share2, TrendingUp, Trophy, Zap } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -223,6 +223,7 @@ export default function WellCup() {
   const [yearResetAt, setYearResetAt] = useState("");
   const [mostConsistent, setMostConsistent] = useState<SpotlightInfo | null>(null);
   const [mostRounded, setMostRounded] = useState<SpotlightInfo | null>(null);
+  const [mostImproved, setMostImproved] = useState<SpotlightInfo | null>(null);
   const [myStats, setMyStats] = useState<MyStats | null>(null);
   const [view, setView] = useState<"top10" | "all">("top10");
   const [loadingAll, setLoadingAll] = useState(false);
@@ -240,7 +241,8 @@ export default function WellCup() {
       API_URL ? fetch(`${API_URL}/api/leaderboard/yearly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-consistent`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-rounded`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-    ]).then(([lb, winner, mon, yr, consistent, rounded]) => {
+      API_URL ? fetch(`${API_URL}/api/leaderboard/most-improved`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
+    ]).then(([lb, winner, mon, yr, consistent, rounded, improved]) => {
       setAllEntries(lb.leaderboard);
       setResetAt(lb.resetAt);
       setYesterday(winner);
@@ -254,6 +256,10 @@ export default function WellCup() {
       if (rounded?.leader) {
         const l = rounded.leader;
         setMostRounded({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.category_count} activity type${l.category_count !== 1 ? "s" : ""} this week` });
+      }
+      if (improved?.leader) {
+        const l = improved.leader;
+        setMostImproved({ name: l.name, avatar: l.avatar, email: l.email, stat: `+${l.improvement} pts vs last week` });
       }
     }).finally(() => setLoading(false));
   }, []);
@@ -377,6 +383,14 @@ export default function WellCup() {
                 accent="border-emerald-400/30 bg-emerald-400/5"
                 icon={Zap}
                 empty="No activity logged yet this week"
+              />
+              <SpotlightBanner
+                label="Most Improved — This Week"
+                description="Biggest points increase compared to last week. Consistently high scores can't win this — only growth can."
+                winner={mostImproved}
+                accent="border-sky-400/30 bg-sky-400/5"
+                icon={TrendingUp}
+                empty="Keep logging — this resets every Monday"
               />
             </div>
           </div>
