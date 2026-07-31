@@ -903,26 +903,26 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Recipe of the day CTA */}
-              <Link to="/nutrition?tab=recipes" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+              {/* Today's recipe */}
+              <Link to="/nutrition#nutrition-recipe" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
                   <Utensils size={20} className="text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-text">Recipe Inspiration</p>
-                  <p className="text-[11px] text-text-muted">Browse today's curated healthy recipes</p>
+                  <p className="text-xs font-bold text-text">Today's Recipe</p>
+                  <p className="text-[11px] text-text-muted">This week's featured healthy recipe</p>
                 </div>
                 <ChevronRight size={14} className="text-text-dim shrink-0" />
               </Link>
 
-              {/* Shopping list link */}
-              <Link to="/nutrition?tab=shopping" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+              {/* Meal plan link */}
+              <Link to="/nutrition/meal-plan" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)" }}>
-                  <Rss size={20} className="text-purple-400" />
+                  <Calendar size={20} className="text-purple-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-text">Shopping List</p>
-                  <p className="text-[11px] text-text-muted">Build and manage your grocery list</p>
+                  <p className="text-xs font-bold text-text">Meal Plan</p>
+                  <p className="text-[11px] text-text-muted">Plan and prep this week's meals</p>
                 </div>
                 <ChevronRight size={14} className="text-text-dim shrink-0" />
               </Link>
@@ -957,7 +957,7 @@ export default function Home() {
               iconColor: "text-yellow-400",
               headline: "Morning ritual",
               sub: "Breathwork · Daily plan · Set your intention",
-              to: "/wellness",
+              to: "/wellness?tab=activities",
               done: bwDone,
             },
             {
@@ -968,8 +968,8 @@ export default function Home() {
               border: "rgba(59,130,246,0.28)",
               iconColor: "text-blue-400",
               headline: "Midday reset",
-              sub: "Step outside · 10 min walk · Breathe",
-              to: "/wellness",
+              sub: "Calm toolkit · Mindful moment · Breathe",
+              to: "/wellness?tab=activities",
               done: false,
             },
             {
@@ -980,8 +980,8 @@ export default function Home() {
               border: "rgba(99,102,241,0.30)",
               iconColor: "text-indigo-400",
               headline: "Wind-down",
-              sub: "Gentle stretch · Sleep prep · Reflect",
-              to: "/wellness",
+              sub: "Gentle stretch · Sleep prep · Log your day",
+              to: "/wellness?tab=workout",
               done: false,
             },
           ];
@@ -1069,7 +1069,100 @@ export default function Home() {
                 <ChevronRight size={14} className="text-text-dim shrink-0" />
               </Link>
 
+              {/* WELL Activity */}
+              <Link to="/wellness?tab=activities" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.30)" }}>
+                  <Sparkles size={20} className="text-indigo-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-0.5">Daily Activity</p>
+                  <p className="text-sm font-bold text-text">Today's WELL Activity</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Motivational Music */}
+              <Link to="/music" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.28)" }}>
+                  <Music size={20} className="text-orange-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-0.5">Music</p>
+                  <p className="text-sm font-bold text-text">Motivational Playlist</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
               {/* Minimal nav strip */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
+                      <Icon size={16} className="text-text-dim" />
+                    </div>
+                    <span className="text-[10px] text-text-dim text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── CALM LAYOUT (stress reduction) ─────────────────────────────────────
+        if (homeLayout === "calm") {
+          return (
+            <div className="mb-6">
+              {/* Today's inspiration hero */}
+              {todaysInspiration && (
+                <Link to="/inspirations" className="block rounded-card px-5 py-5 mb-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.18) 100%)", border: "1px solid rgba(139,92,246,0.28)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-2">Today's Inspiration</p>
+                  <p className="text-sm font-bold text-text leading-snug mb-2">{todaysInspiration.title}</p>
+                  {todaysInspiration.body && (
+                    <p className="text-[11px] text-purple-300/70 leading-relaxed line-clamp-2">{todaysInspiration.body}</p>
+                  )}
+                </Link>
+              )}
+
+              {/* Calm toolkit */}
+              <Link to="/wellness?tab=activities" className="flex items-center gap-4 glass-card rounded-card px-4 py-4 mb-3 border border-blue-500/20">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.28)" }}>
+                  <Waves size={22} className="text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-0.5">Calm Toolkit</p>
+                  <p className="text-sm font-bold text-text">Daily breathwork & calming activity</p>
+                  <p className="text-[11px] text-text-muted mt-0.5">Guided breathing · Affirmations · Grounding</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Motivational sounds */}
+              <Link to="/music?tab=sounds" className="flex items-center gap-4 glass-card rounded-card px-4 py-4 mb-3 border border-indigo-500/20">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.28)" }}>
+                  <Waves size={22} className="text-indigo-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-0.5">Peaceful Sounds</p>
+                  <p className="text-sm font-bold text-text">Ambient & motivational sounds</p>
+                  <p className="text-[11px] text-text-muted mt-0.5">Rain · Forest · Ocean · Focus tones</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Motivational music */}
+              <Link to="/music" className="flex items-center gap-4 glass-card rounded-card px-4 py-4 mb-3 border border-orange-500/20">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.28)" }}>
+                  <Music size={22} className="text-orange-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-0.5">Music</p>
+                  <p className="text-sm font-bold text-text">Calm & motivational playlist</p>
+                  <p className="text-[11px] text-text-muted mt-0.5">Hand-curated music to reset your mind</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Compact nav strip */}
               <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
                 {links.map(({ to, label, icon: Icon }) => (
                   <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">

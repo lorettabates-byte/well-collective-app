@@ -89,6 +89,12 @@ const LAYOUTS: { id: string; label: string; description: string; sectionOrder: S
     description: "Guided morning · afternoon · evening — structured calm",
     sectionOrder: ["daily-plan", "inspiration", "weekly-theme", "events", "tribe", "well-cup", "community"],
   },
+  {
+    id: "calm",
+    label: "Calm",
+    description: "Inspiration · breathwork · peaceful sounds — stress reduction focus",
+    sectionOrder: ["inspiration", "weekly-theme", "daily-plan", "tribe", "events", "community", "well-cup"],
+  },
 ];
 
 // "dashboard" and "together" are legacy IDs — map them to their new equivalents
@@ -98,7 +104,7 @@ const LAYOUT_ID_ALIASES: Record<string, string> = {
 };
 
 const GOAL_RECOMMENDED_LAYOUT: Record<string, string> = {
-  stress:    "flow",
+  stress:    "calm",
   energy:    "exercise",
   strength:  "exercise",
   weight:    "nutrition",

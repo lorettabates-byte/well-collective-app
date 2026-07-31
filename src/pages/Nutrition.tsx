@@ -362,6 +362,17 @@ export default function Nutrition() {
       .catch(() => {});
   }, [user.email]);
 
+  // Scroll to hash anchor (e.g. #nutrition-recipe from home screen deep link)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
   // ── Saved meals (quick reuse of commonly eaten meals) ──────────────────────
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
   const [showSaveMealPrompt, setShowSaveMealPrompt] = useState(false);
@@ -1271,7 +1282,7 @@ export default function Nutrition() {
           Plan This Week's Meals
         </a>
 
-        <div className="glass-card rounded-card overflow-hidden">
+        <div id="nutrition-recipe" className="glass-card rounded-card overflow-hidden">
           <img src={todaysRecipe.image} alt={todaysRecipe.name} className="w-full h-48 object-cover" />
           <div className="p-4">
             <div className="flex items-center gap-1.5 mb-1.5">

@@ -1,4 +1,5 @@
-import { Award, ChevronDown, ChevronUp, Info, RotateCcw, Share2, Star, TrendingUp, Trophy } from "lucide-react";
+import { Award, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Info, RotateCcw, Share2, Star, TrendingUp, Trophy } from "lucide-react";
+import { todayISO } from "../utils/format";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -233,6 +234,40 @@ export default function WellCup() {
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayExpanded, setTodayExpanded] = useState(true);
 
+  // WELL Check tracker data
+  const today = todayISO();
+  const workoutLog = user.workoutLog ?? [];
+  const breathworkLog = user.breathworkLog ?? [];
+  const wellActivityLog = user.wellActivityLog ?? [];
+  const resistanceLog = user.resistanceLog ?? [];
+  const stretchingLog = user.stretchingLog ?? [];
+  const sleepDone = localStorage.getItem(`well-sleep-${today}`) === "1";
+  const breathworkDone = breathworkLog.includes(today) || localStorage.getItem(`well-breathwork-marked-${today}`) === "1";
+  const calmDone = localStorage.getItem(`well-calm-done-${today}`) === "1";
+  const stretchDone = stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1";
+  const workoutDone = workoutLog.includes(today) || resistanceLog.includes(today);
+  const wellActDone = wellActivityLog.includes(today);
+  const [hasMealsToday, setHasMealsToday] = useState(false);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/meals/today?email=${encodeURIComponent(user.email)}`)
+      .then(r => r.ok ? r.json() : { meals: [] })
+      .then(d => { if ((d.meals ?? []).length > 0) setHasMealsToday(true); })
+      .catch(() => {});
+  }, [user.email]);
+
+  const CHECKIN_CATEGORIES = [
+    { label: "Workout",    done: workoutDone },
+    { label: "Sleep",      done: sleepDone },
+    { label: "Nutrition",  done: hasMealsToday },
+    { label: "Breathwork", done: breathworkDone },
+    { label: "Stretching", done: stretchDone },
+    { label: "Mindset",    done: wellActDone || calmDone },
+  ];
+  const checkinDone = CHECKIN_CATEGORIES.filter(c => c.done).length;
+  const checkinPct = Math.round((checkinDone / CHECKIN_CATEGORIES.length) * 100);
+
   useEffect(() => {
     Promise.all([
       fetchLeaderboard(10),
@@ -455,6 +490,77 @@ export default function WellCup() {
           </div>
         </div>
 
+        {/* Daily Goal Tracker (WELL Check) */}
+        <a href="/well-check" className="block glass-card rounded-card p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={13} className="text-brand-light" />
+              <span className="text-[11px] font-bold text-text uppercase tracking-wide">Daily Goal Tracker</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold text-brand-light">{checkinDone}/{CHECKIN_CATEGORIES.length} done</span>
+              <ChevronRight size={13} className="text-text-dim" />
+            </div>
+          </div>
+          <div className="h-[3px] rounded-full mb-3" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <div className="h-[3px] rounded-full gradient-brand transition-all duration-500" style={{ width: `${checkinPct}%` }} />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {CHECKIN_CATEGORIES.map((c) => (
+              <div key={c.label} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border ${c.done ? "bg-brand-light/15 border-brand-light/40 text-brand-light" : "bg-surface-2 border-border text-text-dim"}`}>
+                <CheckCircle2 size={9} className={c.done ? "text-brand-light" : "text-text-dim/40"} />
+                {c.label}
+              </div>
+            ))}
+          </div>
+        </a>
+
+        {/* Today's points breakdown */}
+        <div className="glass-card rounded-card p-4">
+          <button
+            onClick={() => setTodayExpanded((v) => !v)}
+            className="w-full flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Trophy size={14} className="text-yellow-400 shrink-0" />
+              <span className="text-sm font-bold text-text">My points today</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
+              {todayExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+            </div>
+          </button>
+          {todayExpanded && (
+            <div className="mt-3 pt-3 border-t border-border">
+              {todayActivities.length === 0 ? (
+                <p className="text-xs text-text-dim text-center py-1">No points earned yet today — start logging!</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {todayActivities
+                    .sort((a, b) => b.points - a.points)
+                    .map((act) => {
+                      const meta = ACTIVITY_META[act.type];
+                      return (
+                        <div key={act.type} className="flex items-center gap-2">
+                          <span className="text-base w-6 text-center shrink-0">{meta?.emoji ?? "⚡"}</span>
+                          <span className="text-xs text-text-muted flex-1">
+                            {meta?.label ?? act.type.replace(/_/g, " ")}
+                            {act.count > 1 && <span className="text-text-dim"> ×{act.count}</span>}
+                          </span>
+                          <span className="text-xs font-bold text-brand-light shrink-0">+{act.points}</span>
+                        </div>
+                      );
+                    })}
+                  <div className="flex items-center justify-between pt-2 mt-1 border-t border-border">
+                    <span className="text-xs font-bold text-text">Total</span>
+                    <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Full leaderboard */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -507,51 +613,6 @@ export default function WellCup() {
               )}
               {view === "all" && allEntries.length > 10 && (
                 <button onClick={() => setView("top10")} className="text-xs text-text-dim font-semibold">Show less</button>
-              )}
-            </div>
-          )}
-        </div>
-        {/* Today's points breakdown */}
-        <div className="glass-card rounded-card p-4">
-          <button
-            onClick={() => setTodayExpanded((v) => !v)}
-            className="w-full flex items-center justify-between gap-2"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <Trophy size={14} className="text-yellow-400 shrink-0" />
-              <span className="text-sm font-bold text-text">My points today</span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
-              {todayExpanded ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
-            </div>
-          </button>
-          {todayExpanded && (
-            <div className="mt-3 pt-3 border-t border-border">
-              {todayActivities.length === 0 ? (
-                <p className="text-xs text-text-dim text-center py-1">No points earned yet today — start logging!</p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {todayActivities
-                    .sort((a, b) => b.points - a.points)
-                    .map((act) => {
-                      const meta = ACTIVITY_META[act.type];
-                      return (
-                        <div key={act.type} className="flex items-center gap-2">
-                          <span className="text-base w-6 text-center shrink-0">{meta?.emoji ?? "⚡"}</span>
-                          <span className="text-xs text-text-muted flex-1">
-                            {meta?.label ?? act.type.replace(/_/g, " ")}
-                            {act.count > 1 && <span className="text-text-dim"> ×{act.count}</span>}
-                          </span>
-                          <span className="text-xs font-bold text-brand-light shrink-0">+{act.points}</span>
-                        </div>
-                      );
-                    })}
-                  <div className="flex items-center justify-between pt-2 mt-1 border-t border-border">
-                    <span className="text-xs font-bold text-text">Total</span>
-                    <span className="text-sm font-extrabold text-yellow-400">{todayTotal} pts</span>
-                  </div>
-                </div>
               )}
             </div>
           )}
