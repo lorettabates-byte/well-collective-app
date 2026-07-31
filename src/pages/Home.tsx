@@ -1,4 +1,4 @@
-import { Bell, Calendar, CheckCircle2, ChevronRight, Flame, Gift, GripVertical, Info, MessageCircle, Music, Play, Rss, Salad, Share2, Sparkles, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, MessageCircle, Moon, Music, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Trophy, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
@@ -662,46 +662,49 @@ export default function Home() {
 
       {(() => {
         const links = getQuickLinks(user.goalPlan);
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+        const plan = user.goalPlan ? getDailyPlan(user.goalPlan, dayOfYear) : null;
+        const hour = new Date().getHours();
 
+        // ── FOCUS LAYOUT ───────────────────────────────────────────────────────
         if (homeLayout === "focus") {
-          const effectiveBigIds = focusBigIds.length === 4 ? focusBigIds : links.slice(0, 4).map((l) => l.id);
-          const bigLinks = links.filter((l) => effectiveBigIds.includes(l.id));
-          const smallLinks = links.filter((l) => !effectiveBigIds.includes(l.id));
+          const defaultBig = links.slice(0, 4).map((l) => l.id);
+          const activeBigIds = focusBigIds.length === 4 ? focusBigIds : defaultBig;
+          const bigLinks = links.filter((l) => activeBigIds.includes(l.id));
+          const smallLinks = links.filter((l) => !activeBigIds.includes(l.id));
 
+          // Bug fix: toggle works directly on state; initialization happens on picker open
           const toggleFocusSection = (id: string) => {
             setFocusBigIds((prev) => {
-              const cur = prev.length === 4 ? prev : links.slice(0, 4).map((l) => l.id);
-              if (cur.includes(id)) return cur.filter((x) => x !== id);
-              if (cur.length < 4) return [...cur, id];
-              return cur;
+              if (prev.includes(id)) return prev.filter((x) => x !== id);
+              if (prev.length < 4) return [...prev, id];
+              return prev;
             });
           };
 
           const saveFocusPicker = () => {
-            const cur = focusBigIds.length > 0 ? focusBigIds : effectiveBigIds;
-            localStorage.setItem("well-focus-shortcuts-v1", JSON.stringify(cur));
+            localStorage.setItem("well-focus-shortcuts-v1", JSON.stringify(focusBigIds));
             setShowFocusPicker(false);
           };
 
           if (showFocusPicker) {
-            const pickerIds = focusBigIds.length > 0 ? focusBigIds : effectiveBigIds;
-            const remaining = 4 - pickerIds.length;
+            const remaining = 4 - focusBigIds.length;
             return (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-bold text-text">Choose your 4 featured sections</p>
                   <button
                     onClick={saveFocusPicker}
-                    disabled={pickerIds.length !== 4}
+                    disabled={focusBigIds.length !== 4}
                     className="text-xs font-semibold text-brand-light disabled:opacity-40"
                   >
-                    {pickerIds.length === 4 ? "Done" : `${remaining} more to go`}
+                    {focusBigIds.length === 4 ? "Done" : `${remaining} more to go`}
                   </button>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {links.map(({ id, label, icon: Icon }) => {
-                    const selected = pickerIds.includes(id);
-                    const disabled = !selected && pickerIds.length >= 4;
+                    const selected = focusBigIds.includes(id);
+                    const disabled = !selected && focusBigIds.length >= 4;
                     return (
                       <button
                         key={id}
@@ -709,7 +712,7 @@ export default function Home() {
                         disabled={disabled}
                         className={`flex flex-col items-center gap-1.5 transition-opacity ${disabled ? "opacity-30" : ""}`}
                       >
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative shadow-glow ${selected ? "gradient-brand" : "bg-surface-2 border border-border"}`}>
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${selected ? "gradient-brand shadow-glow" : "bg-surface-2 border border-border"}`}>
                           <Icon size={22} className={selected ? "text-white" : "text-text-dim"} />
                           {selected && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-light border border-surface flex items-center justify-center">
@@ -731,17 +734,17 @@ export default function Home() {
               <div className="flex items-center justify-end mb-2">
                 <button
                   onClick={() => {
-                    if (focusBigIds.length === 0) setFocusBigIds(effectiveBigIds);
+                    setFocusBigIds(activeBigIds);
                     setShowFocusPicker(true);
                   }}
                   className="text-[11px] font-semibold text-brand-light border border-brand-light/40 rounded-pill px-3 py-1.5"
                 >
-                  Choose your 4
+                  Customize
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 {bigLinks.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-6">
+                  <Link key={to} to={to} className="flex flex-col items-center justify-center gap-3 glass-card rounded-card py-7">
                     <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
                       <Icon size={28} className="text-white" />
                     </div>
@@ -751,129 +754,6 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {smallLinks.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
-                    <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-80">
-                      <Icon size={18} className="text-white" />
-                    </div>
-                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        if (homeLayout === "flow") {
-          // Two-column pill rows: icon left, label right — easier to scan and tap
-          return (
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              {links.map(({ to, label, icon: Icon }) => (
-                <Link key={to} to={to} className="flex items-center gap-3 glass-card rounded-pill px-4 py-3">
-                  <div className="w-9 h-9 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
-                    <Icon size={18} className="text-white" />
-                  </div>
-                  <span className="text-sm font-semibold text-text leading-tight">{label}</span>
-                </Link>
-              ))}
-            </div>
-          );
-        }
-
-        if (homeLayout === "exercise") {
-          // Compact 4×2 grid — all 8 at a glance, performance-dashboard feel
-          return (
-            <div className="mb-6">
-              {(workoutLog.includes(today) || resistanceLog.includes(today)) && (
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <CheckCircle2 size={13} className="text-brand-light shrink-0" />
-                  <span className="text-[11px] text-brand-light font-semibold">Workout logged today — great work!</span>
-                </div>
-              )}
-              <div className="grid grid-cols-4 gap-2">
-                {links.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
-                    <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center">
-                      <Icon size={18} className="text-white" />
-                    </div>
-                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        if (homeLayout === "nutrition") {
-          // Nutrition-forward: macro summary nudge + horizontal icon scroll
-          const hasTracked = homeMacros != null;
-          return (
-            <div className="mb-6">
-              <div className={`flex items-center gap-3 rounded-card px-3 py-2.5 mb-3 border ${hasTracked ? "border-brand-light/30 bg-brand-light/5" : "border-border bg-surface-2"}`}>
-                <Salad size={16} className={hasTracked ? "text-brand-light shrink-0" : "text-text-dim shrink-0"} />
-                {hasTracked && homeMacros ? (
-                  <div className="flex items-center gap-3 text-[10px]">
-                    <span className="font-bold text-text">{Math.round(homeMacros.calories).toLocaleString()} kcal</span>
-                    <span className="text-text-dim">P <span className="text-text font-semibold">{Math.round(homeMacros.protein)}g</span></span>
-                    <span className="text-text-dim">C <span className="text-text font-semibold">{Math.round(homeMacros.carbs)}g</span></span>
-                    <span className="text-text-dim">F <span className="text-text font-semibold">{Math.round(homeMacros.fat)}g</span></span>
-                  </div>
-                ) : (
-                  <span className="text-[11px] text-text-dim">No meals logged yet today — tap Nutrition to start</span>
-                )}
-              </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-                {links.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-2">
-                    <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
-                      <Icon size={22} className="text-white" />
-                    </div>
-                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        if (homeLayout === "inspire") {
-          // Single horizontal scroll strip — minimal, clean, inspiration-forward
-          return (
-            <div className="mb-6">
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-                {links.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-2">
-                    <div className="w-14 h-14 rounded-2xl gradient-brand shadow-glow flex items-center justify-center">
-                      <Icon size={22} className="text-white" />
-                    </div>
-                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        if (homeLayout === "community") {
-          // Community-first: top 4 shown as full-width pill cards with gradient border
-          const top4 = links.slice(0, 4);
-          const bottom4 = links.slice(4);
-          return (
-            <div className="mb-6">
-              <div className="flex flex-col gap-2 mb-3">
-                {top4.map(({ to, label, icon: Icon }) => (
-                  <Link key={to} to={to} className="flex items-center gap-4 gradient-brand p-[1px] rounded-card">
-                    <div className="flex items-center gap-4 bg-surface rounded-card px-4 py-3 w-full">
-                      <div className="w-10 h-10 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
-                        <Icon size={20} className="text-white" />
-                      </div>
-                      <span className="text-sm font-semibold text-text">{label}</span>
-                      <ChevronRight size={14} className="ml-auto text-text-dim" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {bottom4.map(({ to, label, icon: Icon }) => (
                   <Link key={to} to={to} className="flex flex-col items-center gap-1.5">
                     <div className="w-11 h-11 rounded-xl gradient-brand shadow-glow flex items-center justify-center opacity-70">
                       <Icon size={18} className="text-white" />
@@ -886,7 +766,388 @@ export default function Home() {
           );
         }
 
-        // Classic (default)
+        // ── EXERCISE LAYOUT ────────────────────────────────────────────────────
+        if (homeLayout === "exercise") {
+          const weekStart = new Date();
+          weekStart.setHours(0, 0, 0, 0);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          const weekStartStr = weekStart.toISOString().split("T")[0];
+          const workoutsThisWeek = [...new Set([...workoutLog, ...resistanceLog])].filter((d) => d >= weekStartStr).length;
+          const weeklyGoal = 4;
+          const todayDone = workoutLog.includes(today) || resistanceLog.includes(today);
+
+          return (
+            <div className="mb-6">
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(139,92,246,0.12)", borderColor: "rgba(139,92,246,0.35)" }}>
+                  <Trophy size={16} className="text-purple-400" />
+                  <span className="text-lg font-extrabold text-purple-300 leading-none">{homePoints ?? "—"}</span>
+                  <span className="text-[10px] text-purple-400/80">Cup pts</span>
+                </div>
+                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(251,146,60,0.12)", borderColor: "rgba(251,146,60,0.35)" }}>
+                  <Flame size={16} className="text-orange-400" />
+                  <span className="text-lg font-extrabold text-orange-300 leading-none">{headerStreak ?? "—"}</span>
+                  <span className="text-[10px] text-orange-400/80">Day streak</span>
+                </div>
+                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.30)" }}>
+                  <Activity size={16} className="text-blue-400" />
+                  <span className="text-lg font-extrabold text-blue-300 leading-none">{homeSteps != null ? homeSteps.toLocaleString() : "—"}</span>
+                  <span className="text-[10px] text-blue-400/80">Steps</span>
+                </div>
+              </div>
+
+              {/* Weekly workout progress */}
+              <div className="glass-card rounded-card px-4 py-3 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell size={13} className="text-brand-light" />
+                    <span className="text-xs font-semibold text-text">Workouts this week</span>
+                  </div>
+                  <span className="text-xs font-bold text-brand-light">{workoutsThisWeek} of {weeklyGoal}</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {Array.from({ length: weeklyGoal }).map((_, i) => (
+                    <div key={i} className={`h-2 flex-1 rounded-full transition-all ${i < workoutsThisWeek ? "gradient-brand" : "bg-surface-2 border border-border"}`} />
+                  ))}
+                </div>
+                {todayDone && (
+                  <p className="text-[10px] text-brand-light mt-2 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> Workout logged today — great work!
+                  </p>
+                )}
+              </div>
+
+              {/* Today's fitness plan */}
+              {plan && (
+                <Link to="/wellness?tab=activities" className="block glass-card rounded-card px-4 py-3 mb-3 border border-brand-light/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-brand-light">Today's Focus</span>
+                    <ChevronRight size={13} className="text-text-dim" />
+                  </div>
+                  <p className="text-sm font-bold text-text mb-1">{plan.title}</p>
+                  <div className="flex flex-col gap-1">
+                    {plan.tasks.slice(0, 2).map((t, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-light mt-1.5 shrink-0" />
+                        <p className="text-[11px] text-text-muted leading-tight">{t}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Link>
+              )}
+
+              {/* Quick nav */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="w-12 h-12 rounded-xl gradient-brand shadow-glow flex items-center justify-center">
+                      <Icon size={19} className="text-white" />
+                    </div>
+                    <span className="text-[10px] text-text-muted text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── NUTRITION LAYOUT ───────────────────────────────────────────────────
+        if (homeLayout === "nutrition") {
+          const cals = homeMacros ? Math.round(homeMacros.calories) : 0;
+          const calGoal = 2000;
+          const calPct = Math.min(100, Math.round((cals / calGoal) * 100));
+
+          return (
+            <div className="mb-6">
+              {/* Macro summary card */}
+              <div className="glass-card rounded-card px-4 py-4 mb-3 border border-green-500/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Salad size={14} className="text-green-400" />
+                    <span className="text-xs font-bold text-text">Today's Nutrition</span>
+                  </div>
+                  <Link to="/nutrition" className="text-[10px] text-brand-light font-semibold flex items-center gap-1">
+                    + Log meal <ChevronRight size={10} />
+                  </Link>
+                </div>
+                {homeMacros ? (
+                  <>
+                    <div className="flex items-end gap-2 mb-2">
+                      <span className="text-2xl font-extrabold text-text leading-none">{cals.toLocaleString()}</span>
+                      <span className="text-xs text-text-dim mb-0.5">/ {calGoal.toLocaleString()} kcal</span>
+                    </div>
+                    <div className="h-2 rounded-full mb-3" style={{ background: "rgba(255,255,255,0.07)" }}>
+                      <div className="h-2 rounded-full bg-green-500 transition-all duration-500" style={{ width: `${calPct}%` }} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: "Protein", val: Math.round(homeMacros.protein), unit: "g", color: "text-blue-300" },
+                        { label: "Carbs", val: Math.round(homeMacros.carbs), unit: "g", color: "text-yellow-300" },
+                        { label: "Fat", val: Math.round(homeMacros.fat), unit: "g", color: "text-orange-300" },
+                      ].map(({ label, val, unit, color }) => (
+                        <div key={label} className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                          <p className={`text-base font-bold leading-none ${color}`}>{val}<span className="text-[10px] font-normal text-text-dim">{unit}</span></p>
+                          <p className="text-[10px] text-text-dim mt-0.5">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center py-3 gap-2">
+                    <p className="text-sm text-text-muted">No meals logged yet today.</p>
+                    <Link to="/nutrition" className="gradient-brand text-white text-xs font-semibold px-4 py-2 rounded-pill shadow-glow">
+                      + Log your first meal
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Recipe of the day CTA */}
+              <Link to="/nutrition?tab=recipes" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <Utensils size={20} className="text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-text">Recipe Inspiration</p>
+                  <p className="text-[11px] text-text-muted">Browse today's curated healthy recipes</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Shopping list link */}
+              <Link to="/nutrition?tab=shopping" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)" }}>
+                  <Rss size={20} className="text-purple-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-text">Shopping List</p>
+                  <p className="text-[11px] text-text-muted">Build and manage your grocery list</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Compact quick nav */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.filter((l) => l.id !== "nutrition").map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
+                      <Icon size={16} className="text-text-dim" />
+                    </div>
+                    <span className="text-[10px] text-text-dim text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── FLOW LAYOUT ────────────────────────────────────────────────────────
+        if (homeLayout === "flow") {
+          const timeBlock = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+          const bwDone = breathworkLog.includes(today);
+
+          const blocks = [
+            {
+              id: "morning",
+              Icon: Sunrise,
+              label: "Morning",
+              color: "rgba(251,191,36,0.12)",
+              border: "rgba(251,191,36,0.30)",
+              iconColor: "text-yellow-400",
+              headline: "Morning ritual",
+              sub: "Breathwork · Daily plan · Set your intention",
+              to: "/wellness",
+              done: bwDone,
+            },
+            {
+              id: "afternoon",
+              Icon: Sun,
+              label: "Afternoon",
+              color: "rgba(59,130,246,0.10)",
+              border: "rgba(59,130,246,0.28)",
+              iconColor: "text-blue-400",
+              headline: "Midday reset",
+              sub: "Step outside · 10 min walk · Breathe",
+              to: "/wellness",
+              done: false,
+            },
+            {
+              id: "evening",
+              Icon: Moon,
+              label: "Evening",
+              color: "rgba(99,102,241,0.12)",
+              border: "rgba(99,102,241,0.30)",
+              iconColor: "text-indigo-400",
+              headline: "Wind-down",
+              sub: "Gentle stretch · Sleep prep · Reflect",
+              to: "/wellness",
+              done: false,
+            },
+          ];
+          const current = blocks.find((b) => b.id === timeBlock) ?? blocks[0];
+          const others = blocks.filter((b) => b.id !== timeBlock);
+
+          return (
+            <div className="mb-6">
+              {/* Current time block — hero */}
+              <Link to={current.to} className="block rounded-card px-4 py-5 mb-3 border" style={{ background: current.color, borderColor: current.border }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <current.Icon size={14} className={current.iconColor} />
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${current.iconColor}`}>Right Now · {current.label}</span>
+                  {current.done && <CheckCircle2 size={12} className="text-brand-light ml-auto" />}
+                </div>
+                <p className="text-lg font-extrabold text-text mb-1">{plan ? plan.title : current.headline}</p>
+                <p className="text-xs text-text-muted">{plan ? plan.tasks[0] : current.sub}</p>
+              </Link>
+
+              {/* Other time blocks */}
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-dim mb-2 px-1">More sections</p>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {others.map((b) => (
+                  <Link key={b.id} to={b.to} className="rounded-card px-3 py-3 border" style={{ background: b.color, borderColor: b.border }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <b.Icon size={12} className={b.iconColor} />
+                      <span className={`text-[10px] font-bold ${b.iconColor}`}>{b.label}</span>
+                    </div>
+                    <p className="text-xs font-semibold text-text">{b.headline}</p>
+                    <p className="text-[10px] text-text-dim leading-tight mt-0.5">{b.sub}</p>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Compact nav strip */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
+                      <Icon size={16} className="text-text-dim" />
+                    </div>
+                    <span className="text-[10px] text-text-dim text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── INSPIRE LAYOUT ─────────────────────────────────────────────────────
+        if (homeLayout === "inspire") {
+          return (
+            <div className="mb-6">
+              {/* Hero inspiration quote */}
+              {todaysInspiration && (
+                <Link to="/inspirations" className="block rounded-card px-5 py-6 mb-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.22) 100%)", border: "1px solid rgba(139,92,246,0.30)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-3">Today's Inspiration</p>
+                  <p className="text-base font-bold text-text leading-snug mb-3">{todaysInspiration.title}</p>
+                  {todaysInspiration.body && (
+                    <p className="text-[11px] text-purple-300/80 leading-relaxed line-clamp-3">{todaysInspiration.body}</p>
+                  )}
+                </Link>
+              )}
+
+              {/* Weekly theme card */}
+              {currentWeeklyTheme && (
+                <div className="glass-card rounded-card px-4 py-3 mb-3 border border-brand-light/20">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-light mb-1">This Week's Theme</p>
+                  <p className="text-sm font-bold text-text">{currentWeeklyTheme.title}</p>
+                  {currentWeeklyTheme.body && (
+                    <p className="text-[11px] text-text-muted mt-1 leading-tight line-clamp-2">{currentWeeklyTheme.body}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Featured class CTA */}
+              <Link to="/videos" className="flex items-center gap-4 glass-card rounded-card px-4 py-3 mb-3">
+                <div className="w-12 h-12 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
+                  <Play size={20} className="text-white ml-0.5" fill="white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-light mb-0.5">Featured Class</p>
+                  <p className="text-sm font-bold text-text">Browse Today's Classes</p>
+                </div>
+                <ChevronRight size={14} className="text-text-dim shrink-0" />
+              </Link>
+
+              {/* Minimal nav strip */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center">
+                      <Icon size={16} className="text-text-dim" />
+                    </div>
+                    <span className="text-[10px] text-text-dim text-center leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── COMMUNITY LAYOUT ───────────────────────────────────────────────────
+        if (homeLayout === "community") {
+          return (
+            <div className="mb-6">
+              {/* Community threads */}
+              {latestThreads.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-text">From the Community</span>
+                    <Link to="/community" className="text-[11px] text-brand-light font-semibold">See all</Link>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {latestThreads.map((thread) => (
+                      <Link key={thread.id} to="/community" className="glass-card rounded-card px-4 py-3 border border-border">
+                        <p className="text-xs font-semibold text-text leading-snug mb-1 line-clamp-2">{thread.title}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-text-dim">
+                          <MessageCircle size={10} />
+                          <span>{thread.messages.length} {thread.messages.length === 1 ? "reply" : "replies"}</span>
+                          <span>·</span>
+                          <span>{thread.authorName}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upcoming event */}
+              {upcomingEvents[0] && (
+                <Link to="/events" className="flex items-center gap-3 glass-card rounded-card px-4 py-3 mb-3 border border-border">
+                  <div className="w-10 h-10 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
+                    <Calendar size={18} className="text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-brand-light font-bold uppercase tracking-wide mb-0.5">Next Event</p>
+                    <p className="text-xs font-bold text-text line-clamp-1">{upcomingEvents[0].title}</p>
+                    <p className="text-[10px] text-text-muted">{upcomingEvents[0].date}</p>
+                  </div>
+                  <ChevronRight size={14} className="text-text-dim shrink-0" />
+                </Link>
+              )}
+
+              {/* Community quick nav — full-width pill links */}
+              <div className="flex flex-col gap-2">
+                {[
+                  { to: "/community", label: "Community Forums", icon: MessageCircle },
+                  { to: "/events", label: "Events & Meetups", icon: Calendar },
+                  { to: "/inspirations", label: "Inspiration Board", icon: Sparkles },
+                  { to: "/well-cup", label: "WELL Cup Leaderboard", icon: Trophy },
+                ].map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} className="flex items-center gap-4 gradient-brand p-[1px] rounded-card">
+                    <div className="flex items-center gap-4 bg-surface rounded-card px-4 py-3 w-full">
+                      <Icon size={18} className="text-brand-light" />
+                      <span className="text-sm font-semibold text-text">{label}</span>
+                      <ChevronRight size={14} className="ml-auto text-text-dim" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // ── CLASSIC (default) ──────────────────────────────────────────────────
         return (
           <div className="grid grid-cols-4 gap-3 mb-6">
             {links.map(({ to, label, icon: Icon }) => (
