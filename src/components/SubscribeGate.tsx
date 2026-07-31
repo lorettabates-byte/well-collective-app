@@ -123,6 +123,10 @@ export default function SubscribeGate({
 
           {isNative ? (
             <>
+              <div className="rounded-[12px] p-3 mb-3 text-center" style={{ background: "rgba(1,145,206,0.08)", border: "1px solid rgba(1,145,206,0.18)" }}>
+                <p className="text-[12px] font-bold text-brand-light mb-0.5">WELL Collective Monthly</p>
+                <p className="text-[11px] text-text-muted">$30.00 / month · Auto-renews monthly</p>
+              </div>
               <button
                 onClick={handleIAPPurchase}
                 disabled={purchasing}
