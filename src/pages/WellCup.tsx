@@ -1,4 +1,4 @@
-import { Award, ChevronDown, ChevronUp, Flame, Info, RotateCcw, Share2, Star, Sun, TrendingUp, Trophy, Zap } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, Info, RotateCcw, Share2, Star, TrendingUp, Trophy } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -221,11 +221,8 @@ export default function WellCup() {
   const [monthly, setMonthly] = useState<WinnerInfo | null>(null);
   const [yearly, setYearly] = useState<WinnerInfo | null>(null);
   const [yearResetAt, setYearResetAt] = useState("");
-  const [mostConsistent, setMostConsistent] = useState<SpotlightInfo | null>(null);
-  const [mostRounded, setMostRounded] = useState<SpotlightInfo | null>(null);
   const [mostImproved, setMostImproved] = useState<SpotlightInfo | null>(null);
   const [comeback, setComeback] = useState<SpotlightInfo | null>(null);
-  const [weekendWarrior, setWeekendWarrior] = useState<SpotlightInfo | null>(null);
   const [luckyDraw, setLuckyDraw] = useState<SpotlightInfo | null>(null);
   const [myStats, setMyStats] = useState<MyStats | null>(null);
   const [view, setView] = useState<"top10" | "all">("top10");
@@ -242,27 +239,16 @@ export default function WellCup() {
       fetchYesterdayWinner(),
       API_URL ? fetch(`${API_URL}/api/leaderboard/monthly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/yearly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/most-consistent`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/most-rounded`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/most-improved`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/comeback`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/weekend-warrior`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
       API_URL ? fetch(`${API_URL}/api/leaderboard/lucky-draw`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-    ]).then(([lb, winner, mon, yr, consistent, rounded, improved, cb, weekend, lucky]) => {
+    ]).then(([lb, winner, mon, yr, improved, cb, lucky]) => {
       setAllEntries(lb.leaderboard);
       setResetAt(lb.resetAt);
       setYesterday(winner);
       setMonthly(mon?.leader ?? null);
       setYearly(yr?.leader ?? null);
       if (yr?.yearResetAt) setYearResetAt(yr.yearResetAt);
-      if (consistent?.leader) {
-        const l = consistent.leader;
-        setMostConsistent({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.active_days} active day${l.active_days !== 1 ? "s" : ""} this month` });
-      }
-      if (rounded?.leader) {
-        const l = rounded.leader;
-        setMostRounded({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.category_count} activity type${l.category_count !== 1 ? "s" : ""} this week` });
-      }
       if (improved?.leader) {
         const l = improved.leader;
         setMostImproved({ name: l.name, avatar: l.avatar, email: l.email, stat: `+${l.improvement} pts vs last week` });
@@ -270,10 +256,6 @@ export default function WellCup() {
       if (cb?.leader) {
         const l = cb.leader;
         setComeback({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.this_week_pts} pts — back after a break` });
-      }
-      if (weekend?.leader) {
-        const l = weekend.leader;
-        setWeekendWarrior({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.weekend_pts} pts on weekends this month` });
       }
       if (lucky?.leader) {
         const l = lucky.leader;
@@ -387,22 +369,6 @@ export default function WellCup() {
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Spotlight Awards</p>
             <div className="flex flex-col gap-3">
               <SpotlightBanner
-                label="Most Consistent — This Month"
-                description="Who showed up the most days this month, regardless of total points."
-                winner={mostConsistent}
-                accent="border-teal-400/30 bg-teal-400/5"
-                icon={Flame}
-                empty="No activity logged yet this month"
-              />
-              <SpotlightBanner
-                label="Most Well-Rounded — This Week"
-                description="Who logged the most distinct activity types this week (workout, sleep, nutrition, breathwork, and more)."
-                winner={mostRounded}
-                accent="border-emerald-400/30 bg-emerald-400/5"
-                icon={Zap}
-                empty="No activity logged yet this week"
-              />
-              <SpotlightBanner
                 label="Most Improved — This Week"
                 description="Biggest points increase compared to last week. Consistently high scores can't win this — only growth can."
                 winner={mostImproved}
@@ -417,14 +383,6 @@ export default function WellCup() {
                 accent="border-violet-400/30 bg-violet-400/5"
                 icon={RotateCcw}
                 empty="No returning members logged points yet this week"
-              />
-              <SpotlightBanner
-                label="Weekend Warrior — This Month"
-                description="Most points earned specifically on Saturdays and Sundays. Your weekday grind doesn't count here."
-                winner={weekendWarrior}
-                accent="border-amber-400/30 bg-amber-400/5"
-                icon={Sun}
-                empty="No weekend points logged yet this month"
               />
               <SpotlightBanner
                 label="Weekly Lucky Draw"
