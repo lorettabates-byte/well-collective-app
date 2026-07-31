@@ -1,4 +1,4 @@
-import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, MessageCircle, Moon, Music, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
@@ -1215,51 +1215,44 @@ export default function Home() {
 
         // ── COMMUNITY LAYOUT ───────────────────────────────────────────────────
         if (homeLayout === "community") {
+          const communityPosts = getTrendingThreads(threads, 4, 1);
           return (
             <div className="mb-6">
-              {/* From the Community — thread feed */}
-              {latestThreads.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-text flex items-center gap-2">
-                      <Sparkles size={14} className="text-brand-light" />
-                      From the Community
-                    </span>
+              {/* Action row */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <Link
+                  to="/community/new"
+                  className="flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-3 shadow-glow"
+                >
+                  <PenSquare size={15} />
+                  New Post
+                </Link>
+                <Link
+                  to="/messages"
+                  className="flex items-center justify-center gap-2 glass-card text-text text-sm font-semibold rounded-pill py-3 border border-border"
+                >
+                  <Mail size={15} />
+                  Messages
+                </Link>
+              </div>
+
+              {/* Recent posts */}
+              {communityPosts.length > 0 && (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-bold text-text">Recent Posts</h2>
                     <Link to="/community" className="text-xs text-brand-light font-semibold">See all</Link>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {latestThreads.slice(0, 4).map((thread) => (
-                      <Link key={thread.id} to="/community" className="glass-card rounded-card px-4 py-3 border border-border">
-                        <p className="text-sm font-semibold text-text leading-snug mb-1.5 line-clamp-2">{thread.title}</p>
-                        <div className="flex items-center gap-2 text-xs text-text-dim">
-                          <MessageCircle size={12} />
-                          <span>{thread.messages.length} {thread.messages.length === 1 ? "reply" : "replies"}</span>
-                          <span>·</span>
-                          <span>{thread.authorName}</span>
-                        </div>
-                      </Link>
+                  <div className="flex flex-col gap-2.5">
+                    {communityPosts.map((thread) => (
+                      <ThreadPreviewCard key={thread.id} thread={thread} />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* WELL Tribe — 3×2 grid */}
+              {/* WELL Tribe — 3×2 grid with cheer/card actions built in */}
               <TribeActivityStrip grid maxCount={6} />
-
-              {/* Upcoming event */}
-              {upcomingEvents[0] && (
-                <Link to="/events" className="flex items-center gap-3 glass-card rounded-card px-4 py-3 border border-border">
-                  <div className="w-10 h-10 rounded-xl gradient-brand shadow-glow flex items-center justify-center shrink-0">
-                    <Calendar size={18} className="text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-brand-light font-bold uppercase tracking-wide mb-0.5">Next Event</p>
-                    <p className="text-sm font-bold text-text line-clamp-1">{upcomingEvents[0].title}</p>
-                    <p className="text-xs text-text-muted">{upcomingEvents[0].date}</p>
-                  </div>
-                  <ChevronRight size={14} className="text-text-dim shrink-0" />
-                </Link>
-              )}
             </div>
           );
         }
