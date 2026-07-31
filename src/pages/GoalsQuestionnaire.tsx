@@ -98,7 +98,7 @@ export default function GoalsQuestionnaire({ onComplete, onSkip, currentPeriod }
     goalPlan: [],
     notificationTone: [],
     movementTarget: null,
-    notifTimes: { send7am: true, send3pm: false, send9pm: true },
+    notifTimes: { send7am: true, send3pm: true, send9pm: true },
   });
 
   const canAdvance =
