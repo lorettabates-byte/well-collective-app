@@ -1,4 +1,4 @@
-import { Activity, Bell, Calendar, CheckCircle2, ChevronRight, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
@@ -157,46 +157,28 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [dragging, setDragging] = useState<SectionId | null>(null);
 
-  // Touch-based drag refs (avoid re-renders during move)
-  const touchDraggingId = useRef<SectionId | null>(null);
-  const touchLastOverId = useRef<SectionId | null>(null);
   const sectionOrderRef = useRef<HTMLDivElement>(null);
 
-  const handleGripTouchStart = (e: React.TouchEvent, id: SectionId) => {
-    e.preventDefault();
-    touchDraggingId.current = id;
-    touchLastOverId.current = id;
-    setDragging(id);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchDraggingId.current) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const sectionEl = el?.closest("[data-section-id]");
-    if (!sectionEl) return;
-    const overId = sectionEl.getAttribute("data-section-id") as SectionId | null;
-    // Only update when finger enters a NEW section — prevents 60fps re-renders
-    if (!overId || overId === touchLastOverId.current) return;
-    touchLastOverId.current = overId;
-    if (overId === touchDraggingId.current) return;
+  const moveSectionUp = (id: SectionId) => {
     setSectionOrder((prev) => {
+      const idx = prev.indexOf(id);
+      if (idx <= 0) return prev;
       const next = [...prev];
-      const fromIdx = next.indexOf(touchDraggingId.current!);
-      const toIdx = next.indexOf(overId);
-      if (fromIdx === -1 || toIdx === -1) return prev;
-      next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, touchDraggingId.current!);
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
       localStorage.setItem("well-section-order-v1", JSON.stringify(next));
       return next;
     });
   };
 
-  const handleTouchEnd = () => {
-    touchDraggingId.current = null;
-    touchLastOverId.current = null;
-    setDragging(null);
+  const moveSectionDown = (id: SectionId) => {
+    setSectionOrder((prev) => {
+      const idx = prev.indexOf(id);
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+      localStorage.setItem("well-section-order-v1", JSON.stringify(next));
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -1324,12 +1306,7 @@ export default function Home() {
         </button>
       </div>
 
-      <div
-        ref={sectionOrderRef}
-        onTouchMove={editMode ? handleTouchMove : undefined}
-        onTouchEnd={editMode ? handleTouchEnd : undefined}
-        style={editMode ? { userSelect: "none", touchAction: "none" } : undefined}
-      >
+      <div ref={sectionOrderRef}>
       {sectionOrder.map((sectionId) => {
         const handleDragStart = (e: React.DragEvent) => {
           setDragging(sectionId);
@@ -1358,7 +1335,6 @@ export default function Home() {
         const wrapSection = (content: React.ReactNode) => (
           <div
             key={sectionId}
-            data-section-id={sectionId}
             draggable={editMode}
             onDragStart={editMode ? handleDragStart : undefined}
             onDragOver={editMode ? handleDragOver : undefined}
@@ -1367,15 +1343,27 @@ export default function Home() {
             className={`relative ${isDraggingThis ? "opacity-40" : ""}`}
           >
             {editMode && (
-              <div
-                className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center cursor-grab active:cursor-grabbing"
-                style={{ width: 44, touchAction: "none" }}
-                onTouchStart={(e) => handleGripTouchStart(e, sectionId)}
-              >
-                <GripVertical size={24} className="text-text-dim" />
-              </div>
+              <>
+                <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center text-text-dim cursor-grab" style={{ width: 36 }}>
+                  <GripVertical size={22} />
+                </div>
+                <div className="absolute right-0 top-0 bottom-0 z-10 flex flex-col items-center justify-center gap-0" style={{ width: 36 }}>
+                  <button
+                    onPointerDown={(e) => { e.preventDefault(); moveSectionUp(sectionId); }}
+                    className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
+                  >
+                    <ChevronUp size={20} />
+                  </button>
+                  <button
+                    onPointerDown={(e) => { e.preventDefault(); moveSectionDown(sectionId); }}
+                    className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
+                  >
+                    <ChevronDown size={20} />
+                  </button>
+                </div>
+              </>
             )}
-            <div className={editMode ? "pl-12" : ""}>{content}</div>
+            <div className={editMode ? "px-10" : ""}>{content}</div>
           </div>
         );
 
