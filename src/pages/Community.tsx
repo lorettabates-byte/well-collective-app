@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, PenSquare, Pin, Trophy, Users } from "lucide-react";
+import { Calendar, Mail, MessageCircle, PenSquare, Sparkles, Trophy, Users } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link } from "react-router-dom";
@@ -6,16 +6,29 @@ import CategoryCard from "../components/community/CategoryCard";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import TopBar from "../components/layout/TopBar";
 import SectionHeader from "../components/ui/SectionHeader";
+import TribeActivityStrip from "../components/home/TribeActivityStrip";
+import EventCard from "../components/events/EventCard";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
+import { useEventsFeed } from "../hooks/useEventsFeed";
 import { getTrendingThreads } from "../utils/threadUtils";
 import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 export default function Community() {
   useSectionTracking("community");
-  const { categories, threads, user, currentWeeklyTheme } = useApp();
+  const { categories, threads, events, user, currentWeeklyTheme, featuredEventId } = useApp();
+  const { events: liveEvents } = useEventsFeed();
   const unreadMessageCount = useUnreadMessageCount(user.email);
-  const trendingDisplay = getTrendingThreads(threads);
+  const communityThreads = getTrendingThreads(threads, 5, 1);
+
+  const allUpcomingEvents = [...events, ...liveEvents]
+    .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const featuredEvent = allUpcomingEvents.find((e) => e.id === featuredEventId);
+  const upcomingEvents = [
+    ...(featuredEvent ? [featuredEvent] : []),
+    ...allUpcomingEvents.filter((e) => e.id !== featuredEventId),
+  ].slice(0, 4);
 
   return (
     <div>
@@ -23,6 +36,8 @@ export default function Community() {
       <SectionIntroModal sectionKey="community" />
       <div className="px-4 pt-4">
         <WeeklyThemeBar theme={currentWeeklyTheme} />
+
+        {/* Action buttons */}
         <div className="grid grid-cols-3 gap-3 mb-6 mt-3">
           <Link
             to="/community/new"
@@ -52,25 +67,65 @@ export default function Community() {
           </Link>
         </div>
 
-        {trendingDisplay.length > 0 && (
+        {/* From the Community — thread feed with author info */}
+        {communityThreads.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-text flex items-center gap-2">
-                <Pin size={16} className="text-brand-light" />
-                Trending
+                <Sparkles size={15} className="text-brand-light" />
+                From the Community
               </h2>
-              <Link to="/trending" className="text-xs text-brand-light hover:text-brand">
-                View all
+              <Link to="/trending" className="text-xs text-brand-light font-semibold">
+                See all
               </Link>
             </div>
             <div className="flex flex-col gap-3">
-              {trendingDisplay.map((thread) => (
+              {communityThreads.map((thread) => (
                 <ThreadPreviewCard key={thread.id} thread={thread} />
               ))}
             </div>
           </div>
         )}
 
+        {/* WELL Tribe activity */}
+        <div className="mb-6">
+          <TribeActivityStrip />
+        </div>
+
+        {/* Upcoming Events */}
+        {upcomingEvents.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                <Calendar size={15} className="text-brand-light" />
+                Upcoming Events
+              </h2>
+              <Link to="/events" className="text-xs text-brand-light font-semibold">
+                View all
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+              {upcomingEvents.map((event) => (
+                event.id === featuredEventId ? (
+                  <div key={event.id} className="shrink-0">
+                    <div className="flex items-center gap-1 gradient-brand text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-glow mb-1.5 w-fit">
+                      <Sparkles size={8} /> Featured
+                    </div>
+                    <Link to="/events" className="block rounded-card ring-1 ring-brand-light/50 shadow-glow">
+                      <EventCard event={event} compact />
+                    </Link>
+                  </div>
+                ) : (
+                  <Link key={event.id} to="/events" className="shrink-0 rounded-card self-end">
+                    <EventCard event={event} compact />
+                  </Link>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Categories */}
         <div className="mb-4">
           <SectionHeader title="Categories" />
           <div className="flex flex-col gap-3">

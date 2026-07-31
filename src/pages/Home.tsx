@@ -774,26 +774,64 @@ export default function Home() {
           const weekStartStr = weekStart.toISOString().split("T")[0];
           const workoutsThisWeek = [...new Set([...workoutLog, ...resistanceLog])].filter((d) => d >= weekStartStr).length;
           const weeklyGoal = 4;
-          const todayDone = workoutLog.includes(today) || resistanceLog.includes(today);
+          const cardioDone = workoutLog.includes(today);
+          const strengthDone = resistanceLog.includes(today);
+          const exStretchDone = stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1";
+
+          // Energy out: BMR × activity factor + step burn + exercise cals
+          const exerciseCals = (() => {
+            try { return parseInt(localStorage.getItem(`well-exercise-cals-${today}`) ?? "0", 10) || 0; } catch { return 0; }
+          })();
+          const energyOut = (user.heightCm && user.weightKg && user.age) ? (() => {
+            const base = (10 * user.weightKg) + (6.25 * user.heightCm) - (5 * user.age);
+            const bmr = user.gender === "male" ? base + 5 : user.gender === "female" ? base - 161 : base - 78;
+            const stepKcal = homeSteps ? Math.round(homeSteps * user.weightKg * 0.00057) : 0;
+            const tdee = Math.round(bmr * 1.2) + stepKcal + exerciseCals;
+            return (tdee >= 800 && tdee <= 4500) ? tdee : null;
+          })() : null;
 
           return (
             <div className="mb-6">
-              {/* Stats row */}
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(139,92,246,0.12)", borderColor: "rgba(139,92,246,0.35)" }}>
-                  <Trophy size={16} className="text-purple-400" />
-                  <span className="text-lg font-extrabold text-purple-300 leading-none">{homePoints ?? "—"}</span>
-                  <span className="text-[10px] text-purple-400/80">Cup pts</span>
+              {/* Top stats: Energy Out, Cardio, Strength */}
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <div className="rounded-2xl px-3 py-3 flex flex-col gap-1 border" style={{ background: "rgba(20,184,166,0.10)", borderColor: "rgba(20,184,166,0.30)" }}>
+                  <Activity size={14} className="text-teal-400" />
+                  <span className="text-base font-extrabold text-teal-300 leading-none">
+                    {energyOut != null ? `${energyOut.toLocaleString()}` : "—"}
+                  </span>
+                  <span className="text-[10px] text-teal-400/80 leading-tight">Energy out<br /><span className="text-teal-400/50">kcal est.</span></span>
                 </div>
-                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(251,146,60,0.12)", borderColor: "rgba(251,146,60,0.35)" }}>
-                  <Flame size={16} className="text-orange-400" />
-                  <span className="text-lg font-extrabold text-orange-300 leading-none">{headerStreak ?? "—"}</span>
-                  <span className="text-[10px] text-orange-400/80">Day streak</span>
+                <div className={`rounded-2xl px-3 py-3 flex flex-col gap-1 border ${cardioDone ? "" : ""}`} style={{ background: cardioDone ? "rgba(34,197,94,0.12)" : "rgba(251,146,60,0.10)", borderColor: cardioDone ? "rgba(34,197,94,0.35)" : "rgba(251,146,60,0.30)" }}>
+                  <Flame size={14} className={cardioDone ? "text-green-400" : "text-orange-400"} />
+                  <span className={`text-base font-extrabold leading-none ${cardioDone ? "text-green-300" : "text-orange-300"}`}>
+                    {cardioDone ? "Done" : "0"}
+                  </span>
+                  <span className={`text-[10px] leading-tight ${cardioDone ? "text-green-400/80" : "text-orange-400/80"}`}>Cardio</span>
                 </div>
-                <div className="rounded-2xl p-3 flex flex-col items-center gap-1 border" style={{ background: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.30)" }}>
-                  <Activity size={16} className="text-blue-400" />
-                  <span className="text-lg font-extrabold text-blue-300 leading-none">{homeSteps != null ? homeSteps.toLocaleString() : "—"}</span>
-                  <span className="text-[10px] text-blue-400/80">Steps</span>
+                <div className={`rounded-2xl px-3 py-3 flex flex-col gap-1 border`} style={{ background: strengthDone ? "rgba(139,92,246,0.14)" : "rgba(59,130,246,0.09)", borderColor: strengthDone ? "rgba(139,92,246,0.40)" : "rgba(59,130,246,0.25)" }}>
+                  <Dumbbell size={14} className={strengthDone ? "text-purple-400" : "text-blue-400"} />
+                  <span className={`text-base font-extrabold leading-none ${strengthDone ? "text-purple-300" : "text-blue-300"}`}>
+                    {strengthDone ? "Done" : "0"}
+                  </span>
+                  <span className={`text-[10px] leading-tight ${strengthDone ? "text-purple-400/80" : "text-blue-400/80"}`}>Strength</span>
+                </div>
+              </div>
+
+              {/* Second row: Steps + Stretching */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="rounded-2xl px-3 py-3 flex items-center gap-3 border" style={{ background: "rgba(59,130,246,0.09)", borderColor: "rgba(59,130,246,0.25)" }}>
+                  <Activity size={18} className="text-blue-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-base font-extrabold text-blue-300 leading-none">{homeSteps != null ? homeSteps.toLocaleString() : "—"}</p>
+                    <p className="text-[10px] text-blue-400/70 mt-0.5">Steps today</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl px-3 py-3 flex items-center gap-3 border" style={{ background: exStretchDone ? "rgba(34,197,94,0.10)" : "rgba(255,255,255,0.04)", borderColor: exStretchDone ? "rgba(34,197,94,0.30)" : "rgba(255,255,255,0.10)" }}>
+                  <Waves size={18} className={exStretchDone ? "text-green-400 shrink-0" : "text-text-dim shrink-0"} />
+                  <div className="min-w-0">
+                    <p className={`text-base font-extrabold leading-none ${exStretchDone ? "text-green-300" : "text-text-dim"}`}>{exStretchDone ? "Done" : "—"}</p>
+                    <p className={`text-[10px] mt-0.5 ${exStretchDone ? "text-green-400/70" : "text-text-dim"}`}>Stretching</p>
+                  </div>
                 </div>
               </div>
 
@@ -811,11 +849,6 @@ export default function Home() {
                     <div key={i} className={`h-2 flex-1 rounded-full transition-all ${i < workoutsThisWeek ? "gradient-brand" : "bg-surface-2 border border-border"}`} />
                   ))}
                 </div>
-                {todayDone && (
-                  <p className="text-[10px] text-brand-light mt-2 flex items-center gap-1">
-                    <CheckCircle2 size={10} /> Workout logged today — great work!
-                  </p>
-                )}
               </div>
 
               {/* Today's fitness plan */}
