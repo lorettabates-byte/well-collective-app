@@ -60,8 +60,8 @@ const LAYOUTS: { id: string; label: string; description: string; sectionOrder: S
     sectionOrder: ["daily-plan", "well-cup", "weekly-theme", "inspiration", "events", "tribe", "community"],
   },
   {
-    id: "community",
-    label: "Community",
+    id: "connection",
+    label: "Connection",
     description: "Tribe activity and community threads front and center",
     sectionOrder: ["tribe", "community", "events", "weekly-theme", "inspiration", "daily-plan", "well-cup"],
   },
@@ -101,6 +101,7 @@ const LAYOUTS: { id: string; label: string; description: string; sectionOrder: S
 const LAYOUT_ID_ALIASES: Record<string, string> = {
   dashboard: "exercise",
   together: "community",
+  community: "connection",
 };
 
 const GOAL_RECOMMENDED_LAYOUT: Record<string, string> = {
@@ -109,7 +110,7 @@ const GOAL_RECOMMENDED_LAYOUT: Record<string, string> = {
   strength:  "exercise",
   weight:    "nutrition",
   rut:       "inspire",
-  community: "community",
+  community: "connection",
 };
 
 function LayoutPicker() {

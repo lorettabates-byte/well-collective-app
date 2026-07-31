@@ -117,7 +117,7 @@ export default function Home() {
   const [headerStreak, setHeaderStreak] = useState<number | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
 
-  const resolveLayout = (raw: string): string => ({ dashboard: "exercise", together: "community" }[raw] ?? raw);
+  const resolveLayout = (raw: string): string => ({ dashboard: "exercise", together: "community", community: "connection" }[raw] ?? raw);
   const [homeLayout, setHomeLayout] = useState(() => resolveLayout(localStorage.getItem("well-home-layout") ?? "classic"));
   useEffect(() => {
     const onLayoutChange = () => {
@@ -1213,9 +1213,9 @@ export default function Home() {
           );
         }
 
-        // ── COMMUNITY LAYOUT ───────────────────────────────────────────────────
-        if (homeLayout === "community") {
-          const communityPosts = getTrendingThreads(threads, 4, 1);
+        // ── CONNECTION LAYOUT ───────────────────────────────────────────────────
+        if (homeLayout === "connection") {
+          const communityPosts = getTrendingThreads(threads, 2, 1);
           return (
             <div className="mb-6">
               {/* Action row */}
@@ -1409,10 +1409,12 @@ export default function Home() {
         }
 
         if (sectionId === "tribe") {
+          if (homeLayout === "connection") return null;
           return wrapSection(<TribeActivityStrip key={sectionId} />);
         }
 
         if (sectionId === "community") {
+          if (homeLayout === "connection") return null;
           return wrapSection(
             <div className="mb-6">
               <SectionHeader title="From the Community" to="/community" />
