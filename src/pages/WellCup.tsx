@@ -259,7 +259,7 @@ export default function WellCup() {
       }
       if (lucky?.leader) {
         const l = lucky.leader;
-        setLuckyDraw({ name: l.name, avatar: l.avatar, email: l.email, stat: "This week's lucky draw winner" });
+        setLuckyDraw({ name: l.name, avatar: l.avatar, email: l.email, stat: "This week's community spotlight" });
       }
     }).finally(() => setLoading(false));
   }, []);
@@ -385,12 +385,12 @@ export default function WellCup() {
                 empty="No returning members logged points yet this week"
               />
               <SpotlightBanner
-                label="Weekly Lucky Draw"
-                description="One member randomly selected from everyone who earned 20+ pts this week. Resets every Monday — equal chance for all."
+                label="Weekly Spotlight"
+                description="Each week we shine a light on a member of our community — celebrating who they are and the presence they bring, not just what they've achieved."
                 winner={luckyDraw}
                 accent="border-pink-400/30 bg-pink-400/5"
                 icon={Star}
-                empty="Earn 20+ pts this week to enter the draw"
+                empty="Earn 20+ pts this week — you could be this week's spotlight"
               />
             </div>
           </div>
