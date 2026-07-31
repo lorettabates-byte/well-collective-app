@@ -44,29 +44,70 @@ function MenuRow({
   );
 }
 
-const LAYOUT_LABELS: Record<string, string> = {
-  classic: "Classic", focus: "Focus 2×2", flow: "Flow", dashboard: "Dashboard", inspire: "Inspire", together: "Together",
+const LAYOUTS: { id: string; label: string; description: string }[] = [
+  { id: "classic",   label: "Classic",     description: "Quick links + all your sections" },
+  { id: "focus",     label: "Focus",       description: "Your 4 chosen sections, featured large" },
+  { id: "flow",      label: "Flow",        description: "Guided morning · afternoon · evening routine" },
+  { id: "dashboard", label: "Dashboard",   description: "Stats, streak, and progress at a glance" },
+  { id: "inspire",   label: "Inspire",     description: "Inspiration and content front and center" },
+  { id: "together",  label: "Together",    description: "Community activity front and center" },
+];
+
+const GOAL_RECOMMENDED_LAYOUT: Record<string, string> = {
+  stress:    "flow",
+  energy:    "dashboard",
+  strength:  "dashboard",
+  weight:    "dashboard",
+  rut:       "inspire",
+  community: "together",
 };
 
 function LayoutPicker() {
+  const { user } = useApp();
   const [current, setCurrent] = useState(() => localStorage.getItem("well-home-layout") ?? "classic");
+  const recommended = user.goalPlan ? (GOAL_RECOMMENDED_LAYOUT[user.goalPlan] ?? null) : null;
+
   return (
     <div className="glass-card rounded-card px-4 py-3 mb-3">
-      <p className="text-sm font-semibold text-text mb-3">Homepage Layout</p>
-      <div className="grid grid-cols-3 gap-2">
-        {(["classic", "focus", "flow", "dashboard", "inspire", "together"] as const).map((layout) => (
-          <button
-            key={layout}
-            onClick={() => {
-              localStorage.setItem("well-home-layout", layout);
-              window.dispatchEvent(new Event("well-layout-changed"));
-              setCurrent(layout);
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all ${current === layout ? "gradient-brand text-white border-transparent shadow-glow" : "bg-surface-2 text-text-muted border-border"}`}
-          >
-            {LAYOUT_LABELS[layout]}
-          </button>
-        ))}
+      <p className="text-sm font-semibold text-text mb-1">Homepage Layout</p>
+      {recommended && (
+        <p className="text-[11px] text-text-dim mb-3">Based on your goal, we highlighted the best fit for you.</p>
+      )}
+      <div className="flex flex-col gap-2">
+        {LAYOUTS.map(({ id, label, description }) => {
+          const isActive = current === id;
+          const isRecommended = recommended === id;
+          return (
+            <button
+              key={id}
+              onClick={() => {
+                localStorage.setItem("well-home-layout", id);
+                window.dispatchEvent(new Event("well-layout-changed"));
+                setCurrent(id);
+              }}
+              className={`flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl border transition-all ${
+                isActive
+                  ? "gradient-brand text-white border-transparent shadow-glow"
+                  : isRecommended
+                  ? "bg-brand/10 border-brand-light/40 text-text"
+                  : "bg-surface-2 border-border text-text"
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold ${isActive ? "text-white" : "text-text"}`}>{label}</span>
+                  {isRecommended && !isActive && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-brand-light/20 text-brand-light">For you</span>
+                  )}
+                  {isActive && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-white/20 text-white">Active</span>
+                  )}
+                </div>
+                <p className={`text-[10px] leading-tight mt-0.5 ${isActive ? "text-white/80" : "text-text-dim"}`}>{description}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
