@@ -1,10 +1,19 @@
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import MiniPlayer from "../music/MiniPlayer";
 
 const LOGO_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png";
 
 export default function MobileShell({ children }: { children: ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+
   return (
     <div className="w-full bg-bg min-h-screen sm:flex sm:items-center sm:justify-center sm:py-6 landscape:py-0">
       <div
@@ -12,7 +21,7 @@ export default function MobileShell({ children }: { children: ReactNode }) {
         className="relative w-full sm:max-w-[430px] md:max-w-[720px] h-screen sm:h-[900px] sm:max-h-[94vh] landscape:sm:max-w-full landscape:sm:max-h-full landscape:sm:h-screen landscape:sm:rounded-none sm:rounded-[36px] overflow-hidden sm:border sm:border-border landscape:sm:border-0 bg-bg sm:shadow-2xl landscape:sm:shadow-none flex flex-col"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-64 gradient-glow z-0" />
-        <div className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pb-24">{children}</div>
+        <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pb-24">{children}</div>
         <MiniPlayer />
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <BottomNav />

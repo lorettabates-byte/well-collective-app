@@ -43,8 +43,10 @@ const CONFETTI_SEEDS = [
   { x: 60, y: 8, r: 3, c: 0 },  { x: 42, y: 90, r: 4, c: 1 },
 ];
 
-const CONFETTI_OCCASIONS = new Set(["birthday", "congratulations"]);
-const FLOWER_OCCASIONS = new Set(["thinking-of-you", "condolences"]);
+const CONFETTI_OCCASIONS = new Set(["congratulations"]);
+const FLOWER_OCCASIONS   = new Set(["thinking-of-you"]);
+const BALLOON_OCCASIONS  = new Set(["birthday"]);
+const LEAF_OCCASIONS     = new Set(["condolences"]);
 
 const CONFETTI_FALL = [
   { x: 10, delay: 0,   dur: 2.0, color: "#f43f5e", size: 6 },
@@ -68,6 +70,28 @@ const PETAL_FALL = [
   { x: 20, delay: 1.0, dur: 3.4, color: "#fda4af" },
   { x: 55, delay: 1.4, dur: 2.9, color: "#f9a8d4" },
   { x: 88, delay: 0.3, dur: 2.6, color: "#d8b4fe" },
+];
+
+const BALLOON_FALL = [
+  { x: 8,  delay: 0,   dur: 3.0, color: "#ef5350" },
+  { x: 22, delay: 0.6, dur: 3.5, color: "#fdd835" },
+  { x: 40, delay: 1.2, dur: 2.8, color: "#42a5f5" },
+  { x: 58, delay: 0.3, dur: 3.2, color: "#66bb6a" },
+  { x: 72, delay: 0.9, dur: 3.8, color: "#ab47bc" },
+  { x: 88, delay: 1.5, dur: 3.0, color: "#ff7043" },
+  { x: 32, delay: 1.8, dur: 2.9, color: "#26c6da" },
+  { x: 62, delay: 0.5, dur: 3.4, color: "#f48fb1" },
+];
+
+const LEAF_FALL = [
+  { x: 10, delay: 0,   dur: 3.2, color: "#e65100" },
+  { x: 25, delay: 0.5, dur: 2.8, color: "#f57f17" },
+  { x: 45, delay: 1.0, dur: 3.5, color: "#bf360c" },
+  { x: 62, delay: 0.3, dur: 3.0, color: "#ff8f00" },
+  { x: 78, delay: 0.8, dur: 2.6, color: "#d84315" },
+  { x: 18, delay: 1.4, dur: 3.3, color: "#c5a028" },
+  { x: 52, delay: 1.8, dur: 2.9, color: "#9e6914" },
+  { x: 88, delay: 0.6, dur: 3.6, color: "#e65100" },
 ];
 
 /* ─── Card Graphic Illustrations ──────────────────────────────────────────── */
@@ -128,8 +152,10 @@ export function CardFace({
 }) {
   const IconComponent = CARD_ICONS[occasion.icon];
   const graphicSrc = CARD_GRAPHICS[`${occasion.id}/${style.id}`] ?? CARD_GRAPHICS[occasion.id];
-  const showConfetti = CONFETTI_OCCASIONS.has(occasion.id);
-  const showFlowers = FLOWER_OCCASIONS.has(occasion.id);
+  const showConfetti  = CONFETTI_OCCASIONS.has(occasion.id);
+  const showFlowers   = FLOWER_OCCASIONS.has(occasion.id);
+  const showBalloons  = BALLOON_OCCASIONS.has(occasion.id);
+  const showLeaves    = LEAF_OCCASIONS.has(occasion.id);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -200,6 +226,74 @@ export function CardFace({
                   left: `${p.x}%`, width: 10, height: 18, background: p.color,
                   borderRadius: "50% 50% 50% 0",
                   animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
+                  zIndex: 15,
+                }} />
+            ))}
+          </>
+        )}
+
+        {/* Animated balloons */}
+        {animate && isOpen && showBalloons && (
+          <>
+            <style>{`
+              @keyframes balloonRise {
+                0%   { top: 108%; opacity: 0.9; transform: translateX(0); }
+                30%  { transform: translateX(6px); }
+                60%  { transform: translateX(-5px); }
+                100% { top: -20%; opacity: 0.8; transform: translateX(2px); }
+              }
+            `}</style>
+            {BALLOON_FALL.map((p, i) => (
+              <div key={i} className="absolute pointer-events-none"
+                style={{ left: `${p.x}%`, animation: `balloonRise ${p.dur}s ${p.delay}s ease-in-out infinite`, zIndex: 15 }}>
+                <div style={{
+                  width: 18, height: 22, background: p.color,
+                  borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
+                  position: "relative",
+                }}>
+                  <div style={{
+                    position: "absolute", width: "28%", height: "20%",
+                    top: "18%", left: "18%",
+                    background: "rgba(255,255,255,0.38)", borderRadius: "50%",
+                  }} />
+                  <div style={{
+                    position: "absolute", bottom: -3, left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 0, height: 0,
+                    borderLeft: "2px solid transparent",
+                    borderRight: "2px solid transparent",
+                    borderTop: `3px solid ${p.color}`,
+                  }} />
+                </div>
+                <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.32)", margin: "3px auto 0" }} />
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Animated falling leaves */}
+        {animate && isOpen && showLeaves && (
+          <>
+            <style>{`
+              @keyframes leafFallCW {
+                0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+                33%  { transform: rotate(-140deg) translateX(-7px); }
+                66%  { transform: rotate(80deg) translateX(7px); }
+                100% { top: 110%; opacity: 0.2; transform: rotate(300deg) translateX(-3px); }
+              }
+              @keyframes leafFallCCW {
+                0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+                33%  { transform: rotate(140deg) translateX(7px); }
+                66%  { transform: rotate(-80deg) translateX(-7px); }
+                100% { top: 110%; opacity: 0.2; transform: rotate(-300deg) translateX(3px); }
+              }
+            `}</style>
+            {LEAF_FALL.map((p, i) => (
+              <div key={i} className="absolute pointer-events-none"
+                style={{
+                  left: `${p.x}%`, width: 10, height: 16, background: p.color,
+                  borderRadius: "0 50% 0 50%",
+                  animation: `${i % 2 === 0 ? "leafFallCW" : "leafFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
                   zIndex: 15,
                 }} />
             ))}
@@ -355,13 +449,13 @@ export function Envelope({
         {/* WELL logo wax seal */}
         <div style={{
           position: "absolute",
-          width: 50, height: 50, borderRadius: "50%",
+          width: 66, height: 66, borderRadius: "50%",
           background: "linear-gradient(135deg, #081422, #0191CE)",
           border: "2px solid rgba(1,145,206,0.6)",
           boxShadow: "0 3px 14px rgba(0,0,0,0.7), 0 0 0 1px rgba(1,145,206,0.15)",
-          bottom: 14, left: "50%", transform: "translateX(-50%)",
+          bottom: 10, left: "50%", transform: "translateX(-50%)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "10px", zIndex: 5,
+          padding: "7px", zIndex: 5,
           opacity: flapOpen && !flapClosing ? 0.18 : 1,
           transition: "opacity 0.3s",
         }}>
@@ -474,18 +568,21 @@ export default function CardSender({
   const flapClosing = stage === "closing" || stage === "flying";
 
   const cardY = (() => {
-    if (stage === "sealed") return 130;
-    if (stage === "opening") return 120;
-    if (stage === "rising") return 20;
+    if (stage === "sealed")  return 175;  // hidden behind envelope body
+    if (stage === "opening") return 175;  // still inside while flap opens
+    if (stage === "rising")  return 20;
     if (stage === "viewing") return 0;
     if (stage === "sealing") return 80;
-    return 130;
+    return 175;
   })();
 
-  const cardOpacity = ["sealed", "closing", "flying", "done"].includes(stage) ? 0 : 1;
+  // Card stays invisible until it actually rises — "opening" just opens the flap
+  const cardOpacity = ["sealed", "opening", "closing", "flying", "done"].includes(stage) ? 0 : 1;
   const cardScale = stage === "viewing" ? 1 : 0.88;
-  const envelopeExitY = stage === "flying" ? -500 : 0;
+  const envelopeExitY = stage === "flying" ? -500 : stage === "viewing" ? 200 : 0;
   const envelopeExitRotate = stage === "flying" ? -10 : 0;
+  const envelopeOpacity = stage === "flying" || stage === "viewing" ? 0 : 1;
+  const envelopeDuration = stage === "flying" ? "700ms" : stage === "viewing" ? "450ms" : "600ms";
 
   return createPortal(
     <>
@@ -590,9 +687,8 @@ export default function CardSender({
                       top: 155,
                       zIndex: 5,
                       transform: `translateY(${envelopeExitY}px) rotate(${envelopeExitRotate}deg)`,
-                      opacity: stage === "flying" ? 0 : 1,
-                      transitionDuration:
-                        stage === "flying" ? "700ms" : "600ms",
+                      opacity: envelopeOpacity,
+                      transitionDuration: envelopeDuration,
                     }}
                   >
                     <Envelope
