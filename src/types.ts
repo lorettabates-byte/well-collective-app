@@ -47,6 +47,7 @@ export interface User {
   notifQuietStart?: string; // "HH:MM" — start of notification quiet hours
   notifQuietEnd?: string;   // "HH:MM" — end of notification quiet hours
   showOnLeaderboard?: boolean;
+  moodStatus?: string | null;
 }
 
 export interface NotificationSettings {

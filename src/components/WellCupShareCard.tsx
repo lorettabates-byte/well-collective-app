@@ -2,7 +2,7 @@ import { Download, X } from "lucide-react";
 import { useState } from "react";
 
 const WELL_LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
-const SITE_URL = "app.lorettabates.com";
+const SITE_URL = "www.lorettabates.com";
 
 export interface ShareWinner {
   name: string;
@@ -18,6 +18,7 @@ interface Props {
   period: SharePeriod;
   periodLabel: string;
   onClose: () => void;
+  isOwnWin?: boolean; // true when the viewing user IS the winner
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -307,7 +308,7 @@ function downloadDataUrl(dataUrl: string, filename: string) {
   a.click();
 }
 
-export default function WellCupShareCard({ winner, period, periodLabel, onClose }: Props) {
+export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
 
   const handleDownload = async (size: "instagram" | "facebook") => {
@@ -334,7 +335,9 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose 
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold text-text">Share your win 🏆</h2>
+            <h2 className="text-sm font-bold text-text">
+              {isOwnWin ? "Share your win 🏆" : `Share ${winner.name.split(" ")[0]}'s win 🏆`}
+            </h2>
             <p className="text-xs text-text-muted mt-0.5">{winner.name} · {periodLabel}</p>
           </div>
           <button onClick={onClose} aria-label="Close">

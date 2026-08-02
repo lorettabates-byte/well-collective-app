@@ -61,9 +61,10 @@ function WinnerBanner({
   period: SharePeriod;
   periodLabel: string;
 }) {
-  const { memberBadges } = useApp();
+  const { user, memberBadges } = useApp();
   const [showShare, setShowShare] = useState(false);
   const winnerMoodStatus = winner?.email ? memberBadges[deriveMemberId(winner.email)]?.moodStatus : undefined;
+  const isOwnWin = !!(winner?.email && user.email && winner.email.toLowerCase() === user.email.toLowerCase());
   return (
     <div className={`rounded-card px-4 py-3 border ${accent}`}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">{label}</p>
@@ -92,6 +93,7 @@ function WinnerBanner({
           period={period}
           periodLabel={periodLabel}
           onClose={() => setShowShare(false)}
+          isOwnWin={isOwnWin}
         />
       )}
     </div>

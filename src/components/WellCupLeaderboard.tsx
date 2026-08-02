@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
 
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
 const GOAL_PRESETS = [100, 200, 300, 500];
 const GOAL_KEY = "well-cup-personal-goal";
 
@@ -62,6 +64,7 @@ export default function WellCupLeaderboard() {
   const [view, setView] = useState<ViewState>("top5");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [myPointsToday, setMyPointsToday] = useState(0);
 
   // Personal goal
   const [personalGoal, setPersonalGoal] = useState<number>(() => {
@@ -81,6 +84,14 @@ export default function WellCupLeaderboard() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!API_URL || !user.email) return;
+    fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(user.email)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.totalPoints !== undefined) setMyPointsToday(data.totalPoints); })
+      .catch(() => {});
+  }, [user.email]);
 
   useEffect(() => {
     if (editingGoal) inputRef.current?.focus();
@@ -105,9 +116,9 @@ export default function WellCupLeaderboard() {
 
   if (loading) return null;
 
-  // Find the current user's entry on the leaderboard
-  const myEntry = user.email ? allEntries.find((e) => e.email === user.email) : undefined;
-  const myPoints = myEntry?.points ?? 0;
+  // Find the current user's rank from the leaderboard; points come from the dedicated endpoint
+  const myEntry = user.email ? allEntries.find((e) => e.email?.toLowerCase() === user.email?.toLowerCase()) : undefined;
+  const myPoints = myPointsToday > 0 ? myPointsToday : (myEntry?.points ?? 0);
   const myRank = myEntry ? allEntries.indexOf(myEntry) + 1 : null;
   const goalPct = Math.min(100, Math.round((myPoints / personalGoal) * 100));
   const goalMet = myPoints >= personalGoal;

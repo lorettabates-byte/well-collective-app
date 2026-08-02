@@ -76,8 +76,6 @@ interface HistoryChartPoint {
 
 const ACTIVITY_LABELS: Record<string, string> = {
   app_open: "Opened the app",
-  forum_post: "Posted in the community",
-  forum_comment: "Commented in community",
   class_watch: "Watched a class",
   song_play: "Listened to music",
   blog_open: "Read the blog",
