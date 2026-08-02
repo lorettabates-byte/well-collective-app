@@ -40,6 +40,8 @@ export interface User {
   goalsCompleted?: boolean;
   goalsRefreshPeriod?: string; // "YYYY-MM" of last questionnaire completion or skip
   hiddenFromCommunity?: boolean; // opt-out of appearing in member lists / discovery
+  lastMonthlyWinAt?: string; // ISO timestamp of their most recent monthly WELL Cup win
+  lastMonthlyWinPts?: number; // points they earned in that winning month
   showOnLeaderboard?: boolean;
 }
 

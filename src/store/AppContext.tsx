@@ -2316,6 +2316,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             age: prev.user.age ?? member.age,
             gender: prev.user.gender ?? member.gender,
             healthSyncEnabled: prev.user.healthSyncEnabled ?? member.healthSyncEnabled,
+            lastMonthlyWinAt: member.lastMonthlyWinAt,
+            lastMonthlyWinPts: member.lastMonthlyWinPts,
             goalPlan: prev.user.goalPlan ?? member.goalPlan,
             notificationTone: prev.user.notificationTone ?? member.notificationTone,
             movementTarget: prev.user.movementTarget ?? member.movementTarget,

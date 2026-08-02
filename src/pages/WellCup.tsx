@@ -105,6 +105,7 @@ function SpotlightBanner({
   accent,
   icon: Icon,
   empty,
+  shareLabel,
 }: {
   label: string;
   description: string;
@@ -112,8 +113,10 @@ function SpotlightBanner({
   accent: string;
   icon: React.ElementType;
   empty: string;
+  shareLabel?: string;
 }) {
   const navigate = useNavigate();
+  const [showShare, setShowShare] = useState(false);
   return (
     <div className={`rounded-card px-4 py-3 border ${accent}`}>
       <div className="flex items-center gap-2 mb-1">
@@ -122,18 +125,37 @@ function SpotlightBanner({
       </div>
       <p className="text-[10px] text-text-dim/70 mb-2 leading-snug">{description}</p>
       {winner ? (
-        <button
-          onClick={() => winner.email ? navigate(`/member/${deriveMemberId(winner.email)}`) : undefined}
-          className="flex items-center gap-3 w-full text-left"
-        >
-          <Avatar src={winner.avatar ?? ""} alt={winner.name} size={36} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-text truncate">{winner.name}</p>
-            <p className="text-xs text-text-muted">{winner.stat}</p>
-          </div>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => winner.email ? navigate(`/member/${deriveMemberId(winner.email)}`) : undefined}
+            className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          >
+            <Avatar src={winner.avatar ?? ""} alt={winner.name} size={36} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-text truncate">{winner.name}</p>
+              <p className="text-xs text-text-muted">{winner.stat}</p>
+            </div>
+          </button>
+          {shareLabel && (
+            <button
+              onClick={() => setShowShare(true)}
+              className="shrink-0 p-1.5 rounded-full bg-white/10 hover:bg-white/20"
+              aria-label="Share spotlight"
+            >
+              <Share2 size={15} className="text-pink-300" />
+            </button>
+          )}
+        </div>
       ) : (
         <p className="text-xs text-text-dim italic">{empty}</p>
+      )}
+      {showShare && winner && shareLabel && (
+        <WellCupShareCard
+          winner={{ name: winner.name, avatar: winner.avatar, total_points: 0, stat: winner.stat }}
+          period="spotlight"
+          periodLabel={shareLabel}
+          onClose={() => setShowShare(false)}
+        />
       )}
     </div>
   );
@@ -410,11 +432,13 @@ export default function WellCup() {
                 accent="border-sky-400/30 bg-sky-400/5"
                 icon={TrendingUp}
                 empty="Keep logging — this resets every Monday"
+                shareLabel="Most Improved"
               />
               <SpotlightBanner
                 label="Comeback Story — This Week"
                 description="Highest points this week among members who were inactive last week. Always-active members can never qualify."
                 winner={comeback}
+                shareLabel="Comeback Story"
                 accent="border-violet-400/30 bg-violet-400/5"
                 icon={RotateCcw}
                 empty="No returning members logged points yet this week"
@@ -426,6 +450,7 @@ export default function WellCup() {
                 accent="border-pink-400/30 bg-pink-400/5"
                 icon={Star}
                 empty="Earn 20+ pts this week — you could be this week's spotlight"
+                shareLabel="Weekly Spotlight"
               />
             </div>
           </div>

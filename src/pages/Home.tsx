@@ -113,6 +113,8 @@ export default function Home() {
   const [showWalkthroughVideo, setShowWalkthroughVideo] = useState(false);
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
   const [showWinShare, setShowWinShare] = useState(false);
+  const [showMonthlyWinShare, setShowMonthlyWinShare] = useState(false);
+  const [monthlyWinBanner, setMonthlyWinBanner] = useState<{ pts: number; monthLabel: string; dismissKey: string } | null>(null);
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
   const [headerStreak, setHeaderStreak] = useState<number | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
@@ -254,6 +256,19 @@ export default function Home() {
       setWinnerBanner(winner);
     }).catch(() => {});
   }, [user.email]);
+
+  // Check if this user recently won the monthly WELL Cup (show share banner once per winning month)
+  useEffect(() => {
+    if (!user.lastMonthlyWinAt || !user.lastMonthlyWinPts) return;
+    const winDate = new Date(user.lastMonthlyWinAt);
+    const ageMs = Date.now() - winDate.getTime();
+    if (ageMs > 60 * 24 * 60 * 60 * 1000) return; // older than 60 days, skip
+    const winMonth = `${winDate.getFullYear()}-${String(winDate.getMonth() + 1).padStart(2, "0")}`;
+    const dismissKey = `well-cup-monthly-banner-${winMonth}`;
+    if (localStorage.getItem(dismissKey)) return;
+    const monthLabel = winDate.toLocaleString("default", { month: "long", year: "numeric" });
+    setMonthlyWinBanner({ pts: user.lastMonthlyWinPts, monthLabel, dismissKey });
+  }, [user.lastMonthlyWinAt, user.lastMonthlyWinPts]);
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
@@ -494,6 +509,48 @@ export default function Home() {
             setShowWinShare(false);
             localStorage.setItem(`well-cup-win-banner-${winnerBanner.win_date}`, "1");
             setWinnerBanner(null);
+          }}
+        />
+      )}
+
+      {/* Monthly WELL Cup win banner */}
+      {monthlyWinBanner && (
+        <div className="rounded-card mb-4 border border-purple-400/40 overflow-hidden" style={{ background: "rgba(167,139,250,0.07)" }}>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-2xl shrink-0">👑</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-purple-300">You won the {monthlyWinBanner.monthLabel} WELL Cup!</p>
+              <p className="text-xs text-purple-400/70">{monthlyWinBanner.pts.toLocaleString()} points — you led the entire community.</p>
+            </div>
+            <button
+              onClick={() => setShowMonthlyWinShare(true)}
+              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-purple-300 bg-purple-400/10 border border-purple-400/30 rounded-pill px-3 py-1.5"
+            >
+              <Share2 size={12} />
+              Share
+            </button>
+            <button
+              onClick={() => {
+                localStorage.setItem(monthlyWinBanner.dismissKey, "1");
+                setMonthlyWinBanner(null);
+              }}
+              className="shrink-0 text-text-dim p-1"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+      {showMonthlyWinShare && monthlyWinBanner && (
+        <WellCupShareCard
+          winner={{ name: user.name, avatar: user.avatar || null, total_points: monthlyWinBanner.pts }}
+          period="monthly"
+          periodLabel={`${monthlyWinBanner.monthLabel} Winner`}
+          onClose={() => {
+            setShowMonthlyWinShare(false);
+            localStorage.setItem(monthlyWinBanner.dismissKey, "1");
+            setMonthlyWinBanner(null);
           }}
         />
       )}
@@ -801,8 +858,8 @@ export default function Home() {
           const weekStartStr = weekStart.toISOString().split("T")[0];
           const workoutsThisWeek = [...new Set([...workoutLog, ...resistanceLog])].filter((d) => d >= weekStartStr).length;
           const weeklyGoal = 4;
-          const cardioDone = workoutLog.includes(today);
-          const strengthDone = resistanceLog.includes(today);
+          const cardioDone = (() => { try { return localStorage.getItem(`well-cardio-${today}`) === "1"; } catch { return false; } })();
+          const strengthDone = (() => { try { return localStorage.getItem(`well-resistance-${today}`) === "1"; } catch { return false; } })();
           const exStretchDone = stretchingLog.includes(today) || localStorage.getItem(`well-stretching-${today}`) === "1";
 
           // Energy out: BMR × activity factor + step burn + exercise cals

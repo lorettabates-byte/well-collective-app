@@ -8,9 +8,10 @@ export interface ShareWinner {
   name: string;
   avatar: string | null;
   total_points: number;
+  stat?: string; // overrides "total_points pts" display line for spotlight awards
 }
 
-export type SharePeriod = "daily" | "monthly" | "yearly";
+export type SharePeriod = "daily" | "monthly" | "yearly" | "spotlight";
 
 interface Props {
   winner: ShareWinner;
@@ -105,7 +106,7 @@ async function drawProfileCircle(
 
 async function generateCard(
   winner: ShareWinner,
-  _period: SharePeriod,
+  period: SharePeriod,
   periodLabel: string,
   size: "instagram" | "facebook"
 ): Promise<string> {
@@ -152,6 +153,10 @@ async function generateCard(
   const initials = winner.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const now = new Date();
   const monthYear = now.toLocaleString("default", { month: "long", year: "numeric" });
+  const isSpotlight = period === "spotlight";
+  const pillText = isSpotlight ? "COMMUNITY SPOTLIGHT" : "WELL CUP CHAMPION";
+  const pointsLine = winner.stat ?? winner.total_points.toLocaleString();
+  const pointsSuffix = winner.stat ? "" : " pts";
 
   if (isIG) {
     // ── Instagram Story (1080 × 1920) ──
@@ -191,17 +196,19 @@ async function generateCard(
     ctx.textAlign = "center";
     ctx.fillText(winner.name, W / 2, H * 0.675);
 
-    // Points
+    // Points / stat line
     ctx.fillStyle = "#ffffff";
     ctx.font = "500 124px system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(winner.total_points.toLocaleString(), W / 2, H * 0.754);
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "400 50px system-ui, sans-serif";
-    ctx.fillText("points", W / 2, H * 0.796);
+    ctx.fillText(pointsLine, W / 2, H * 0.754);
+    if (pointsSuffix) {
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.font = "400 50px system-ui, sans-serif";
+      ctx.fillText("points", W / 2, H * 0.796);
+    }
 
-    // Champion pill
-    drawPillLabel(ctx, "WELL CUP CHAMPION", W / 2, H * 0.845, 38);
+    // Champion / spotlight pill
+    drawPillLabel(ctx, pillText, W / 2, H * 0.845, 38);
 
     // Date + site link
     ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -262,19 +269,20 @@ async function generateCard(
     ctx.textAlign = "left";
     ctx.fillText(winner.name, textX, H * 0.46);
 
-    // Points row
-    const ptsText = winner.total_points.toLocaleString();
+    // Points / stat row
     ctx.fillStyle = "#ffffff";
     ctx.font = "500 82px system-ui, sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(ptsText, textX, H * 0.645);
-    const ptsW = ctx.measureText(ptsText).width;
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = "400 30px system-ui, sans-serif";
-    ctx.fillText("points", textX + ptsW + 12, H * 0.645 - 6);
+    ctx.fillText(pointsLine, textX, H * 0.645);
+    if (pointsSuffix) {
+      const ptsW = ctx.measureText(pointsLine).width;
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "400 30px system-ui, sans-serif";
+      ctx.fillText("points", textX + ptsW + 12, H * 0.645 - 6);
+    }
 
-    // WELL Cup Champion pill
-    drawPillLabel(ctx, "WELL CUP CHAMPION", textX + 100, H * 0.81, 22);
+    // Champion / spotlight pill
+    drawPillLabel(ctx, pillText, textX + 100, H * 0.81, 22);
 
     // Site link
     ctx.fillStyle = "rgba(255,255,255,0.45)";
@@ -357,13 +365,13 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose 
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
             <span style={{ fontSize: "22px" }}>🏆</span>
-            <span style={{ fontSize: "9px", fontWeight: 500, color: "rgba(255,255,255,0.9)", letterSpacing: "0.06em", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "20px", padding: "2px 8px", whiteSpace: "nowrap" }}>CHAMPION</span>
+            <span style={{ fontSize: "9px", fontWeight: 500, color: "rgba(255,255,255,0.9)", letterSpacing: "0.06em", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "20px", padding: "2px 8px", whiteSpace: "nowrap" }}>{period === "spotlight" ? "SPOTLIGHT" : "CHAMPION"}</span>
           </div>
           <div style={{ width: "1px", alignSelf: "stretch", margin: "8px 0", background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.6)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em" }}>{periodLabel}</span>
             <span style={{ fontSize: "15px", fontWeight: 500, color: "white" }}>{winner.name}</span>
-            <span style={{ fontSize: "18px", fontWeight: 500, color: "white" }}>{winner.total_points.toLocaleString()} <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)" }}>pts</span></span>
+            <span style={{ fontSize: "18px", fontWeight: 500, color: "white" }}>{winner.stat ?? winner.total_points.toLocaleString()}{!winner.stat && <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)" }}> pts</span>}</span>
             <span style={{ fontSize: "8px", color: "rgba(255,255,255,0.45)", marginTop: "4px" }}>{SITE_URL}</span>
           </div>
           {winner.avatar ? (
