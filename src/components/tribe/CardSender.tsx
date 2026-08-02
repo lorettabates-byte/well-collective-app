@@ -43,8 +43,8 @@ const CONFETTI_SEEDS = [
   { x: 60, y: 8, r: 3, c: 0 },  { x: 42, y: 90, r: 4, c: 1 },
 ];
 
-const CONFETTI_OCCASIONS = new Set(["birthday", "congratulations", "just-saying-hi"]);
-const FLOWER_OCCASIONS = new Set(["thinking-of-you", "condolences", "youve-got-this"]);
+const CONFETTI_OCCASIONS = new Set(["birthday", "congratulations"]);
+const FLOWER_OCCASIONS = new Set(["thinking-of-you", "condolences"]);
 
 const CONFETTI_FALL = [
   { x: 10, delay: 0,   dur: 2.0, color: "#f43f5e", size: 6 },
