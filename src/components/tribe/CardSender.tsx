@@ -172,7 +172,7 @@ export function CardFace({
   return (
     <div
       className="w-full select-none"
-      style={{ height: CARD_H, position: "relative" }}
+      style={{ height: CARD_H, position: "relative", overflow: "hidden", borderRadius: "1rem" }}
     >
       {/* ── INSIDE panel (message side, revealed when cover slides up) ── */}
       <div
