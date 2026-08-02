@@ -73,37 +73,43 @@ const PETAL_FALL = [
 /* ─── Card Graphic Illustrations ──────────────────────────────────────────── */
 
 const CARD_GRAPHICS: Record<string, string> = {
-  "birthday/ocean":          "/card-icons/balloon-svgrepo-com.svg",
-  "birthday/rose":           "/card-icons/birthday-cake-cake-svgrepo-com.svg",
-  "birthday/midnight":       "/card-icons/birthday-cake-food-svgrepo-com.svg",
-  "birthday/citrus":         "/card-icons/hat-svgrepo-com.svg",
-  "birthday/lavender":       "/card-icons/party-popper-svgrepo-com.svg",
-  "birthday/emerald":        "/card-icons/confetti-svgrepo-com.svg",
+  // Birthday — each style gets a distinct celebration icon
+  "birthday/ocean":          "/card-icons/balloon-svgrepo-com-2.svg",       // two balloons, festive
+  "birthday/rose":           "/card-icons/birthday-cake-cake-svgrepo-com-2.svg", // colorful tiered cake
+  "birthday/midnight":       "/card-icons/mirror-ball-disco-svgrepo-com.svg",   // disco ball, midnight party
+  "birthday/citrus":         "/card-icons/hat-svgrepo-com.svg",              // party hat
+  "birthday/lavender":       "/card-icons/party-popper-svgrepo-com.svg",     // party popper
+  "birthday/emerald":        "/card-icons/garlands-garland-svgrepo-com.svg", // festive garlands
 
-  "thinking-of-you/blue-mist":    "/card-icons/flower-svgrepo-com.svg",
-  "thinking-of-you/warm-sunrise": "/card-icons/flowers-bouquet-svgrepo-com.svg",
-  "thinking-of-you/soft-mauve":   "/card-icons/garlands-garland-svgrepo-com.svg",
-  "thinking-of-you/garden":       "/card-icons/leaves-svgrepo-com.svg",
+  // Thinking of You — botanical / caring imagery
+  "thinking-of-you/blue-mist":    "/card-icons/flower-svgrepo-com.svg",          // elegant 4-petal flower
+  "thinking-of-you/warm-sunrise": "/card-icons/flowers-bouquet-svgrepo-com.svg", // warm bouquet
+  "thinking-of-you/soft-mauve":   "/card-icons/organic-flora-2-svgrepo-com.svg", // soft botanical
+  "thinking-of-you/garden":       "/card-icons/leaves-svgrepo-com.svg",           // fresh leaves
 
-  "just-saying-hi/sunny":   "/card-icons/musical-note-music-and-multimedia-svgrepo-com.svg",
-  "just-saying-hi/teal":    "/card-icons/mobile-phone-notification-svgrepo-com.svg",
-  "just-saying-hi/coral":   "/card-icons/photo-camera-photograph-svgrepo-com.svg",
-  "just-saying-hi/skyblue": "/card-icons/shopping-bag-svgrepo-com.svg",
+  // Just Saying Hi — playful everyday moments
+  "just-saying-hi/sunny":   "/card-icons/karaoke-sing-svgrepo-com.svg",                     // music/karaoke, fun
+  "just-saying-hi/teal":    "/card-icons/mobile-phone-notification-svgrepo-com.svg",         // phone hi
+  "just-saying-hi/coral":   "/card-icons/photo-camera-photograph-svgrepo-com.svg",           // camera snap
+  "just-saying-hi/skyblue": "/card-icons/musical-note-music-and-multimedia-svgrepo-com.svg", // music note
 
-  "condolences/gentle-grey":  "/card-icons/candle-svgrepo-com.svg",
-  "condolences/soft-indigo":  "/card-icons/bird-svgrepo-com.svg",
-  "condolences/ivory":        "/card-icons/tree-svgrepo-com.svg",
-  "condolences/misty-rose":   "/card-icons/bushes-of-leaves-svgrepo-com.svg",
+  // Condolences — peaceful, gentle imagery
+  "condolences/gentle-grey":  "/card-icons/candle-svgrepo-com.svg",                // soft candle
+  "condolences/soft-indigo":  "/card-icons/bird-svgrepo-com.svg",                  // peaceful bird
+  "condolences/ivory":        "/card-icons/tree-svgrepo-com.svg",                  // enduring tree
+  "condolences/misty-rose":   "/card-icons/flower-orange-organic-svgrepo-com.svg", // gentle flower
 
-  "youve-got-this/fire":     "/card-icons/suit-vip-svgrepo-com.svg",
-  "youve-got-this/electric": "/card-icons/bow-tie-svgrepo-com.svg",
-  "youve-got-this/bold-red": "/card-icons/karaoke-sing-svgrepo-com.svg",
-  "youve-got-this/gold":     "/card-icons/wine-svgrepo-com.svg",
+  // You've Got This — energetic, empowering icons
+  "youve-got-this/fire":     "/card-icons/fireworks-rocket-svgrepo-com.svg", // rocket / launch
+  "youve-got-this/electric": "/card-icons/suit-vip-svgrepo-com.svg",         // VIP suit, confidence
+  "youve-got-this/bold-red": "/card-icons/crown-svgrepo-com.svg",            // crown, power
+  "youve-got-this/gold":     "/card-icons/star-svgrepo-com.svg",             // gold star
 
-  "congratulations/champagne": "/card-icons/crown-svgrepo-com.svg",
-  "congratulations/rainbow":   "/card-icons/fireworks-rocket-svgrepo-com.svg",
-  "congratulations/royal":     "/card-icons/cheers-svgrepo-com.svg",
-  "congratulations/starlight": "/card-icons/star-svgrepo-com.svg",
+  // Congratulations — achievement & celebration
+  "congratulations/champagne": "/card-icons/cheers-svgrepo-com.svg",               // champagne toast
+  "congratulations/rainbow":   "/card-icons/confetti-svgrepo-com-2.svg",           // vibrant confetti
+  "congratulations/royal":     "/card-icons/giftbox-gift-svgrepo-com.svg",         // luxury gift
+  "congratulations/starlight": "/card-icons/abstract-star-2-svgrepo-com.svg",      // starburst
 };
 
 /* ---------- CardFace ---------- */
@@ -269,7 +275,7 @@ export function CardFace({
               alt=""
               style={{
                 maxHeight: "100%", maxWidth: "100%", objectFit: "contain",
-                filter: "brightness(0) invert(1) opacity(0.85)",
+                opacity: 0.92,
               }}
             />
           </div>
