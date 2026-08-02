@@ -44,6 +44,31 @@ const CONFETTI_SEEDS = [
 ];
 
 const CONFETTI_OCCASIONS = new Set(["birthday", "congratulations", "just-saying-hi"]);
+const FLOWER_OCCASIONS = new Set(["thinking-of-you", "condolences", "youve-got-this"]);
+
+const CONFETTI_FALL = [
+  { x: 10, delay: 0,   dur: 2.0, color: "#f43f5e", size: 6 },
+  { x: 25, delay: 0.3, dur: 2.5, color: "#facc15", size: 8 },
+  { x: 40, delay: 0.7, dur: 1.8, color: "#60a5fa", size: 5 },
+  { x: 55, delay: 0.1, dur: 2.2, color: "#34d399", size: 7 },
+  { x: 70, delay: 0.5, dur: 2.8, color: "#a78bfa", size: 6 },
+  { x: 85, delay: 0.9, dur: 2.0, color: "#fb7185", size: 9 },
+  { x: 15, delay: 1.2, dur: 2.3, color: "#fde68a", size: 6 },
+  { x: 48, delay: 1.5, dur: 1.9, color: "#f97316", size: 7 },
+  { x: 65, delay: 0.4, dur: 2.6, color: "#f43f5e", size: 5 },
+  { x: 30, delay: 0.8, dur: 2.1, color: "#a78bfa", size: 8 },
+];
+
+const PETAL_FALL = [
+  { x: 12, delay: 0,   dur: 2.8, color: "#fda4af" },
+  { x: 28, delay: 0.4, dur: 3.2, color: "#f9a8d4" },
+  { x: 45, delay: 0.8, dur: 2.5, color: "#d8b4fe" },
+  { x: 62, delay: 0.2, dur: 3.0, color: "#fbcfe8" },
+  { x: 78, delay: 0.6, dur: 2.7, color: "#c4b5fd" },
+  { x: 20, delay: 1.0, dur: 3.4, color: "#fda4af" },
+  { x: 55, delay: 1.4, dur: 2.9, color: "#f9a8d4" },
+  { x: 88, delay: 0.3, dur: 2.6, color: "#d8b4fe" },
+];
 
 /* ─── Card Graphic Illustrations ──────────────────────────────────────────── */
 
@@ -98,6 +123,7 @@ export function CardFace({
   const IconComponent = CARD_ICONS[occasion.icon];
   const graphicSrc = CARD_GRAPHICS[`${occasion.id}/${style.id}`] ?? CARD_GRAPHICS[occasion.id];
   const showConfetti = CONFETTI_OCCASIONS.has(occasion.id);
+  const showFlowers = FLOWER_OCCASIONS.has(occasion.id);
 
   return (
     <div
@@ -135,6 +161,65 @@ export function CardFace({
           }}
         />
       ))}
+
+      {/* Animated confetti — falls through card when viewed */}
+      {animate && showConfetti && (
+        <>
+          <style>{`
+            @keyframes confettiFall {
+              0% { top: -5%; opacity: 1; transform: rotate(0deg); }
+              100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
+            }
+          `}</style>
+          {CONFETTI_FALL.map((p, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none rounded-sm"
+              style={{
+                left: `${p.x}%`,
+                width: p.size,
+                height: p.size + 4,
+                background: p.color,
+                animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`,
+                zIndex: 15,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Flower petals — fall through card for supportive occasions */}
+      {animate && showFlowers && (
+        <>
+          <style>{`
+            @keyframes petalFallCW {
+              0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+              50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
+              100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
+            }
+            @keyframes petalFallCCW {
+              0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+              50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
+              100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
+            }
+          `}</style>
+          {PETAL_FALL.map((p, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none"
+              style={{
+                left: `${p.x}%`,
+                width: 10,
+                height: 18,
+                background: p.color,
+                borderRadius: "50% 50% 50% 0",
+                animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
+                zIndex: 15,
+              }}
+            />
+          ))}
+        </>
+      )}
 
       {/* Animated watermark icon */}
       {IconComponent && (
@@ -217,42 +302,68 @@ export function Envelope({
     flapOpen && !flapClosing ? "rotateX(-172deg)" : "rotateX(0deg)";
   return (
     <div className="relative w-full" style={{ height: 150, perspective: "700px" }}>
-      {/* Body */}
+      {/* Envelope body — cream paper with diagonal fold lines */}
       <div
-        className="absolute inset-x-0 bottom-0 rounded-b-xl border border-white/10 overflow-hidden"
-        style={{ height: 130, background: "#1a2744", zIndex: 2 }}
+        className="absolute inset-x-0 bottom-0 rounded-b-xl overflow-hidden"
+        style={{ height: 130, background: "#f5f0e8", border: "1px solid #c9bda6", zIndex: 2 }}
       >
+        {/* Left diagonal fold triangle */}
         <div
           className="absolute inset-y-0 left-0"
           style={{
             width: "50%",
-            background: "#162035",
+            background: "#ede7d8",
             clipPath: "polygon(0 0, 100% 50%, 0 100%)",
           }}
         />
+        {/* Right diagonal fold triangle */}
         <div
           className="absolute inset-y-0 right-0"
           style={{
             width: "50%",
-            background: "#162035",
+            background: "#ede7d8",
             clipPath: "polygon(100% 0, 0 50%, 100% 100%)",
           }}
         />
+        {/* Bottom fold triangle */}
         <div
           className="absolute inset-x-0 bottom-0"
           style={{
             height: "50%",
-            background: "#111a30",
+            background: "#e8e1d2",
             clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
           }}
         />
+        {/* Wax seal */}
+        <div
+          className="absolute flex items-center justify-center font-bold text-white"
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 38% 35%, #e11d48, #9f1239)",
+            border: "1.5px solid #be123c",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 10,
+            letterSpacing: "0.04em",
+            zIndex: 5,
+            opacity: flapOpen && !flapClosing ? 0.4 : 1,
+            transition: "opacity 0.3s",
+          }}
+        >
+          W
+        </div>
+        {/* Card color peek at top when flap is open */}
         <div
           className="absolute inset-x-6 top-0 h-5 rounded-b-md transition-opacity duration-300"
           style={{ background: cardColor, opacity: flapOpen ? 0.5 : 0 }}
         />
       </div>
 
-      {/* Flap */}
+      {/* Flap — cream paper triangle */}
       <div
         className="absolute inset-x-0 top-0 transition-transform ease-in-out"
         style={{
@@ -262,7 +373,8 @@ export function Envelope({
           transformStyle: "preserve-3d",
           transform: flapTransform,
           transitionDuration: flapClosing ? "500ms" : "600ms",
-          background: "#1e3060",
+          background: "#ece6d8",
+          border: "1px solid #c9bda6",
           clipPath: "polygon(0 0, 100% 0, 50% 100%)",
         }}
       />

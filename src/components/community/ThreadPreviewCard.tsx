@@ -28,7 +28,7 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
     >
       <div className="flex items-center gap-2 mb-2">
         {isOwnThread ? (
-          <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
+          <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} moodStatus={user.moodStatus} />
         ) : (
           <button
             type="button"
@@ -39,7 +39,7 @@ export default function ThreadPreviewCard({ thread }: { thread: ForumThread }) {
             }}
             className="shrink-0"
           >
-            <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} />
+            <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} moodStatus={liveAuthor?.moodStatus} />
           </button>
         )}
         <div className="min-w-0 flex-1">

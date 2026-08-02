@@ -176,7 +176,7 @@ export default function Thread() {
           </div>
         }
       />
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-4 pb-28">
         <p className="text-xs text-text-dim mb-4">
           Started by {authorName} · {timeAgo(thread.createdAt)}
         </p>
