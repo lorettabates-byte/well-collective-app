@@ -44,6 +44,8 @@ export interface User {
   lastMonthlyWinPts?: number;
   lastDailyWinAt?: string;
   lastDailyWinPts?: number;
+  lastYearlyWinAt?: string;
+  lastYearlyWinPts?: number;
   notifQuietStart?: string; // "HH:MM" — start of notification quiet hours
   notifQuietEnd?: string;   // "HH:MM" — end of notification quiet hours
   showOnLeaderboard?: boolean;
