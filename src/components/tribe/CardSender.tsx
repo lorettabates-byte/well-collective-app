@@ -146,9 +146,9 @@ export function CardFace({
   return (
     <div
       className="w-full select-none"
-      style={{ height: CARD_H, position: "relative", perspective: "1200px" }}
+      style={{ height: CARD_H, position: "relative" }}
     >
-      {/* ── INSIDE panel (message side, always behind the cover) ── */}
+      {/* ── INSIDE panel (message side, revealed when cover slides up) ── */}
       <div
         className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: style.bg }}
@@ -239,16 +239,13 @@ export function CardFace({
         </div>
       </div>
 
-      {/* ── COVER panel (elegant front face; flips up to reveal inside) ── */}
+      {/* ── COVER panel (slides up to reveal inside — avoids iOS backface-visibility bug) ── */}
       <div
         className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
         style={{
           zIndex: 2,
-          transformOrigin: "center top",
-          transform: isOpen ? "rotateX(-180deg)" : "rotateX(0deg)",
-          transition: "transform 0.9s cubic-bezier(0.4, 0, 0.2, 1)",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
+          transform: isOpen ? "translateY(-105%)" : "translateY(0%)",
+          transition: "transform 0.75s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         <div className="absolute inset-0" style={{ background: style.bg }} />
