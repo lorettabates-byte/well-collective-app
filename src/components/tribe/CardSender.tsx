@@ -156,241 +156,222 @@ export function CardFace({
   const showFlowers   = FLOWER_OCCASIONS.has(occasion.id);
   const showBalloons  = BALLOON_OCCASIONS.has(occasion.id);
   const showLeaves    = LEAF_OCCASIONS.has(occasion.id);
-  const [isOpen, setIsOpen] = useState(false);
+
+  // scaleX flip: no 3D transforms, no backfaceVisibility — fully iOS-safe
+  const [phase, setPhase] = useState<"cover" | "flipping-out" | "flipping-in" | "inside">("cover");
 
   useEffect(() => {
     if (animate) {
-      const t = setTimeout(() => setIsOpen(true), 420);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => setPhase("flipping-out"), 420);
+      const t2 = setTimeout(() => setPhase("flipping-in"),  700);
+      const t3 = setTimeout(() => setPhase("inside"),       980);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     } else {
-      setIsOpen(false);
+      setPhase("cover");
     }
   }, [animate]);
+
+  const showInside = phase === "flipping-in" || phase === "inside";
+  const cardAnimation =
+    phase === "flipping-out" ? "cardFlipOut 0.28s ease-in forwards" :
+    phase === "flipping-in"  ? "cardFlipIn 0.28s ease-out forwards" :
+    "none";
 
   const CARD_H = 286;
 
   return (
-    <div
-      className="w-full select-none"
-      style={{ height: CARD_H, position: "relative", overflow: "hidden", borderRadius: "1rem" }}
-    >
-      {/* ── INSIDE panel (message side, revealed when cover slides up) ── */}
+    <>
+      <style>{`
+        @keyframes cardFlipOut { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+        @keyframes cardFlipIn  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes confettiFall {
+          0% { top: -5%; opacity: 1; transform: rotate(0deg); }
+          100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
+        }
+        @keyframes petalFallCW {
+          0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+          50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
+          100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
+        }
+        @keyframes petalFallCCW {
+          0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+          50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
+          100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
+        }
+        @keyframes balloonRise {
+          0%   { top: 108%; opacity: 0.9; transform: translateX(0); }
+          30%  { transform: translateX(6px); }
+          60%  { transform: translateX(-5px); }
+          100% { top: -20%; opacity: 0.8; transform: translateX(2px); }
+        }
+        @keyframes leafFallCW {
+          0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+          33%  { transform: rotate(-140deg) translateX(-7px); }
+          66%  { transform: rotate(80deg) translateX(7px); }
+          100% { top: 110%; opacity: 0.2; transform: rotate(300deg) translateX(-3px); }
+        }
+        @keyframes leafFallCCW {
+          0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+          33%  { transform: rotate(140deg) translateX(7px); }
+          66%  { transform: rotate(-80deg) translateX(-7px); }
+          100% { top: 110%; opacity: 0.2; transform: rotate(-300deg) translateX(3px); }
+        }
+      `}</style>
+
       <div
-        className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: style.bg }}
+        className="w-full select-none"
+        style={{ height: CARD_H, position: "relative" }}
       >
-        <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
-          style={{ background: "rgba(255,255,255,0.08)" }} />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none"
-          style={{ background: "rgba(0,0,0,0.07)" }} />
-        <div className="absolute inset-1.5 rounded-xl pointer-events-none"
-          style={{ border: "1.5px dashed rgba(255,255,255,0.16)" }} />
+        <div
+          className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+          style={{ background: style.bg, animation: cardAnimation }}
+        >
+          {showInside ? (
+            /* ── INSIDE face ── */
+            <>
+              <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
+                style={{ background: "rgba(255,255,255,0.08)" }} />
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none"
+                style={{ background: "rgba(0,0,0,0.07)" }} />
+              <div className="absolute inset-1.5 rounded-xl pointer-events-none"
+                style={{ border: "1.5px dashed rgba(255,255,255,0.16)" }} />
 
-        {/* Animated confetti */}
-        {animate && isOpen && showConfetti && (
-          <>
-            <style>{`
-              @keyframes confettiFall {
-                0% { top: -5%; opacity: 1; transform: rotate(0deg); }
-                100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
-              }
-            `}</style>
-            {CONFETTI_FALL.map((p, i) => (
-              <div key={i} className="absolute pointer-events-none rounded-sm"
-                style={{
-                  left: `${p.x}%`, width: p.size, height: p.size + 4, background: p.color,
-                  animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`, zIndex: 15,
-                }} />
-            ))}
-          </>
-        )}
-
-        {/* Animated flower petals */}
-        {animate && isOpen && showFlowers && (
-          <>
-            <style>{`
-              @keyframes petalFallCW {
-                0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-                50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
-                100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
-              }
-              @keyframes petalFallCCW {
-                0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-                50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
-                100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
-              }
-            `}</style>
-            {PETAL_FALL.map((p, i) => (
-              <div key={i} className="absolute pointer-events-none"
-                style={{
-                  left: `${p.x}%`, width: 10, height: 18, background: p.color,
-                  borderRadius: "50% 50% 50% 0",
-                  animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
-                  zIndex: 15,
-                }} />
-            ))}
-          </>
-        )}
-
-        {/* Animated balloons */}
-        {animate && isOpen && showBalloons && (
-          <>
-            <style>{`
-              @keyframes balloonRise {
-                0%   { top: 108%; opacity: 0.9; transform: translateX(0); }
-                30%  { transform: translateX(6px); }
-                60%  { transform: translateX(-5px); }
-                100% { top: -20%; opacity: 0.8; transform: translateX(2px); }
-              }
-            `}</style>
-            {BALLOON_FALL.map((p, i) => (
-              <div key={i} className="absolute pointer-events-none"
-                style={{ left: `${p.x}%`, animation: `balloonRise ${p.dur}s ${p.delay}s ease-in-out infinite`, zIndex: 15 }}>
-                <div style={{
-                  width: 18, height: 22, background: p.color,
-                  borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
-                  position: "relative",
-                }}>
-                  <div style={{
-                    position: "absolute", width: "28%", height: "20%",
-                    top: "18%", left: "18%",
-                    background: "rgba(255,255,255,0.38)", borderRadius: "50%",
+              {animate && showConfetti && CONFETTI_FALL.map((p, i) => (
+                <div key={i} className="absolute pointer-events-none rounded-sm"
+                  style={{
+                    left: `${p.x}%`, width: p.size, height: p.size + 4, background: p.color,
+                    animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`, zIndex: 15,
                   }} />
-                  <div style={{
-                    position: "absolute", bottom: -3, left: "50%",
-                    transform: "translateX(-50%)",
-                    width: 0, height: 0,
-                    borderLeft: "2px solid transparent",
-                    borderRight: "2px solid transparent",
-                    borderTop: `3px solid ${p.color}`,
+              ))}
+
+              {animate && showFlowers && PETAL_FALL.map((p, i) => (
+                <div key={i} className="absolute pointer-events-none"
+                  style={{
+                    left: `${p.x}%`, width: 10, height: 18, background: p.color,
+                    borderRadius: "50% 50% 50% 0",
+                    animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
+                    zIndex: 15,
                   }} />
+              ))}
+
+              {animate && showBalloons && BALLOON_FALL.map((p, i) => (
+                <div key={i} className="absolute pointer-events-none"
+                  style={{ left: `${p.x}%`, animation: `balloonRise ${p.dur}s ${p.delay}s ease-in-out infinite`, zIndex: 15 }}>
+                  <div style={{
+                    width: 18, height: 22, background: p.color,
+                    borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
+                    position: "relative",
+                  }}>
+                    <div style={{
+                      position: "absolute", width: "28%", height: "20%",
+                      top: "18%", left: "18%",
+                      background: "rgba(255,255,255,0.38)", borderRadius: "50%",
+                    }} />
+                    <div style={{
+                      position: "absolute", bottom: -3, left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 0, height: 0,
+                      borderLeft: "2px solid transparent",
+                      borderRight: "2px solid transparent",
+                      borderTop: `3px solid ${p.color}`,
+                    }} />
+                  </div>
+                  <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.32)", margin: "3px auto 0" }} />
                 </div>
-                <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.32)", margin: "3px auto 0" }} />
+              ))}
+
+              {animate && showLeaves && LEAF_FALL.map((p, i) => (
+                <div key={i} className="absolute pointer-events-none"
+                  style={{
+                    left: `${p.x}%`, width: 10, height: 16, background: p.color,
+                    borderRadius: "0 50% 0 50%",
+                    animation: `${i % 2 === 0 ? "leafFallCW" : "leafFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
+                    zIndex: 15,
+                  }} />
+              ))}
+
+              {IconComponent && (
+                <div className="absolute bottom-3 right-3 pointer-events-none"
+                  style={{ opacity: 0.08, animation: animate ? "cardIconFloat 3s ease-in-out infinite" : "none" }}>
+                  <IconComponent size={52} strokeWidth={1.2} className="text-white" />
+                </div>
+              )}
+
+              <div className="relative z-10 px-6 flex flex-col justify-center h-full gap-2.5">
+                <div className="flex items-center gap-1.5">
+                  {IconComponent && (
+                    <IconComponent size={12} strokeWidth={2.2} className={`${style.textColor} opacity-60 shrink-0`} />
+                  )}
+                  <p className={`text-[9px] font-black uppercase tracking-[0.22em] opacity-50 ${style.textColor}`}>
+                    {occasion.label}
+                  </p>
+                </div>
+                <p className={`text-[17px] font-bold leading-snug ${style.textColor}`}>
+                  {messageOverride ?? style.message}
+                </p>
+                <div className={`flex items-center gap-3 ${style.textColor}`}>
+                  <div className="h-px flex-1 bg-current opacity-15" />
+                  {IconComponent && <IconComponent size={9} strokeWidth={2} className="opacity-25 shrink-0" />}
+                  <div className="h-px flex-1 bg-current opacity-15" />
+                </div>
+                <p className={`text-[11px] leading-relaxed ${style.textColor} opacity-65`} style={{ fontStyle: "italic" }}>
+                  {style.quote}
+                </p>
+                <p className={`text-[12px] font-semibold opacity-65 mt-1 ${style.textColor}`}>
+                  — from {userName || "you"}
+                </p>
               </div>
-            ))}
-          </>
-        )}
+            </>
+          ) : (
+            /* ── COVER face ── */
+            <>
+              {showConfetti && CONFETTI_SEEDS.map((dot, i) => (
+                <div key={i} className="absolute rounded-full pointer-events-none"
+                  style={{
+                    left: `${dot.x}%`, top: `${dot.y}%`,
+                    width: dot.r * 2, height: dot.r * 2,
+                    background: CONFETTI_COLORS[dot.c],
+                  }} />
+              ))}
 
-        {/* Animated falling leaves */}
-        {animate && isOpen && showLeaves && (
-          <>
-            <style>{`
-              @keyframes leafFallCW {
-                0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-                33%  { transform: rotate(-140deg) translateX(-7px); }
-                66%  { transform: rotate(80deg) translateX(7px); }
-                100% { top: 110%; opacity: 0.2; transform: rotate(300deg) translateX(-3px); }
-              }
-              @keyframes leafFallCCW {
-                0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-                33%  { transform: rotate(140deg) translateX(7px); }
-                66%  { transform: rotate(-80deg) translateX(-7px); }
-                100% { top: 110%; opacity: 0.2; transform: rotate(-300deg) translateX(3px); }
-              }
-            `}</style>
-            {LEAF_FALL.map((p, i) => (
-              <div key={i} className="absolute pointer-events-none"
-                style={{
-                  left: `${p.x}%`, width: 10, height: 16, background: p.color,
-                  borderRadius: "0 50% 0 50%",
-                  animation: `${i % 2 === 0 ? "leafFallCW" : "leafFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
-                  zIndex: 15,
-                }} />
-            ))}
-          </>
-        )}
+              <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none"
+                style={{ background: "rgba(255,255,255,0.10)" }} />
+              <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full pointer-events-none"
+                style={{ background: "rgba(0,0,0,0.08)" }} />
 
-        {IconComponent && (
-          <div className="absolute bottom-3 right-3 pointer-events-none"
-            style={{ opacity: 0.08, animation: animate && isOpen ? "cardIconFloat 3s ease-in-out infinite" : "none" }}>
-            <IconComponent size={52} strokeWidth={1.2} className="text-white" />
-          </div>
-        )}
+              {graphicSrc && (
+                <div className="absolute inset-x-0 top-0 flex items-center justify-center"
+                  style={{ height: "62%", paddingTop: "10%", paddingLeft: "12%", paddingRight: "12%" }}>
+                  <img
+                    src={graphicSrc}
+                    alt=""
+                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", opacity: 0.92 }}
+                  />
+                </div>
+              )}
 
-        <div className="relative z-10 px-6 flex flex-col justify-center h-full gap-2.5">
-          <div className="flex items-center gap-1.5">
-            {IconComponent && (
-              <IconComponent size={12} strokeWidth={2.2} className={`${style.textColor} opacity-60 shrink-0`} />
-            )}
-            <p className={`text-[9px] font-black uppercase tracking-[0.22em] opacity-50 ${style.textColor}`}>
-              {occasion.label}
-            </p>
-          </div>
-          <p className={`text-[17px] font-bold leading-snug ${style.textColor}`}>
-            {messageOverride ?? style.message}
-          </p>
-          <div className={`flex items-center gap-3 ${style.textColor}`}>
-            <div className="h-px flex-1 bg-current opacity-15" />
-            {IconComponent && <IconComponent size={9} strokeWidth={2} className="opacity-25 shrink-0" />}
-            <div className="h-px flex-1 bg-current opacity-15" />
-          </div>
-          <p className={`text-[11px] leading-relaxed ${style.textColor} opacity-65`} style={{ fontStyle: "italic" }}>
-            {style.quote}
-          </p>
-          <p className={`text-[12px] font-semibold opacity-65 mt-1 ${style.textColor}`}>
-            — from {userName || "you"}
-          </p>
+              <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
+                <p className={`text-[8px] font-black uppercase tracking-[0.30em] opacity-50 ${style.textColor}`}>
+                  {occasion.label}
+                </p>
+                <p className={`text-[21px] font-bold leading-tight mt-0.5 ${style.textColor}`}>
+                  {style.label}
+                </p>
+              </div>
+
+              <div className="absolute inset-1.5 rounded-xl pointer-events-none"
+                style={{ border: "1.5px dashed rgba(255,255,255,0.22)" }} />
+
+              {IconComponent && (
+                <div className="absolute top-3 right-4 pointer-events-none" style={{ opacity: 0.12 }}>
+                  <IconComponent size={44} strokeWidth={1.2} className="text-white" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {/* ── COVER panel (slides up to reveal inside — avoids iOS backface-visibility bug) ── */}
-      <div
-        className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
-        style={{
-          zIndex: 2,
-          transform: isOpen ? "translateY(-105%)" : "translateY(0%)",
-          transition: "transform 0.75s cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-      >
-        <div className="absolute inset-0" style={{ background: style.bg }} />
-
-        {showConfetti && CONFETTI_SEEDS.map((dot, i) => (
-          <div key={i} className="absolute rounded-full pointer-events-none"
-            style={{
-              left: `${dot.x}%`, top: `${dot.y}%`,
-              width: dot.r * 2, height: dot.r * 2,
-              background: CONFETTI_COLORS[dot.c],
-            }} />
-        ))}
-
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background: "rgba(255,255,255,0.10)" }} />
-        <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full pointer-events-none"
-          style={{ background: "rgba(0,0,0,0.08)" }} />
-
-        {graphicSrc && (
-          <div className="absolute inset-x-0 top-0 flex items-center justify-center"
-            style={{ height: "62%", paddingTop: "10%", paddingLeft: "12%", paddingRight: "12%" }}>
-            <img
-              src={graphicSrc}
-              alt=""
-              style={{
-                maxHeight: "100%", maxWidth: "100%", objectFit: "contain",
-                opacity: 0.92,
-              }}
-            />
-          </div>
-        )}
-
-        <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
-          <p className={`text-[8px] font-black uppercase tracking-[0.30em] opacity-50 ${style.textColor}`}>
-            {occasion.label}
-          </p>
-          <p className={`text-[21px] font-bold leading-tight mt-0.5 ${style.textColor}`}>
-            {style.label}
-          </p>
-        </div>
-
-        <div className="absolute inset-1.5 rounded-xl pointer-events-none"
-          style={{ border: "1.5px dashed rgba(255,255,255,0.22)" }} />
-
-        {IconComponent && (
-          <div className="absolute top-3 right-4 pointer-events-none" style={{ opacity: 0.12 }}>
-            <IconComponent size={44} strokeWidth={1.2} className="text-white" />
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
