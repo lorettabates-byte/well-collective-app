@@ -529,7 +529,7 @@ export default function Messages() {
         }
       />
 
-      <div ref={messagesListRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-0">
+      <div ref={messagesListRef} className="flex-1 overflow-y-auto px-4 pt-4 pb-24 flex flex-col gap-3 min-h-0">
         {messages.length === 0 ? (
           <p className="text-xs text-text-muted text-center py-8">No messages yet. Start the conversation!</p>
         ) : (

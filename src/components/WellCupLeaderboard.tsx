@@ -207,7 +207,7 @@ export default function WellCupLeaderboard() {
       {yesterday && (
         <div className="flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 rounded-card px-3 py-2 mb-3">
           <Trophy size={12} className="text-yellow-400 shrink-0" />
-          <Avatar alt={yesterday.name} src={yesterday.avatar ?? undefined} size={22} />
+          <Avatar alt={yesterday.name} src={yesterday.avatar ?? ""} size={22} />
           <p className="text-xs text-text-dim truncate flex-1 min-w-0">
             <span className="font-semibold text-yellow-400">{yesterday.name}</span>
             <span> held the Cup yesterday · {yesterday.total_points} pts</span>
@@ -229,7 +229,7 @@ export default function WellCupLeaderboard() {
                 className="flex items-center gap-3 bg-yellow-400/10 border border-yellow-400/30 rounded-card px-3 py-2.5 w-full text-left"
               >
                 <div className="relative shrink-0">
-                  <Avatar alt={first.name} src={first.avatar ?? undefined} size={40} moodStatus={memberBadges[deriveMemberId(first.email)]?.moodStatus} />
+                  <Avatar alt={first.name} src={first.avatar ?? ""} size={40} moodStatus={memberBadges[deriveMemberId(first.email)]?.moodStatus} />
                   <span className="absolute -top-1 -right-1 text-base leading-none">🏆</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -247,7 +247,7 @@ export default function WellCupLeaderboard() {
                 className={`flex items-center gap-3 px-1 w-full text-left ${entry.email === user.email ? "opacity-100" : ""}`}
               >
                 <span className="text-xs text-text-dim w-4 shrink-0 text-center">{i + 2}</span>
-                <Avatar alt={entry.name} src={entry.avatar ?? undefined} size={30} moodStatus={memberBadges[deriveMemberId(entry.email)]?.moodStatus} />
+                <Avatar alt={entry.name} src={entry.avatar ?? ""} size={30} moodStatus={memberBadges[deriveMemberId(entry.email)]?.moodStatus} />
                 <span className={`text-xs font-semibold flex-1 min-w-0 truncate ${entry.email === user.email ? "text-brand-light" : "text-text"}`}>
                   {entry.name}{entry.email === user.email ? " (you)" : ""}
                 </span>

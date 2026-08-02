@@ -124,165 +124,174 @@ export function CardFace({
   const graphicSrc = CARD_GRAPHICS[`${occasion.id}/${style.id}`] ?? CARD_GRAPHICS[occasion.id];
   const showConfetti = CONFETTI_OCCASIONS.has(occasion.id);
   const showFlowers = FLOWER_OCCASIONS.has(occasion.id);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (animate) {
+      const t = setTimeout(() => setIsOpen(true), 420);
+      return () => clearTimeout(t);
+    } else {
+      setIsOpen(false);
+    }
+  }, [animate]);
+
+  const CARD_H = 286;
 
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden shadow-2xl relative select-none"
-      style={{ background: style.bg }}
+      className="w-full select-none"
+      style={{ height: CARD_H, position: "relative", perspective: "1200px" }}
     >
-      {/* Scalloped border inset */}
+      {/* ── INSIDE panel (message side, always behind the cover) ── */}
       <div
-        className="absolute inset-1.5 rounded-xl pointer-events-none"
-        style={{ border: "1.5px dashed rgba(255,255,255,0.18)" }}
-      />
+        className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: style.bg }}
+      >
+        <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none"
+          style={{ background: "rgba(0,0,0,0.07)" }} />
+        <div className="absolute inset-1.5 rounded-xl pointer-events-none"
+          style={{ border: "1.5px dashed rgba(255,255,255,0.16)" }} />
 
-      {/* Top-right large decorative circle */}
+        {/* Animated confetti */}
+        {animate && isOpen && showConfetti && (
+          <>
+            <style>{`
+              @keyframes confettiFall {
+                0% { top: -5%; opacity: 1; transform: rotate(0deg); }
+                100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
+              }
+            `}</style>
+            {CONFETTI_FALL.map((p, i) => (
+              <div key={i} className="absolute pointer-events-none rounded-sm"
+                style={{
+                  left: `${p.x}%`, width: p.size, height: p.size + 4, background: p.color,
+                  animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`, zIndex: 15,
+                }} />
+            ))}
+          </>
+        )}
+
+        {/* Animated flower petals */}
+        {animate && isOpen && showFlowers && (
+          <>
+            <style>{`
+              @keyframes petalFallCW {
+                0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+                50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
+                100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
+              }
+              @keyframes petalFallCCW {
+                0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
+                50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
+                100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
+              }
+            `}</style>
+            {PETAL_FALL.map((p, i) => (
+              <div key={i} className="absolute pointer-events-none"
+                style={{
+                  left: `${p.x}%`, width: 10, height: 18, background: p.color,
+                  borderRadius: "50% 50% 50% 0",
+                  animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
+                  zIndex: 15,
+                }} />
+            ))}
+          </>
+        )}
+
+        {IconComponent && (
+          <div className="absolute bottom-3 right-3 pointer-events-none"
+            style={{ opacity: 0.08, animation: animate && isOpen ? "cardIconFloat 3s ease-in-out infinite" : "none" }}>
+            <IconComponent size={52} strokeWidth={1.2} className="text-white" />
+          </div>
+        )}
+
+        <div className="relative z-10 px-6 flex flex-col justify-center h-full gap-2.5">
+          <div className="flex items-center gap-1.5">
+            {IconComponent && (
+              <IconComponent size={12} strokeWidth={2.2} className={`${style.textColor} opacity-60 shrink-0`} />
+            )}
+            <p className={`text-[9px] font-black uppercase tracking-[0.22em] opacity-50 ${style.textColor}`}>
+              {occasion.label}
+            </p>
+          </div>
+          <p className={`text-[17px] font-bold leading-snug ${style.textColor}`}>
+            {messageOverride ?? style.message}
+          </p>
+          <div className={`flex items-center gap-3 ${style.textColor}`}>
+            <div className="h-px flex-1 bg-current opacity-15" />
+            {IconComponent && <IconComponent size={9} strokeWidth={2} className="opacity-25 shrink-0" />}
+            <div className="h-px flex-1 bg-current opacity-15" />
+          </div>
+          <p className={`text-[11px] leading-relaxed ${style.textColor} opacity-65`} style={{ fontStyle: "italic" }}>
+            {style.quote}
+          </p>
+          <p className={`text-[12px] font-semibold opacity-65 mt-1 ${style.textColor}`}>
+            — from {userName || "you"}
+          </p>
+        </div>
+      </div>
+
+      {/* ── COVER panel (elegant front face; flips up to reveal inside) ── */}
       <div
-        className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
-        style={{ background: "rgba(255,255,255,0.10)" }}
-      />
-      {/* Bottom-left circle */}
-      <div
-        className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full pointer-events-none"
-        style={{ background: "rgba(0,0,0,0.07)" }}
-      />
+        className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+        style={{
+          zIndex: 2,
+          transformOrigin: "center top",
+          transform: isOpen ? "rotateX(-180deg)" : "rotateX(0deg)",
+          transition: "transform 0.9s cubic-bezier(0.4, 0, 0.2, 1)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
+      >
+        <div className="absolute inset-0" style={{ background: style.bg }} />
 
-      {/* Confetti dots */}
-      {showConfetti && CONFETTI_SEEDS.map((dot, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            left: `${dot.x}%`,
-            top: `${dot.y}%`,
-            width: dot.r * 2,
-            height: dot.r * 2,
-            background: CONFETTI_COLORS[dot.c],
-          }}
-        />
-      ))}
+        {showConfetti && CONFETTI_SEEDS.map((dot, i) => (
+          <div key={i} className="absolute rounded-full pointer-events-none"
+            style={{
+              left: `${dot.x}%`, top: `${dot.y}%`,
+              width: dot.r * 2, height: dot.r * 2,
+              background: CONFETTI_COLORS[dot.c],
+            }} />
+        ))}
 
-      {/* Animated confetti — falls through card when viewed */}
-      {animate && showConfetti && (
-        <>
-          <style>{`
-            @keyframes confettiFall {
-              0% { top: -5%; opacity: 1; transform: rotate(0deg); }
-              100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
-            }
-          `}</style>
-          {CONFETTI_FALL.map((p, i) => (
-            <div
-              key={i}
-              className="absolute pointer-events-none rounded-sm"
+        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.10)" }} />
+        <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full pointer-events-none"
+          style={{ background: "rgba(0,0,0,0.08)" }} />
+
+        {graphicSrc && (
+          <div className="absolute inset-x-0 top-0 flex items-center justify-center"
+            style={{ height: "62%", paddingTop: "10%", paddingLeft: "12%", paddingRight: "12%" }}>
+            <img
+              src={graphicSrc}
+              alt=""
               style={{
-                left: `${p.x}%`,
-                width: p.size,
-                height: p.size + 4,
-                background: p.color,
-                animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`,
-                zIndex: 15,
+                maxHeight: "100%", maxWidth: "100%", objectFit: "contain",
+                filter: "brightness(0) invert(1) opacity(0.85)",
               }}
             />
-          ))}
-        </>
-      )}
+          </div>
+        )}
 
-      {/* Flower petals — fall through card for supportive occasions */}
-      {animate && showFlowers && (
-        <>
-          <style>{`
-            @keyframes petalFallCW {
-              0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-              50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
-              100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
-            }
-            @keyframes petalFallCCW {
-              0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-              50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
-              100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
-            }
-          `}</style>
-          {PETAL_FALL.map((p, i) => (
-            <div
-              key={i}
-              className="absolute pointer-events-none"
-              style={{
-                left: `${p.x}%`,
-                width: 10,
-                height: 18,
-                background: p.color,
-                borderRadius: "50% 50% 50% 0",
-                animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
-                zIndex: 15,
-              }}
-            />
-          ))}
-        </>
-      )}
-
-      {/* Animated watermark icon */}
-      {IconComponent && (
-        <div
-          className="absolute bottom-4 right-4 pointer-events-none"
-          style={{
-            opacity: 0.10,
-            animation: animate ? "cardIconFloat 3s ease-in-out infinite" : "none",
-          }}
-        >
-          <IconComponent size={52} strokeWidth={1.2} className="text-white" />
-        </div>
-      )}
-
-      {/* Graphic illustration */}
-      {graphicSrc && (
-        <div className="relative z-10 mx-5 mt-5" style={{ height: 60 }}>
-          <img src={graphicSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="relative z-10 px-6 pb-5 pt-2 flex flex-col gap-2.5">
-        {/* Occasion label row */}
-        <div className="flex items-center gap-1.5">
-          {IconComponent && (
-            <IconComponent
-              size={13}
-              strokeWidth={2.2}
-              className={`${style.textColor} opacity-65 shrink-0`}
-            />
-          )}
-          <p
-            className={`text-[9px] font-black uppercase tracking-[0.22em] opacity-55 ${style.textColor}`}
-          >
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
+          <p className={`text-[8px] font-black uppercase tracking-[0.30em] opacity-50 ${style.textColor}`}>
             {occasion.label}
+          </p>
+          <p className={`text-[21px] font-bold leading-tight mt-0.5 ${style.textColor}`}>
+            {style.label}
           </p>
         </div>
 
-        {/* Main message */}
-        <p className={`text-[18px] font-bold leading-snug ${style.textColor}`}>
-          {messageOverride ?? style.message}
-        </p>
+        <div className="absolute inset-1.5 rounded-xl pointer-events-none"
+          style={{ border: "1.5px dashed rgba(255,255,255,0.22)" }} />
 
-        {/* Divider */}
-        <div className={`flex items-center gap-3 ${style.textColor}`}>
-          <div className="h-px flex-1 bg-current opacity-15" />
-          <IconComponent size={10} strokeWidth={2} className="opacity-25 shrink-0" />
-          <div className="h-px flex-1 bg-current opacity-15" />
-        </div>
-
-        {/* Inspirational quote */}
-        <p
-          className={`text-[11px] leading-relaxed ${style.textColor} opacity-70`}
-          style={{ fontStyle: "italic" }}
-        >
-          {style.quote}
-        </p>
-
-        {/* From line */}
-        <p className={`text-[13px] font-semibold opacity-70 mt-1 ${style.textColor}`}>
-          — from {userName || "you"}
-        </p>
+        {IconComponent && (
+          <div className="absolute top-3 right-4 pointer-events-none" style={{ opacity: 0.12 }}>
+            <IconComponent size={44} strokeWidth={1.2} className="text-white" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -301,86 +310,90 @@ export function Envelope({
   const flapTransform =
     flapOpen && !flapClosing ? "rotateX(-172deg)" : "rotateX(0deg)";
   return (
-    <div className="relative w-full" style={{ height: 150, perspective: "700px" }}>
-      {/* Envelope body — cream paper with diagonal fold lines */}
+    <div className="relative w-full" style={{ height: 160, perspective: "700px" }}>
+      {/* Envelope body — dark navy */}
       <div
-        className="absolute inset-x-0 bottom-0 rounded-b-xl overflow-hidden"
-        style={{ height: 130, background: "#f5f0e8", border: "1px solid #c9bda6", zIndex: 2 }}
+        className="absolute inset-x-0 bottom-0"
+        style={{
+          height: 140,
+          background: "linear-gradient(160deg, #0e1c36 0%, #091224 100%)",
+          borderRadius: "0 0 16px 16px",
+          border: "1px solid rgba(1,145,206,0.22)",
+          zIndex: 2,
+          overflow: "hidden",
+        }}
       >
-        {/* Left diagonal fold triangle */}
-        <div
-          className="absolute inset-y-0 left-0"
-          style={{
-            width: "50%",
-            background: "#ede7d8",
-            clipPath: "polygon(0 0, 100% 50%, 0 100%)",
-          }}
-        />
-        {/* Right diagonal fold triangle */}
-        <div
-          className="absolute inset-y-0 right-0"
-          style={{
-            width: "50%",
-            background: "#ede7d8",
-            clipPath: "polygon(100% 0, 0 50%, 100% 100%)",
-          }}
-        />
-        {/* Bottom fold triangle */}
-        <div
-          className="absolute inset-x-0 bottom-0"
-          style={{
-            height: "50%",
-            background: "#e8e1d2",
-            clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
-          }}
-        />
+        {/* Left diagonal fold */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: "50%",
+          background: "rgba(255,255,255,0.03)",
+          clipPath: "polygon(0 0, 100% 38%, 0 100%)",
+        }} />
+        {/* Right diagonal fold */}
+        <div style={{
+          position: "absolute", right: 0, top: 0, bottom: 0, width: "50%",
+          background: "rgba(255,255,255,0.03)",
+          clipPath: "polygon(100% 0, 0 38%, 100% 100%)",
+        }} />
+        {/* Bottom V fold */}
+        <div style={{
+          position: "absolute", left: 0, right: 0, bottom: 0, height: "42%",
+          background: "rgba(0,0,0,0.18)",
+          clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
+        }} />
+        {/* Card color peek at fold line when open */}
+        <div style={{
+          position: "absolute", left: 10, right: 10, top: 0, height: 5,
+          background: cardColor,
+          borderRadius: "0 0 4px 4px",
+          opacity: flapOpen && !flapClosing ? 0.65 : 0,
+          transition: "opacity 0.4s",
+        }} />
         {/* WELL logo stamp */}
-        <div
-          className="absolute flex items-center justify-center"
-          style={{
-            width: 48,
-            height: 22,
-            borderRadius: "11px",
-            background: "linear-gradient(135deg, #0a1628, #0191CE)",
-            border: "1px solid rgba(1,145,206,0.5)",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.18)",
-            bottom: 22,
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "2px 6px",
-            zIndex: 5,
-            opacity: flapOpen && !flapClosing ? 0.35 : 0.9,
-            transition: "opacity 0.3s",
-          }}
-        >
+        <div style={{
+          position: "absolute",
+          width: 54, height: 24, borderRadius: 12,
+          background: "linear-gradient(135deg, #0a1628, #0191CE)",
+          border: "1px solid rgba(1,145,206,0.55)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.55)",
+          bottom: 26, left: "50%", transform: "translateX(-50%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "3px 8px", zIndex: 5,
+          opacity: flapOpen && !flapClosing ? 0.2 : 1,
+          transition: "opacity 0.3s",
+        }}>
           <img
             src="https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png"
             alt="WELL"
             style={{ height: "100%", objectFit: "contain" }}
           />
         </div>
-        {/* Card color peek at top when flap is open */}
-        <div
-          className="absolute inset-x-6 top-0 h-5 rounded-b-md transition-opacity duration-300"
-          style={{ background: cardColor, opacity: flapOpen ? 0.5 : 0 }}
-        />
       </div>
 
-      {/* Flap — cream paper triangle */}
+      {/* Flap — dark navy triangle, no border so it blends seamlessly with body */}
       <div
-        className="absolute inset-x-0 top-0 transition-transform ease-in-out"
+        className="absolute inset-x-0 top-0"
         style={{
-          height: 80,
+          height: 84,
+          background: "linear-gradient(180deg, #112040 0%, #0e1c36 100%)",
+          clipPath: "polygon(0 0, 100% 0, 50% 100%)",
           zIndex: flapOpen && !flapClosing ? 1 : 4,
           transformOrigin: "top center",
           transformStyle: "preserve-3d",
           transform: flapTransform,
           transitionDuration: flapClosing ? "500ms" : "600ms",
-          background: "#ece6d8",
-          border: "1px solid #c9bda6",
-          clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+          transitionProperty: "transform",
+          transitionTimingFunction: "ease-in-out",
         }}
       />
+      {/* Side borders above body (left + right edges of the envelope rectangle) */}
+      <div style={{
+        position: "absolute", left: 0, right: 0, top: 0, height: 20,
+        borderLeft: "1px solid rgba(1,145,206,0.22)",
+        borderRight: "1px solid rgba(1,145,206,0.22)",
+        pointerEvents: "none",
+        zIndex: 1,
+      }} />
     </div>
   );
 }

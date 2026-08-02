@@ -177,7 +177,7 @@ function drawDecorations(
   period: SharePeriod,
   W: number, H: number,
   isIG: boolean,
-  theme: typeof THEMES[SharePeriod]
+  _theme: typeof THEMES[SharePeriod]
 ) {
   const ring = (cx: number, cy: number, r: number, color: string, lw = 2) => {
     ctx.beginPath();
