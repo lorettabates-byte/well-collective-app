@@ -11,7 +11,7 @@ export interface ShareWinner {
   stat?: string;
 }
 
-export type SharePeriod = "daily" | "monthly" | "yearly" | "spotlight";
+export type SharePeriod = "daily" | "monthly" | "yearly" | "spotlight" | "comeback";
 
 interface Props {
   winner: ShareWinner;
@@ -70,6 +70,18 @@ const THEMES = {
     accentRgba: "rgba(52,211,153,0.65)",
     previewBg: "linear-gradient(135deg, #0d2b2b 0%, #0f6b57 55%, #34d399 100%)",
     previewBadge: { bg: "rgba(52,211,153,0.15)", border: "rgba(52,211,153,0.45)", color: "#34d399" },
+  },
+  comeback: {
+    gradStops: ["#431407", "#9a3412", "#fb923c"],
+    gradDir: (W: number, H: number) => [0, H, W, 0] as [number, number, number, number],
+    emoji: "🔥",
+    pillLabel: "COMEBACK STORY",
+    pillBg: "rgba(251,146,60,0.18)",
+    pillBorder: "rgba(251,146,60,0.5)",
+    accentHex: "#fb923c",
+    accentRgba: "rgba(251,146,60,0.65)",
+    previewBg: "linear-gradient(135deg, #431407 0%, #9a3412 55%, #fb923c 100%)",
+    previewBadge: { bg: "rgba(251,146,60,0.18)", border: "rgba(251,146,60,0.5)", color: "#fb923c" },
   },
 } as const;
 
@@ -216,6 +228,26 @@ function drawDecorations(
     ring(W * 0.9, isIG ? H * 0.88 : H + 60, isIG ? 100 : 70, "rgba(52,211,153,0.08)");
     // Top-left soft ring
     ring(W * 0.05, isIG ? H * 0.05 : -50, isIG ? 220 : 160, "rgba(52,211,153,0.08)");
+
+  } else if (period === "comeback") {
+    // Starburst from bottom-left — rising from the ashes feel
+    const bx = W * 0.08;
+    const by = isIG ? H * 0.9 : H * 0.8;
+    const maxR = isIG ? 420 : 240;
+    const rays = 12;
+    for (let i = 0; i < rays; i++) {
+      const angle = (i / rays) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + Math.cos(angle) * maxR, by + Math.sin(angle) * maxR);
+      ctx.strokeStyle = "rgba(251,146,60,0.10)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ring(bx, by, isIG ? 110 : 65, "rgba(251,146,60,0.12)", 3);
+    ring(bx, by, isIG ? 220 : 130, "rgba(251,146,60,0.07)", 2);
+    // Accent ring top-right
+    ring(W * 0.92, isIG ? H * 0.08 : -50, isIG ? 240 : 160, "rgba(251,146,60,0.08)");
   }
 }
 
@@ -345,7 +377,7 @@ async function generateCard(
     ctx.fillText(theme.emoji, leftW / 2, H / 2 - 16);
 
     // Champion pill (left col)
-    const shortPill = period === "daily" ? "DAILY" : period === "monthly" ? "MONTHLY" : period === "yearly" ? "YEARLY" : "SPOTLIGHT";
+    const shortPill = period === "daily" ? "DAILY" : period === "monthly" ? "MONTHLY" : period === "yearly" ? "YEARLY" : period === "comeback" ? "COMEBACK" : "SPOTLIGHT";
     drawPillLabel(ctx, shortPill, leftW / 2, H * 0.72, 22,
       theme.pillBg, theme.pillBorder,
       theme.accentHex === "#e9d5ff" || theme.accentHex === "#6ab8d8" ? "rgba(255,255,255,0.95)" : theme.accentHex);

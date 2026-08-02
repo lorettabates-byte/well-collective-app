@@ -108,6 +108,7 @@ function SpotlightBanner({
   icon: Icon,
   empty,
   shareLabel,
+  period = "spotlight",
 }: {
   label: string;
   description: string;
@@ -116,6 +117,7 @@ function SpotlightBanner({
   icon: React.ElementType;
   empty: string;
   shareLabel?: string;
+  period?: SharePeriod;
 }) {
   const navigate = useNavigate();
   const { memberBadges } = useApp();
@@ -155,7 +157,7 @@ function SpotlightBanner({
       {showShare && winner && shareLabel && (
         <WellCupShareCard
           winner={{ name: winner.name, avatar: winner.avatar, total_points: 0, stat: winner.stat }}
-          period="spotlight"
+          period={period}
           periodLabel={shareLabel}
           onClose={() => setShowShare(false)}
         />
@@ -443,6 +445,7 @@ export default function WellCup() {
                 description="Highest points this week among members who were inactive last week. Always-active members can never qualify."
                 winner={comeback}
                 shareLabel="Comeback Story"
+                period="comeback"
                 accent="border-violet-400/30 bg-violet-400/5"
                 icon={RotateCcw}
                 empty="No returning members logged points yet this week"

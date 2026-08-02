@@ -334,27 +334,30 @@ export function Envelope({
             clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
           }}
         />
-        {/* Wax seal */}
+        {/* WELL logo stamp */}
         <div
-          className="absolute flex items-center justify-center font-bold text-white"
+          className="absolute flex items-center justify-center"
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 38% 35%, #e11d48, #9f1239)",
-            border: "1.5px solid #be123c",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-            bottom: 20,
+            width: 48,
+            height: 22,
+            borderRadius: "11px",
+            background: "linear-gradient(135deg, #0a1628, #0191CE)",
+            border: "1px solid rgba(1,145,206,0.5)",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.18)",
+            bottom: 22,
             left: "50%",
             transform: "translateX(-50%)",
-            fontSize: 10,
-            letterSpacing: "0.04em",
+            padding: "2px 6px",
             zIndex: 5,
-            opacity: flapOpen && !flapClosing ? 0.4 : 1,
+            opacity: flapOpen && !flapClosing ? 0.35 : 0.9,
             transition: "opacity 0.3s",
           }}
         >
-          W
+          <img
+            src="https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png"
+            alt="WELL"
+            style={{ height: "100%", objectFit: "contain" }}
+          />
         </div>
         {/* Card color peek at top when flap is open */}
         <div
