@@ -1,4 +1,4 @@
-import { AlertCircle, Clock } from "lucide-react";
+import { AlertCircle, BellOff, Clock } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { subscribeToPush, unsubscribeFromPush } from "../lib/push";
@@ -94,6 +94,9 @@ export default function NotificationSettings() {
   const [notificationSchedule, setNotificationSchedule] = useState(
     user.notificationSchedule || { send7am: true, send3pm: false, send9pm: false }
   );
+  const [quietEnabled, setQuietEnabled] = useState(!!(user.notifQuietStart && user.notifQuietEnd));
+  const [quietStart, setQuietStart] = useState(user.notifQuietStart || "22:00");
+  const [quietEnd, setQuietEnd] = useState(user.notifQuietEnd || "07:00");
   const [saving, setSaving] = useState(false);
 
   const handleTogglePush = async () => {
@@ -125,12 +128,18 @@ export default function NotificationSettings() {
           email: user.email,
           timezone,
           notificationSchedule,
+          notifQuietStart: quietEnabled ? quietStart : null,
+          notifQuietEnd: quietEnabled ? quietEnd : null,
         }),
       });
 
       if (res.ok) {
-        // Persist to local context so the toggles stay correct on next visit
-        updateProfile({ notificationSchedule, ...(timezone !== user.timezone ? { timezone } : {}) });
+        updateProfile({
+          notificationSchedule,
+          ...(timezone !== user.timezone ? { timezone } : {}),
+          notifQuietStart: quietEnabled ? quietStart : undefined,
+          notifQuietEnd: quietEnabled ? quietEnd : undefined,
+        });
       }
     } catch (err) {
       console.error("Failed to save timezone settings:", err);
@@ -212,6 +221,49 @@ export default function NotificationSettings() {
               onToggle={() => setNotificationSchedule({ ...notificationSchedule, send9pm: !notificationSchedule.send9pm })}
             />
           </div>
+        </div>
+
+        {/* Quiet Hours */}
+        <div className="mt-2 mb-1">
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Quiet Hours</p>
+        </div>
+        <div className="glass-card rounded-card px-4 py-3.5">
+          <div className="flex items-center gap-3 mb-3">
+            <BellOff size={16} className="text-brand-light shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">Do Not Disturb</p>
+              <p className="text-xs text-text-muted mt-0.5">Silence all notifications during these hours</p>
+            </div>
+            <Toggle enabled={quietEnabled} onToggle={() => setQuietEnabled((v) => !v)} />
+          </div>
+          {quietEnabled && (
+            <div className="flex items-center gap-3 mt-2 pt-3 border-t border-border">
+              <div className="flex-1">
+                <p className="text-xs text-text-muted mb-1">From</p>
+                <select
+                  value={quietStart}
+                  onChange={(e) => setQuietStart(e.target.value)}
+                  className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                >
+                  {Array.from({ length: 24 }, (_, h) => [`${String(h).padStart(2, "0")}:00`, `${String(h).padStart(2, "0")}:30`]).flat().map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-text-muted mb-1">Until</p>
+                <select
+                  value={quietEnd}
+                  onChange={(e) => setQuietEnd(e.target.value)}
+                  className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-brand-light"
+                >
+                  {Array.from({ length: 24 }, (_, h) => [`${String(h).padStart(2, "0")}:00`, `${String(h).padStart(2, "0")}:30`]).flat().map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <button

@@ -1,6 +1,6 @@
-import { Send, Pin, Image as ImageIcon, X, CornerUpLeft } from "lucide-react";
+import { Send, Pin, Image as ImageIcon, X, CornerUpLeft, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ChatBubble from "../components/community/ChatBubble";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
@@ -15,7 +15,8 @@ export default function Thread() {
   const [searchParams] = useSearchParams();
   const highlightMessageId = searchParams.get("message") ?? undefined;
 
-  const { categories, threads, user, addMessage, memberBadges, pinThread, unpinThread } = useApp();
+  const { categories, threads, user, addMessage, memberBadges, pinThread, unpinThread, deleteOwnThread } = useApp();
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | undefined>();
   const [photoError, setPhotoError] = useState("");
@@ -135,24 +136,44 @@ export default function Thread() {
     }
   };
 
+  const handleDeleteOwnThread = () => {
+    if (window.confirm("Delete this post? This cannot be undone.")) {
+      deleteOwnThread(thread.id);
+      navigate(-1);
+    }
+  };
+
   return (
     <div>
       <TopBar
         title={thread.title}
         subtitle={category.name}
         showBack
-        right={user.isAdmin && (
-          <button
-            onClick={handleTogglePin}
-            className={`p-2 rounded-full transition-colors ${
-              thread.pinnedAt
-                ? "text-brand-light"
-                : "text-text-dim hover:text-text"
-            }`}
-          >
-            <Pin size={20} className={thread.pinnedAt ? "fill-brand-light" : ""} />
-          </button>
-        )}
+        right={
+          <div className="flex items-center gap-1">
+            {isOwnThread && (
+              <button
+                onClick={handleDeleteOwnThread}
+                className="p-2 rounded-full text-text-dim hover:text-red-400 transition-colors"
+                aria-label="Delete post"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
+            {user.isAdmin && (
+              <button
+                onClick={handleTogglePin}
+                className={`p-2 rounded-full transition-colors ${
+                  thread.pinnedAt
+                    ? "text-brand-light"
+                    : "text-text-dim hover:text-text"
+                }`}
+              >
+                <Pin size={20} className={thread.pinnedAt ? "fill-brand-light" : ""} />
+              </button>
+            )}
+          </div>
+        }
       />
       <div className="px-4 pt-4 pb-2">
         <p className="text-xs text-text-dim mb-4">

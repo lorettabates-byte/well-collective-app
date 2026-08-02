@@ -116,6 +116,7 @@ function SpotlightBanner({
   shareLabel?: string;
 }) {
   const navigate = useNavigate();
+  const { memberBadges } = useApp();
   const [showShare, setShowShare] = useState(false);
   return (
     <div className={`rounded-card px-4 py-3 border ${accent}`}>
@@ -130,7 +131,7 @@ function SpotlightBanner({
             onClick={() => winner.email ? navigate(`/member/${deriveMemberId(winner.email)}`) : undefined}
             className="flex items-center gap-3 flex-1 min-w-0 text-left"
           >
-            <Avatar src={winner.avatar ?? ""} alt={winner.name} size={36} />
+            <Avatar src={winner.avatar ?? ""} alt={winner.name} size={36} moodStatus={winner.email ? memberBadges[deriveMemberId(winner.email)]?.moodStatus : undefined} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-text truncate">{winner.name}</p>
               <p className="text-xs text-text-muted">{winner.stat}</p>
@@ -209,7 +210,7 @@ const ACTIVITY_META: Record<string, { emoji: string; label: string }> = {
   add_to_homescreen:        { emoji: "📲", label: "Added to home screen" },
 };
 
-const POINTS_GUIDE = [
+const POINTS_GUIDE: { emoji: string; label: string; pts: number | string }[] = [
   { emoji: "📱", label: "Open the app", pts: 5 },
   { emoji: "✍️", label: "Post in community", pts: 10 },
   { emoji: "💬", label: "Comment in community", pts: 5 },
@@ -230,6 +231,7 @@ const POINTS_GUIDE = [
   { emoji: "⚡", label: "Complete a Tribe challenge with a friend", pts: 25 },
   { emoji: "🎯", label: "Accept a daily challenge", pts: 10 },
   { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
+  { emoji: "🔥", label: "Login streak milestone bonus", pts: "5–1,000" },
 ];
 
 interface TodayActivity { type: string; points: number; count: number; }

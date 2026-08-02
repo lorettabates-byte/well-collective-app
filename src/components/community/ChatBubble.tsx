@@ -1,4 +1,4 @@
-import { Heart, Edit2, Check, X, CornerUpLeft, Flag } from "lucide-react";
+import { Heart, Edit2, Check, X, CornerUpLeft, Flag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { resolveFeaturedBadge } from "../../data/badges";
@@ -22,7 +22,7 @@ interface ChatBubbleProps {
 }
 
 export default function ChatBubble({ message, isOwn, showAvatar, showName, threadId, replyToMessage, onReply }: ChatBubbleProps) {
-  const { user, toggleMessageLike, memberBadges, editMessage } = useApp();
+  const { user, toggleMessageLike, memberBadges, editMessage, deleteOwnMessage } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
       <div className="w-7 shrink-0">
         {showAvatar &&
           (isOwn ? (
-            <Avatar src={user.avatar || authorAvatar} alt={user.name || authorName} size={28} badgeId={badgeId} />
+            <Avatar src={user.avatar || authorAvatar} alt={user.name || authorName} size={28} badgeId={badgeId} moodStatus={user.moodStatus ?? undefined} />
           ) : (
             <Link to={`/member/${message.authorId}`}>
               <Avatar src={authorAvatar} alt={authorName} size={28} badgeId={badgeId} moodStatus={liveAuthor?.moodStatus} />
@@ -167,12 +167,21 @@ export default function ChatBubble({ message, isOwn, showAvatar, showName, threa
                 </button>
               )}
               {isOwn && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="text-text-dim hover:text-text transition-colors p-0.5"
-                >
-                  <Edit2 size={12} />
-                </button>
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-text-dim hover:text-text transition-colors p-0.5"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                  <button
+                    onClick={() => { if (window.confirm("Delete this message?")) deleteOwnMessage(threadId, message.id); }}
+                    className="text-text-dim hover:text-red-400 transition-colors p-0.5"
+                    aria-label="Delete message"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </>
               )}
               <button
                 onClick={() => toggleMessageLike(threadId, message.id)}

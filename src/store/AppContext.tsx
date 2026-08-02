@@ -389,7 +389,7 @@ interface ServerNotification {
 
 interface AppContextValue extends PersistedState {
   profileReady: boolean;
-  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "goalsRefreshPeriod" | "notificationSchedule">>) => void;
+  updateProfile: (updates: Partial<Pick<User, "name" | "avatar" | "bio" | "birthday" | "showBirthdayOnCalendar" | "heightCm" | "weightKg" | "age" | "gender" | "healthSyncEnabled" | "goalPlan" | "notificationTone" | "movementTarget" | "goalsCompleted" | "goalsRefreshPeriod" | "notificationSchedule" | "notifQuietStart" | "notifQuietEnd">>) => void;
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   addThread: (categoryId: string, title: string, text: string, image?: string) => ForumThread;
   addMessage: (threadId: string, text: string, image?: string, replyToId?: string) => void;
@@ -399,6 +399,8 @@ interface AppContextValue extends PersistedState {
   deleteCategory: (categoryId: string) => void;
   deleteThread: (threadId: string) => void;
   deleteMessage: (threadId: string, messageId: string) => void;
+  deleteOwnThread: (threadId: string) => void;
+  deleteOwnMessage: (threadId: string, messageId: string) => void;
   editThread: (threadId: string, newTitle: string) => void;
   editMessage: (threadId: string, messageId: string, newText: string) => void;
   pinThread: (threadId: string, categoryId: string) => void;
@@ -812,6 +814,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       threads: prev.threads.map((thread) =>
         thread.id === threadId
           ? { ...thread, messages: thread.messages.filter((message) => message.id !== messageId) }
+          : thread
+      ),
+    }));
+  };
+
+  const deleteOwnThread: AppContextValue["deleteOwnThread"] = (threadId) => {
+    if (API_URL) {
+      fetch(`${API_URL}/api/forum/threads/${threadId}/own`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: state.user.id }),
+      }).catch((err) => console.error("Failed to delete own thread:", err));
+    }
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.filter((thread) => thread.id !== threadId),
+    }));
+  };
+
+  const deleteOwnMessage: AppContextValue["deleteOwnMessage"] = (threadId, messageId) => {
+    if (API_URL) {
+      fetch(`${API_URL}/api/forum/threads/${threadId}/messages/${messageId}/own`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: state.user.id }),
+      }).catch((err) => console.error("Failed to delete own message:", err));
+    }
+    setState((prev) => ({
+      ...prev,
+      threads: prev.threads.map((thread) =>
+        thread.id === threadId
+          ? { ...thread, messages: thread.messages.filter((m) => m.id !== messageId) }
           : thread
       ),
     }));
@@ -2318,6 +2352,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             healthSyncEnabled: prev.user.healthSyncEnabled ?? member.healthSyncEnabled,
             lastMonthlyWinAt: member.lastMonthlyWinAt,
             lastMonthlyWinPts: member.lastMonthlyWinPts,
+            lastDailyWinAt: member.lastDailyWinAt,
+            lastDailyWinPts: member.lastDailyWinPts,
+            notifQuietStart: member.notifQuietStart,
+            notifQuietEnd: member.notifQuietEnd,
             goalPlan: prev.user.goalPlan ?? member.goalPlan,
             notificationTone: prev.user.notificationTone ?? member.notificationTone,
             movementTarget: prev.user.movementTarget ?? member.movementTarget,
@@ -2420,6 +2458,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteCategory,
     deleteThread,
     deleteMessage,
+    deleteOwnThread,
+    deleteOwnMessage,
     editThread,
     editMessage,
     pinThread,

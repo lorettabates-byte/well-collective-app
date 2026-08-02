@@ -4,6 +4,7 @@ import { fetchYesterdayWinner } from "../utils/wellCup";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useRef, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
+import Confetti from "../components/ui/Confetti";
 import WeeklyThemeBar from "../components/WeeklyThemeBar";
 import { Link } from "react-router-dom";
 import WellCupLeaderboard from "../components/WellCupLeaderboard";
@@ -115,6 +116,7 @@ export default function Home() {
   const [showWinShare, setShowWinShare] = useState(false);
   const [showMonthlyWinShare, setShowMonthlyWinShare] = useState(false);
   const [monthlyWinBanner, setMonthlyWinBanner] = useState<{ pts: number; monthLabel: string; dismissKey: string } | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [streakBanner, setStreakBanner] = useState<{ streak: number; bonus: number } | null>(null);
   const [headerStreak, setHeaderStreak] = useState<number | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
@@ -262,13 +264,32 @@ export default function Home() {
     if (!user.lastMonthlyWinAt || !user.lastMonthlyWinPts) return;
     const winDate = new Date(user.lastMonthlyWinAt);
     const ageMs = Date.now() - winDate.getTime();
-    if (ageMs > 60 * 24 * 60 * 60 * 1000) return; // older than 60 days, skip
+    if (ageMs > 60 * 24 * 60 * 60 * 1000) return;
     const winMonth = `${winDate.getFullYear()}-${String(winDate.getMonth() + 1).padStart(2, "0")}`;
     const dismissKey = `well-cup-monthly-banner-${winMonth}`;
     if (localStorage.getItem(dismissKey)) return;
     const monthLabel = winDate.toLocaleString("default", { month: "long", year: "numeric" });
     setMonthlyWinBanner({ pts: user.lastMonthlyWinPts, monthLabel, dismissKey });
+    const confettiKey = `well-cup-confetti-monthly-${winMonth}`;
+    if (!localStorage.getItem(confettiKey)) {
+      localStorage.setItem(confettiKey, "1");
+      setShowConfetti(true);
+    }
   }, [user.lastMonthlyWinAt, user.lastMonthlyWinPts]);
+
+  // Check if this user won yesterday's daily WELL Cup (confetti on first open after win)
+  useEffect(() => {
+    if (!user.lastDailyWinAt || !user.lastDailyWinPts) return;
+    const winDate = new Date(user.lastDailyWinAt);
+    const ageMs = Date.now() - winDate.getTime();
+    if (ageMs > 36 * 60 * 60 * 1000) return; // only within 36h of win
+    const winDay = winDate.toISOString().slice(0, 10);
+    const confettiKey = `well-cup-confetti-daily-${winDay}`;
+    if (!localStorage.getItem(confettiKey)) {
+      localStorage.setItem(confettiKey, "1");
+      setShowConfetti(true);
+    }
+  }, [user.lastDailyWinAt, user.lastDailyWinPts]);
 
   const trialStatus = getTrialStatus(user.trialEndsAt);
   const showTrialBanner = trialStatus.isActive && !isActiveMember() && !user.isAdmin;
@@ -372,6 +393,7 @@ export default function Home() {
 
   return (
     <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
+      <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
 
       {/* Full-screen in-app walkthrough video */}
       {showWalkthroughVideo && (

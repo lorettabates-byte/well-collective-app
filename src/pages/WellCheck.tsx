@@ -1,5 +1,5 @@
 import {
-  Activity, BarChart3, BookOpen, Calendar, CheckCircle2, Dumbbell, Flame, Footprints, Home, Lock,
+  Activity, BarChart3, BookOpen, Calendar, CheckCircle2, Dumbbell, Flame, Footprints, Heart, Home, Lock,
   MapPin, MessageSquare, Moon, Music, PenLine, PieChart, Salad, Smartphone, Sparkles,
   Star, Target, TrendingUp, UserPlus, Video, Wind, X, Zap,
 } from "lucide-react";
@@ -92,9 +92,14 @@ const ACTIVITY_LABELS: Record<string, string> = {
   well_activity: "WELL activity",
   event_attend: "Attended an event",
   well_escape: "Attended a WELL Escape",
-  tribe_add: "Added a tribe member",
-  daily_challenge_accept: "Accepted a challenge",
-  steps: "Logged daily steps",
+  tribe_add: "Added a Tribe Member",
+  daily_challenge_accept: "Accepted a Challenge",
+  steps: "Logged Daily Steps",
+  login_streak_bonus: "Login Streak Milestone",
+  tribe_cheer: "Tribe Cheer Sent",
+  admin_award: "WELL Award",
+  forum_post: "Posted in the Community",
+  forum_comment: "Commented in the Community",
 };
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
@@ -118,6 +123,9 @@ const ACTIVITY_ICON: Record<string, LucideIcon> = {
   tribe_add: UserPlus,
   daily_challenge_accept: Target,
   steps: Footprints,
+  login_streak_bonus: Flame,
+  tribe_cheer: Heart,
+  admin_award: Star,
 };
 
 // 6 fixed wellness categories shown in the check-in grid
