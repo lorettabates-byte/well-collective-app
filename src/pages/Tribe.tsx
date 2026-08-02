@@ -188,7 +188,7 @@ function launchChallengeConfetti() {
 
 export default function Tribe() {
   useSectionTracking("tribe");
-  const { user } = useApp();
+  const { user, blockedUserIds } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [allMembers, setAllMembers] = useState<DirectoryMember[]>([]);
@@ -385,6 +385,7 @@ export default function Tribe() {
   const tribeIds = new Set(tribe.map((m) => m.id));
   const addable = allMembers
     .filter((m) => !tribeIds.has(m.id))
+    .filter((m) => !blockedUserIds.includes(m.id))
     .filter((m) => !addSearch || m.name.toLowerCase().includes(addSearch.toLowerCase()));
 
   const filteredTribe = tribe.filter(
