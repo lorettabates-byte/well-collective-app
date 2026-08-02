@@ -6,13 +6,13 @@ import { useApp } from "../store/AppContext";
 
 export default function CategoryThreads() {
   const { categoryId } = useParams<{ categoryId: string }>();
-  const { categories, threads } = useApp();
+  const { categories, threads, blockedUserIds } = useApp();
   const category = categories.find((c) => c.id === categoryId);
 
   if (!category) return <Navigate to="/community" replace />;
 
   const categoryThreads = threads
-    .filter((t) => t.categoryId === categoryId)
+    .filter((t) => t.categoryId === categoryId && !blockedUserIds.includes(t.authorId))
     .sort((a, b) => {
       if (!!a.pinnedAt !== !!b.pinnedAt) return a.pinnedAt ? -1 : 1;
       if (a.pinnedAt && b.pinnedAt) return b.pinnedAt.localeCompare(a.pinnedAt);

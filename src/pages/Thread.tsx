@@ -15,7 +15,7 @@ export default function Thread() {
   const [searchParams] = useSearchParams();
   const highlightMessageId = searchParams.get("message") ?? undefined;
 
-  const { categories, threads, user, addMessage, memberBadges, pinThread, unpinThread, deleteOwnThread } = useApp();
+  const { categories, threads, blockedUserIds, user, addMessage, memberBadges, pinThread, unpinThread, deleteOwnThread } = useApp();
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | undefined>();
@@ -65,6 +65,7 @@ export default function Thread() {
   if (threads.length === 0) return null;
   if (!thread || !category) return <Navigate to="/community" replace />;
 
+  const visibleMessages = thread.messages.filter((m) => !blockedUserIds.includes(m.authorId));
   // Build a lookup so ChatBubble can show the quoted message for replies
   const messageById = Object.fromEntries(thread.messages.map((m) => [m.id, m]));
 
@@ -180,9 +181,9 @@ export default function Thread() {
           Started by {authorName} · {timeAgo(thread.createdAt)}
         </p>
         <div className="flex flex-col gap-3">
-          {thread.messages.map((message, i) => {
-            const prev = thread.messages[i - 1];
-            const next = thread.messages[i + 1];
+          {visibleMessages.map((message, i) => {
+            const prev = visibleMessages[i - 1];
+            const next = visibleMessages[i + 1];
             const showName = !prev || prev.authorId !== message.authorId;
             const showAvatar = !next || next.authorId !== message.authorId;
             const isHighlighted = highlighted === message.id;

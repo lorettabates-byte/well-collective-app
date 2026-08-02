@@ -83,7 +83,8 @@ const GOAL_TAGLINES: Record<string, string> = {
 };
 
 export default function Home() {
-  const { user, threads, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
+  const { user, threads, blockedUserIds, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
+  const visibleThreads = threads.filter((t) => !blockedUserIds.includes(t.authorId));
   const { events: liveEvents } = useEventsFeed();
   const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
@@ -103,7 +104,7 @@ export default function Home() {
     ...(featuredEvent ? [featuredEvent] : []),
     ...allUpcomingEvents.filter((e) => e.id !== featuredEventId),
   ].slice(0, 4);
-  const latestThreads = getTrendingThreads(threads, 2, 1);
+  const latestThreads = getTrendingThreads(visibleThreads, 2, 1);
 
   const [showBirthday, setShowBirthday] = useState(false);
   const [showNotifOptIn, setShowNotifOptIn] = useState(false);
@@ -1318,7 +1319,7 @@ export default function Home() {
 
         // ── CONNECTION LAYOUT ───────────────────────────────────────────────────
         if (homeLayout === "connection") {
-          const communityPosts = getTrendingThreads(threads, 2, 1);
+          const communityPosts = getTrendingThreads(visibleThreads, 2, 1);
           return (
             <div className="mb-6">
               {/* Action row */}

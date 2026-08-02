@@ -4,13 +4,14 @@ import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import { useApp } from "../store/AppContext";
 
 export default function Trending() {
-  const { threads } = useApp();
+  const { threads, blockedUserIds } = useApp();
+  const visibleThreads = threads.filter((t) => !blockedUserIds.includes(t.authorId));
 
-  const pinnedThreads = threads
+  const pinnedThreads = visibleThreads
     .filter((t) => t.pinnedAt)
     .sort((a, b) => (b.pinnedAt || "").localeCompare(a.pinnedAt || ""));
 
-  const recentThreads = threads
+  const recentThreads = visibleThreads
     .filter((t) => !t.pinnedAt)
     .sort((a, b) => {
       const aDate = a.messages[a.messages.length - 1]?.createdAt ?? a.createdAt ?? "";

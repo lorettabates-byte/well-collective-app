@@ -13,9 +13,10 @@ import { useUnreadMessageCount } from "../hooks/useUnreadMessageCount";
 
 export default function Community() {
   useSectionTracking("community");
-  const { categories, threads, user, currentWeeklyTheme } = useApp();
+  const { categories, threads, blockedUserIds, user, currentWeeklyTheme } = useApp();
   const unreadMessageCount = useUnreadMessageCount(user.email);
-  const trendingDisplay = getTrendingThreads(threads);
+  const visibleThreads = threads.filter((t) => !blockedUserIds.includes(t.authorId));
+  const trendingDisplay = getTrendingThreads(visibleThreads);
 
   return (
     <div>
