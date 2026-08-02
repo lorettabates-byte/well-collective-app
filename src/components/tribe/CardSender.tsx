@@ -349,23 +349,23 @@ export function Envelope({
           opacity: flapOpen && !flapClosing ? 0.65 : 0,
           transition: "opacity 0.4s",
         }} />
-        {/* WELL logo stamp */}
+        {/* WELL logo wax seal */}
         <div style={{
           position: "absolute",
-          width: 54, height: 24, borderRadius: 12,
-          background: "linear-gradient(135deg, #0a1628, #0191CE)",
-          border: "1px solid rgba(1,145,206,0.55)",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.55)",
-          bottom: 26, left: "50%", transform: "translateX(-50%)",
+          width: 50, height: 50, borderRadius: "50%",
+          background: "linear-gradient(135deg, #081422, #0191CE)",
+          border: "2px solid rgba(1,145,206,0.6)",
+          boxShadow: "0 3px 14px rgba(0,0,0,0.7), 0 0 0 1px rgba(1,145,206,0.15)",
+          bottom: 14, left: "50%", transform: "translateX(-50%)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "3px 8px", zIndex: 5,
-          opacity: flapOpen && !flapClosing ? 0.2 : 1,
+          padding: "10px", zIndex: 5,
+          opacity: flapOpen && !flapClosing ? 0.18 : 1,
           transition: "opacity 0.3s",
         }}>
           <img
             src="https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png"
             alt="WELL"
-            style={{ height: "100%", objectFit: "contain" }}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
           />
         </div>
       </div>
