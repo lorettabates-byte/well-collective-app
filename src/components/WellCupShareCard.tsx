@@ -113,6 +113,21 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+async function fetchAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 function drawRoundedRect(
   ctx: CanvasRenderingContext2D,
   x: number, y: number, w: number, h: number, r: number
@@ -273,7 +288,8 @@ async function generateCard(
   winner: ShareWinner,
   period: SharePeriod,
   periodLabel: string,
-  size: "instagram" | "facebook"
+  size: "instagram" | "facebook",
+  logoDataUrl: string | null
 ): Promise<string> {
   const isIG = size === "instagram";
   const W = isIG ? 1080 : 1200;
@@ -298,9 +314,9 @@ async function generateCard(
   // Per-period decorations
   drawDecorations(ctx, period, W, H, isIG, theme);
 
-  // Load images
+  // Load images — use pre-fetched data URL for logo to avoid CORS cache conflicts
   const [logoImg, avatarImg] = await Promise.all([
-    loadImage(WELL_LOGO_URL).catch(() => null),
+    logoDataUrl ? loadImage(logoDataUrl).catch(() => null) : Promise.resolve(null),
     winner.avatar ? loadImage(winner.avatar).catch(() => null) : Promise.resolve(null),
   ]);
 
@@ -485,14 +501,16 @@ async function saveOrDownload(dataUrl: string, filename: string): Promise<void> 
 
 export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
+  useEffect(() => { fetchAsDataUrl(WELL_LOGO_URL).then(setLogoDataUrl); }, []);
 
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
     try {
-      const dataUrl = await generateCard(winner, period, periodLabel, size);
+      const dataUrl = await generateCard(winner, period, periodLabel, size, logoDataUrl);
       const label = size === "instagram" ? "instagram-story" : "facebook";
       await saveOrDownload(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
     } catch (err) {
