@@ -125,7 +125,7 @@ export default function Notifications() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-text">{notification.title}</p>
-                      <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{notification.body}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{notification.body}</p>
                       <p className="text-[11px] text-text-dim mt-1">{timeAgo(notification.createdAt)}</p>
                     </div>
                     {!notification.read && <span className="w-2 h-2 rounded-full bg-brand-light shrink-0 mt-1.5" />}
