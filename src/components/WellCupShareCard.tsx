@@ -502,7 +502,8 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm bg-surface rounded-card p-5"
+        className="w-full max-w-sm bg-surface rounded-card p-5 overflow-y-auto"
+        style={{ maxHeight: "90vh" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
