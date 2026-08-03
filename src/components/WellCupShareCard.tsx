@@ -1,5 +1,5 @@
 import { Download, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const WELL_LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
 const SITE_URL = "www.lorettabates.com";
@@ -482,6 +482,8 @@ async function saveOrDownload(dataUrl: string, filename: string): Promise<void> 
 export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
   const theme = THEMES[period];
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
@@ -499,26 +501,44 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const badgeStyle = theme.previewBadge;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-6"
-      onClick={onClose}
-    >
+    <>
+      {/* Backdrop */}
       <div
-        className="w-full max-w-sm bg-surface rounded-card p-5 overflow-y-auto"
-        style={{ maxHeight: "90vh" }}
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.6)",
+          opacity: visible ? 1 : 0,
+          transition: "opacity 0.25s ease",
+        }}
+      />
+      {/* Bottom sheet */}
+      <div
+        style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10000,
+          maxHeight: "92vh",
+          display: "flex", flexDirection: "column",
+          background: "var(--color-surface, #0e1a26)",
+          borderRadius: "20px 20px 0 0",
+          transform: visible ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
+        {/* Header row */}
+        <div style={{ display: "flex", alignItems: "center", padding: "12px 16px 8px", position: "relative", flexShrink: 0 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "0 auto 10px" }} />
             <h2 className="text-sm font-bold text-text">
               {isOwnWin ? "Share your win 🏆" : `Share ${winner.name.split(" ")[0]}'s win 🏆`}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">{winner.name} · {periodLabel}</p>
           </div>
-          <button onClick={onClose} aria-label="Close">
-            <X size={18} className="text-text-muted" />
+          <button onClick={onClose} aria-label="Close" className="text-text-muted ml-4">
+            <X size={18} />
           </button>
         </div>
+        <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-8">
 
         {/* Card preview */}
         <div
@@ -593,7 +613,8 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
             {generating === "facebook" ? "Generating…" : "Download for Facebook (1200×630)"}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
