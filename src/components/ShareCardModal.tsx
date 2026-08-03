@@ -326,82 +326,94 @@ export default function ShareCardModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6 animate-fade-in-overlay"
-      onClick={onClose}
-    >
-      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-slide-up-modal z-[10000]" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
-          aria-label="Close"
-        >
-          <X size={14} />
-        </button>
-
-        {/* Square preview card (also used for the "Download Image" + Facebook export) */}
+    <>
+      <style>{`
+        @keyframes scm-overlay { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scm-slide { from { opacity: 0; transform: translateY(72px); } to { opacity: 1; transform: translateY(0); } }
+        .scm-overlay { animation: scm-overlay 0.22s ease-out both; }
+        .scm-slide   { animation: scm-slide 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+      `}</style>
+      <div
+        className="scm-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4"
+        onClick={onClose}
+      >
         <div
-          ref={cardRefSquare}
-          className="rounded-card p-6 flex flex-col items-center text-center gap-4 w-full"
-          style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", color: "#fff" }}
+          className="scm-slide relative w-full flex flex-col gap-4 z-[10000] overflow-y-auto"
+          style={{ maxWidth: 480, maxHeight: "92vh" }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {wellLogoDataUrl && (
-            <img src={wellLogoDataUrl} alt="WELL Collective" className="w-36 h-auto object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          )}
-          {recipeImageDataUrl && (
-            <img src={recipeImageDataUrl} alt="Recipe" className="w-full h-32 rounded-lg object-cover mb-2"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          )}
-          {lorrettaImageDataUrl && (
-            <img src={lorrettaImageDataUrl} alt="Loretta Bates"
-              className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          )}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
-            <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
-          </div>
-          <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
-          {userAvatar && (
-            <div className="flex flex-col items-center gap-2">
-              <img src={userAvatar} alt={userName} crossOrigin="anonymous"
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]" />
-              <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
-            </div>
-          )}
-          <div className="w-full pt-3 border-t border-[#0191CE]/30">
-            <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
-            <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
-            <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-2 flex-col">
-          {status && (
-            <div className="flex items-start gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
-              <AlertCircle size={14} className="text-brand-light shrink-0 mt-0.5" />
-              <p className="text-xs text-text-muted">{status}</p>
-            </div>
-          )}
-          <button onClick={handleDownload} disabled={busy}
-            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3 disabled:opacity-60 w-full">
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            Download Image
+          <button
+            onClick={onClose}
+            className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
+            aria-label="Close"
+          >
+            <X size={14} />
           </button>
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => handleShare("instagram")} disabled={busy}
-              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60">
-              📱 Instagram/TikTok
+
+          {/* Square preview card */}
+          <div
+            ref={cardRefSquare}
+            className="rounded-card p-7 flex flex-col items-center text-center gap-5 w-full"
+            style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", color: "#fff" }}
+          >
+            {wellLogoDataUrl && (
+              <img src={wellLogoDataUrl} alt="WELL Collective" className="w-40 h-auto object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+            {recipeImageDataUrl && (
+              <img src={recipeImageDataUrl} alt="Recipe" className="w-full h-40 rounded-xl object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+            {lorrettaImageDataUrl && (
+              <img src={lorrettaImageDataUrl} alt="Loretta Bates"
+                className="w-28 h-28 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
+              <h2 className="text-xl font-bold text-white leading-snug">{title}</h2>
+            </div>
+            <p className="text-sm text-gray-300 leading-relaxed">{body}</p>
+            {userAvatar && (
+              <div className="flex flex-col items-center gap-2">
+                <img src={userAvatar} alt={userName} crossOrigin="anonymous"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]" />
+                <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
+              </div>
+            )}
+            <div className="w-full pt-3 border-t border-[#0191CE]/30">
+              <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
+              <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
+              <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2 flex-col">
+            {status && (
+              <div className="flex items-start gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
+                <AlertCircle size={14} className="text-brand-light shrink-0 mt-0.5" />
+                <p className="text-xs text-text-muted">{status}</p>
+              </div>
+            )}
+            <button onClick={handleDownload} disabled={busy}
+              className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3.5 disabled:opacity-60 w-full">
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Download Image
             </button>
-            <button onClick={() => handleShare("facebook")} disabled={busy}
-              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60">
-              👥 Facebook
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => handleShare("instagram")} disabled={busy}
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-3 disabled:opacity-60">
+                📱 Instagram/TikTok
+              </button>
+              <button onClick={() => handleShare("facebook")} disabled={busy}
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-3 disabled:opacity-60">
+                👥 Facebook
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
