@@ -14,8 +14,6 @@ interface ShareCardModalProps {
   onClose: () => void;
 }
 
-const LORETTA_IMAGE = "https://lorettabates.com/wp-content/uploads/2025/11/Loretta_Bates_Bio.jpg";
-const WELL_LOGO = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
 const JOIN_URL = "https://lorettabates.com";
 
 async function fetchImageAsDataUrl(url: string): Promise<string | null> {
