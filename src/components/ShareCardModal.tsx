@@ -239,6 +239,9 @@ export default function ShareCardModal({
   const [lorrettaImageDataUrl, setLorrettaImageDataUrl] = useState<string | null>(null);
   const [wellLogoDataUrl, setWellLogoDataUrl] = useState<string | null>(null);
   const [recipeImageDataUrl, setRecipeImageDataUrl] = useState<string | null>(null);
+  // Drive the slide-up via inline style + transition so it cannot be cached away
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
   useEffect(() => {
     fetchImageAsDataUrl(LORETTA_IMAGE).then(setLorrettaImageDataUrl);
@@ -327,28 +330,42 @@ export default function ShareCardModal({
 
   return (
     <>
-      <style>{`
-        @keyframes scm-overlay { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scm-slide { from { opacity: 0; transform: translateY(72px); } to { opacity: 1; transform: translateY(0); } }
-        .scm-overlay { animation: scm-overlay 0.22s ease-out both; }
-        .scm-slide   { animation: scm-slide 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
-      `}</style>
+      {/* Backdrop — fades in via inline transition, no transform */}
       <div
-        className="scm-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4"
         onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.6)",
+          opacity: visible ? 1 : 0,
+          transition: "opacity 0.25s ease",
+        }}
+      />
+      {/* Sheet — slides up from the bottom via inline transition */}
+      <div
+        style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10000,
+          maxHeight: "92vh",
+          display: "flex", flexDirection: "column",
+          background: "var(--color-surface, #0e1a26)",
+          borderRadius: "20px 20px 0 0",
+          transform: visible ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="scm-slide relative w-full flex flex-col gap-4 z-[10000] overflow-y-auto"
-          style={{ maxWidth: 480, maxHeight: "92vh" }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        {/* Header row: drag handle + close */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 16px 8px", position: "relative", flexShrink: 0 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }} />
           <button
             onClick={onClose}
-            className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
+            style={{ position: "absolute", right: 16, top: 10 }}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted"
             aria-label="Close"
           >
             <X size={14} />
           </button>
+        </div>
+        <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-8">
 
           {/* Square preview card */}
           <div
