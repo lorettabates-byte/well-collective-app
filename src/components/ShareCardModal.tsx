@@ -221,6 +221,11 @@ async function generateInstagramCard(params: {
   ctx.font = "400 26px system-ui, -apple-system, sans-serif";
   ctx.fillText("lorettabates.com", W / 2, footerY + 88);
 
+  // Border
+  ctx.strokeStyle = "rgba(255,255,255,0.2)";
+  ctx.lineWidth = 12;
+  ctx.strokeRect(6, 6, W - 12, H - 12);
+
   return canvas.toDataURL("image/png");
 }
 

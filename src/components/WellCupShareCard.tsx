@@ -349,10 +349,11 @@ async function generateCard(
     ctx.textAlign = "center";
     ctx.fillText(winner.name, W / 2, H * 0.675);
 
-    // Points / stat line — accent for yearly/spotlight
+    // Points / stat line — accent for yearly/spotlight, auto-scale to fit
     const isAccentPoints = period === "yearly" || period === "spotlight";
     ctx.fillStyle = isAccentPoints ? theme.accentHex : "#ffffff";
-    ctx.font = "700 124px system-ui, sans-serif";
+    const pointsFontSizeIG = fitFontSize(ctx, pointsLine, W - 80, 124, 48, "700");
+    ctx.font = `700 ${pointsFontSizeIG}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(pointsLine, W / 2, H * 0.754);
     if (pointsSuffix) {
@@ -430,10 +431,12 @@ async function generateCard(
     ctx.textAlign = "left";
     ctx.fillText(winner.name, textX, H * 0.46);
 
-    // Points row
+    // Points row — auto-scale so long stat text (e.g. Spotlight phrase) doesn't overflow
     const isAccentPoints = period === "yearly" || period === "spotlight";
     ctx.fillStyle = isAccentPoints ? theme.accentHex : "#ffffff";
-    ctx.font = "700 82px system-ui, sans-serif";
+    const pointsMaxWidthFB = W - textX - photoR * 2 - 80;
+    const pointsFontSizeFB = fitFontSize(ctx, pointsLine, pointsMaxWidthFB, 82, 28, "700");
+    ctx.font = `700 ${pointsFontSizeFB}px system-ui, sans-serif`;
     ctx.textAlign = "left";
     ctx.fillText(pointsLine, textX, H * 0.645);
     if (pointsSuffix) {
@@ -459,6 +462,12 @@ async function generateCard(
     const photoY = H / 2;
     await drawProfileCircle(ctx, avatarImg, initials, photoX, photoY, photoR, 6, theme.accentHex);
   }
+
+  // Border — drawn last so it sits on top of all content
+  const borderW = isIG ? 12 : 8;
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.lineWidth = borderW;
+  ctx.strokeRect(borderW / 2, borderW / 2, W - borderW, H - borderW);
 
   return canvas.toDataURL("image/png");
 }
