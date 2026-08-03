@@ -559,11 +559,11 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
             position: "relative",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0, width: "90px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0, width: "120px" }}>
             <img
               src={WELL_LOGO_URL}
               alt="WELL"
-              style={{ height: "18px", objectFit: "contain" }}
+              style={{ width: "108px", height: "auto", objectFit: "contain" }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
             <span style={{ fontSize: "22px" }}>{theme.emoji}</span>
