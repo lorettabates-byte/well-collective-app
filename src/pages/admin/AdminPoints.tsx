@@ -1,4 +1,4 @@
-import { Award, Check, Search } from "lucide-react";
+import { Award, Check, Search, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
@@ -23,6 +23,13 @@ export default function AdminPoints() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [spotlightSearch, setSpotlightSearch] = useState("");
+  const [spotlightFocused, setSpotlightFocused] = useState(false);
+  const [spotlightEmail, setSpotlightEmail] = useState("");
+  const [spotlightSubmitting, setSpotlightSubmitting] = useState(false);
+  const [spotlightSuccess, setSpotlightSuccess] = useState<string | null>(null);
+  const [spotlightError, setSpotlightError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!API_URL) return;
@@ -82,6 +89,37 @@ export default function AdminPoints() {
   };
 
   const selected = members.find((m) => m.email === selectedEmail);
+
+  const spotlightFiltered = members.filter(
+    (m) =>
+      m.name.toLowerCase().includes(spotlightSearch.toLowerCase()) ||
+      m.email.toLowerCase().includes(spotlightSearch.toLowerCase())
+  );
+  const spotlightSelected = members.find((m) => m.email === spotlightEmail);
+
+  const handleSpotlightOverride = async () => {
+    if (!API_URL || !spotlightEmail) return;
+    setSpotlightSubmitting(true);
+    setSpotlightSuccess(null);
+    setSpotlightError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/points/leaderboard/spotlight-override`, {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ email: spotlightEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSpotlightError(data.error ?? "Failed to set spotlight");
+      } else {
+        setSpotlightSuccess(`Weekly Spotlight set to ${data.leader?.name ?? spotlightEmail}`);
+      }
+    } catch {
+      setSpotlightError("Network error — try again");
+    } finally {
+      setSpotlightSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -183,6 +221,72 @@ export default function AdminPoints() {
             {submitting ? "Awarding…" : "Award Points"}
           </button>
         </form>
+
+        {/* Weekly Spotlight override */}
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-0.5">
+            <Star size={14} className="text-brand-light shrink-0" />
+            <h3 className="text-sm font-bold text-text">Weekly Community Spotlight</h3>
+          </div>
+          <p className="text-xs text-text-muted -mt-1">Override this week's spotlight to any member. Takes effect immediately.</p>
+
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
+            <input
+              type="text"
+              placeholder="Search by name or email…"
+              value={spotlightSearch}
+              onChange={(e) => setSpotlightSearch(e.target.value)}
+              onFocus={() => setSpotlightFocused(true)}
+              onBlur={() => setSpotlightFocused(false)}
+              className="w-full bg-surface-2 border border-border rounded-lg pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim outline-none focus:border-brand-light"
+            />
+          </div>
+
+          {(spotlightFocused || spotlightSearch) && (
+            loading ? (
+              <p className="text-xs text-text-dim px-1">Loading members…</p>
+            ) : (
+              <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
+                {spotlightFiltered.map((m) => (
+                  <button
+                    key={m.email}
+                    type="button"
+                    onMouseDown={() => { setSpotlightEmail(m.email); setSpotlightSearch(""); setSpotlightFocused(false); }}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      spotlightEmail === m.email
+                        ? "bg-brand-light/20 text-brand-light font-semibold border border-brand-light/40"
+                        : "bg-surface-2 text-text hover:bg-surface-3"
+                    }`}
+                  >
+                    {m.name} <span className="text-text-dim text-xs">{m.email}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          )}
+
+          {spotlightSelected && (
+            <p className="text-xs text-brand-light px-1">Selected: <strong>{spotlightSelected.name}</strong></p>
+          )}
+
+          {spotlightSuccess && (
+            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
+              <Check size={14} className="text-green-400 shrink-0" />
+              <p className="text-xs text-green-400">{spotlightSuccess}</p>
+            </div>
+          )}
+          {spotlightError && <p className="text-xs text-red-400 px-1">{spotlightError}</p>}
+
+          <button
+            type="button"
+            onClick={handleSpotlightOverride}
+            disabled={spotlightSubmitting || !spotlightEmail}
+            className="gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {spotlightSubmitting ? "Saving…" : "Set as This Week's Spotlight"}
+          </button>
+        </div>
 
         {/* Leaderboard snapshot */}
         <div className="glass-card rounded-card p-4">

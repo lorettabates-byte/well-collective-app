@@ -1,6 +1,6 @@
 import {
   Cake, CheckCircle2, ChevronDown, ChevronUp, Circle, Flame, Heart, HelpCircle,
-  Plus, Search, Sparkles, Trash2, Trophy, UserMinus, Users, X, Zap,
+  Plus, Search, Sparkles, Trash2, Trophy, UserMinus, Users, X, Zap, HeartHandshake,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
@@ -388,9 +388,15 @@ export default function Tribe() {
     .filter((m) => !blockedUserIds.includes(m.id))
     .filter((m) => !addSearch || m.name.toLowerCase().includes(addSearch.toLowerCase()));
 
-  const filteredTribe = tribe.filter(
-    (m) => !tribeSearch || m.name.toLowerCase().includes(tribeSearch.toLowerCase())
-  );
+  const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement"]);
+
+  const filteredTribe = tribe
+    .filter((m) => !tribeSearch || m.name.toLowerCase().includes(tribeSearch.toLowerCase()))
+    .sort((a, b) => {
+      const aNeeds = a.moodStatus && NEEDS_SUPPORT_MOODS.has(a.moodStatus) ? 0 : 1;
+      const bNeeds = b.moodStatus && NEEDS_SUPPORT_MOODS.has(b.moodStatus) ? 0 : 1;
+      return aNeeds - bNeeds;
+    });
 
   const suggestions: ScoredMember[] = !tribeSearch
     ? tribe.map(scoreMember).filter((s): s is ScoredMember => s !== null).sort((a, b) => b.score - a.score).slice(0, 5)
@@ -790,19 +796,31 @@ export default function Tribe() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-text truncate">{member.name}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          {streak >= 3 && (
+                          {member.moodStatus === "need-encouragement" && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-purple-400">
+                              <HeartHandshake size={11} />
+                              Needs encouragement
+                            </span>
+                          )}
+                          {member.moodStatus === "tough-day" && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-blue-400">
+                              <HeartHandshake size={11} />
+                              Tough day
+                            </span>
+                          )}
+                          {!NEEDS_SUPPORT_MOODS.has(member.moodStatus ?? "") && streak >= 3 && (
                             <span className="flex items-center gap-0.5 text-[11px] text-orange-400 font-medium">
                               <Flame size={11} />
                               {streak}d
                             </span>
                           )}
-                          {bdayDays !== null && bdayDays <= 7 && (
+                          {!NEEDS_SUPPORT_MOODS.has(member.moodStatus ?? "") && bdayDays !== null && bdayDays <= 7 && (
                             <span className="flex items-center gap-0.5 text-[11px] text-brand-light font-medium">
                               <Cake size={11} />
                               {bdayDays === 0 ? "Today!" : `${bdayDays}d`}
                             </span>
                           )}
-                          {scored && !streak && !bdayDays && (
+                          {!NEEDS_SUPPORT_MOODS.has(member.moodStatus ?? "") && scored && !streak && !bdayDays && (
                             <span className={`flex items-center gap-0.5 text-[11px] font-medium ${REASON_CONFIG[scored.reason].accent.split(" ")[0]}`}>
                               {REASON_CONFIG[scored.reason].icon}
                               {scored.reasonText}
