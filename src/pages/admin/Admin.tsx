@@ -1,4 +1,4 @@
-import { Award, BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Music, Share2, ShieldCheck, Sparkles, Users, Video } from "lucide-react";
+import { Award, BarChart3, Bell, Calendar, CalendarClock, Gift, Layers, Mail, Music, Share2, ShieldCheck, Sparkles, Users, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/layout/TopBar";
@@ -18,6 +18,7 @@ const TILES = [
   { to: "/admin/coupons", label: "Coupons", description: "Create promo codes & birthday gift codes", icon: Gift },
   { to: "/admin/referrals", label: "Referrals", description: "Track friend invites & conversions", icon: Share2 },
   { to: "/admin/tribe", label: "Tribe Connections", description: "View and restore WELL Tribe memberships", icon: Users },
+  { to: "/admin/campaign", label: "Campaign", description: "Email campaigns, push diagnostic & tribe cleanup", icon: Mail },
   { to: "/admin/points", label: "Award Points", description: "Manually give or deduct points for any member", icon: Award },
   { to: "/admin/music", label: "Music", description: "Manage the WELL Collective Soundtrack", icon: Music },
   { to: "/admin/exercise-videos", label: "Exercise Videos", description: "Assign and save demo videos for each exercise", icon: Video },
