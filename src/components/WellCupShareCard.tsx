@@ -463,12 +463,6 @@ async function generateCard(
     await drawProfileCircle(ctx, avatarImg, initials, photoX, photoY, photoR, 6, theme.accentHex);
   }
 
-  // Border — drawn last so it sits on top of all content
-  const borderW = isIG ? 12 : 8;
-  ctx.strokeStyle = "rgba(255,255,255,0.22)";
-  ctx.lineWidth = borderW;
-  ctx.strokeRect(borderW / 2, borderW / 2, W - borderW, H - borderW);
-
   return canvas.toDataURL("image/png");
 }
 
