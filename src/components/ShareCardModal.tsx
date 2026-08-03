@@ -1,6 +1,8 @@
 import { toPng } from "html-to-image";
 import { AlertCircle, Download, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import lorettaAsset from "../assets/loretta-bates-bio.jpg";
+import wellLogoAsset from "../assets/well-logo-white.png";
 
 interface ShareCardModalProps {
   cadenceLabel: string;
@@ -236,16 +238,12 @@ export default function ShareCardModal({
   const cardRefSquare = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [lorrettaImageDataUrl, setLorrettaImageDataUrl] = useState<string | null>(null);
-  const [wellLogoDataUrl, setWellLogoDataUrl] = useState<string | null>(null);
   const [recipeImageDataUrl, setRecipeImageDataUrl] = useState<string | null>(null);
   // Drive the slide-up via inline style + transition so it cannot be cached away
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
-    fetchImageAsDataUrl(LORETTA_IMAGE).then(setLorrettaImageDataUrl);
-    fetchImageAsDataUrl(WELL_LOGO).then(setWellLogoDataUrl);
     if (recipeImage) {
       fetchImageAsDataUrl(recipeImage).then(setRecipeImageDataUrl);
     }
@@ -290,8 +288,8 @@ export default function ShareCardModal({
         // Canvas-based generation — reliable on all platforms, no hidden-DOM tricks
         dataUrl = await generateInstagramCard({
           cadenceLabel, title, body, userAvatar, userName,
-          lorrettaDataUrl: lorrettaImageDataUrl,
-          logoDataUrl: wellLogoDataUrl,
+          lorrettaDataUrl: lorettaAsset,
+          logoDataUrl: wellLogoAsset,
           recipeDataUrl: recipeImageDataUrl,
         });
       } else {
@@ -373,19 +371,15 @@ export default function ShareCardModal({
             className="rounded-card p-7 flex flex-col items-center text-center gap-5 w-full"
             style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", color: "#fff" }}
           >
-            {wellLogoDataUrl && (
-              <img src={wellLogoDataUrl} alt="WELL Collective" className="w-40 h-auto object-contain"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
+            <img src={wellLogoAsset} alt="WELL Collective" className="w-40 h-auto object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             {recipeImageDataUrl && (
               <img src={recipeImageDataUrl} alt="Recipe" className="w-full h-40 rounded-xl object-cover"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             )}
-            {lorrettaImageDataUrl && (
-              <img src={lorrettaImageDataUrl} alt="Loretta Bates"
-                className="w-28 h-28 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            )}
+            <img src={lorettaAsset} alt="Loretta Bates"
+              className="w-28 h-28 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
               <h2 className="text-xl font-bold text-white leading-snug">{title}</h2>

@@ -1,6 +1,7 @@
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import wellLogoAsset from "../assets/well-logo-white.png";
 
 const WELL_LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
 const SITE_URL = "www.lorettabates.com";
@@ -113,20 +114,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
 
 function drawRoundedRect(
   ctx: CanvasRenderingContext2D,
@@ -501,16 +488,14 @@ async function saveOrDownload(dataUrl: string, filename: string): Promise<void> 
 
 export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
-  useEffect(() => { fetchAsDataUrl(WELL_LOGO_URL).then(setLogoDataUrl); }, []);
 
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
     try {
-      const dataUrl = await generateCard(winner, period, periodLabel, size, logoDataUrl);
+      const dataUrl = await generateCard(winner, period, periodLabel, size, wellLogoAsset);
       const label = size === "instagram" ? "instagram-story" : "facebook";
       await saveOrDownload(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
     } catch (err) {
