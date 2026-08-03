@@ -68,7 +68,7 @@ export default function AdminCampaign() {
   const [winbackResult, setWinbackResult] = useState<string | null>(null);
 
   // Push diagnostic
-  const [diagEmail, setDiagEmail] = useState("danielle.gaillard@gmail.com");
+  const [diagEmail, setDiagEmail] = useState("");
   const [diagLoading, setDiagLoading] = useState(false);
   const [diag, setDiag] = useState<PushDiagnostic | null>(null);
   const [diagError, setDiagError] = useState("");
