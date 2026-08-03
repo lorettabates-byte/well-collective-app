@@ -418,6 +418,9 @@ async function generateCard(
     ctx.textBaseline = "middle";
     ctx.fillText(`${periodLabel.toUpperCase()} · ${monthYear.toUpperCase()}`, textX, H * 0.28);
 
+    // Profile photo radius — declared early because nameMaxWidthFB depends on it
+    const photoR = 90;
+
     // Winner name — auto-scale to avoid overflowing into the avatar
     const nameMaxWidthFB = W - textX - photoR * 2 - 80;
     const nameFontSizeFB = fitFontSize(ctx, winner.name, nameMaxWidthFB, 72, 36);
@@ -451,7 +454,6 @@ async function generateCard(
     ctx.fillText(SITE_URL, textX, H - 38);
 
     // Profile photo — right edge with accent border
-    const photoR = 90;
     const photoX = W - photoR - 55;
     const photoY = H / 2;
     await drawProfileCircle(ctx, avatarImg, initials, photoX, photoY, photoR, 6, theme.accentHex);
