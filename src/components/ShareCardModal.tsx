@@ -128,7 +128,7 @@ async function generateInstagramCard(params: {
 
   // WELL logo
   if (logoImg) {
-    const lh = 160;
+    const lh = 320;
     const lw = (logoImg.width / logoImg.height) * lh;
     ctx.drawImage(logoImg, (W - lw) / 2, y, lw, lh);
     y += lh + 70;

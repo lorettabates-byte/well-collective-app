@@ -314,7 +314,7 @@ async function generateCard(
     // ── Instagram Story (1080 × 1920) ──
 
     if (logoImg) {
-      const lh = 180;
+      const lh = 360;
       const lw = (logoImg.width / logoImg.height) * lh;
       ctx.drawImage(logoImg, (W - lw) / 2, 110, lw, lh);
     } else {
@@ -380,9 +380,9 @@ async function generateCard(
     const leftW = 290;
 
     if (logoImg) {
-      const lh = 110;
-      const lw = (logoImg.width / logoImg.height) * lh;
-      ctx.drawImage(logoImg, (leftW - lw) / 2, 40, lw, lh);
+      const lw = leftW - 24;
+      const lh = (logoImg.height / logoImg.width) * lw;
+      ctx.drawImage(logoImg, (leftW - lw) / 2, 32, lw, lh);
     } else {
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.font = "500 28px system-ui, sans-serif";
