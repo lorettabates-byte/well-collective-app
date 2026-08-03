@@ -390,13 +390,23 @@ export default function Tribe() {
 
   const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement"]);
 
+  function tribePriority(m: TribeMember): number {
+    if (m.moodStatus && NEEDS_SUPPORT_MOODS.has(m.moodStatus)) return 5;
+    if (m.birthday) {
+      const days = daysUntilBirthday(m.birthday);
+      if (days === 0) return 4;
+      if (days <= 2) return 3;
+      if (days <= 7) return 2;
+    }
+    const lastCheered = m.lastCheeredAt ? new Date(m.lastCheeredAt).getTime() : 0;
+    const daysSinceCheer = lastCheered ? Math.floor((Date.now() - lastCheered) / MS_PER_DAY) : 999;
+    if (daysSinceCheer >= 7) return 1;
+    return 0;
+  }
+
   const filteredTribe = tribe
     .filter((m) => !tribeSearch || m.name.toLowerCase().includes(tribeSearch.toLowerCase()))
-    .sort((a, b) => {
-      const aNeeds = a.moodStatus && NEEDS_SUPPORT_MOODS.has(a.moodStatus) ? 0 : 1;
-      const bNeeds = b.moodStatus && NEEDS_SUPPORT_MOODS.has(b.moodStatus) ? 0 : 1;
-      return aNeeds - bNeeds;
-    });
+    .sort((a, b) => tribePriority(b) - tribePriority(a));
 
   const suggestions: ScoredMember[] = !tribeSearch
     ? tribe.map(scoreMember).filter((s): s is ScoredMember => s !== null).sort((a, b) => b.score - a.score).slice(0, 5)

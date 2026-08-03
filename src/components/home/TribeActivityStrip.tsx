@@ -1,4 +1,4 @@
-import { Cake, Flame, Heart, Sparkles } from "lucide-react";
+import { Cake, Flame, Heart, HeartHandshake, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { TRIBE_CHEERS } from "../../data/cheers";
@@ -26,7 +26,7 @@ interface TribeMember {
   moodStatus?: string | null;
 }
 
-type SuggestionReason = "birthday" | "streak" | "new" | "uncheerred" | "inactive" | "tribe";
+type SuggestionReason = "needs-support" | "birthday" | "streak" | "new" | "uncheerred" | "inactive" | "tribe";
 
 interface ScoredMember {
   member: TribeMember;
@@ -48,11 +48,20 @@ function daysUntilBirthday(birthday: string): number {
   return diff;
 }
 
+const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement"]);
+
 function scoreMember(m: TribeMember): ScoredMember | null {
   let score = 0;
   let reason: SuggestionReason | null = null;
   let reasonLabel = "";
   let ctaCopy = "Send a Cheer";
+
+  if (m.moodStatus && NEEDS_SUPPORT_MOODS.has(m.moodStatus)) {
+    score += 20;
+    reason = "needs-support";
+    reasonLabel = m.moodStatus === "tough-day" ? "Tough day" : "Needs encouragement";
+    ctaCopy = "Send Love";
+  }
 
   if (m.birthday) {
     const days = daysUntilBirthday(m.birthday);
@@ -87,12 +96,13 @@ function scoreMember(m: TribeMember): ScoredMember | null {
 }
 
 const REASON_STYLES: Record<SuggestionReason, { icon: React.ReactNode; accent: string }> = {
-  birthday:   { icon: <Cake size={10} />,     accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
-  streak:     { icon: <Flame size={10} />,    accent: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
-  new:        { icon: <Sparkles size={10} />, accent: "text-violet-400 bg-violet-400/10 border-violet-400/20" },
-  uncheerred: { icon: <Heart size={10} />,    accent: "text-rose-400 bg-rose-400/10 border-rose-400/20" },
-  inactive:   { icon: <Heart size={10} />,    accent: "text-text-muted bg-surface-2 border-border" },
-  tribe:      { icon: <Heart size={10} />,    accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
+  "needs-support": { icon: <HeartHandshake size={10} />, accent: "text-purple-400 bg-purple-400/10 border-purple-400/30" },
+  birthday:        { icon: <Cake size={10} />,           accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
+  streak:          { icon: <Flame size={10} />,          accent: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
+  new:             { icon: <Sparkles size={10} />,       accent: "text-violet-400 bg-violet-400/10 border-violet-400/20" },
+  uncheerred:      { icon: <Heart size={10} />,          accent: "text-rose-400 bg-rose-400/10 border-rose-400/20" },
+  inactive:        { icon: <Heart size={10} />,          accent: "text-text-muted bg-surface-2 border-border" },
+  tribe:           { icon: <Heart size={10} />,          accent: "text-brand-light bg-brand-light/10 border-brand-light/20" },
 };
 
 interface Props {
