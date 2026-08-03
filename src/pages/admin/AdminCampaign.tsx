@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Loader2, Mail, RefreshCw, Send, Trash2, Wifi, WifiOff } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Clock, Loader2, Mail, RefreshCw, Send, Trash2, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
@@ -7,6 +7,13 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const WINBACK_CODE = "WELL-LORETT-BE1D";
 
 interface CampaignMember { email: string; name: string }
+
+interface CampaignHistoryRow {
+  email: string;
+  name: string;
+  campaign_type: "app-invite" | "winback";
+  sent_at: string;
+}
 
 interface CampaignPreview {
   notOnApp: CampaignMember[];
@@ -76,6 +83,12 @@ export default function AdminCampaign() {
   // Tribe prune
   const [pruning, setPruning] = useState(false);
   const [pruneResult, setPruneResult] = useState<string | null>(null);
+
+  // Campaign history
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<CampaignHistoryRow[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<"all" | "app-invite" | "winback">("all");
 
   const loadPreview = async () => {
     if (!API_URL) return;
@@ -169,6 +182,26 @@ export default function AdminCampaign() {
     } finally {
       setDiagLoading(false);
     }
+  };
+
+  const loadHistory = async () => {
+    if (!API_URL) return;
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/campaign-history`, { headers: getAuthHeaders() });
+      const data = await res.json();
+      setHistory(data.history ?? []);
+    } catch {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const toggleHistory = () => {
+    const next = !historyOpen;
+    setHistoryOpen(next);
+    if (next && !history) loadHistory();
   };
 
   const pruneTribe = async () => {
@@ -408,6 +441,97 @@ export default function AdminCampaign() {
                   </div>
                 )}
               </div>
+            </>
+          )}
+        </section>
+
+        {/* ── Campaign History ──────────────────────────── */}
+        <section className="bg-surface rounded-card p-5 flex flex-col gap-3">
+          <button
+            onClick={toggleHistory}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center gap-2">
+              <Clock size={15} className="text-brand-light" />
+              <div className="text-left">
+                <h2 className="text-sm font-bold text-text">Email Send History</h2>
+                <p className="text-xs text-text-muted mt-0.5">Everyone who has received a campaign email</p>
+              </div>
+            </div>
+            {historyOpen ? <ChevronUp size={16} className="text-text-dim" /> : <ChevronDown size={16} className="text-text-dim" />}
+          </button>
+
+          {historyOpen && (
+            <>
+              {/* Filter tabs */}
+              <div className="flex gap-1.5">
+                {(["all", "app-invite", "winback"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setHistoryFilter(f)}
+                    className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
+                      historyFilter === f
+                        ? "gradient-brand text-white border-transparent"
+                        : "bg-surface-2 text-text-muted border-border"
+                    }`}
+                  >
+                    {f === "all" ? "All" : f === "app-invite" ? "App Invite" : "Win-Back"}
+                  </button>
+                ))}
+                <button
+                  onClick={loadHistory}
+                  disabled={historyLoading}
+                  className="ml-auto text-xs text-text-dim flex items-center gap-1"
+                >
+                  <RefreshCw size={11} className={historyLoading ? "animate-spin" : ""} />
+                  Refresh
+                </button>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-brand-light" />
+                </div>
+              ) : !history || history.length === 0 ? (
+                <p className="text-xs text-text-muted italic text-center py-4">No campaign emails sent yet.</p>
+              ) : (() => {
+                const filtered = historyFilter === "all" ? history : history.filter((r) => r.campaign_type === historyFilter);
+                if (filtered.length === 0) return <p className="text-xs text-text-muted italic text-center py-4">No emails of this type sent yet.</p>;
+
+                // Group by date
+                const byDate = filtered.reduce<Record<string, CampaignHistoryRow[]>>((acc, row) => {
+                  const date = new Date(row.sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  (acc[date] ??= []).push(row);
+                  return acc;
+                }, {});
+
+                return (
+                  <div className="flex flex-col gap-4 max-h-96 overflow-y-auto">
+                    {Object.entries(byDate).map(([date, rows]) => (
+                      <div key={date}>
+                        <p className="text-[11px] font-bold text-text-dim uppercase tracking-wide mb-1.5">{date} — {rows.length} sent</p>
+                        <div className="flex flex-col gap-1">
+                          {rows.map((row, i) => (
+                            <div key={i} className="flex items-center gap-2 bg-surface-2 rounded-lg px-3 py-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-text truncate">{row.name}</p>
+                                <p className="text-[11px] text-text-dim truncate">{row.email}</p>
+                              </div>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                row.campaign_type === "app-invite"
+                                  ? "bg-brand-blue/20 text-brand-light"
+                                  : "bg-violet-500/20 text-violet-400"
+                              }`}>
+                                {row.campaign_type === "app-invite" ? "App Invite" : "Win-Back"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
         </section>
