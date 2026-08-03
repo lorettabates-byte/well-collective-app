@@ -241,7 +241,7 @@ export default function ShareCardModal({
   const [recipeImageDataUrl, setRecipeImageDataUrl] = useState<string | null>(null);
   // Drive the slide-up via inline style + transition so it cannot be cached away
   const [visible, setVisible] = useState(false);
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     fetchImageAsDataUrl(LORETTA_IMAGE).then(setLorrettaImageDataUrl);

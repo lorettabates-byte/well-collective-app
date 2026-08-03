@@ -1,5 +1,6 @@
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const WELL_LOGO_URL = "https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png";
 const SITE_URL = "www.lorettabates.com";
@@ -483,7 +484,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
 
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
@@ -500,7 +501,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
 
   const badgeStyle = theme.previewBadge;
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -516,7 +517,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
       <div
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10000,
-          maxHeight: "92vh",
+          minHeight: "72vh", maxHeight: "92vh",
           display: "flex", flexDirection: "column",
           background: "var(--color-surface, #0e1a26)",
           borderRadius: "20px 20px 0 0",
@@ -615,6 +616,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
         </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
