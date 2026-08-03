@@ -327,10 +327,10 @@ export default function ShareCardModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6 animate-fade-in-overlay"
       onClick={onClose}
     >
-      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-fade-in-up z-[10000]" onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-slide-up-modal z-[10000]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
