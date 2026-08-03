@@ -136,11 +136,17 @@ export default function ShareCardModal({
     try {
       const dataUrl = await renderImage("square");
       if (!dataUrl) throw new Error("no image");
-      const link = document.createElement("a");
-      link.download = "well-collective-inspiration.png";
-      link.href = dataUrl;
-      link.click();
-      setStatus("Image downloaded to your device!");
+      const filename = "well-collective-inspiration.png";
+      const shared = await saveToPhotoLibrary(dataUrl, filename);
+      if (shared) {
+        setStatus("Image saved to your camera roll!");
+      } else {
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = dataUrl;
+        link.click();
+        setStatus("Image downloaded to your device!");
+      }
     } catch {
       setStatus("Couldn't generate the image right now. Please try again.");
     } finally {
@@ -230,16 +236,20 @@ export default function ShareCardModal({
           {cardContent}
         </div>
 
-        {/* Vertical format (hidden, used for instagram rendering) */}
+        {/* Vertical format (off-screen, used for instagram rendering) — must NOT use
+            display:none or html-to-image produces a zero-size blank canvas */}
         <div
           ref={cardRefVertical}
-          className="hidden rounded-card p-6 flex flex-col items-center text-center gap-4"
+          className="rounded-card p-6 flex flex-col items-center text-center gap-4"
           style={{
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
             color: '#fff',
             width: '540px',
             height: '960px',
-            margin: '0 auto',
+            position: 'fixed',
+            left: '-99999px',
+            top: 0,
+            pointerEvents: 'none',
           }}
         >
           {cardContent}

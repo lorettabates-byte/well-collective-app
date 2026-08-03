@@ -439,7 +439,17 @@ async function generateCard(
   return canvas.toDataURL("image/png");
 }
 
-function downloadDataUrl(dataUrl: string, filename: string) {
+async function saveOrDownload(dataUrl: string, filename: string): Promise<void> {
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], filename, { type: "image/png" });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: "WELL Collective" });
+      return;
+    }
+  } catch {
+    // fall through to link download
+  }
   const a = document.createElement("a");
   a.href = dataUrl;
   a.download = filename;
@@ -455,7 +465,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
     try {
       const dataUrl = await generateCard(winner, period, periodLabel, size);
       const label = size === "instagram" ? "instagram-story" : "facebook";
-      downloadDataUrl(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
+      await saveOrDownload(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
     } catch (err) {
       console.error("Share card generation failed:", err);
     } finally {
