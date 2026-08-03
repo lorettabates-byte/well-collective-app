@@ -85,6 +85,23 @@ const THEMES = {
   },
 } as const;
 
+function fitFontSize(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  startSize: number,
+  minSize: number,
+  weight = "500"
+): number {
+  let size = startSize;
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px system-ui, -apple-system, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  return minSize;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -323,9 +340,11 @@ async function generateCard(
     ctx.textBaseline = "middle";
     ctx.fillText(periodLabel.toUpperCase(), W / 2, H * 0.615);
 
-    // Winner name
+    // Winner name — auto-scale so long names don't overflow
+    const nameMaxWidthIG = W - 80;
+    const nameFontSizeIG = fitFontSize(ctx, winner.name, nameMaxWidthIG, 92, 48);
     ctx.fillStyle = "#ffffff";
-    ctx.font = "500 92px system-ui, sans-serif";
+    ctx.font = `500 ${nameFontSizeIG}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(winner.name, W / 2, H * 0.675);
 
@@ -399,9 +418,11 @@ async function generateCard(
     ctx.textBaseline = "middle";
     ctx.fillText(`${periodLabel.toUpperCase()} · ${monthYear.toUpperCase()}`, textX, H * 0.28);
 
-    // Winner name
+    // Winner name — auto-scale to avoid overflowing into the avatar
+    const nameMaxWidthFB = W - textX - photoR * 2 - 80;
+    const nameFontSizeFB = fitFontSize(ctx, winner.name, nameMaxWidthFB, 72, 36);
     ctx.fillStyle = "#ffffff";
-    ctx.font = "500 72px system-ui, sans-serif";
+    ctx.font = `500 ${nameFontSizeFB}px system-ui, sans-serif`;
     ctx.textAlign = "left";
     ctx.fillText(winner.name, textX, H * 0.46);
 

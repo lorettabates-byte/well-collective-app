@@ -215,6 +215,26 @@ export default function ShareCardModal({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
       onClick={onClose}
     >
+      {/* Vertical format for Instagram export — visibility:hidden keeps it rendered so
+          html-to-image can capture it; position:fixed+huge-negative-left fails on iOS */}
+      <div
+        ref={cardRefVertical}
+        className="rounded-card p-6 flex flex-col items-center text-center gap-4"
+        style={{
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+          color: '#fff',
+          width: '540px',
+          height: '960px',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          visibility: 'hidden',
+          pointerEvents: 'none',
+        }}
+      >
+        {cardContent}
+      </div>
+
       <div className="relative w-full max-w-sm flex flex-col gap-4 animate-pop-in z-[10000]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
@@ -231,25 +251,6 @@ export default function ShareCardModal({
           style={{
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
             color: '#fff',
-          }}
-        >
-          {cardContent}
-        </div>
-
-        {/* Vertical format (off-screen, used for instagram rendering) — must NOT use
-            display:none or html-to-image produces a zero-size blank canvas */}
-        <div
-          ref={cardRefVertical}
-          className="rounded-card p-6 flex flex-col items-center text-center gap-4"
-          style={{
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-            color: '#fff',
-            width: '540px',
-            height: '960px',
-            position: 'fixed',
-            left: '-99999px',
-            top: 0,
-            pointerEvents: 'none',
           }}
         >
           {cardContent}
