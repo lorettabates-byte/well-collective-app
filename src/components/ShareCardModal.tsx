@@ -31,6 +31,199 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
+function loadCanvasImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function drawCircleImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  cx: number, cy: number, r: number,
+  borderColor: string, borderWidth: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.clip();
+  const minD = Math.min(img.width, img.height);
+  const sx = (img.width - minD) / 2;
+  const sy = (img.height - minD) / 2;
+  ctx.drawImage(img, sx, sy, minD, minD, cx - r, cy - r, r * 2, r * 2);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = borderWidth;
+  ctx.stroke();
+}
+
+async function generateInstagramCard(params: {
+  cadenceLabel: string;
+  title: string;
+  body: string;
+  userAvatar?: string;
+  userName?: string;
+  lorrettaDataUrl: string | null;
+  logoDataUrl: string | null;
+  recipeDataUrl: string | null;
+}): Promise<string> {
+  const W = 1080, H = 1920;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#1a1a2e");
+  grad.addColorStop(1, "#16213e");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle decorative rings
+  const ring = (cx: number, cy: number, r: number, color: string) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+  ring(W * 0.85, H * 0.08, 320, "rgba(1,145,206,0.08)");
+  ring(W * 0.1, H * 0.92, 240, "rgba(1,145,206,0.06)");
+
+  const [logoImg, lorrettaImg, avatarImg, recipeImg] = await Promise.all([
+    params.logoDataUrl ? loadCanvasImage(params.logoDataUrl) : Promise.resolve(null),
+    params.lorrettaDataUrl ? loadCanvasImage(params.lorrettaDataUrl) : Promise.resolve(null),
+    params.userAvatar ? loadCanvasImage(params.userAvatar) : Promise.resolve(null),
+    params.recipeDataUrl ? loadCanvasImage(params.recipeDataUrl) : Promise.resolve(null),
+  ]);
+
+  let y = 140;
+
+  // WELL logo
+  if (logoImg) {
+    const lh = 80;
+    const lw = (logoImg.width / logoImg.height) * lh;
+    ctx.drawImage(logoImg, (W - lw) / 2, y, lw, lh);
+    y += lh + 70;
+  }
+
+  // Recipe image (if present)
+  if (recipeImg) {
+    const rw = W - 120, rh = 320;
+    const rx = 60;
+    ctx.save();
+    const rad = 24;
+    ctx.beginPath();
+    ctx.moveTo(rx + rad, y);
+    ctx.lineTo(rx + rw - rad, y);
+    ctx.arcTo(rx + rw, y, rx + rw, y + rad, rad);
+    ctx.lineTo(rx + rw, y + rh - rad);
+    ctx.arcTo(rx + rw, y + rh, rx + rw - rad, y + rh, rad);
+    ctx.lineTo(rx + rad, y + rh);
+    ctx.arcTo(rx, y + rh, rx, y + rh - rad, rad);
+    ctx.lineTo(rx, y + rad);
+    ctx.arcTo(rx, y, rx + rad, y, rad);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(recipeImg, rx, y, rw, rh);
+    ctx.restore();
+    y += rh + 60;
+  }
+
+  // Loretta circle
+  if (lorrettaImg) {
+    const r = 130;
+    drawCircleImage(ctx, lorrettaImg, W / 2, y + r, r, "#0191CE", 7);
+    y += r * 2 + 60;
+  }
+
+  // Cadence label
+  ctx.fillStyle = "#84D8FD";
+  ctx.font = "700 42px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(params.cadenceLabel.toUpperCase(), W / 2, y + 21);
+  y += 72;
+
+  // Title
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 76px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  const titleLines = wrapCanvasText(ctx, params.title, W - 120);
+  for (const line of titleLines) {
+    ctx.fillText(line, W / 2, y);
+    y += 88;
+  }
+  y += 24;
+
+  // Body text
+  ctx.fillStyle = "#c8cdd6";
+  ctx.font = "400 46px system-ui, -apple-system, sans-serif";
+  const bodyLines = wrapCanvasText(ctx, params.body, W - 160);
+  for (const line of bodyLines) {
+    ctx.fillText(line, W / 2, y);
+    y += 60;
+  }
+  y += 48;
+
+  // User avatar + name
+  if (avatarImg && params.userName) {
+    const r = 70;
+    drawCircleImage(ctx, avatarImg, W / 2, y + r, r, "#0191CE", 4);
+    y += r * 2 + 20;
+    ctx.fillStyle = "#84D8FD";
+    ctx.font = "600 38px system-ui, -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(params.userName, W / 2, y + 20);
+    y += 60;
+  }
+
+  // Footer
+  const footerY = H - 130;
+  ctx.fillStyle = "rgba(1,145,206,0.9)";
+  ctx.font = "700 38px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("WELL COLLECTIVE", W / 2, footerY);
+  ctx.fillStyle = "rgba(132,216,253,0.75)";
+  ctx.font = "400 30px system-ui, -apple-system, sans-serif";
+  ctx.fillText("with Loretta Bates", W / 2, footerY + 48);
+  ctx.fillStyle = "rgba(156,163,175,0.5)";
+  ctx.font = "400 26px system-ui, -apple-system, sans-serif";
+  ctx.fillText("lorettabates.com", W / 2, footerY + 88);
+
+  return canvas.toDataURL("image/png");
+}
+
 export default function ShareCardModal({
   cadenceLabel,
   title,
@@ -41,7 +234,6 @@ export default function ShareCardModal({
   onClose,
 }: ShareCardModalProps) {
   const cardRefSquare = useRef<HTMLDivElement>(null);
-  const cardRefVertical = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [lorrettaImageDataUrl, setLorrettaImageDataUrl] = useState<string | null>(null);
@@ -56,41 +248,33 @@ export default function ShareCardModal({
     }
   }, [recipeImage]);
 
-  const renderImage = async (format: "square" | "vertical" = "square") => {
-    const cardRef = format === "square" ? cardRefSquare : cardRefVertical;
-    if (!cardRef.current) return null;
-    const images = cardRef.current.querySelectorAll("img");
-    const imagePromises = Array.from(images).map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-          } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          }
+  const renderSquareImage = async () => {
+    if (!cardRefSquare.current) return null;
+    const images = cardRefSquare.current.querySelectorAll("img");
+    await Promise.all(
+      Array.from(images).map(
+        (img) => new Promise<void>((resolve) => {
+          if (img.complete) resolve();
+          else { img.onload = () => resolve(); img.onerror = () => resolve(); }
         })
+      )
     );
-    await Promise.all(imagePromises);
-    return toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
+    return toPng(cardRefSquare.current, { pixelRatio: 2, cacheBust: true });
   };
 
-  const saveToPhotoLibrary = async (dataUrl: string, filename: string) => {
+  const saveOrDownload = async (dataUrl: string, filename: string): Promise<boolean> => {
     try {
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], filename, { type: "image/png" });
-
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "WELL Collective",
-          text: `${title} — join the WELL Collective. ${JOIN_URL}`,
-        });
+        await navigator.share({ files: [file], title: "WELL Collective", text: `${title} - join the WELL Collective. ${JOIN_URL}` });
         return true;
       }
-    } catch {
-      // Fall back to download
-    }
+    } catch { /* fall through */ }
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
     return false;
   };
 
@@ -98,32 +282,28 @@ export default function ShareCardModal({
     setBusy(true);
     setStatus(null);
     try {
-      const format = platform === "instagram" ? "vertical" : "square";
-      const dataUrl = await renderImage(format);
-      if (!dataUrl) throw new Error("no image");
-
-      const filename = `well-collective-${platform}.png`;
-      const success = await saveToPhotoLibrary(dataUrl, filename);
-
-      if (success) {
-        setStatus(
-          platform === "instagram"
-            ? "Image saved to camera roll! Open Instagram to share it to your story or feed."
-            : "Image saved to camera roll! Open Facebook to share it to your profile."
-        );
+      let dataUrl: string;
+      if (platform === "instagram") {
+        // Canvas-based generation — reliable on all platforms, no hidden-DOM tricks
+        dataUrl = await generateInstagramCard({
+          cadenceLabel, title, body, userAvatar, userName,
+          lorrettaDataUrl: lorrettaImageDataUrl,
+          logoDataUrl: wellLogoDataUrl,
+          recipeDataUrl: recipeImageDataUrl,
+        });
       } else {
-        // Fallback: download
-        const link = document.createElement("a");
-        link.download = filename;
-        link.href = dataUrl;
-        link.click();
-        setStatus(
-          platform === "instagram"
-            ? "Image downloaded! Open Instagram to share it to your story or feed."
-            : "Image downloaded! Open Facebook to share it to your profile."
-        );
+        const img = await renderSquareImage();
+        if (!img) throw new Error("no image");
+        dataUrl = img;
       }
-    } catch (err) {
+      const filename = `well-collective-${platform}.png`;
+      const shared = await saveOrDownload(dataUrl, filename);
+      setStatus(
+        platform === "instagram"
+          ? shared ? "Saved! Open Instagram to share to your story or feed." : "Downloaded! Open Instagram to share to your story or feed."
+          : shared ? "Saved! Open Facebook to share to your profile." : "Downloaded! Open Facebook to share to your profile."
+      );
+    } catch {
       setStatus("Couldn't generate the image right now. Please try again.");
     } finally {
       setBusy(false);
@@ -134,19 +314,10 @@ export default function ShareCardModal({
     setBusy(true);
     setStatus(null);
     try {
-      const dataUrl = await renderImage("square");
+      const dataUrl = await renderSquareImage();
       if (!dataUrl) throw new Error("no image");
-      const filename = "well-collective-inspiration.png";
-      const shared = await saveToPhotoLibrary(dataUrl, filename);
-      if (shared) {
-        setStatus("Image saved to your camera roll!");
-      } else {
-        const link = document.createElement("a");
-        link.download = filename;
-        link.href = dataUrl;
-        link.click();
-        setStatus("Image downloaded to your device!");
-      }
+      const shared = await saveOrDownload(dataUrl, "well-collective-inspiration.png");
+      setStatus(shared ? "Image saved to your camera roll!" : "Image downloaded to your device!");
     } catch {
       setStatus("Couldn't generate the image right now. Please try again.");
     } finally {
@@ -154,88 +325,12 @@ export default function ShareCardModal({
     }
   };
 
-  const cardContent = (
-    <>
-      {wellLogoDataUrl && (
-        <img
-          src={wellLogoDataUrl}
-          alt="WELL Collective"
-          className="w-36 h-auto object-contain"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-      )}
-
-      {recipeImageDataUrl && (
-        <img
-          src={recipeImageDataUrl}
-          alt="Recipe"
-          className="w-full h-32 rounded-lg object-cover mb-2"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-      )}
-
-      {lorrettaImageDataUrl && (
-        <img
-          src={lorrettaImageDataUrl}
-          alt="Loretta Bates"
-          className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-      )}
-
-      <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
-        <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
-      </div>
-
-      <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
-
-      {userAvatar && (
-        <div className="flex flex-col items-center gap-2">
-          <img
-            src={userAvatar}
-            alt={userName}
-            crossOrigin="anonymous"
-            className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]"
-          />
-          <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
-        </div>
-      )}
-
-      <div className="w-full pt-3 border-t border-[#0191CE]/30">
-        <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
-        <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
-        <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
-      </div>
-    </>
-  );
-
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6 animate-fade-in-up"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-6"
       onClick={onClose}
     >
-      {/* Vertical format for Instagram export — visibility:hidden keeps it rendered so
-          html-to-image can capture it; position:fixed+huge-negative-left fails on iOS */}
-      <div
-        ref={cardRefVertical}
-        className="rounded-card p-6 flex flex-col items-center text-center gap-4"
-        style={{
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-          color: '#fff',
-          width: '540px',
-          height: '960px',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          visibility: 'hidden',
-          pointerEvents: 'none',
-        }}
-      >
-        {cardContent}
-      </div>
-
-      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-pop-in z-[10000]" onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full max-w-sm flex flex-col gap-4 animate-fade-in-up z-[10000]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 border border-border text-text-muted z-10"
@@ -244,19 +339,45 @@ export default function ShareCardModal({
           <X size={14} />
         </button>
 
-        {/* Square format (for download/facebook preview) */}
+        {/* Square preview card (also used for the "Download Image" + Facebook export) */}
         <div
           ref={cardRefSquare}
           className="rounded-card p-6 flex flex-col items-center text-center gap-4 w-full"
-          style={{
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-            color: '#fff',
-          }}
+          style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", color: "#fff" }}
         >
-          {cardContent}
+          {wellLogoDataUrl && (
+            <img src={wellLogoDataUrl} alt="WELL Collective" className="w-36 h-auto object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          )}
+          {recipeImageDataUrl && (
+            <img src={recipeImageDataUrl} alt="Recipe" className="w-full h-32 rounded-lg object-cover mb-2"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          )}
+          {lorrettaImageDataUrl && (
+            <img src={lorrettaImageDataUrl} alt="Loretta Bates"
+              className="w-24 h-24 rounded-full object-cover border-4 border-[#0191CE] shadow-lg"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          )}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#84D8FD] mb-1">{cadenceLabel}</p>
+            <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed max-w-xs">{body}</p>
+          {userAvatar && (
+            <div className="flex flex-col items-center gap-2">
+              <img src={userAvatar} alt={userName} crossOrigin="anonymous"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#0191CE]" />
+              <p className="text-xs font-semibold text-[#84D8FD]">{userName}</p>
+            </div>
+          )}
+          <div className="w-full pt-3 border-t border-[#0191CE]/30">
+            <p className="text-sm font-bold text-[#0191CE]">WELL COLLECTIVE</p>
+            <p className="text-xs font-semibold text-[#84D8FD]">with Loretta Bates</p>
+            <p className="text-[10px] text-gray-400 mt-1">lorettabates.com</p>
+          </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Buttons */}
         <div className="flex gap-2 flex-col">
           {status && (
             <div className="flex items-start gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5">
@@ -264,28 +385,18 @@ export default function ShareCardModal({
               <p className="text-xs text-text-muted">{status}</p>
             </div>
           )}
-          <button
-            onClick={handleDownload}
-            disabled={busy}
-            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3 disabled:opacity-60 w-full"
-          >
+          <button onClick={handleDownload} disabled={busy}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-3 disabled:opacity-60 w-full">
             {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
             Download Image
           </button>
-
           <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleShare("instagram")}
-              disabled={busy}
-              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60"
-            >
+            <button onClick={() => handleShare("instagram")} disabled={busy}
+              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60">
               📱 Instagram/TikTok
             </button>
-            <button
-              onClick={() => handleShare("facebook")}
-              disabled={busy}
-              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60"
-            >
+            <button onClick={() => handleShare("facebook")} disabled={busy}
+              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text border border-border rounded-pill py-2.5 disabled:opacity-60">
               👥 Facebook
             </button>
           </div>
