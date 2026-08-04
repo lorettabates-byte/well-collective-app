@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -12,6 +13,11 @@ const CHECK_INTERVAL_MS = 5 * 60 * 1000;
  */
 export function useStaleVersionGuard() {
   useEffect(() => {
+    // On native (iOS/Android), Capgo handles all bundle updates. Running a
+    // web-layer reload here races with Capgo's own update mechanism and
+    // causes the Android WebView to crash when both fire on foreground.
+    if (Capacitor.isNativePlatform()) return;
+
     const currentVersion = __APP_VERSION__;
 
     async function check() {

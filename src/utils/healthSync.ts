@@ -122,6 +122,11 @@ async function syncSleepForLastNight(email: string): Promise<void> {
 }
 
 async function syncCalorieBurnForToday(): Promise<void> {
+  // totalCalories requires READ_TOTAL_CALORIES_BURNED permission, which is
+  // intentionally excluded from the Android manifest (we only declared
+  // steps/sleep/workouts). Skip on Android to avoid a SecurityException.
+  if (Capacitor.getPlatform() === "android") return;
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 

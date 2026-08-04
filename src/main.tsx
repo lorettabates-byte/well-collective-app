@@ -53,7 +53,10 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>
 );
 
-if ("serviceWorker" in navigator) {
+// Service worker handles web PWA updates only. On native (iOS/Android),
+// Capgo owns all bundle updates — registering a SW here and reloading on
+// activation would race with Capgo's own mechanism and crash the WebView.
+if ("serviceWorker" in navigator && !Capacitor.isNativePlatform()) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
