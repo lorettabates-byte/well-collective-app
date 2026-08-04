@@ -39,15 +39,11 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const appClient = clients.find((c) => c.url.startsWith(self.location.origin));
       if (appClient) {
-        // Use client.navigate() for a guaranteed page change, then fall back to
-        // postMessage for browsers that don't support it (navigate returns a Promise).
-        const nav = appClient.navigate ? appClient.navigate(absoluteUrl) : Promise.reject();
-        return nav
-          .then((c) => (c || appClient).focus())
-          .catch(() => {
-            appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
-            return appClient.focus();
-          });
+        // postMessage is more reliable than client.navigate() in Capacitor WebViews
+        // because navigate() may silently no-op while postMessage reaches the React
+        // Router handler in App.tsx and does a client-side navigation without a reload.
+        appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
+        return appClient.focus();
       }
       return self.clients.openWindow(absoluteUrl);
     })

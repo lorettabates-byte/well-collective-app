@@ -1570,6 +1570,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const now = new Date().toISOString();
       const isMonday = todayAsDate().getDay() === 1;
 
+      const noEmDash = (s: string) => s.replace(/—/g, "-");
+
       if (entry.weeklyTheme && isMonday) {
         // Deterministic id + dedup check, same pattern as the forum bell
         // reconciliation — without it, this effect re-running for any
@@ -1579,6 +1581,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // a fresh random id for content already marked read, which is
         // exactly what looked like "my read notification came back".
         const weeklyNotifId = `weekly-notif-${today}`;
+        entry.weeklyTheme = { title: noEmDash(entry.weeklyTheme.title), body: noEmDash(entry.weeklyTheme.body) };
         next = {
           ...next,
           inspirations: [
@@ -1620,6 +1623,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (entry.motivationBoost) {
+        entry.motivationBoost = { title: noEmDash(entry.motivationBoost.title), body: noEmDash(entry.motivationBoost.body) };
         // Only surface the boost after 3pm on the day it's scheduled
         const boostHour = new Date().getHours();
         if (boostHour >= 15) {
@@ -1643,6 +1647,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (entry.dailyInspiration) {
+        entry.dailyInspiration = { title: noEmDash(entry.dailyInspiration.title), body: noEmDash(entry.dailyInspiration.body) };
         const dailyNotifId = `daily-notif-${today}`;
         next = {
           ...next,

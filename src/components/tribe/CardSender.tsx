@@ -351,11 +351,8 @@ export function CardFace({
               )}
 
               <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
-                <p className={`text-[8px] font-black uppercase tracking-[0.30em] opacity-50 ${style.textColor}`}>
+                <p className={`text-[21px] font-bold leading-tight ${style.textColor}`}>
                   {occasion.label}
-                </p>
-                <p className={`text-[21px] font-bold leading-tight mt-0.5 ${style.textColor}`}>
-                  {style.label}
                 </p>
               </div>
 

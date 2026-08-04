@@ -749,6 +749,7 @@ export default function Tribe() {
                               placeholder="Add a personal note… (optional)"
                               className="w-full bg-surface-2 border border-border rounded-pill px-3 py-1.5 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-blue mb-2"
                             />
+                            <p className="text-[10px] text-text-dim text-center mb-1.5">Tap a cheer to send</p>
                             <div className="flex items-center flex-wrap justify-center gap-1">
                               {TRIBE_CHEERS.map((cheer) => (
                                 <button
@@ -762,6 +763,12 @@ export default function Tribe() {
                                 </button>
                               ))}
                             </div>
+                            <button
+                              onClick={() => { setCheeringFor(null); setCheerNote(""); }}
+                              className="text-[10px] text-text-dim mt-1.5 w-full text-center"
+                            >
+                              Cancel
+                            </button>
                           </div>
                         ) : (
                           <button
