@@ -42,25 +42,30 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!authed) return;
-    // Initialize IAP and identify user so RevenueCat knows who this is
-    const member = JSON.parse(localStorage.getItem("memberUser") || "{}") as { email?: string };
-    if (member.email) initIAP(member.email).catch(() => {});
 
-    const raw = localStorage.getItem("memberMembershipStatus");
-    if (raw) {
-      try {
-        const cached = JSON.parse(raw) as CachedMembershipStatus;
-        const age = Date.now() - new Date(cached.checkedAt).getTime();
-        if (age < RECHECK_INTERVAL_MS) {
-          setMembershipActive(cached.active);
-          return;
+    const run = async () => {
+      const member = JSON.parse(localStorage.getItem("memberUser") || "{}") as { email?: string };
+      // Await IAP init so SDK is configured before SubscribeGate can trigger a purchase
+      if (member.email) await initIAP(member.email);
+
+      const raw = localStorage.getItem("memberMembershipStatus");
+      if (raw) {
+        try {
+          const cached = JSON.parse(raw) as CachedMembershipStatus;
+          const age = Date.now() - new Date(cached.checkedAt).getTime();
+          if (age < RECHECK_INTERVAL_MS) {
+            setMembershipActive(cached.active);
+            return;
+          }
+        } catch {
+          // ignore malformed cache
         }
-      } catch {
-        // ignore malformed cache
       }
-    }
 
-    refreshMembership();
+      refreshMembership();
+    };
+
+    run().catch(() => {});
   }, [authed]);
 
   const handleLogout = () => {

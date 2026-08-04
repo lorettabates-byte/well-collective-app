@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Brain, Dumbbell, Gift, Loader2, LogOut, Moon, RefreshCw, RotateCcw, Trophy, Utensils, ClipboardList } from "lucide-react";
 import { useState } from "react";
-import { purchaseMembership, restoreIAPPurchases } from "../utils/iap";
+import { initIAP, purchaseMembership, restoreIAPPurchases } from "../utils/iap";
 import { openMemberLink } from "../utils/ssoLink";
 import { LOGO_URL } from "./layout/MobileShell";
 import { Browser } from "@capacitor/browser";
@@ -51,6 +51,8 @@ export default function SubscribeGate({
     setError("");
     setPurchasing(true);
     try {
+      // Ensure SDK is initialized — guards against race at login
+      if (member.email) await initIAP(member.email);
       const result = await purchaseMembership();
       if (result.userCancelled) return;
       if (!result.success) {
