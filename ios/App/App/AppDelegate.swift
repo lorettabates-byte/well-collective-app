@@ -7,7 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Required for @capacitor-community/barcode-scanner — makes the WKWebView
+        // background transparent so the native camera overlay is visible during scan.
+        self.window?.backgroundColor = UIColor.clear
         return true
     }
 

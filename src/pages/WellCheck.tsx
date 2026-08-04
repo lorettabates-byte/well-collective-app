@@ -98,7 +98,12 @@ const ACTIVITY_LABELS: Record<string, string> = {
   admin_award: "WELL Award",
   forum_post: "Posted in the Community",
   forum_comment: "Commented in the Community",
+  tutorial_complete: "Completed the Tutorial",
 };
+
+function formatActivityLabel(type: string): string {
+  return ACTIVITY_LABELS[type] ?? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const ACTIVITY_ICON: Record<string, LucideIcon> = {
   app_open: Smartphone,
@@ -189,7 +194,7 @@ function getDayAreaCount(day: ActivityHistoryDay): number {
 
 function getTopActivityLabel(activities: ActivitySummary[]): string {
   const top = [...activities].sort((a, b) => b.points - a.points)[0];
-  return top ? ACTIVITY_LABELS[top.type] ?? top.type : "No activities";
+  return top ? formatActivityLabel(top.type) : "No activities";
 }
 
 function averagePositive(values: (number | null | undefined)[], places = 0): number | null {
@@ -716,7 +721,7 @@ export default function WellCheck() {
                       <Icon size={13} className="text-brand-light" />
                     </div>
                     <span className="text-xs text-text flex-1 min-w-0 truncate">
-                      {ACTIVITY_LABELS[a.type] ?? a.type}
+                      {formatActivityLabel(a.type)}
                       {a.count > 1 && <span className="text-text-dim"> ×{a.count}</span>}
                     </span>
                     <span className="text-xs font-bold text-yellow-400 shrink-0 flex items-center gap-0.5">

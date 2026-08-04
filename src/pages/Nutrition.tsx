@@ -275,8 +275,15 @@ export default function Nutrition() {
       setEstimatedCalories(String(Math.round(cal)));
       if (!showMealForm) setShowMealForm(true);
     } catch (err) {
-      setScanError("Scan failed. Try again or enter food manually.");
-      console.error("Barcode scan error:", err);
+      const msg = (err as { message?: string })?.message ?? "";
+      if (msg.includes("permission") || msg.includes("denied")) {
+        setScanError("Camera permission denied. Enable it in Settings > Privacy > Camera.");
+      } else if (msg.includes("not implement") || msg.includes("not available")) {
+        setScanError("Barcode scanner not available. Try updating the app.");
+      } else {
+        setScanError("Scan failed. Try again or enter food manually.");
+      }
+      console.error("Barcode scan error:", JSON.stringify(err));
     } finally {
       setScanning(false);
     }

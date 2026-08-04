@@ -263,7 +263,7 @@ export default function GoalsQuestionnaire({ onComplete, onSkip, currentPeriod }
       style={{ height: "100dvh" }}
     >
       {/* Header */}
-      <div className="px-5 pt-safe pt-6 pb-4 shrink-0">
+      <div className="px-5 pb-4 shrink-0" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top))" }}>
         <div className="flex items-center gap-3 mb-5">
           {step > 0 && (
             <button

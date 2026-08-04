@@ -1,6 +1,8 @@
 import {
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Download,
   FileText,
   GripVertical,
   Heart,
@@ -31,7 +33,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import type { Song, SongCategory } from "../../types";
 import { formatSeconds } from "../../utils/format";
-import { deleteDownload, downloadSong } from "../../utils/musicOffline";
+import { Capacitor } from "@capacitor/core";
+import { deleteDownload, downloadSong, isDownloaded } from "../../utils/musicOffline";
 
 const FAVORITES_KEY = "well-music-favorites";
 const FAVORITES_ORDER_KEY = "well-music-favorites-order";
@@ -144,6 +147,12 @@ export default function Playlist({
   const [favorites, setFavorites] = useState<Set<number>>(() => loadFavorites());
   const [favoritesOrder, setFavoritesOrder] = useState<number[]>(() => loadFavoritesOrder());
   const [downloadingIds, setDownloadingIds] = useState<Set<number>>(new Set());
+  const [downloadedIds, setDownloadedIds] = useState<Set<number>>(() =>
+    Capacitor.isNativePlatform()
+      ? new Set(songs.filter((s) => isDownloaded(s.id)).map((s) => s.id))
+      : new Set()
+  );
+  const isNative = Capacitor.isNativePlatform();
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
@@ -308,6 +317,7 @@ export default function Playlist({
         if (song) {
           setDownloadingIds((prevIds) => new Set(prevIds).add(id));
           downloadSong(song)
+            .then(() => setDownloadedIds((prev) => new Set(prev).add(id)))
             .catch((err) => console.error("Failed to download song for offline playback:", err))
             .finally(() =>
               setDownloadingIds((prevIds) => {
@@ -554,12 +564,31 @@ export default function Playlist({
                 aria-label={favorites.has(song.id) ? "Unfavorite" : "Favorite"}
                 className="w-8 h-8 flex items-center justify-center shrink-0 text-brand-light"
               >
-                {downloadingIds.has(song.id) ? (
-                  <Loader2 size={16} className="animate-spin text-text-muted" />
-                ) : (
-                  <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
-                )}
+                <Heart size={16} className={favorites.has(song.id) ? "fill-brand-light" : ""} />
               </button>
+              {isNative && !downloadsLocked && (
+                <button
+                  onClick={() => {
+                    if (downloadingIds.has(song.id) || downloadedIds.has(song.id)) return;
+                    const s = song;
+                    setDownloadingIds((prev) => new Set(prev).add(s.id));
+                    downloadSong(s)
+                      .then(() => setDownloadedIds((prev) => new Set(prev).add(s.id)))
+                      .catch((err) => console.error("Download failed:", err))
+                      .finally(() => setDownloadingIds((prev) => { const n = new Set(prev); n.delete(s.id); return n; }));
+                  }}
+                  aria-label={downloadedIds.has(song.id) ? "Downloaded" : "Download for offline"}
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                >
+                  {downloadingIds.has(song.id) ? (
+                    <Loader2 size={15} className="animate-spin text-text-muted" />
+                  ) : downloadedIds.has(song.id) ? (
+                    <CheckCircle2 size={15} className="text-brand-light" />
+                  ) : (
+                    <Download size={15} className="text-text-dim" />
+                  )}
+                </button>
+              )}
               {song.lyrics && (
                 <button
                   onClick={() => setLyricsSong(song)}

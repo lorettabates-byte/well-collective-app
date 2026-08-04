@@ -471,6 +471,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Not persisted: it's a live directory, refetched fresh each session.
   const [memberBadges, setMemberBadges] = useState<Record<string, MemberDirectoryEntry>>({});
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+  const blockedUserIdsRef = useRef<string[]>([]);
+  useEffect(() => { blockedUserIdsRef.current = blockedUserIds; }, [blockedUserIds]);
 
   // Saved recipes and folders live server-side (saved_recipes / recipe_folders
   // tables), not in localStorage — recipe content (images, steps) is too big
@@ -1971,6 +1973,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const baseline = prev.lastForumNotifiedAt;
             let newest = baseline ?? "";
             const newNotifications: AppNotification[] = [];
+            const blockedSet = new Set(blockedUserIdsRef.current);
 
             for (const thread of incoming) {
               if (thread.createdAt > newest) newest = thread.createdAt;
@@ -1980,6 +1983,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 baseline &&
                 thread.createdAt > baseline &&
                 !isOwn &&
+                !blockedSet.has(thread.authorId) &&
                 prev.notificationSettings.community &&
                 !prev.notifications.some((n) => n.id === postId)
               ) {
@@ -2001,6 +2005,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   baseline &&
                   message.createdAt > baseline &&
                   message.authorId !== prev.user.id &&
+                  !blockedSet.has(message.authorId) &&
                   prev.notificationSettings.replies &&
                   !prev.notifications.some((n) => n.id === replyId)
                 ) {

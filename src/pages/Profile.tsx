@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Crown, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, Loader2, LogOut, MessageCircle, Pencil, Phone, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
+import { Activity, Bell, Bookmark, ChefHat, ChevronRight, Copy, Check, Crown, Dumbbell, Eye, EyeOff, Gift, Heart, HelpCircle, Loader2, LogOut, MessageCircle, Moon, Pencil, Phone, RefreshCw, Share2, ShieldCheck, SlidersHorizontal, Trash2, Trophy, Users, Watch, X } from "lucide-react";
 import { openMemberLink } from "../utils/ssoLink";
 import { initIAP, purchaseMembership } from "../utils/iap";
 
@@ -521,6 +521,7 @@ export default function Profile() {
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
+        <MenuRow icon={<Moon size={16} />} label="Sleep Analysis" to="/profile/sleep-analysis" />
         <MenuRow icon={<Watch size={16} />} label="Health Sync" to="/profile/health-sync" />
         <MenuRow icon={<HelpCircle size={16} />} label="Help & FAQ" to="/profile/help" />
         <MenuRow icon={<Bookmark size={16} />} label="Saved Inspirations" to="/inspirations?filter=saved" badge={savedCount} />
