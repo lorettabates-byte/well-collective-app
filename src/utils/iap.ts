@@ -20,26 +20,7 @@ export async function initIAP(email: string): Promise<void> {
   }
 }
 
-async function diagRCFetch(email: string): Promise<string> {
-  if (!RC_IOS_KEY) return "no-key";
-  try {
-    const uid = encodeURIComponent(email || "anonymous");
-    const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${uid}/offerings`, {
-      headers: {
-        Authorization: `Bearer ${RC_IOS_KEY}`,
-        "X-Platform": "ios",
-        "X-Client-Bundle-ID": "com.wellcollective.app",
-        "Content-Type": "application/json",
-      },
-    });
-    const body = await res.text();
-    return `HTTP ${res.status}: ${body.slice(0, 120)}`;
-  } catch (e) {
-    return `fetch-error: ${String(e).slice(0, 80)}`;
-  }
-}
-
-export async function purchaseMembership(email?: string): Promise<{
+export async function purchaseMembership(): Promise<{
   success: boolean;
   error?: string;
   userCancelled?: boolean;
@@ -49,14 +30,9 @@ export async function purchaseMembership(email?: string): Promise<{
     if (!configCheck.isConfigured) {
       return { success: false, error: "IAP not initialized. Please restart the app and try again." };
     }
-
-    // Diagnostic: hit RevenueCat REST API directly to verify key validity
-    const diag = await diagRCFetch(email || "");
-    console.log("[IAP] RC direct REST test:", diag);
-
     const { current } = await Purchases.getOfferings();
     if (!current?.availablePackages?.length) {
-      return { success: false, error: `No packages available. Diag: ${diag}` };
+      return { success: false, error: "No subscription packages available. Please try again shortly." };
     }
     const pkg = current.availablePackages[0];
     const result = await Purchases.purchasePackage({ aPackage: pkg });
@@ -67,8 +43,7 @@ export async function purchaseMembership(email?: string): Promise<{
     if (e.userCancelled) return { success: false, userCancelled: true };
     const detail = e.code ? ` [code ${e.code}]` : "";
     console.error("[IAP] purchaseMembership error:", JSON.stringify(err));
-    const diag = await diagRCFetch(email || "").catch(() => "diag-failed");
-    return { success: false, error: `${e.message || "Purchase failed."} ${detail} | REST: ${diag}` };
+    return { success: false, error: (e.message || "Purchase failed. Please try again.") + detail };
   }
 }
 
