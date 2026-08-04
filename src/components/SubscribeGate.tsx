@@ -53,7 +53,7 @@ export default function SubscribeGate({
     try {
       // Ensure SDK is initialized — guards against race at login
       if (member.email) await initIAP(member.email);
-      const result = await purchaseMembership();
+      const result = await purchaseMembership(member.email);
       if (result.userCancelled) return;
       if (!result.success) {
         setError(result.error || "Purchase failed. Please try again.");
