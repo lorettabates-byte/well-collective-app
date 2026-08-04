@@ -154,6 +154,7 @@ export default function Nutrition() {
   const [photoScanning, setPhotoScanning] = useState(false);
   const [photoScanError, setPhotoScanError] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
   const mealFormRef = useRef<HTMLDivElement>(null);
 
   const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,38 +212,44 @@ export default function Nutrition() {
     }
   };
 
-  const handleBarcodeScan = async () => {
-    if (!Capacitor.isNativePlatform()) {
-      setScanError("Barcode scanning requires the native app (iOS or Android).");
+  const handleBarcodeScan = () => {
+    setScanError("");
+    barcodeInputRef.current?.click();
+  };
+
+  const handleBarcodeCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (barcodeInputRef.current) barcodeInputRef.current.value = "";
+    if (!file) return;
+
+    if (!("BarcodeDetector" in window)) {
+      setScanError("Barcode scanning is not supported on this device. Try entering the food manually.");
       return;
     }
+
     setScanError("");
     setScanning(true);
     try {
-      const { BarcodeScanner } = await import("@capacitor-community/barcode-scanner");
-      const perm = await BarcodeScanner.checkPermission({ force: true });
-      if (!perm.granted) {
-        setScanError("Camera permission is required to scan barcodes.");
-        setScanning(false);
+      const bitmap = await createImageBitmap(file);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detector = new (window as any).BarcodeDetector({
+        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
+      });
+      const barcodes = await detector.detect(bitmap);
+      if (!barcodes.length) {
+        setScanError("No barcode found. Make sure the barcode fills the frame and try again.");
         return;
       }
-      await BarcodeScanner.prepare();
-      const result = await BarcodeScanner.startScan();
-      await BarcodeScanner.stopScan();
-      if (!result.hasContent || !result.content) {
-        setScanning(false);
-        return;
-      }
-      const barcode = result.content;
-      // Look up nutrition data from Open Food Facts (free, no key required)
-      const offRes = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}?fields=product_name,nutriments,serving_size,brands`);
+      const barcode = barcodes[0].rawValue as string;
+      const offRes = await fetch(
+        `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}?fields=product_name,nutriments,serving_size,brands`
+      );
       if (!offRes.ok) throw new Error("Product not found");
       const offData = await offRes.json() as {
         status: number;
         product?: {
           product_name?: string;
           brands?: string;
-          serving_size?: string;
           nutriments?: {
             "energy-kcal_serving"?: number;
             "energy-kcal_100g"?: number;
@@ -256,8 +263,7 @@ export default function Nutrition() {
         };
       };
       if (offData.status !== 1 || !offData.product) {
-        setScanError("Product not found in Open Food Facts database. Try typing it manually.");
-        setScanning(false);
+        setScanError("Product not found in database. Try typing it manually.");
         return;
       }
       const p = offData.product;
@@ -268,22 +274,23 @@ export default function Nutrition() {
       const carbs = n["carbohydrates_serving"] ?? n["carbohydrates_100g"] ?? 0;
       const fat = n["fat_serving"] ?? n["fat_100g"] ?? 0;
       setMealItems((prev) => {
-        const next = [...prev, { description: name, calories: Math.round(cal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat), verified: true, servings: 1 }];
+        const next = [...prev, {
+          description: name,
+          calories: Math.round(cal),
+          protein: Math.round(protein),
+          carbs: Math.round(carbs),
+          fat: Math.round(fat),
+          verified: true,
+          servings: 1,
+        }];
         setMealNotes(next.map((i) => i.description).join(", "));
         return next;
       });
       setEstimatedCalories(String(Math.round(cal)));
       if (!showMealForm) setShowMealForm(true);
     } catch (err) {
-      const msg = (err as { message?: string })?.message ?? "";
-      if (msg.includes("permission") || msg.includes("denied")) {
-        setScanError("Camera permission denied. Enable it in Settings > Privacy > Camera.");
-      } else if (msg.includes("not implement") || msg.includes("not available")) {
-        setScanError("Barcode scanner not available. Try updating the app.");
-      } else {
-        setScanError("Scan failed. Try again or enter food manually.");
-      }
-      console.error("Barcode scan error:", JSON.stringify(err));
+      setScanError("Scan failed. Try again or enter food manually.");
+      console.error("Barcode capture error:", JSON.stringify(err));
     } finally {
       setScanning(false);
     }
@@ -947,6 +954,15 @@ export default function Nutrition() {
             accept="image/*"
             className="hidden"
             onChange={handlePhotoScan}
+          />
+          {/* Hidden file input for barcode scan — opens camera directly */}
+          <input
+            ref={barcodeInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleBarcodeCapture}
           />
           <div className="flex gap-2 mb-3">
             <button
