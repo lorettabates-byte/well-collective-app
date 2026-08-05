@@ -44,6 +44,8 @@ import type {
 
 const STORAGE_KEY = "well-collective-state-v1";
 
+const noEmDash = (s: string) => s.replace(/—/g, "-");
+
 // Emails that should have admin access to the app
 const ADMIN_EMAILS = new Set([
   "loretta@lorettabates.com",
@@ -1570,7 +1572,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const now = new Date().toISOString();
       const isMonday = todayAsDate().getDay() === 1;
 
-      const noEmDash = (s: string) => s.replace(/—/g, "-");
 
       if (entry.weeklyTheme && isMonday) {
         // Deterministic id + dedup check, same pattern as the forum bell
@@ -1613,12 +1614,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ],
         };
         if (
+          !Capacitor.isNativePlatform() &&
           prev.notificationSettings.pushEnabled &&
           prev.notificationSettings.weeklyTheme &&
           typeof Notification !== "undefined" &&
           Notification.permission === "granted"
         ) {
-          new Notification(`This week's focus: ${entry.weeklyTheme.title}`, { body: entry.weeklyTheme.body });
+          navigator.serviceWorker?.ready.then((reg) => {
+            reg.showNotification(`This week's focus: ${entry.weeklyTheme.title}`, { body: entry.weeklyTheme.body });
+          }).catch(() => {});
         }
       }
 
@@ -1680,12 +1684,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ],
         };
         if (
+          !Capacitor.isNativePlatform() &&
           prev.notificationSettings.pushEnabled &&
           prev.notificationSettings.dailyInspiration &&
           typeof Notification !== "undefined" &&
           Notification.permission === "granted"
         ) {
-          new Notification(entry.dailyInspiration.title, { body: entry.dailyInspiration.body });
+          navigator.serviceWorker?.ready.then((reg) => {
+            reg.showNotification(entry.dailyInspiration.title, { body: entry.dailyInspiration.body });
+          }).catch(() => {});
         }
       }
 
@@ -1745,8 +1752,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               updatedInspirations = [
                 {
                   id: dailyId,
-                  title: entry.dailyInspiration.title,
-                  body: entry.dailyInspiration.body,
+                  title: noEmDash(entry.dailyInspiration.title),
+                  body: noEmDash(entry.dailyInspiration.body),
                   cadence: "daily",
                   author: "WELL Collective",
                   sentAt: new Date(entry.date + "T07:00:00").toISOString(),
@@ -1779,8 +1786,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               updatedInspirations = [
                 {
                   id: weeklyId,
-                  title: entry.weeklyTheme.title,
-                  body: entry.weeklyTheme.body,
+                  title: noEmDash(entry.weeklyTheme.title),
+                  body: noEmDash(entry.weeklyTheme.body),
                   cadence: "weekly",
                   author: "Loretta Bates",
                   sentAt: new Date(entry.date + "T07:00:00").toISOString(),
@@ -1810,8 +1817,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               updatedInspirations = [
                 {
                   id: motivationId,
-                  title: entry.motivationBoost.title,
-                  body: entry.motivationBoost.body,
+                  title: noEmDash(entry.motivationBoost.title),
+                  body: noEmDash(entry.motivationBoost.body),
                   cadence: "motivational",
                   author: "Loretta Bates",
                   sentAt: new Date(entry.date + "T15:00:00").toISOString(),
