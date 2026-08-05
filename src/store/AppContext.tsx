@@ -1620,8 +1620,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           typeof Notification !== "undefined" &&
           Notification.permission === "granted"
         ) {
+          const wTitle = `This week's focus: ${entry.weeklyTheme.title}`;
+          const wBody = entry.weeklyTheme.body;
           navigator.serviceWorker?.ready.then((reg) => {
-            reg.showNotification(`This week's focus: ${entry.weeklyTheme.title}`, { body: entry.weeklyTheme.body });
+            reg.showNotification(wTitle, { body: wBody });
           }).catch(() => {});
         }
       }
@@ -1690,8 +1692,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           typeof Notification !== "undefined" &&
           Notification.permission === "granted"
         ) {
+          const dTitle = entry.dailyInspiration.title;
+          const dBody = entry.dailyInspiration.body;
           navigator.serviceWorker?.ready.then((reg) => {
-            reg.showNotification(entry.dailyInspiration.title, { body: entry.dailyInspiration.body });
+            reg.showNotification(dTitle, { body: dBody });
           }).catch(() => {});
         }
       }

@@ -1,5 +1,4 @@
 import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Salad, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
-import { Capacitor } from "@capacitor/core";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
