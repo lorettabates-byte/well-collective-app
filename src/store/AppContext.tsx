@@ -50,6 +50,9 @@ const noEmDash = (s: string) => s.replace(/—/g, "-");
 const ADMIN_EMAILS = new Set([
   "loretta@lorettabates.com",
   "lorettabates@gmail.com",
+  // App-store reviewer demo accounts — full access, no subscription required
+  "rettabates@yahoo.com",
+  "demo@wellcollective.app",
 ]);
 
 // Attempt to free up localStorage quota when it's exceeded.
