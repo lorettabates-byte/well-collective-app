@@ -1,5 +1,6 @@
 import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Salad, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
+import { BrowserMultiFormatReader } from "@zxing/library";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -221,25 +222,20 @@ export default function Nutrition() {
     if (barcodeInputRef.current) barcodeInputRef.current.value = "";
     if (!file) return;
 
-    if (!("BarcodeDetector" in window)) {
-      setScanError("Barcode scanning is not supported on this device. Try entering the food manually.");
-      return;
-    }
-
     setScanError("");
     setScanning(true);
+    let objectUrl: string | null = null;
     try {
-      const bitmap = await createImageBitmap(file);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const detector = new (window as any).BarcodeDetector({
-        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
-      });
-      const barcodes = await detector.detect(bitmap);
-      if (!barcodes.length) {
+      objectUrl = URL.createObjectURL(file);
+      const reader = new BrowserMultiFormatReader();
+      let barcode: string;
+      try {
+        const result = await reader.decodeFromImageUrl(objectUrl);
+        barcode = result.getText();
+      } catch {
         setScanError("No barcode found. Make sure the barcode fills the frame and try again.");
         return;
       }
-      const barcode = barcodes[0].rawValue as string;
       const offRes = await fetch(
         `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}?fields=product_name,nutriments,serving_size,brands`
       );
@@ -291,6 +287,7 @@ export default function Nutrition() {
       setScanError("Scan failed. Try again or enter food manually.");
       console.error("Barcode capture error:", JSON.stringify(err));
     } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       setScanning(false);
     }
   };

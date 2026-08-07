@@ -710,15 +710,6 @@ export default function CardSender({
                               : "scale(1)",
                         }}
                       />
-                      <span
-                        className={`text-[10px] font-medium ${
-                          selectedStyle.id === style.id
-                            ? "text-text"
-                            : "text-text-dim"
-                        }`}
-                      >
-                        {style.label}
-                      </span>
                     </button>
                   ))}
                 </div>
