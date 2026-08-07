@@ -224,13 +224,25 @@ export default function Nutrition() {
 
     setScanError("");
     setScanning(true);
-    let objectUrl: string | null = null;
     try {
-      objectUrl = URL.createObjectURL(file);
+      // Use FileReader data URL instead of blob URL — data URLs are embedded
+      // in memory and load reliably in iOS WKWebView without network fetching.
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(new Error("Failed to read image file"));
+        fr.readAsDataURL(file);
+      });
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = dataUrl;
+      });
       const reader = new BrowserMultiFormatReader();
       let barcode: string;
       try {
-        const result = await reader.decodeFromImageUrl(objectUrl);
+        const result = await reader.decodeFromImageElement(img);
         barcode = result.getText();
       } catch {
         setScanError("No barcode found. Make sure the barcode fills the frame and try again.");
@@ -287,7 +299,6 @@ export default function Nutrition() {
       setScanError("Scan failed. Try again or enter food manually.");
       console.error("Barcode capture error:", JSON.stringify(err));
     } finally {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
       setScanning(false);
     }
   };
