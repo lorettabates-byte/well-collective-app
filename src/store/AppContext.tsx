@@ -177,6 +177,7 @@ function applyMemberInfo(user: User): User {
       ...(isAdmin
         ? {
             isAdmin: true,
+            ...(member.name ? { name: member.name } : {}),
           }
         : isNewMember
           // Only seed name/avatar/bio/birthday from the WP account on first
