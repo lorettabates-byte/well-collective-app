@@ -1,6 +1,7 @@
 import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
+import { RateApp } from "capacitor-rate-app";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useRef, useState } from "react";
 import WellCupShareCard from "../components/WellCupShareCard";
@@ -237,6 +238,15 @@ export default function Home() {
           setHeaderStreak(s.current_streak);
           if (s.current_streak > 1 && !localStorage.getItem(bannerKey)) {
             setStreakBanner({ streak: s.current_streak, bonus: s.todays_bonus });
+          }
+          // Prompt for a rating at 7-day and 30-day streak milestones — once per milestone.
+          const streak = s.current_streak;
+          if (streak === 7 || streak === 30) {
+            const ratingKey = `well-rating-prompted-${streak}`;
+            if (!localStorage.getItem(ratingKey)) {
+              localStorage.setItem(ratingKey, "1");
+              setTimeout(() => RateApp.requestReview(), 2500);
+            }
           }
         })
         .catch(() => {});
