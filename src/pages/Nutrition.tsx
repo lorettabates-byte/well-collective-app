@@ -1,6 +1,6 @@
 import { Apple, ArrowLeft, BadgeCheck, Bookmark, Calendar, Camera, ChefHat, Droplets, Dumbbell, Folder, FolderPlus, History, Leaf, Minus, Pencil, Plus, Salad, ScanLine, Trash2, Wand2, Wheat, X } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
-import { BrowserMultiFormatReader } from "@zxing/library";
+import { BinaryBitmap, HybridBinarizer, MultiFormatReader, RGBLuminanceSource } from "@zxing/library";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
@@ -225,25 +225,21 @@ export default function Nutrition() {
     setScanError("");
     setScanning(true);
     try {
-      // Use FileReader data URL instead of blob URL — data URLs are embedded
-      // in memory and load reliably in iOS WKWebView without network fetching.
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(fr.result as string);
-        fr.onerror = () => reject(new Error("Failed to read image file"));
-        fr.readAsDataURL(file);
-      });
-      const img = new Image();
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = dataUrl;
-      });
-      const reader = new BrowserMultiFormatReader();
+      // createImageBitmap works reliably in iOS WKWebView for camera captures.
+      // Draw onto a canvas to get raw RGBA pixel data, then pass to ZXing's
+      // low-level API directly — bypasses any img-element loading quirks.
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(bitmap, 0, 0);
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const luminance = new RGBLuminanceSource(data, canvas.width, canvas.height);
+      const bitmap2d = new BinaryBitmap(new HybridBinarizer(luminance));
       let barcode: string;
       try {
-        const result = await reader.decodeFromImageElement(img);
-        barcode = result.getText();
+        barcode = new MultiFormatReader().decode(bitmap2d).getText();
       } catch {
         setScanError("No barcode found. Make sure the barcode fills the frame and try again.");
         return;
