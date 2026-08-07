@@ -19,12 +19,16 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Set build version
+        run: npm version --no-git-tag-version "1.0.${{ github.run_number }}"
+
       - name: Build
         run: npm run build
         env:
           VITE_PUSH_API_URL: ${{ secrets.VITE_PUSH_API_URL }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VITE_ADMIN_API_KEY: ${{ secrets.VITE_ADMIN_API_KEY }}
+          VITE_APP_VERSION: 1.0.${{ github.run_number }}
 
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -37,9 +41,6 @@ jobs:
           local-dir: ./dist/
           server-dir: ./
           state-name: .ftp-sync-state.json
-
-      - name: Set build version
-        run: npm version --no-git-tag-version "1.0.${{ github.run_number }}"
 
       - name: Deploy to Capgo (native app live update)
         run: npx @capgo/cli@latest bundle upload --apikey ${{ secrets.CAPGO_TOKEN }} --channel production

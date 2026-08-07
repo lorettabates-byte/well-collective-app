@@ -643,6 +643,7 @@ export default function AdminAnalytics() {
   return (
     <div>
       <TopBar title="Analytics" subtitle="Member engagement & behaviour" showBack icon={BarChart2} iconColor="#0191CE" />
+      <p className="px-4 pt-2 text-xs text-text-dim">Build {import.meta.env.VITE_APP_VERSION || "dev"}</p>
 
       <div className="flex gap-1 px-4 pt-4 pb-2 overflow-x-auto scrollbar-hide">
         {TABS.map(({ id, label, icon: Icon }) => (
