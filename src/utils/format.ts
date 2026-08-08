@@ -39,12 +39,11 @@ export function getMonthKey(dateStr: string): string {
 }
 
 export function todayISO(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  // Use the same 5-hour UTC offset as the server's competition day boundary
+  // (05:00 UTC reset) so client-side completion flags and localStorage keys
+  // stay in sync with what the server considers "today".
+  const offsetDate = new Date(Date.now() - 5 * 60 * 60 * 1000);
+  return offsetDate.toISOString().slice(0, 10);
 }
 
 export function stripHtml(html: string): string {
