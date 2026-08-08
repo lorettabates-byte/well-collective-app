@@ -53,11 +53,11 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "My streak reset even though I was active. What happened?",
-        a: "Points and streaks reset at midnight Eastern Time (ET). If you're in a western US time zone (e.g. Pacific), midnight ET is 9 pm your time — log activities before that cutoff to protect your streak.",
+        a: "The WELL Cup competition day resets at 1 AM Eastern / 10 PM Pacific / 7 AM Amsterdam. Make sure your activities are logged before that cutoff in your local time.",
       },
       {
-        q: "Why does the app use Eastern Time?",
-        a: "WELL Collective is based in the US Eastern time zone, so daily resets align to ET midnight. We recommend logging your activities earlier in the evening if you're in a different time zone.",
+        q: "When does the daily competition reset?",
+        a: "The competition day resets at the same moment for everyone: 1 AM Eastern, 10 PM Pacific, or 7 AM Amsterdam. The countdown timer on the WELL Cup page shows exactly how long is left in your current day.",
       },
       {
         q: "My sleep log shows the wrong date.",
