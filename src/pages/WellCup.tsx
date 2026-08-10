@@ -1,5 +1,6 @@
-import { Award, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Info, RotateCcw, Share2, Star, TrendingUp, Trophy } from "lucide-react";
+import { Award, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Info, RotateCcw, Share2, Star, TrendingUp, Trophy, HelpCircle } from "lucide-react";
 import { todayISO } from "../utils/format";
+import { cachedFetch } from "../utils/offlineCache";
 import SectionIntroModal from "../components/SectionIntroModal";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -258,6 +259,7 @@ export default function WellCup() {
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [guideExpanded, setGuideExpanded] = useState(false);
+  const [rulesExpanded, setRulesExpanded] = useState(false);
   const [todayActivities, setTodayActivities] = useState<TodayActivity[]>([]);
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayExpanded, setTodayExpanded] = useState(true);
@@ -297,31 +299,39 @@ export default function WellCup() {
   const checkinPct = Math.round((checkinDone / CHECKIN_CATEGORIES.length) * 100);
 
   useEffect(() => {
+    const empty = { leaderboard: [], resetAt: "" };
     Promise.all([
-      fetchLeaderboard(10),
-      fetchYesterdayWinner(),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/monthly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/yearly`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/most-improved`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/comeback`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-      API_URL ? fetch(`${API_URL}/api/leaderboard/lucky-draw`).then(r => r.ok ? r.json() : null) : Promise.resolve(null),
-    ]).then(([lb, winner, mon, yr, improved, cb, lucky]) => {
-      setAllEntries(lb.leaderboard);
-      setResetAt(lb.resetAt);
+      cachedFetch(`${API_URL}/api/leaderboard?limit=10`, "leaderboard_10", empty),
+      cachedFetch(`${API_URL}/api/leaderboard/yesterday`, "leaderboard_yesterday", null),
+      cachedFetch(`${API_URL}/api/leaderboard/monthly`, "leaderboard_monthly", null),
+      cachedFetch(`${API_URL}/api/leaderboard/yearly`, "leaderboard_yearly", null),
+      cachedFetch(`${API_URL}/api/leaderboard/most-improved`, "leaderboard_improved", null),
+      cachedFetch(`${API_URL}/api/leaderboard/comeback`, "leaderboard_comeback", null),
+      cachedFetch(`${API_URL}/api/leaderboard/lucky-draw`, "leaderboard_lucky", null),
+    ]).then(([lb, winnerRes, mon, yr, improved, cb, lucky]) => {
+      const lbData = lb.data as typeof empty;
+      setAllEntries(lbData.leaderboard ?? []);
+      setResetAt(lbData.resetAt ?? "");
+      const winner = winnerRes.data as WinnerInfo | null;
       setYesterday(winner);
-      setMonthly(mon?.leader ?? null);
-      setYearly(yr?.leader ?? null);
-      if (yr?.yearResetAt) setYearResetAt(yr.yearResetAt);
-      if (improved?.leader) {
-        const l = improved.leader;
+      const monData = mon.data as { leader?: WinnerInfo } | null;
+      setMonthly(monData?.leader ?? null);
+      const yrData = yr.data as { leader?: WinnerInfo; yearResetAt?: string } | null;
+      setYearly(yrData?.leader ?? null);
+      if (yrData?.yearResetAt) setYearResetAt(yrData.yearResetAt);
+      const impData = improved.data as { leader?: WinnerInfo & { improvement?: number } } | null;
+      if (impData?.leader) {
+        const l = impData.leader;
         setMostImproved({ name: l.name, avatar: l.avatar, email: l.email, stat: `+${l.improvement} pts vs last week` });
       }
-      if (cb?.leader) {
-        const l = cb.leader;
+      const cbData = cb.data as { leader?: WinnerInfo & { this_week_pts?: number } } | null;
+      if (cbData?.leader) {
+        const l = cbData.leader;
         setComeback({ name: l.name, avatar: l.avatar, email: l.email, stat: `${l.this_week_pts} pts — back after a break` });
       }
-      if (lucky?.leader) {
-        const l = lucky.leader;
+      const luckyData = lucky.data as { leader?: WinnerInfo } | null;
+      if (luckyData?.leader) {
+        const l = luckyData.leader;
         setLuckyDraw({ name: l.name, avatar: l.avatar, email: l.email, stat: "This week's community spotlight" });
       }
     }).finally(() => setLoading(false));
@@ -390,6 +400,32 @@ export default function WellCup() {
                 <p className="text-xs text-text-muted">No one on the board yet — open the app, log an activity, be first! 🏆</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Rules */}
+        <button
+          onClick={() => setRulesExpanded(v => !v)}
+          className="w-full flex items-center gap-2 text-left"
+        >
+          <HelpCircle size={14} className="text-brand-light shrink-0" />
+          <span className="text-xs font-semibold text-brand-light flex-1">How the WELL Cup works</span>
+          {rulesExpanded ? <ChevronUp size={14} className="text-text-dim" /> : <ChevronDown size={14} className="text-text-dim" />}
+        </button>
+        {rulesExpanded && (
+          <div className="rounded-card border border-brand-light/20 bg-brand-light/5 px-4 py-3 flex flex-col gap-2 -mt-2">
+            {[
+              { icon: "🏆", rule: "Earn points each day by logging activities — workouts, breathwork, meals, community posts, and more." },
+              { icon: "📅", rule: "The daily winner is whoever has the most points at reset (1 AM ET / 10 PM PT / 7 AM Amsterdam). They earn the crown and a 1-day cooldown — so they can't win the very next day." },
+              { icon: "📆", rule: "The monthly crown goes to the top earner of the month. Monthly winners sit out for the rest of that month so others can shine." },
+              { icon: "🌟", rule: "The yearly crown celebrates the highest point total of the year. Yearly winners are honoured and step aside for that full year." },
+              { icon: "💡", rule: "Cooldowns only apply to the crown — you can still earn points, climb the leaderboard, and support your tribe every single day." },
+            ].map(({ icon, rule }, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <span className="text-sm shrink-0">{icon}</span>
+                <p className="text-xs text-text-muted leading-relaxed">{rule}</p>
+              </div>
+            ))}
           </div>
         )}
 

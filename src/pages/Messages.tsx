@@ -238,12 +238,20 @@ export default function Messages() {
   const messagesListRef = useRef<HTMLDivElement>(null);
   const composeRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isNearBottomRef = useRef(true);
 
   // Scroll messages list to bottom (targets the inner scroll container, not MobileShell)
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     const el = messagesListRef.current;
     if (el) el.scrollTop = el.scrollHeight;
     else bottomRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Track whether user has scrolled up — prevents polling from snapping back to bottom
+  const handleMessagesScroll = () => {
+    const el = messagesListRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
   // Adjust compose box when virtual keyboard opens/closes (iOS PWA / Capacitor).
@@ -310,23 +318,29 @@ export default function Messages() {
   useEffect(() => {
     if (!selectedUserId || !API_URL) return;
 
-    const fetchMessages = async () => {
+    const fetchMessages = async (initial = false) => {
       try {
         const res = await fetch(
           `${API_URL}/api/messages/${selectedUserId}?currentUserId=${user.id}`
         );
         if (res.ok) {
           const data = await res.json();
-          setMessages(data.messages);
-          setTimeout(() => scrollToBottom("instant"), 50);
+          const incoming: Message[] = data.messages;
+          setMessages((prev) => {
+            const hasNew = incoming.length > prev.length;
+            if (initial || hasNew || isNearBottomRef.current) {
+              setTimeout(() => scrollToBottom(initial ? "instant" : "smooth"), 50);
+            }
+            return incoming;
+          });
         }
       } catch (err) {
         console.error("Fetch messages error:", err);
       }
     };
 
-    fetchMessages();
-    const pollInterval = setInterval(fetchMessages, 2000);
+    fetchMessages(true);
+    const pollInterval = setInterval(() => fetchMessages(false), 2000);
     return () => clearInterval(pollInterval);
   }, [selectedUserId, user.id, API_URL]);
 
@@ -529,7 +543,7 @@ export default function Messages() {
         }
       />
 
-      <div ref={messagesListRef} className="flex-1 overflow-y-auto px-4 pt-4 pb-24 flex flex-col gap-3 min-h-0">
+      <div ref={messagesListRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 pt-4 pb-24 flex flex-col gap-3 min-h-0">
         {messages.length === 0 ? (
           <p className="text-xs text-text-muted text-center py-8">No messages yet. Start the conversation!</p>
         ) : (
