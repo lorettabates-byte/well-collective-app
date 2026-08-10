@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import WellCupShareCard, { type SharePeriod, type ShareWinner } from "../components/WellCupShareCard";
-import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
+import { fetchLeaderboard, type LeaderboardEntry } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
 
