@@ -309,11 +309,11 @@ export default function WellCup() {
       cachedFetch(`${API_URL}/api/leaderboard/comeback`, "leaderboard_comeback", null),
       cachedFetch(`${API_URL}/api/leaderboard/lucky-draw`, "leaderboard_lucky", null),
     ]).then(([lb, winnerRes, mon, yr, improved, cb, lucky]) => {
-      const lbData = lb.data as typeof empty;
+      const lbData = (lb.data ?? empty) as typeof empty;
       setAllEntries(lbData.leaderboard ?? []);
       setResetAt(lbData.resetAt ?? "");
-      const winner = winnerRes.data as WinnerInfo | null;
-      setYesterday(winner);
+      const winnerRaw = winnerRes.data as { winner?: WinnerInfo } | null;
+      setYesterday(winnerRaw?.winner ?? null);
       const monData = mon.data as { leader?: WinnerInfo } | null;
       setMonthly(monData?.leader ?? null);
       const yrData = yr.data as { leader?: WinnerInfo; yearResetAt?: string } | null;
