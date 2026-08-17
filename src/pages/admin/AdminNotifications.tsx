@@ -48,6 +48,8 @@ export default function AdminNotifications() {
   const [videoMessage, setVideoMessage] = useState("");
   const [sendingRating, setSendingRating] = useState(false);
   const [ratingMessage, setRatingMessage] = useState("");
+  const [sendingTrialWinback, setSendingTrialWinback] = useState(false);
+  const [trialWinbackMessage, setTrialWinbackMessage] = useState("");
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedBody, setSchedBody] = useState("");
@@ -204,6 +206,29 @@ export default function AdminNotifications() {
     }
   };
 
+  const handleSendTrialWinback = async () => {
+    if (!API_URL) return;
+    setSendingTrialWinback(true);
+    setTrialWinbackMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/admin/campaign-send-trial-resume-winback`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = `✓ Found ${data.eligible} eligible. Sent to ${data.sent}, already sent to ${data.alreadySent}${data.errors.length > 0 ? `, ${data.errors.length} failed` : ""}.`;
+        setTrialWinbackMessage(msg);
+      } else {
+        setTrialWinbackMessage("Failed to send. Try again.");
+      }
+    } catch {
+      setTrialWinbackMessage("Failed to send. Try again.");
+    } finally {
+      setSendingTrialWinback(false);
+    }
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -265,8 +290,26 @@ export default function AdminNotifications() {
             disabled={sendingRating}
             className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
           >
-            {sendingRating ? <Loader2 size={16} className="animate-spin" /> : "⭐"}
-            {sendingRating ? "Sending…" : "Send Rating Request"}
+            {sendingRating ? <Loader2 size={16} className="animate-spin" /> : "Send Rating Request"}
+            {sendingRating && <Loader2 size={16} className="animate-spin" />}
+          </button>
+        </div>
+
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
+          <h3 className="text-sm font-bold text-text">Trial Resume Winback Email</h3>
+          <p className="text-xs text-text-muted">Auto-discovers lapsed members whose original 7-day trial has expired, and sends them a "your days are still waiting" email inviting them to return for the remaining 23 days of the full 30-day trial.</p>
+          {trialWinbackMessage && (
+            <p className={`text-xs ${trialWinbackMessage.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+              {trialWinbackMessage}
+            </p>
+          )}
+          <button
+            onClick={handleSendTrialWinback}
+            disabled={sendingTrialWinback}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {sendingTrialWinback ? "Sending…" : "Send Trial Winback Email"}
+            {sendingTrialWinback && <Loader2 size={16} className="animate-spin" />}
           </button>
         </div>
 
