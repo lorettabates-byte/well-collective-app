@@ -46,6 +46,8 @@ export default function AdminNotifications() {
   const [blogMessage, setBlogMessage] = useState("");
   const [checkingVideo, setCheckingVideo] = useState(false);
   const [videoMessage, setVideoMessage] = useState("");
+  const [sendingRating, setSendingRating] = useState(false);
+  const [ratingMessage, setRatingMessage] = useState("");
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedBody, setSchedBody] = useState("");
@@ -180,6 +182,28 @@ export default function AdminNotifications() {
     }
   };
 
+  const handleSendRatingNotifications = async () => {
+    if (!API_URL) return;
+    setSendingRating(true);
+    setRatingMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/admin/send-rating-notifications`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRatingMessage(`✓ Sent to ${data.sent} member${data.sent !== 1 ? "s" : ""} (${data.skipped} had no push subscription).`);
+      } else {
+        setRatingMessage("Failed to send. Try again.");
+      }
+    } catch {
+      setRatingMessage("Failed to send. Try again.");
+    } finally {
+      setSendingRating(false);
+    }
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -228,6 +252,24 @@ export default function AdminNotifications() {
     <div>
       <TopBar title="Notifications" subtitle="Send push notifications" showBack />
       <div className="px-4 pt-4">
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
+          <h3 className="text-sm font-bold text-text">Request App Reviews</h3>
+          <p className="text-xs text-text-muted">Sends a push notification to all members who joined 7+ days ago, asking them to rate the app. Run once — safe to re-run if needed.</p>
+          {ratingMessage && (
+            <p className={`text-xs ${ratingMessage.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+              {ratingMessage}
+            </p>
+          )}
+          <button
+            onClick={handleSendRatingNotifications}
+            disabled={sendingRating}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {sendingRating ? <Loader2 size={16} className="animate-spin" /> : "⭐"}
+            {sendingRating ? "Sending…" : "Send Rating Request"}
+          </button>
+        </div>
+
         <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
           <h3 className="text-sm font-bold text-text">Blog Notifications</h3>
           <p className="text-xs text-text-muted">Automatically checks every hour. Click to force a check now.</p>
