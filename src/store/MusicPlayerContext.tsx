@@ -142,14 +142,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         album: "WELL Collective Playlist",
         artwork: [
           {
-            src: "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png",
-            sizes: "2048x2048",
-            type: "image/png",
+            src: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/74/e3/3c/74e33c45-b590-88f2-ccf9-c81230eb109d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+            sizes: "512x512",
+            type: "image/jpeg",
           },
           {
-            src: "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png",
-            sizes: "512x512",
-            type: "image/png",
+            src: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/74/e3/3c/74e33c45-b590-88f2-ccf9-c81230eb109d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/100x100bb.jpg",
+            sizes: "100x100",
+            type: "image/jpeg",
           },
         ],
       });
