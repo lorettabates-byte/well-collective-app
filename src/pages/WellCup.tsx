@@ -63,6 +63,7 @@ function WinnerBanner({
   periodLabel: string;
 }) {
   const { user, memberBadges } = useApp();
+  const navigate = useNavigate();
   const [showShare, setShowShare] = useState(false);
   const winnerMoodStatus = winner?.email ? memberBadges[deriveMemberId(winner.email)]?.moodStatus : undefined;
   const isOwnWin = !!(winner?.email && user.email && winner.email.toLowerCase() === user.email.toLowerCase());
@@ -71,7 +72,13 @@ function WinnerBanner({
       <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">{label}</p>
       {winner ? (
         <div className="flex items-center gap-3">
-          <Avatar src={winner.avatar ?? ""} alt={winner.name} size={40} moodStatus={winnerMoodStatus} />
+          <button
+            type="button"
+            onClick={() => winner.email && navigate(`/member/${deriveMemberId(winner.email)}`)}
+            className={winner.email ? "shrink-0" : "shrink-0 cursor-default"}
+          >
+            <Avatar src={winner.avatar ?? ""} alt={winner.name} size={40} moodStatus={winnerMoodStatus} />
+          </button>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-text truncate">{winner.name}</p>
             <p className="text-xs text-text-muted">{sublabel} · {winner.total_points.toLocaleString()} pts</p>
@@ -385,10 +392,14 @@ export default function WellCup() {
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim mb-2">Holding the Cup Today</p>
             {leader ? (
               <div className="rounded-card p-4 border border-yellow-400/40 flex items-center gap-3" style={{ background: "rgba(250,204,21,0.07)" }}>
-                <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/member/${deriveMemberId(leader.email)}`)}
+                  className="relative shrink-0"
+                >
                   <Avatar src={leader.avatar ?? ""} alt={leader.name} size={52} moodStatus={memberBadges[deriveMemberId(leader.email)]?.moodStatus} />
                   <span className="absolute -top-1 -right-1 text-lg leading-none">🏆</span>
-                </div>
+                </button>
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-bold text-yellow-300 truncate">{leader.name}</p>
                   <p className="text-xs text-yellow-400/70">Leading with {leader.points} pts</p>
