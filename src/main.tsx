@@ -53,14 +53,16 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>
 );
 
-// Service worker handles web PWA updates only. On native (iOS/Android),
-// Capgo owns all bundle updates — registering a SW here and reloading on
-// activation would race with Capgo's own mechanism and crash the WebView.
-if ("serviceWorker" in navigator && !Capacitor.isNativePlatform()) {
+// Register the service worker on all platforms so push notifications work
+// on Android and iOS native apps (the SW handles incoming push events).
+// On native, skip the update-detection and auto-reload — Capgo owns bundle
+// updates there and the reload would race with Capgo's own mechanism.
+if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
       .then((registration) => {
+        if (Capacitor.isNativePlatform()) return; // Capgo handles updates on native
         // sw.js calls skipWaiting()+clients.claim() on install, so a new SW
         // takes over immediately rather than waiting for all tabs to close.
         // Without this listener, the open page would still be running the
