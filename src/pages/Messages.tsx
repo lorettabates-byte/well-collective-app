@@ -7,7 +7,7 @@ import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import { resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
-import { formatTime } from "../utils/format";
+import { formatMessageTimestamp, messageDayKey, messageDayLabel } from "../utils/format";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -195,7 +195,7 @@ function DirectMessage({
             )}
             <div className="flex items-center gap-2 mt-1 text-[10px] text-text-dim px-1">
               <span>
-                {formatTime(message.created_at)}
+                {formatMessageTimestamp(message.created_at)}
                 {message.edited_at && <span className="ml-1">(edited)</span>}
               </span>
               <button
@@ -547,21 +547,32 @@ export default function Messages() {
         {messages.length === 0 ? (
           <p className="text-xs text-text-muted text-center py-8">No messages yet. Start the conversation!</p>
         ) : (
-          messages.map((msg) => (
-            <DirectMessage
-              key={msg.id}
-              message={msg}
-              isOwn={msg.sender_id === user.id}
-              onEdit={handleEditMessage}
-              onLike={handleLikeMessage}
-              onApproveImage={handleApproveImage}
-              currentUserId={user.id}
-              otherMember={otherMember}
-              otherMoodStatus={memberBadges[selectedUserId ?? ""]?.moodStatus}
-              selectedUserId={selectedUserId}
-              navigate={navigate}
-            />
-          ))
+          messages.map((msg, i) => {
+            const showDateSep = i === 0 || messageDayKey(msg.created_at) !== messageDayKey(messages[i - 1].created_at);
+            return (
+              <div key={msg.id}>
+                {showDateSep && (
+                  <div className="flex items-center gap-2 my-1">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] text-text-dim font-medium shrink-0">{messageDayLabel(msg.created_at)}</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                )}
+                <DirectMessage
+                  message={msg}
+                  isOwn={msg.sender_id === user.id}
+                  onEdit={handleEditMessage}
+                  onLike={handleLikeMessage}
+                  onApproveImage={handleApproveImage}
+                  currentUserId={user.id}
+                  otherMember={otherMember}
+                  otherMoodStatus={memberBadges[selectedUserId ?? ""]?.moodStatus}
+                  selectedUserId={selectedUserId}
+                  navigate={navigate}
+                />
+              </div>
+            );
+          })
         )}
         <div ref={bottomRef} />
       </div>

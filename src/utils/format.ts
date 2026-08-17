@@ -18,6 +18,38 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+export function formatMessageTimestamp(iso: string): string {
+  const date = new Date(iso);
+  const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (isSameDay(date, today)) return time;
+  if (isSameDay(date, yesterday)) return `Yesterday · ${time}`;
+  return `${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })} · ${time}`;
+}
+
+export function messageDayKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+export function messageDayLabel(iso: string): string {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (isSameDay(date, today)) return "Today";
+  if (isSameDay(date, yesterday)) return "Yesterday";
+  const thisYear = today.getFullYear();
+  if (date.getFullYear() === thisYear) return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 export function formatDateLong(dateStr: string): string {
   const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
   const date = new Date(y, m - 1, d);
