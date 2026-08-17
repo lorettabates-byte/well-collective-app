@@ -278,6 +278,14 @@ export default function Profile() {
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [hasPushSub, setHasPushSub] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    navigator.serviceWorker?.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setHasPushSub(!!sub))
+      .catch(() => setHasPushSub(null));
+  }, []);
 
   const handleDeleteAccount = async () => {
     if (!API_URL || !user.email) return;
@@ -519,6 +527,23 @@ export default function Profile() {
           </button>
         )}
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
+        {hasPushSub === false && (
+          <button
+            onClick={() => {
+              Notification.requestPermission().then((perm) => {
+                if (perm === "granted") setHasPushSub(null);
+              });
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 bg-brand-light/10 border border-brand-light/30 rounded-card mb-1 text-left"
+          >
+            <Bell size={16} className="text-brand-light shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-brand-light">Enable push notifications</p>
+              <p className="text-xs text-text-muted">Get notified about classes, challenges, and your daily win</p>
+            </div>
+            <ChevronRight size={14} className="text-brand-light shrink-0" />
+          </button>
+        )}
         <MenuRow icon={<Bell size={16} />} label="Notifications" to="/notifications" />
         <MenuRow icon={<SlidersHorizontal size={16} />} label="Notification Settings" to="/profile/notifications" />
         <MenuRow icon={<Moon size={16} />} label="Sleep Analysis" to="/profile/sleep-analysis" />

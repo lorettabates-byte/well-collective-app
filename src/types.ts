@@ -48,6 +48,7 @@ export interface User {
   lastYearlyWinPts?: number;
   notifQuietStart?: string; // "HH:MM" — start of notification quiet hours
   notifQuietEnd?: string;   // "HH:MM" — end of notification quiet hours
+  ratingPromptPending?: boolean;
   showOnLeaderboard?: boolean;
   moodStatus?: string | null;
 }

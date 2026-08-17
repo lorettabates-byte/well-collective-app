@@ -201,6 +201,19 @@ export default function Home() {
   }, [user.birthday, user.id]);
 
   useEffect(() => {
+    if (!user.ratingPromptPending || !user.email) return;
+    const timer = setTimeout(async () => {
+      try { await RateApp.requestReview(); } catch { /* web preview */ }
+      fetch(`${API_URL}/api/members/clear-rating-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      }).catch(() => {});
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [user.ratingPromptPending, user.email]);
+
+  useEffect(() => {
     const key = "well-notifications-onboarding-v1";
     if (localStorage.getItem(key)) return;
     setShowNotifOptIn(true);
