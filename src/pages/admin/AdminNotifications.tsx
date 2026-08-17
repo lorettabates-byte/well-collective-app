@@ -50,6 +50,8 @@ export default function AdminNotifications() {
   const [ratingMessage, setRatingMessage] = useState("");
   const [sendingTrialWinback, setSendingTrialWinback] = useState(false);
   const [trialWinbackMessage, setTrialWinbackMessage] = useState("");
+  const [sendingNotifOptin, setSendingNotifOptin] = useState(false);
+  const [notifOptinMessage, setNotifOptinMessage] = useState("");
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedBody, setSchedBody] = useState("");
@@ -229,6 +231,29 @@ export default function AdminNotifications() {
     }
   };
 
+  const handleSendNotifOptin = async () => {
+    if (!API_URL) return;
+    setSendingNotifOptin(true);
+    setNotifOptinMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/admin/campaign-send-notification-optin`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = `✓ Sent to ${data.sent} of ${data.total} member${data.total !== 1 ? "s" : ""}${data.errors.length > 0 ? `, ${data.errors.length} failed` : ""}.`;
+        setNotifOptinMessage(msg);
+      } else {
+        setNotifOptinMessage("Failed to send. Try again.");
+      }
+    } catch {
+      setNotifOptinMessage("Failed to send. Try again.");
+    } finally {
+      setSendingNotifOptin(false);
+    }
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -292,6 +317,24 @@ export default function AdminNotifications() {
           >
             {sendingRating ? <Loader2 size={16} className="animate-spin" /> : "Send Rating Request"}
             {sendingRating && <Loader2 size={16} className="animate-spin" />}
+          </button>
+        </div>
+
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
+          <h3 className="text-sm font-bold text-text">Push Notification Opt-In Campaign</h3>
+          <p className="text-xs text-text-muted">Sends "Did you get my message?" to all members, encouraging them to enable push notifications for daily coaching, WELL Cup updates, and evening recaps.</p>
+          {notifOptinMessage && (
+            <p className={`text-xs ${notifOptinMessage.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+              {notifOptinMessage}
+            </p>
+          )}
+          <button
+            onClick={handleSendNotifOptin}
+            disabled={sendingNotifOptin}
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white gradient-brand rounded-pill py-2.5 disabled:opacity-60"
+          >
+            {sendingNotifOptin ? "Sending…" : "Send Notification Opt-In Email"}
+            {sendingNotifOptin && <Loader2 size={16} className="animate-spin" />}
           </button>
         </div>
 
