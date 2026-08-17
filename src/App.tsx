@@ -50,6 +50,7 @@ import AdminPoints from "./pages/admin/AdminPoints";
 import AdminTribe from "./pages/admin/AdminTribe";
 import AdminExerciseVideos from "./pages/admin/AdminExerciseVideos";
 import AdminCampaign from "./pages/admin/AdminCampaign";
+import RateAppPage from "./pages/RateAppPage";
 import { useStaleVersionGuard } from "./utils/staleVersionGuard";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -162,6 +163,7 @@ function App() {
         <Route path="/admin/tribe" element={<AdminRoute><AdminTribe /></AdminRoute>} />
         <Route path="/admin/exercise-videos" element={<AdminRoute><AdminExerciseVideos /></AdminRoute>} />
         <Route path="/admin/campaign" element={<AdminRoute><AdminCampaign /></AdminRoute>} />
+        <Route path="/rate-app" element={<RateAppPage />} />
       </Routes>
       </MobileShell>
     </>
