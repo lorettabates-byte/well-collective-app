@@ -140,6 +140,18 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         title: song.title,
         artist: song.artist || "WELL Collective",
         album: "WELL Collective Playlist",
+        artwork: [
+          {
+            src: "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png",
+            sizes: "2048x2048",
+            type: "image/png",
+          },
+          {
+            src: "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
       });
       navigator.mediaSession.setActionHandler("play", () => {
         audioRef.current?.play().catch(() => {});
