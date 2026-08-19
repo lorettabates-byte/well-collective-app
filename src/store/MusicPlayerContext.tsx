@@ -142,14 +142,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         album: "WELL Collective Playlist",
         artwork: [
           {
-            src: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/74/e3/3c/74e33c45-b590-88f2-ccf9-c81230eb109d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+            src: "/icons/icon-512-v2.png",
             sizes: "512x512",
-            type: "image/jpeg",
+            type: "image/png",
           },
           {
-            src: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/74/e3/3c/74e33c45-b590-88f2-ccf9-c81230eb109d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/100x100bb.jpg",
-            sizes: "100x100",
-            type: "image/jpeg",
+            src: "/icons/icon-192-v2.png",
+            sizes: "192x192",
+            type: "image/png",
           },
         ],
       });
