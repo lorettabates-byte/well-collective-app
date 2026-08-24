@@ -67,9 +67,12 @@ function GramStat({ grams, label }: { grams: number; label: string }) {
   );
 }
 
-function NutritionInfo({ nutrition, verified }: { nutrition: RecipeNutrition; verified?: boolean }) {
+function NutritionInfo({ nutrition, verified, servings }: { nutrition: RecipeNutrition; verified?: boolean; servings?: number }) {
   return (
     <div className="bg-surface-2 border border-border rounded-card p-3 mb-4">
+      {servings && servings > 1 && (
+        <p className="text-[10px] text-text-dim text-center mb-2">Per serving · serves {servings}</p>
+      )}
       <div className="grid grid-cols-4 gap-2 text-center mb-2">
         <div>
           <p className="text-sm font-bold text-text">{nutrition.calories}</p>
@@ -744,7 +747,7 @@ export default function Nutrition() {
 
                   <p className="text-sm text-text-muted leading-relaxed mb-4">{recipe.description}</p>
 
-                  {recipe.nutrition && <NutritionInfo nutrition={recipe.nutrition} verified={recipe.nutritionVerified} />}
+                  {recipe.nutrition && <NutritionInfo nutrition={recipe.nutrition} verified={recipe.nutritionVerified} servings={recipe.servings} />}
 
                   <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
                   <ul className="flex flex-col gap-1.5 mb-4">
@@ -1333,7 +1336,7 @@ export default function Nutrition() {
             <p className="text-sm text-text-muted leading-relaxed mb-4">{todaysRecipe.description}</p>
 
             {todaysRecipe.nutrition && (
-              <NutritionInfo nutrition={todaysRecipe.nutrition} verified={todaysRecipe.nutritionVerified} />
+              <NutritionInfo nutrition={todaysRecipe.nutrition} verified={todaysRecipe.nutritionVerified} servings={todaysRecipe.servings} />
             )}
 
             <h3 className="text-sm font-bold text-text mb-2">Ingredients</h3>
@@ -1430,6 +1433,7 @@ export default function Nutrition() {
                 <NutritionInfo
                   nutrition={selectedHistoryRecipe.nutrition}
                   verified={selectedHistoryRecipe.nutritionVerified}
+                  servings={selectedHistoryRecipe.servings}
                 />
               )}
 

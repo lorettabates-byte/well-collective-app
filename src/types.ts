@@ -96,6 +96,7 @@ export interface Recipe {
   steps: string[];
   image: string;
   imageCategory?: string;
+  servings?: number;
   nutrition?: RecipeNutrition;
   // True only when every ingredient resolved against the USDA FoodData
   // Central database — false/absent means `nutrition` is the AI's own
