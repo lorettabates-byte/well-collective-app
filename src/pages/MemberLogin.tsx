@@ -437,7 +437,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
             <>
               <h1 className="text-xl font-bold text-text mb-1">Start Your Free Trial</h1>
               <p className="text-xs text-text-muted mb-3">
-                Try WELL Collective free for 7 days — or 30 days with a friend's referral code!
+                Try WELL Collective free for 30 days — no credit card required.
               </p>
               <div className="grid grid-cols-2 gap-2 mb-5">
                 {[
@@ -455,11 +455,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
                   </div>
                 ))}
               </div>
-              {isNative ? (
-                <StartTrialNative onSuccess={onSuccess} onSwitchToResume={() => setTrialView("resume")} />
-              ) : (
-                <JoinOnWeb onSwitchToResume={() => setTrialView("resume")} />
-              )}
+              <JoinOnWeb onSwitchToResume={() => setTrialView("resume")} />
             </>
           ) : (
             <>
