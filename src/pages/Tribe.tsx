@@ -388,7 +388,7 @@ export default function Tribe() {
     .filter((m) => !blockedUserIds.includes(m.id))
     .filter((m) => !addSearch || m.name.toLowerCase().includes(addSearch.toLowerCase()));
 
-  const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement"]);
+  const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement", "stressed"]);
 
   function tribePriority(m: TribeMember): number {
     if (m.moodStatus && NEEDS_SUPPORT_MOODS.has(m.moodStatus)) return 5;
@@ -823,6 +823,12 @@ export default function Tribe() {
                             <span className="flex items-center gap-0.5 text-[11px] font-semibold text-blue-400">
                               <HeartHandshake size={11} />
                               Tough day
+                            </span>
+                          )}
+                          {member.moodStatus === "stressed" && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-amber-400">
+                              <HeartHandshake size={11} />
+                              Stressed
                             </span>
                           )}
                           {!NEEDS_SUPPORT_MOODS.has(member.moodStatus ?? "") && streak >= 3 && (

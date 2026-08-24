@@ -48,7 +48,7 @@ function daysUntilBirthday(birthday: string): number {
   return diff;
 }
 
-const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement"]);
+const NEEDS_SUPPORT_MOODS = new Set(["tough-day", "need-encouragement", "stressed"]);
 
 function scoreMember(m: TribeMember): ScoredMember | null {
   let score = 0;
@@ -59,7 +59,7 @@ function scoreMember(m: TribeMember): ScoredMember | null {
   if (m.moodStatus && NEEDS_SUPPORT_MOODS.has(m.moodStatus)) {
     score += 20;
     reason = "needs-support";
-    reasonLabel = m.moodStatus === "tough-day" ? "Tough day" : "Needs encouragement";
+    reasonLabel = m.moodStatus === "tough-day" ? "Tough day" : m.moodStatus === "stressed" ? "Stressed" : "Needs encouragement";
     ctaCopy = "Send Love";
   }
 
