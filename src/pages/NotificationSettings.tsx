@@ -1,4 +1,5 @@
-import { AlertCircle, BellOff, Clock } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { AlertCircle, BellOff, Clock, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { subscribeToPush, unsubscribeFromPush } from "../lib/push";
@@ -99,6 +100,15 @@ export default function NotificationSettings() {
   const [quietEnd, setQuietEnd] = useState(user.notifQuietEnd || "07:00");
   const [saving, setSaving] = useState(false);
 
+  const isNative = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform();
+
+  const openSystemSettings = () => {
+    if (platform === "ios") {
+      window.open("app-settings:", "_system");
+    }
+  };
+
   const handleTogglePush = async () => {
     setPushError("");
     if (notificationSettings.pushEnabled) {
@@ -106,11 +116,25 @@ export default function NotificationSettings() {
       updateNotificationSettings({ pushEnabled: false });
       return;
     }
+    // On native, check if Notification API is available at all
+    if (isNative && typeof Notification === "undefined") {
+      setPushError(
+        platform === "android"
+          ? "Go to Settings > Apps > WELL Collective > Notifications to enable them."
+          : "Go to Settings > WELL Collective > Notifications to enable them."
+      );
+      if (platform === "ios") openSystemSettings();
+      return;
+    }
     try {
       const result = await subscribeToPush(user.email || user.name);
       updateNotificationSettings({ pushEnabled: result.success });
       if (!result.success && result.reason) {
         setPushError(result.reason);
+        // If denied on iOS native, offer to open Settings automatically
+        if (isNative && platform === "ios" && typeof Notification !== "undefined" && Notification.permission === "denied") {
+          openSystemSettings();
+        }
       }
     } catch (err) {
       setPushError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -153,9 +177,29 @@ export default function NotificationSettings() {
       <TopBar title="Notification Settings" showBack />
       <div className="px-4 pt-4 flex flex-col gap-2.5">
         {pushError && (
-          <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
-            <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-red-400">{pushError}</p>
+          <div className="flex flex-col gap-2 bg-red-500/10 border border-red-500/30 rounded-card p-3">
+            <div className="flex gap-2">
+              <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400">{pushError}</p>
+            </div>
+            {isNative && platform === "android" && (
+              <button
+                onClick={() => window.open("app-settings:", "_system")}
+                className="flex items-center gap-1.5 text-xs font-semibold text-red-300 underline"
+              >
+                <ExternalLink size={12} />
+                Open Settings
+              </button>
+            )}
+            {isNative && platform === "ios" && (
+              <button
+                onClick={openSystemSettings}
+                className="flex items-center gap-1.5 text-xs font-semibold text-red-300 underline"
+              >
+                <ExternalLink size={12} />
+                Open Settings
+              </button>
+            )}
           </div>
         )}
         <div className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5">

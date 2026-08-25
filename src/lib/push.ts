@@ -1,8 +1,30 @@
+import { Capacitor } from "@capacitor/core";
+
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
 export function isPushSupported(): boolean {
   return "serviceWorker" in navigator && "PushManager" in window;
+}
+
+function notSupportedMessage(): string {
+  if (Capacitor.isNativePlatform()) {
+    if (Capacitor.getPlatform() === "android") {
+      return "To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.";
+    }
+    return "To enable notifications, go to Settings > WELL Collective > Notifications on your device.";
+  }
+  return "Notifications aren't supported in this browser. On iPhone or iPad, use Share > Add to Home Screen first, then enable notifications from there.";
+}
+
+function deniedMessage(): string {
+  if (Capacitor.isNativePlatform()) {
+    if (Capacitor.getPlatform() === "android") {
+      return "Notifications are blocked. Go to Settings > Apps > WELL Collective > Notifications to enable them.";
+    }
+    return "Notifications are blocked. Go to Settings > WELL Collective > Notifications to enable them.";
+  }
+  return "Notifications are blocked for this app. Enable them in your device or browser settings, then try again.";
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -31,19 +53,11 @@ export interface PushSubscribeResult {
  */
 export async function subscribeToPush(userEmail?: string): Promise<PushSubscribeResult> {
   if (typeof Notification === "undefined") {
-    return {
-      success: false,
-      reason:
-        "Notifications aren't supported in this browser. On iPhone/iPad, add WELL Collective to your Home Screen first (Share > Add to Home Screen), then enable notifications from there.",
-    };
+    return { success: false, reason: notSupportedMessage() };
   }
 
   if (Notification.permission === "denied") {
-    return {
-      success: false,
-      reason:
-        "Notifications are blocked for this app. Enable them in your device or browser settings, then try again.",
-    };
+    return { success: false, reason: deniedMessage() };
   }
 
   const permission = await Notification.requestPermission();
@@ -52,11 +66,7 @@ export async function subscribeToPush(userEmail?: string): Promise<PushSubscribe
   }
 
   if (!isPushSupported()) {
-    return {
-      success: false,
-      reason:
-        "Push notifications aren't supported in this browser. On iPhone/iPad, add WELL Collective to your Home Screen first (Share > Add to Home Screen), then enable notifications from there.",
-    };
+    return { success: false, reason: notSupportedMessage() };
   }
 
   if (!API_URL || !VAPID_PUBLIC_KEY) {

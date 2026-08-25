@@ -1,6 +1,7 @@
 import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
+import { Capacitor } from "@capacitor/core";
 import { RateApp } from "capacitor-rate-app";
 import { logEvent, startSessionTracking } from "../utils/analytics";
 import { useEffect, useRef, useState } from "react";
@@ -216,6 +217,8 @@ export default function Home() {
   useEffect(() => {
     const key = "well-notifications-onboarding-v1";
     if (localStorage.getItem(key)) return;
+    // Skip on Android native - Notification API is unavailable there (web push not supported in Capacitor WebView)
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android" && typeof Notification === "undefined") return;
     setShowNotifOptIn(true);
   }, []);
 
