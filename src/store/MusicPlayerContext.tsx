@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
 import type { Song } from "../types";
 import { logActivity } from "../utils/wellCup";
 import { getPlaybackUrl, isDownloaded } from "../utils/musicOffline";
+import { NowPlaying } from "../plugins/NowPlaying";
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -135,22 +137,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     if (userEmail) userEmailRef.current = userEmail;
     if (emailToLog) logActivity(emailToLog, "song_play", { songId: song.id, title: song.title });
 
+    const artworkUrl = "https://app.lorettabates.com/icons/icon-512-v2.png";
+
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: song.title,
         artist: song.artist || "WELL Collective",
         album: "WELL Collective Playlist",
         artwork: [
-          {
-            src: "https://app.lorettabates.com/icons/icon-512-v2.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "https://app.lorettabates.com/icons/icon-192-v2.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
+          { src: artworkUrl, sizes: "512x512", type: "image/png" },
+          { src: "https://app.lorettabates.com/icons/icon-192-v2.png", sizes: "192x192", type: "image/png" },
         ],
       });
       navigator.mediaSession.setActionHandler("play", () => {
@@ -161,6 +157,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       });
       navigator.mediaSession.setActionHandler("nexttrack", () => handleSkip(1));
       navigator.mediaSession.setActionHandler("previoustrack", () => handleSkip(-1));
+    }
+
+    // On iOS native, WKWebView doesn't surface MediaSession artwork to the lock
+    // screen. Call the native NowPlayingPlugin to set it via MPNowPlayingInfoCenter.
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+      NowPlaying.setTrack({
+        title: song.title,
+        artist: song.artist || "WELL Collective",
+        artworkUrl,
+      }).catch(() => {});
     }
   }
 
