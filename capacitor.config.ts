@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorUpdater: {
       autoUpdate: true,
+      disableAutoUpdate: "none",
     },
   },
 };
