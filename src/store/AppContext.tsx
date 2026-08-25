@@ -2383,6 +2383,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             notifQuietEnd: member.notifQuietEnd,
             ratingPromptPending: member.ratingPromptPending ?? false,
             tutorialCompleted: member.tutorialCompleted ?? false,
+            timezone: member.timezone ?? prev.user.timezone,
+            notificationSchedule: member.notificationSchedule ?? prev.user.notificationSchedule,
             goalPlan: prev.user.goalPlan ?? member.goalPlan,
             notificationTone: prev.user.notificationTone ?? member.notificationTone,
             movementTarget: prev.user.movementTarget ?? member.movementTarget,
