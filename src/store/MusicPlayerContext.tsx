@@ -142,12 +142,12 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         album: "WELL Collective Playlist",
         artwork: [
           {
-            src: "https://lorettabates.com/icons/icon-512-v2.png",
+            src: "https://app.lorettabates.com/icons/icon-512-v2.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "https://lorettabates.com/icons/icon-192-v2.png",
+            src: "https://app.lorettabates.com/icons/icon-192-v2.png",
             sizes: "192x192",
             type: "image/png",
           },
