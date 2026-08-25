@@ -268,7 +268,14 @@ export default function WellCup() {
   const [guideExpanded, setGuideExpanded] = useState(false);
   const [rulesExpanded, setRulesExpanded] = useState(false);
   const [todayActivities, setTodayActivities] = useState<TodayActivity[]>([]);
-  const [todayTotal, setTodayTotal] = useState(0);
+  const [todayTotal, setTodayTotal] = useState<number>(() => {
+    // Seed from BottomNav's cache so points show instantly on Android before the API responds
+    try {
+      const cached = JSON.parse(localStorage.getItem("well-cup-today-pts") ?? "{}") as { pts?: number; date?: string };
+      if (cached.date === todayISO()) return cached.pts ?? 0;
+    } catch { /* ignore */ }
+    return 0;
+  });
   const [todayExpanded, setTodayExpanded] = useState(true);
 
   // WELL Check tracker data
