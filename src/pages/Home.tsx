@@ -230,8 +230,12 @@ export default function Home() {
   useEffect(() => {
     const key = "well-feature-tour-v2";
     if (localStorage.getItem(key)) return;
+    if (user.tutorialCompleted) {
+      localStorage.setItem(key, "1");
+      return;
+    }
     setShowTour(true);
-  }, []);
+  }, [user.tutorialCompleted]);
 
   // Track app open + start session timer
   useEffect(() => {

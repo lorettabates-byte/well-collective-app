@@ -260,7 +260,7 @@ export default function FeatureTourModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 animate-fade-in-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 animate-fade-in-up" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <div className="relative w-full max-w-sm gradient-brand p-[1px] rounded-card">
         <div className="bg-surface rounded-card p-6 flex flex-col items-center text-center gap-3 animate-pop-in">
           <button
