@@ -116,14 +116,10 @@ export default function NotificationSettings() {
       updateNotificationSettings({ pushEnabled: false });
       return;
     }
-    // On native, check if Notification API is available at all
-    if (isNative && typeof Notification === "undefined") {
-      setPushError(
-        platform === "android"
-          ? "Go to Settings > Apps > WELL Collective > Notifications to enable them."
-          : "Go to Settings > WELL Collective > Notifications to enable them."
-      );
-      if (platform === "ios") openSystemSettings();
+    // On iOS native, Notification API absence means permission is fully blocked
+    if (isNative && platform === "ios" && typeof Notification === "undefined") {
+      setPushError("Go to Settings > WELL Collective > Notifications to enable them.");
+      openSystemSettings();
       return;
     }
     try {

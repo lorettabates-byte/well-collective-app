@@ -52,17 +52,19 @@ export interface PushSubscribeResult {
  * failure, `reason` explains why so the UI can surface it.
  */
 export async function subscribeToPush(userEmail?: string): Promise<PushSubscribeResult> {
-  if (typeof Notification === "undefined") {
-    return { success: false, reason: notSupportedMessage() };
-  }
+  const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
 
-  if (Notification.permission === "denied") {
-    return { success: false, reason: deniedMessage() };
-  }
-
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") {
-    return { success: false, reason: "Notification permission was not granted." };
+  if (!isAndroidNative) {
+    if (typeof Notification === "undefined") {
+      return { success: false, reason: notSupportedMessage() };
+    }
+    if (Notification.permission === "denied") {
+      return { success: false, reason: deniedMessage() };
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      return { success: false, reason: "Notification permission was not granted." };
+    }
   }
 
   if (!isPushSupported()) {
