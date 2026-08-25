@@ -2332,6 +2332,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!member) return;
         setState((prev) => ({
           ...prev,
+          // Restore notification toggles from server when available (handles reinstall/new device).
+          // Server is authoritative here: it stores whatever the member last saved.
+          notificationSettings: member.notificationSettings
+            ? { ...prev.notificationSettings, ...member.notificationSettings }
+            : prev.notificationSettings,
           user: {
             ...prev.user,
             // Same placeholder check as applyMemberInfo: "Member" is the
@@ -2385,6 +2390,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             tutorialCompleted: member.tutorialCompleted ?? false,
             timezone: member.timezone ?? prev.user.timezone,
             notificationSchedule: member.notificationSchedule ?? prev.user.notificationSchedule,
+            hiddenFromCommunity: member.hiddenFromCommunity ?? prev.user.hiddenFromCommunity ?? false,
+            showOnLeaderboard: member.showOnLeaderboard ?? prev.user.showOnLeaderboard ?? true,
+            moodStatus: member.moodStatus ?? prev.user.moodStatus ?? null,
+            lastYearlyWinAt: member.lastYearlyWinAt,
+            lastYearlyWinPts: member.lastYearlyWinPts,
             goalPlan: prev.user.goalPlan ?? member.goalPlan,
             notificationTone: prev.user.notificationTone ?? member.notificationTone,
             movementTarget: prev.user.movementTarget ?? member.movementTarget,
