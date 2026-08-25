@@ -30,7 +30,7 @@ export default function MobileShell({ children }: { children: ReactNode }) {
             <span className="text-[11px] font-semibold text-yellow-300">You're offline — showing saved content</span>
           </div>
         )}
-        <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide pb-24">{children}</div>
+        <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
         <MiniPlayer />
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <BottomNav />

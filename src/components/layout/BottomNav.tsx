@@ -61,7 +61,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="glass-card border-t border-border px-2 py-2 flex items-center justify-between">
+    <nav className="glass-card border-t border-border px-2 pt-2 flex items-center justify-between" style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}>
       {navItems.map(({ to, label, icon: Icon, badge }) => (
         <NavLink
           key={to}

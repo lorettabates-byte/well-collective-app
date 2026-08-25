@@ -48,7 +48,14 @@ export default function WellCupLeaderboard() {
   const [view, setView] = useState<ViewState>("top5");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [myPointsToday, setMyPointsToday] = useState(0);
+  const [myPointsToday, setMyPointsToday] = useState<number>(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem("well-cup-today-pts") ?? "{}") as { pts?: number; date?: string };
+      const today = new Date().toISOString().slice(0, 10);
+      if (cached.date === today) return cached.pts ?? 0;
+    } catch { /* ignore */ }
+    return 0;
+  });
 
   // Personal goal
   const [personalGoal, setPersonalGoal] = useState<number>(() => {
