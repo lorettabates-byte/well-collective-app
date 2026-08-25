@@ -1,5 +1,7 @@
 import { BarChart2, ChevronDown, ChevronUp, Clock, Flame, TrendingUp, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CapacitorUpdater } from "@capgo/capacitor-updater";
+import { Capacitor } from "@capacitor/core";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
 
@@ -619,6 +621,13 @@ export default function AdminAnalytics() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [capgoBundleId, setCapgoBundleId] = useState<string>("");
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      CapacitorUpdater.current().then((info) => setCapgoBundleId(info.bundle.id)).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (!API_URL) { setError("No API URL configured"); setLoading(false); return; }
@@ -643,7 +652,11 @@ export default function AdminAnalytics() {
   return (
     <div>
       <TopBar title="Analytics" subtitle="Member engagement & behaviour" showBack icon={BarChart2} iconColor="#0191CE" />
-      <p className="px-4 pt-2 text-xs text-text-dim">Build {import.meta.env.VITE_APP_VERSION || "dev"}</p>
+      <div className="mx-4 mt-2 mb-1 px-3 py-2 bg-surface-2 rounded-lg border border-border">
+        <p className="text-xs font-semibold text-text">Build: {import.meta.env.VITE_APP_VERSION || "dev (no env var)"}</p>
+        {capgoBundleId && <p className="text-xs text-text-muted mt-0.5">Capgo bundle: {capgoBundleId}</p>}
+        {!capgoBundleId && Capacitor.isNativePlatform() && <p className="text-xs text-text-muted mt-0.5">Capgo bundle: loading...</p>}
+      </div>
 
       <div className="flex gap-1 px-4 pt-4 pb-2 overflow-x-auto scrollbar-hide">
         {TABS.map(({ id, label, icon: Icon }) => (
