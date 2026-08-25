@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WELL Collective — All Slides Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #030810;
+    min-height: 100vh;
+    font-family: 'Helvetica Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 40px 60px;
+  }
+
+  .page-title {
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .page-sub {
+    color: rgba(132,216,253,0.55);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    margin-bottom: 44px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 189px);
+    grid-template-rows: repeat(2, auto);
+    column-gap: 22px;
+    row-gap: 40px;
+    align-items: start;
+  }
+
+  .slide-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .slide-label {
+    color: rgba(132,216,253,0.50);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .frame-outer {
+    width: 189px;
+    height: 410px;
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow:
+      0 0 0 1px rgba(132,216,253,0.09),
+      0 20px 60px rgba(0,0,0,0.68),
+      0 6px 16px rgba(0,0,0,0.38);
+    position: relative;
+  }
+
+  iframe {
+    width: 430px;
+    height: 932px;
+    border: none;
+    display: block;
+    transform: scale(0.44);
+    transform-origin: top left;
+    pointer-events: none;
+  }
+
+  .slide-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(1,145,206,0.14);
+    border: 1px solid rgba(132,216,253,0.20);
+    color: #84d8fd;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-note {
+    margin-top: 44px;
+    color: rgba(255,255,255,0.20);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-align: center;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+  <p class="page-title">WELL Collective &nbsp;·&nbsp; App Store Screenshots</p>
+  <p class="page-sub">All 6 Slides — In Order</p>
+
+  <div class="grid">
+
+    <!-- Slide 1 -->
+    <div class="slide-col">
+      <span class="slide-label">01 &nbsp;·&nbsp; Hero</span>
+      <div class="frame-outer">
+        <iframe src="slide-1-hero.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">1</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide-col">
+      <span class="slide-label">02 &nbsp;·&nbsp; Community</span>
+      <div class="frame-outer">
+        <iframe src="slide-2-community.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">2</div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide-col">
+      <span class="slide-label">03 &nbsp;·&nbsp; Channels</span>
+      <div class="frame-outer">
+        <iframe src="slide-3-channels.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">3</div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="slide-col">
+      <span class="slide-label">04 &nbsp;·&nbsp; Nutrition</span>
+      <div class="frame-outer">
+        <iframe src="slide-nutrition.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">4</div>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide-col">
+      <span class="slide-label">05 &nbsp;·&nbsp; Calendar</span>
+      <div class="frame-outer">
+        <iframe src="slide-4-calendar.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">5</div>
+    </div>
+
+    <!-- Slide 6 -->
+    <div class="slide-col">
+      <span class="slide-label">06 &nbsp;·&nbsp; Join WELL</span>
+      <div class="frame-outer">
+        <iframe src="slide-5-cta.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">6</div>
+    </div>
+
+  </div>
+
+  <p class="footer-note">
+    localhost:8091/preview-all.html &nbsp;·&nbsp; 44% scale &nbsp;·&nbsp; Cmd+Shift+R to refresh all frames
+  </p>
+
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 430px; height: 932px; overflow: hidden; background: #050b14; }
+  body { width: 430px; height: 932px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif; }
+
+  .bg-solid { position: absolute; inset: 0; background: #050b14; }
+  .glow { position: absolute; top: 0; left: 0; right: 0; height: 320px;
+    background: radial-gradient(120% 100% at 50% 0%, rgba(1,145,206,0.38) 0%, transparent 70%); }
+  .deco { position: absolute; width: 320px; height: 320px; border-radius: 50%;
+    background: rgba(1,81,157,0.10); border: 1px solid rgba(132,216,253,0.05);
+    top: -90px; right: -70px; }
+
+  /* Topbar */
+  .topbar { position: absolute; top: 0; left: 0; right: 0; padding: 52px 24px 14px;
+    display: flex; align-items: center; gap: 12px; z-index: 10; }
+  .logo-img { width: 52px; height: 52px; object-fit: contain; }
+  .logo-wm { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic;
+    font-size: 21px; color: white; letter-spacing: 2px; font-weight: 300; }
+
+  /* Headline — LEFT column */
+  .hl { position: absolute; top: 108px; left: 28px; right: 248px; z-index: 10; }
+  .hl h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 38px;
+    font-weight: 600; color: white; line-height: 1.0; }
+  .hl h2 em { color: #84D8FD; font-style: italic; }
+  .hl p { font-size: 12px; color: #8da4bd; line-height: 1.55; margin-top: 8px; }
+
+  /* Event chips below headline */
+  .chips { position: absolute; top: 390px; left: 28px; right: 248px; z-index: 10;
+    display: flex; flex-direction: column; gap: 8px; }
+  .chip { display: flex; align-items: center; gap: 8px; }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .chip-lbl { font-size: 10px; color: rgba(255,255,255,0.75); line-height: 1.35; font-weight: 500; }
+
+  /* iPhone frame — RIGHT, same proportions as hero slide */
+  .phone-wrap { position: absolute; right: -10px; top: 260px; width: 240px; z-index: 10; }
+  .phone-outer {
+    background: #060810; border-radius: 40px; padding: 7px;
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.14),
+                0 28px 64px rgba(0,0,0,0.72),
+                0 8px 20px rgba(0,0,0,0.50);
+  }
+  /* 240px outer → 226px inner × 2.17 = 490px screen */
+  .phone-screen { background: #050b14; border-radius: 34px; overflow: hidden;
+    height: 490px; position: relative; }
+  .pdyn { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 19px; background: #060810; border-radius: 10px; z-index: 5; }
+
+  /* Calendar app header */
+  .cal-header { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 38px 14px 11px; display: flex; align-items: center; justify-content: space-between; }
+  .cal-month { color: white; font-size: 13px; font-weight: 700; }
+  .cal-nav { color: rgba(255,255,255,0.7); font-size: 16px; display: flex; gap: 10px; }
+
+  /* Calendar grid */
+  .cal-grid { padding: 10px 14px 6px; }
+  .day-heads { display: grid; grid-template-columns: repeat(7,1fr); margin-bottom: 4px; }
+  .dh { font-size: 9px; color: #5e7793; text-align: center; font-weight: 600; }
+  .days { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; }
+  .day { font-size: 10px; color: #8da4bd; text-align: center;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto; border-radius: 50%; }
+  .day.marked { background: linear-gradient(135deg, #01519d, #0191ce); color: white; font-weight: 700; }
+  .day.today { border: 2px solid #0191CE; color: #84d8fd; font-weight: 700; }
+  .day.dim { color: #1f3349; }
+  .day.bday { background: rgba(255,215,0,0.16); color: #FFD700; font-weight: 700;
+    border: 1px solid rgba(255,215,0,0.32); }
+
+  /* Events section inside phone */
+  .events { padding: 4px 12px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .ev { display: flex; gap: 8px; align-items: flex-start; padding: 9px 10px; border-radius: 12px;
+    background: rgba(132,216,253,0.05); border: 1px solid rgba(132,216,253,0.09); }
+  .ev-accent { width: 3px; border-radius: 3px; align-self: stretch; flex-shrink: 0; }
+  .ev-info { flex: 1; }
+  .ev-title { font-size: 10.5px; font-weight: 700; color: #f3f8fc; }
+  .ev-meta { font-size: 8px; color: #5e7793; margin-top: 2px; }
+  .ev-rsvp { display: inline-block; background: linear-gradient(135deg, #01519d, #0191ce);
+    color: white; font-size: 7.5px; font-weight: 700; padding: 2px 8px;
+    border-radius: 8px; margin-top: 3px; }
+  .ev-bday { display: inline-block; background: rgba(255,215,0,0.12);
+    border: 1px solid rgba(255,215,0,0.28); color: #FFD700;
+    font-size: 7.5px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+
+  /* Bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,24,38,0.96);
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; padding: 5px 4px 8px; }
+  .bi { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .bi-ic { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bi-ic.on { background: linear-gradient(135deg, #0191ce, #0171ce); }
+  .bi-ic svg { width: 12px; height: 12px; }
+  .bi-l { font-size: 6.5px; font-weight: 600; }
+  .bi-l.on { color: #84d8fd; }
+  .bi-l.off { color: #5e7793; }
+
+  /* Widget callout */
+  .widget-callout { position: absolute; top: 510px; left: 28px; right: 248px; z-index: 10; }
+  .widget-card { display: flex; align-items: center; gap: 9px;
+    background: rgba(13,24,38,0.80); border: 1px solid rgba(132,216,253,0.14);
+    border-radius: 14px; padding: 9px 11px; }
+  .widget-icon { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, #01519d, #0191ce);
+    display: flex; align-items: center; justify-content: center; }
+  .widget-icon svg { width: 16px; height: 16px; }
+  .widget-text-title { font-size: 10px; font-weight: 700; color: #f3f8fc; }
+  .widget-text-sub { font-size: 8.5px; color: #8da4bd; margin-top: 2px; line-height: 1.4; }
+
+  .bband { position: absolute; bottom: 0; left: 0; right: 0; background: #0d1826;
+    border-top: 1px solid rgba(132,216,253,0.10); padding: 14px 32px 20px;
+    text-align: center; z-index: 20; }
+  .bband p { font-size: 13px; color: #84d8fd; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="bg-solid"></div>
+  <div class="glow"></div>
+  <div class="deco"></div>
+
+  <div class="topbar">
+    <img class="logo-img" src="well-logo.png" alt="WELL" />
+    <span class="logo-wm">WELL with Loretta</span>
+  </div>
+
+  <!-- Headline left column -->
+  <div class="hl">
+    <h2>Events<br>made<br>just<br><em>for you.</em></h2>
+    <p>Retreats, live classes<br>&amp; celebrations.</p>
+  </div>
+
+  <!-- Upcoming event chips — below headline on left -->
+  <div class="chips">
+    <div class="chip">
+      <div class="chip-dot" style="background:#0191ce;"></div>
+      <span class="chip-lbl">WELL Escape — Mexico<br><span style="color:#5e7793;font-size:9px;">Jul 3 · 18 attending</span></span>
+    </div>
+    <div class="chip">
+      <div class="chip-dot" style="background:#84d8fd;"></div>
+      <span class="chip-lbl">Livestream with Loretta<br><span style="color:#5e7793;font-size:9px;">Jul 11 · 8:00 AM</span></span>
+    </div>
+    <div class="chip">
+      <div class="chip-dot" style="background:#FFD700;"></div>
+      <span class="chip-lbl">Happy Birthday, Sarah!<br><span style="color:#5e7793;font-size:9px;">Jul 23 · Send a wish</span></span>
+    </div>
+  </div>
+
+  <!-- Widget callout -->
+  <div class="widget-callout">
+    <div class="widget-card">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="widget-text-title">iOS Widgets</div>
+        <div class="widget-text-sub">Home screen &amp;<br>Lock screen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iPhone right -->
+  <div class="phone-wrap">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+
+        <div class="cal-header">
+          <span class="cal-month">July 2026</span>
+          <div class="cal-nav"><span>&#8249;</span><span>&#8250;</span></div>
+        </div>
+
+        <div class="cal-grid">
+          <div class="day-heads">
+            <div class="dh">S</div><div class="dh">M</div><div class="dh">T</div>
+            <div class="dh">W</div><div class="dh">T</div><div class="dh">F</div><div class="dh">S</div>
+          </div>
+          <div class="days">
+            <div class="day dim">29</div><div class="day dim">30</div>
+            <div class="day">1</div><div class="day">2</div>
+            <div class="day marked">3</div><div class="day">4</div><div class="day">5</div>
+            <div class="day">6</div><div class="day">7</div><div class="day">8</div>
+            <div class="day today">9</div><div class="day">10</div>
+            <div class="day bday">11</div><div class="day">12</div>
+            <div class="day">13</div><div class="day">14</div><div class="day">15</div>
+            <div class="day">16</div><div class="day">17</div><div class="day">18</div><div class="day">19</div>
+            <div class="day">20</div><div class="day">21</div><div class="day">22</div>
+            <div class="day marked">23</div><div class="day">24</div><div class="day">25</div><div class="day">26</div>
+          </div>
+        </div>
+
+        <div class="events">
+          <div class="ev">
+            <div class="ev-accent" style="background:linear-gradient(180deg,#0191ce,#84d8fd);"></div>
+            <div class="ev-info">
+              <div class="ev-title">WELL Escape — Mexico</div>
+              <div class="ev-meta">Thu Jul 3 &nbsp;·&nbsp; Weekend in Paradise</div>
+              <span class="ev-rsvp">18 attending &nbsp;·&nbsp; Join us</span>
+            </div>
+          </div>
+          <div class="ev">
+            <div class="ev-accent" style="background:#84D8FD;"></div>
+            <div class="ev-info">
+              <div class="ev-title">Livestream Class with Loretta</div>
+              <div class="ev-meta">Fri Jul 11 &nbsp;·&nbsp; 8:00 AM &nbsp;·&nbsp; Members only</div>
+              <span class="ev-rsvp">42 attending &nbsp;·&nbsp; RSVP</span>
+            </div>
+          </div>
+          <div class="ev">
+            <div class="ev-accent" style="background:#FFD700;"></div>
+            <div class="ev-info">
+              <div class="ev-title">Happy Birthday, Sarah!</div>
+              <div class="ev-meta">Wed Jul 23 &nbsp;·&nbsp; Community celebration</div>
+              <span class="ev-bday">Send a birthday wish</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bnav">
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bi-l off">Home</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bi-l off">Community</span></div>
+          <div class="bi"><div class="bi-ic on"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><span class="bi-l on">Events</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bi-l off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bband"><p>Always something to look forward to together</p></div>
+</body>
+</html>

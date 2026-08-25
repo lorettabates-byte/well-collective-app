@@ -23,6 +23,7 @@
 		E8A90A383000400000DAF05F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E8A90A323000400000DAF05F /* Assets.xcassets */; };
 		E8A90A393000520000DAF05F /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A90A3B3000520000DAF05F /* MainViewController.swift */; };
 		E8A90A3A3000520000DAF05F /* WellCheckWidgetPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A90A3C3000520000DAF05F /* WellCheckWidgetPlugin.swift */; };
+		E8A90A503000520000DAF05F /* NowPlayingPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A90A513000520000DAF05F /* NowPlayingPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 		E8A90A353000400000DAF05F /* WellCheckWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WellCheckWidget.entitlements; sourceTree = "<group>"; };
 		E8A90A3B3000520000DAF05F /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		E8A90A3C3000520000DAF05F /* WellCheckWidgetPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellCheckWidgetPlugin.swift; sourceTree = "<group>"; };
+		E8A90A513000520000DAF05F /* NowPlayingPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +123,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				E8A90A3B3000520000DAF05F /* MainViewController.swift */,
 				E8A90A3C3000520000DAF05F /* WellCheckWidgetPlugin.swift */,
+				E8A90A513000520000DAF05F /* NowPlayingPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -271,6 +274,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				E8A90A393000520000DAF05F /* MainViewController.swift in Sources */,
 				E8A90A3A3000520000DAF05F /* WellCheckWidgetPlugin.swift in Sources */,
+				E8A90A503000520000DAF05F /* NowPlayingPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 430px; height: 932px; overflow: hidden; background: #050b14; }
+  body { width: 430px; height: 932px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif; }
+
+  .bg { position: absolute; inset: 0; background: #050b14; }
+  .glow-top { position: absolute; top: 0; left: 0; right: 0; height: 300px;
+    background: radial-gradient(110% 100% at 50% 0%, rgba(1,145,206,0.32) 0%, transparent 70%); }
+  .glow-bot { position: absolute; bottom: 0; left: 0; right: 0; height: 280px;
+    background: radial-gradient(110% 80% at 50% 100%, rgba(1,81,157,0.20) 0%, transparent 70%); }
+
+  /* Top branding */
+  .topbar { position: absolute; top: 0; left: 0; right: 0; padding: 52px 28px 14px;
+    display: flex; align-items: center; gap: 12px; z-index: 10; }
+  .logo-img { width: 56px; height: 56px; object-fit: contain; }
+  .logo-wm { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic;
+    font-size: 22px; color: white; letter-spacing: 2px; font-weight: 300; }
+
+  /* Headline — Plus Jakarta Sans for clean, modern data-feature feel */
+  .headline { position: absolute; top: 118px; left: 28px; right: 28px; z-index: 10; }
+  .headline h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 40px;
+    font-weight: 600; color: white; line-height: 1.03; }
+  .headline h2 em { color: #84D8FD; font-style: italic; }
+  .headline p { font-size: 13px; color: #8da4bd; line-height: 1.55; margin-top: 8px; }
+
+  /* Sync + trust badge pills */
+  .badges-row { position: absolute; top: 308px; left: 28px; right: 28px; z-index: 10;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .badge-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px;
+    background: rgba(13,24,38,0.85); border-radius: 20px; border: 1px solid; }
+  .badge-pill svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .badge-pill span { font-size: 9px; font-weight: 700; white-space: nowrap; }
+  .badge-pill.apple { border-color: rgba(255,75,110,0.40); }
+  .badge-pill.apple span { color: #FF7096; }
+  .badge-pill.hc { border-color: rgba(74,222,128,0.32); }
+  .badge-pill.hc span { color: #4ADE80; }
+  .badge-pill.usda { border-color: rgba(244,162,97,0.38); }
+  .badge-pill.usda span { color: #F4A261; }
+
+  /* Phone mockup — centered, correct iPhone 1:2.17 proportions */
+  /* 430 - 95 - 95 = 240px outer → 226px inner × 2.17 = 490px screen height */
+  .phone-wrap { position: absolute; top: 350px; left: 95px; right: 95px; z-index: 10; }
+  .phone-outer {
+    background: #060810; border-radius: 38px; padding: 7px;
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.14), 0 28px 64px rgba(0,0,0,0.72), 0 8px 20px rgba(0,0,0,0.50);
+  }
+  .phone-screen { background: #050b14; border-radius: 32px; overflow: hidden; height: 490px; position: relative; }
+  .pdyn { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 19px; background: #060810; border-radius: 10px; z-index: 5; }
+
+  /* App header */
+  .apph { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 36px 14px 12px; display: flex; align-items: center; justify-content: space-between; }
+  .apph-left { display: flex; align-items: center; gap: 7px; }
+  .apph-logo { width: 18px; height: 18px; object-fit: contain; }
+  .apph-t { color: white; font-size: 13px; font-weight: 700; }
+  .apph-date { color: rgba(255,255,255,0.7); font-size: 10px; }
+  .apph-add { width: 22px; height: 22px; background: rgba(255,255,255,0.2); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; }
+  .apph-add svg { width: 11px; height: 11px; }
+
+  /* Calorie ring section */
+  .cal-section { padding: 14px 14px 10px; display: flex; align-items: center; gap: 14px;
+    background: #0d1826; margin: 10px 10px 0; border-radius: 16px;
+    border: 1px solid rgba(132,216,253,0.08); }
+  .ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .ring-wrap svg { position: absolute; inset: 0; }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  .ring-num { font-size: 20px; font-weight: 700; color: #f3f8fc; line-height: 1; }
+  .ring-lbl { font-size: 7.5px; color: #5e7793; margin-top: 2px; }
+  .ring-info { flex: 1; }
+  .ring-info-title { font-size: 10px; color: #8da4bd; margin-bottom: 6px; }
+  .macro-row { display: flex; flex-direction: column; gap: 5px; }
+  .macro { display: flex; align-items: center; gap: 6px; }
+  .macro-lbl { font-size: 8.5px; color: #5e7793; width: 44px; flex-shrink: 0; }
+  .macro-bar-wrap { flex: 1; height: 4px; background: rgba(132,216,253,0.08); border-radius: 2px; }
+  .macro-bar { height: 100%; border-radius: 2px; }
+  .macro-val { font-size: 8px; color: #8da4bd; width: 28px; text-align: right; flex-shrink: 0; }
+
+  /* Today's log */
+  .log-card { margin: 8px 10px 0; background: #0d1826; border-radius: 14px;
+    border: 1px solid rgba(132,216,253,0.08); overflow: hidden; }
+  .log-header { padding: 9px 12px 5px; display: flex; align-items: center; justify-content: space-between; }
+  .log-title { font-size: 10px; font-weight: 700; color: #f3f8fc; }
+  .log-add { font-size: 8.5px; color: #0191ce; font-weight: 600; }
+  .meal { display: flex; align-items: center; gap: 9px; padding: 8px 12px;
+    border-top: 1px solid rgba(132,216,253,0.06); }
+  .meal-time { font-size: 7.5px; color: #5e7793; width: 48px; flex-shrink: 0; }
+  .meal-body { flex: 1; }
+  .meal-name { font-size: 10px; font-weight: 600; color: #f3f8fc; }
+  .meal-sub { font-size: 8px; color: #5e7793; margin-top: 1px; }
+  .meal-cal { font-size: 10px; font-weight: 700; color: #84d8fd; flex-shrink: 0; }
+
+  /* Scan buttons */
+  .scan-row { display: flex; gap: 8px; margin: 8px 10px 0; }
+  .scan-btn { flex: 1; background: rgba(1,145,206,0.12); border: 1px solid rgba(132,216,253,0.16);
+    border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; }
+  .scan-btn svg { width: 18px; height: 18px; }
+  .scan-lbl { font-size: 8.5px; color: #8da4bd; font-weight: 600; }
+
+  /* Bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,24,38,0.98);
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; padding: 5px 4px 7px; }
+  .bi { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .bi-ic { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bi-ic.on { background: linear-gradient(135deg, #0191ce, #0171ce); }
+  .bi-ic svg { width: 13px; height: 13px; }
+  .bi-l { font-size: 7px; font-weight: 600; }
+  .bi-l.on { color: #84d8fd; }
+  .bi-l.off { color: #5e7793; }
+
+  /* Bottom band */
+  .bband { position: absolute; bottom: 0; left: 0; right: 0; background: #0d1826;
+    border-top: 1px solid rgba(132,216,253,0.10); padding: 14px 32px 20px; text-align: center; z-index: 10; }
+  .bband p { font-size: 13px; color: #84d8fd; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="glow-top"></div>
+  <div class="glow-bot"></div>
+
+  <div class="topbar">
+    <img class="logo-img" src="well-logo.png" alt="WELL" />
+    <span class="logo-wm">WELL with Loretta</span>
+  </div>
+
+  <div class="headline">
+    <h2>Your nutrition,<br>tracked<br><em>your way.</em></h2>
+    <p>Body &amp; mind — macros, water, calories,<br>breathwork &amp; mindfulness. All in one place.</p>
+  </div>
+
+  <div class="badges-row">
+    <div class="badge-pill apple">
+      <svg viewBox="0 0 24 24" fill="#FF7096" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <span>Apple Health</span>
+    </div>
+    <div class="badge-pill hc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5v2h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5z"/><path d="M9 15l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Health Connect</span>
+    </div>
+    <div class="badge-pill usda">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F4A261" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>USDA Verified Recipes</span>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+
+        <div class="apph">
+          <div class="apph-left">
+            <img class="apph-logo" src="well-logo.png" alt="" />
+            <span class="apph-t">Nutrition</span>
+          </div>
+          <span class="apph-date">Wed, Jul 9</span>
+          <div class="apph-add"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        </div>
+
+        <!-- Calorie ring + macros -->
+        <div class="cal-section">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 80 80" width="80" height="80">
+              <defs>
+                <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0191ce"/>
+                  <stop offset="100%" stop-color="#84d8fd"/>
+                </linearGradient>
+              </defs>
+              <!-- Background ring -->
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(132,216,253,0.08)" stroke-width="6"/>
+              <!-- Remaining arc ~65% consumed -->
+              <circle cx="40" cy="40" r="34" fill="none" stroke="url(#rg)" stroke-width="6"
+                stroke-dasharray="139 76" stroke-linecap="round"
+                transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-num">1,640</span>
+              <span class="ring-lbl">cal left</span>
+            </div>
+          </div>
+          <div class="ring-info">
+            <div class="ring-info-title">860 consumed of 2,500 goal</div>
+            <div class="macro-row">
+              <div class="macro">
+                <span class="macro-lbl">Protein</span>
+                <div class="macro-bar-wrap"><div class="macro-bar" style="width:56%;background:#0191ce;"></div></div>
+                <span class="macro-val">68g</span>
+              </div>
+              <div class="macro">
+                <span class="macro-lbl">Carbs</span>
+                <div class="macro-bar-wrap"><div class="macro-bar" style="width:63%;background:#84d8fd;"></div></div>
+                <span class="macro-val">95g</span>
+              </div>
+              <div class="macro">
+                <span class="macro-lbl">Fat</span>
+                <div class="macro-bar-wrap"><div class="macro-bar" style="width:51%;background:rgba(1,145,206,0.7);"></div></div>
+                <span class="macro-val">28g</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meal log -->
+        <div class="log-card">
+          <div class="log-header">
+            <span class="log-title">Today's Food</span>
+            <span class="log-add">+ Add meal</span>
+          </div>
+          <div class="meal">
+            <span class="meal-time">8:30 AM</span>
+            <div class="meal-body">
+              <div class="meal-name">Greek Yogurt Bowl</div>
+              <div class="meal-sub">Breakfast &nbsp;·&nbsp; 24g protein</div>
+            </div>
+            <span class="meal-cal">312</span>
+          </div>
+          <div class="meal">
+            <span class="meal-time">12:15 PM</span>
+            <div class="meal-body">
+              <div class="meal-name">Grilled Salmon Salad</div>
+              <div class="meal-sub">Lunch &nbsp;·&nbsp; 38g protein</div>
+            </div>
+            <span class="meal-cal">485</span>
+          </div>
+        </div>
+
+        <!-- Scan / log buttons -->
+        <div class="scan-row">
+          <div class="scan-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="1.8">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span class="scan-lbl">Photo Scan</span>
+          </div>
+          <div class="scan-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="1.8">
+              <path d="M3 5v14M7 5v14M12 5v14M17 5v14M21 5v14"/>
+              <rect x="1" y="3" width="22" height="18" rx="2" stroke="rgba(132,216,253,0.4)" stroke-width="1"/>
+            </svg>
+            <span class="scan-lbl">Barcode Scan</span>
+          </div>
+          <div class="scan-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="1.8">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span class="scan-lbl">Manual Log</span>
+          </div>
+        </div>
+
+        <!-- Bottom nav — Wellness tab active -->
+        <div class="bnav">
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bi-l off">Home</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bi-l off">Community</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bi-l off">Well Cup</span></div>
+          <div class="bi"><div class="bi-ic on"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg></div><span class="bi-l on">Wellness</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bi-l off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bband"><p>Fuel your body with intention every day</p></div>
+</body>
+</html>

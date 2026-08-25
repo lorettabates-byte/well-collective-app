@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 430px; height: 932px; overflow: hidden; background: #050b14; }
+  body { width: 430px; height: 932px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif; }
+
+  .bg { position: absolute; inset: 0; background: #050b14; }
+  .glow-top { position: absolute; top: 0; left: 0; right: 0; height: 380px;
+    background: radial-gradient(110% 80% at 50% 0%, rgba(1,145,206,0.32) 0%, transparent 70%); }
+  .glow-bot { position: absolute; bottom: 0; left: 0; right: 0; height: 300px;
+    background: radial-gradient(110% 80% at 50% 100%, rgba(1,81,157,0.18) 0%, transparent 70%); }
+  .deco { position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    border: 1px solid rgba(132,216,253,0.05); top: -80px; right: -80px; }
+
+  /* Topbar */
+  .topbar { position: absolute; top: 0; left: 0; right: 0; padding: 52px 28px 14px;
+    display: flex; align-items: center; gap: 12px; z-index: 10; }
+  .logo-img { width: 52px; height: 52px; object-fit: contain; }
+  .logo-wm { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic;
+    font-size: 22px; color: white; letter-spacing: 2px; font-weight: 300; }
+
+  /* Headline */
+  .headline { position: absolute; top: 122px; left: 28px; right: 28px; z-index: 10; }
+  .headline h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 50px;
+    font-weight: 600; color: white; line-height: 1.03; }
+  .headline h2 em { color: #84D8FD; font-style: italic; }
+  .headline p { font-size: 14px; color: rgba(255,255,255,0.75); margin-top: 10px; line-height: 1.5; }
+
+  /* ── Shared phone frame ── */
+  .phone-outer { background: #060810; border-radius: 40px; padding: 7px; }
+  .phone-screen { background: #050b14; border-radius: 34px; overflow: hidden;
+    width: 226px; height: 450px; position: relative; }
+  .pdyn { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 19px; background: #060810; border-radius: 10px; z-index: 5; }
+
+  /* Left phone — Workout — tilted left, behind */
+  .phone-left { position: absolute; left: -14px; top: 405px;
+    transform: rotate(-7deg); transform-origin: top center; z-index: 5; }
+  .phone-left .phone-outer {
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.10), 0 18px 52px rgba(0,0,0,0.78),
+                0 6px 16px rgba(0,0,0,0.50); }
+
+  /* Right phone — Breathwork — tilted right, in front */
+  .phone-right { position: absolute; right: -14px; top: 360px;
+    transform: rotate(7deg); transform-origin: top center; z-index: 10; }
+  .phone-right .phone-outer {
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.18), 0 26px 64px rgba(0,0,0,0.84),
+                0 8px 22px rgba(0,0,0,0.55); }
+
+  /* ── Workout phone (left) ── */
+  .w-hd { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 38px 14px 10px; display: flex; align-items: center; gap: 8px; }
+  .w-logo { width: 15px; height: 15px; object-fit: contain; }
+  .w-title { color: white; font-size: 11.5px; font-weight: 700; flex: 1; }
+  .w-sub { color: rgba(255,255,255,0.65); font-size: 8.5px; }
+
+  .w-section { display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 13px 5px; }
+  .w-section-t { font-size: 10.5px; font-weight: 700; color: #f3f8fc; }
+  .w-badge { background: rgba(1,145,206,0.18); border: 1px solid rgba(132,216,253,0.20);
+    color: #84d8fd; font-size: 8px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+
+  .w-item { display: flex; align-items: center; gap: 9px; padding: 8px 13px;
+    border-bottom: 1px solid rgba(132,216,253,0.06); }
+  .w-ic { width: 28px; height: 28px; border-radius: 8px; background: rgba(1,145,206,0.10);
+    border: 1px solid rgba(132,216,253,0.10); display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; }
+  .w-ic svg { width: 13px; height: 13px; }
+  .w-body { flex: 1; }
+  .w-name { font-size: 10px; font-weight: 600; color: #f3f8fc; }
+  .w-detail { font-size: 7.5px; color: #5e7793; margin-top: 1px; }
+  .w-check { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; }
+  .w-check.done { background: #0191ce; }
+  .w-check.done svg { width: 9px; height: 9px; }
+  .w-check.open { border: 1.5px solid rgba(132,216,253,0.22); }
+
+  .w-prog { margin: 8px 13px 0; }
+  .w-prog-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .w-prog-lbl { font-size: 8px; color: #8da4bd; }
+  .w-prog-val { font-size: 8px; color: #84d8fd; font-weight: 700; }
+  .w-prog-track { height: 4px; background: rgba(132,216,253,0.10); border-radius: 2px; }
+  .w-prog-fill { height: 100%; border-radius: 2px; width: 40%;
+    background: linear-gradient(90deg, #0191ce, #84d8fd); }
+
+  .w-cta { margin: 9px 13px 0; background: linear-gradient(135deg, #01519d, #0191ce);
+    border-radius: 12px; padding: 9px; text-align: center;
+    font-size: 10px; font-weight: 700; color: white; }
+
+  /* ── Breathwork phone (right) ── */
+  .b-hd { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 38px 14px 10px; display: flex; align-items: center; gap: 8px; }
+  .b-logo { width: 15px; height: 15px; object-fit: contain; }
+  .b-title { color: white; font-size: 11.5px; font-weight: 700; flex: 1; }
+  .b-sub { color: rgba(255,255,255,0.65); font-size: 8.5px; }
+
+  .b-circle-wrap { display: flex; justify-content: center; padding: 12px 0 8px; }
+  .b-circle { position: relative; width: 108px; height: 108px; }
+  .b-circle svg { position: absolute; inset: 0; }
+  .b-circle-inner { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  .b-action { font-size: 15px; font-weight: 700; color: white; }
+  .b-count { font-size: 11px; color: #84d8fd; margin-top: 3px; }
+  .b-phase { font-size: 8px; color: #5e7793; margin-top: 1px; }
+
+  .b-session-hd { font-size: 10px; font-weight: 700; color: #f3f8fc; padding: 0 13px 5px; }
+
+  .b-session { display: flex; align-items: center; gap: 9px; padding: 7px 13px;
+    border-bottom: 1px solid rgba(132,216,253,0.06); }
+  .b-session-ic { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; }
+  .b-session-ic svg { width: 13px; height: 13px; }
+  .b-session-body { flex: 1; }
+  .b-session-name { font-size: 10px; font-weight: 600; color: #f3f8fc; }
+  .b-session-dur { font-size: 7.5px; color: #5e7793; margin-top: 1px; }
+  .b-tag { font-size: 7.5px; font-weight: 700; padding: 2px 7px; border-radius: 7px; }
+  .b-tag.active { background: rgba(1,145,206,0.18); color: #84d8fd;
+    border: 1px solid rgba(132,216,253,0.20); }
+  .b-tag.rest { background: rgba(132,216,253,0.06); color: #5e7793;
+    border: 1px solid rgba(132,216,253,0.10); }
+
+  /* Shared bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,24,38,0.98);
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; padding: 5px 4px 8px; }
+  .bi { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .bi-ic { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bi-ic.on { background: linear-gradient(135deg, #0191ce, #0171ce); }
+  .bi-ic svg { width: 11px; height: 11px; }
+  .bi-l { font-size: 6.5px; font-weight: 600; }
+  .bi-l.on { color: #84d8fd; }
+  .bi-l.off { color: #5e7793; }
+
+  /* Bottom band */
+  .bband { position: absolute; bottom: 0; left: 0; right: 0; background: #0d1826;
+    border-top: 1px solid rgba(132,216,253,0.10); padding: 14px 32px 20px;
+    text-align: center; z-index: 20; }
+  .bband p { font-size: 13px; color: #84d8fd; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="glow-top"></div>
+  <div class="glow-bot"></div>
+  <div class="deco"></div>
+
+  <div class="topbar">
+    <img class="logo-img" src="well-logo.png" alt="WELL" />
+    <span class="logo-wm">WELL with Loretta</span>
+  </div>
+
+  <div class="headline">
+    <h2>Move your body.<br>Calm your <em>mind.</em></h2>
+    <p>Workouts, breathwork &amp; mindfulness<br>— all in one place.</p>
+  </div>
+
+  <!-- Left phone: Fitness & Movement -->
+  <div class="phone-left">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+
+        <div class="w-hd">
+          <img class="w-logo" src="well-logo.png" alt="" />
+          <span class="w-title">Fitness &amp; Movement</span>
+          <span class="w-sub">Today</span>
+        </div>
+
+        <div class="w-section">
+          <span class="w-section-t">Today's Workout</span>
+          <span class="w-badge">2 of 5 done</span>
+        </div>
+
+        <div class="w-item">
+          <div class="w-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <div class="w-body">
+            <div class="w-name">Warm-Up</div>
+            <div class="w-detail">5 min &nbsp;·&nbsp; Dynamic stretch</div>
+          </div>
+          <div class="w-check done"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></div>
+        </div>
+        <div class="w-item">
+          <div class="w-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12"/></svg></div>
+          <div class="w-body">
+            <div class="w-name">Squats</div>
+            <div class="w-detail">3 &times; 12 &nbsp;·&nbsp; Lower body</div>
+          </div>
+          <div class="w-check done"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></div>
+        </div>
+        <div class="w-item">
+          <div class="w-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><rect x="2" y="9" width="20" height="6" rx="2"/><path d="M5 9V5M19 9V5"/></svg></div>
+          <div class="w-body">
+            <div class="w-name">Push-Ups</div>
+            <div class="w-detail">3 &times; 10 &nbsp;·&nbsp; Upper body</div>
+          </div>
+          <div class="w-check open"></div>
+        </div>
+        <div class="w-item">
+          <div class="w-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="w-body">
+            <div class="w-name">Hip Hinge</div>
+            <div class="w-detail">3 &times; 12 &nbsp;·&nbsp; Core &amp; back</div>
+          </div>
+          <div class="w-check open"></div>
+        </div>
+        <div class="w-item">
+          <div class="w-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+          <div class="w-body">
+            <div class="w-name">Cool Down</div>
+            <div class="w-detail">5 min &nbsp;·&nbsp; Stretch &amp; recover</div>
+          </div>
+          <div class="w-check open"></div>
+        </div>
+
+        <div class="w-prog">
+          <div class="w-prog-row">
+            <span class="w-prog-lbl">Progress</span>
+            <span class="w-prog-val">40% complete</span>
+          </div>
+          <div class="w-prog-track"><div class="w-prog-fill"></div></div>
+        </div>
+
+        <div class="w-cta">Keep Going</div>
+
+        <div class="bnav">
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bi-l off">Home</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bi-l off">Community</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bi-l off">Well Cup</span></div>
+          <div class="bi"><div class="bi-ic on"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg></div><span class="bi-l on">Wellness</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bi-l off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right phone: Breathwork -->
+  <div class="phone-right">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+
+        <div class="b-hd">
+          <img class="b-logo" src="well-logo.png" alt="" />
+          <span class="b-title">Breathwork</span>
+          <span class="b-sub">Daily practice</span>
+        </div>
+
+        <!-- Breathing circle -->
+        <div class="b-circle-wrap">
+          <div class="b-circle">
+            <svg viewBox="0 0 108 108" width="108" height="108">
+              <defs>
+                <radialGradient id="bg-glow" cx="50%" cy="50%">
+                  <stop offset="0%" stop-color="rgba(1,145,206,0.22)"/>
+                  <stop offset="100%" stop-color="rgba(1,145,206,0.04)"/>
+                </radialGradient>
+                <linearGradient id="arc-g" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0191ce"/>
+                  <stop offset="100%" stop-color="#84d8fd"/>
+                </linearGradient>
+              </defs>
+              <circle cx="54" cy="54" r="50" fill="url(#bg-glow)"/>
+              <circle cx="54" cy="54" r="44" fill="none" stroke="rgba(132,216,253,0.09)" stroke-width="5"/>
+              <circle cx="54" cy="54" r="44" fill="none" stroke="url(#arc-g)" stroke-width="5"
+                stroke-dasharray="193 83" stroke-linecap="round" transform="rotate(-90 54 54)"/>
+              <circle cx="54" cy="54" r="34" fill="none" stroke="rgba(132,216,253,0.07)" stroke-width="1"/>
+            </svg>
+            <div class="b-circle-inner">
+              <span class="b-action">Inhale</span>
+              <span class="b-count">4 sec</span>
+              <span class="b-phase">4-7-8 Breathing</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="b-session-hd">More Sessions</div>
+
+        <div class="b-session">
+          <div class="b-session-ic" style="background:rgba(1,145,206,0.14);border:1px solid rgba(132,216,253,0.14);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v4M12 16h.01"/></svg>
+          </div>
+          <div class="b-session-body">
+            <div class="b-session-name">Box Breathing</div>
+            <div class="b-session-dur">5 min &nbsp;·&nbsp; Focus &amp; Clarity</div>
+          </div>
+          <span class="b-tag rest">Rest</span>
+        </div>
+        <div class="b-session">
+          <div class="b-session-ic" style="background:rgba(1,145,206,0.10);border:1px solid rgba(132,216,253,0.10);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </div>
+          <div class="b-session-body">
+            <div class="b-session-name">Morning Energy</div>
+            <div class="b-session-dur">6 min &nbsp;·&nbsp; Energize</div>
+          </div>
+          <span class="b-tag rest">Rest</span>
+        </div>
+        <div class="b-session">
+          <div class="b-session-ic" style="background:rgba(132,216,253,0.06);border:1px solid rgba(132,216,253,0.08);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <div class="b-session-body">
+            <div class="b-session-name">Evening Wind Down</div>
+            <div class="b-session-dur">10 min &nbsp;·&nbsp; Sleep Prep</div>
+          </div>
+          <span class="b-tag rest">Rest</span>
+        </div>
+        <div class="b-session">
+          <div class="b-session-ic" style="background:rgba(1,145,206,0.08);border:1px solid rgba(132,216,253,0.08);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="b-session-body">
+            <div class="b-session-name">Guided Body Scan</div>
+            <div class="b-session-dur">12 min &nbsp;·&nbsp; Full release</div>
+          </div>
+          <span class="b-tag rest">Rest</span>
+        </div>
+
+        <div class="bnav">
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bi-l off">Home</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bi-l off">Community</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bi-l off">Well Cup</span></div>
+          <div class="bi"><div class="bi-ic on"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg></div><span class="bi-l on">Wellness</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bi-l off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bband"><p>Movement &amp; mindfulness, built for women 40+</p></div>
+</body>
+</html>

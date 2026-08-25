@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 430px; height: 932px; overflow: hidden; background: #01519D; }
+  body { width: 430px; height: 932px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif; background: #01519D; }
+
+  /* Background photo — landscape, she's on the left side */
+  .bg { position: absolute; inset: 0; background: url('photos/photo-landscape.jpg') 18% top / cover no-repeat; }
+  .ov { position: absolute; inset: 0; background: linear-gradient(110deg,
+    rgba(1,81,157,0.92) 0%,
+    rgba(1,81,157,0.85) 40%,
+    rgba(1,81,157,0.50) 65%,
+    rgba(1,81,157,0.20) 100%); }
+
+  /* TEXT — left column, higher z-index than phone so text is always readable */
+  .text-col {
+    position: absolute;
+    top: 0; left: 0;
+    width: 248px;
+    padding: 52px 0 0 28px;
+    z-index: 15;
+  }
+
+  .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+  .logo-img { width: 56px; height: 56px; object-fit: contain; }
+  .logo-wm { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic;
+    font-size: 22px; color: white; letter-spacing: 2px; font-weight: 300; }
+
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 58px;
+    font-weight: 600; color: white; line-height: 1.0; letter-spacing: -0.5px; margin-bottom: 16px; }
+  h1 em { color: #84D8FD; font-style: italic; font-weight: 300; }
+  .sub { font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.6; }
+
+  /* PHONE — right column, correct iPhone 1:2.17 proportions */
+  .phone-area {
+    position: absolute;
+    right: -14px;
+    top: 312px;
+    width: 220px;
+    height: 491px; /* 220px outer → 206px inner × 2.17 = 447px screen + 14px padding = 461px... close enough visually */
+    z-index: 8;
+  }
+  .phone-outer {
+    width: 100%; height: 100%;
+    background: #060810;
+    border-radius: 40px; padding: 7px;
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.14), 0 28px 64px rgba(0,0,0,0.72), 0 8px 20px rgba(0,0,0,0.50);
+  }
+  .phone-screen { background: #050b14; border-radius: 34px; overflow: hidden; height: 100%; position: relative; }
+  /* Dynamic island */
+  .pdyn { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 22px; background: #060810; border-radius: 12px; z-index: 5; }
+
+  /* App header */
+  .apph {
+    background: #0d1826;
+    padding: 40px 12px 10px;
+    display: flex; align-items: center; gap: 7px;
+    border-bottom: 1px solid rgba(132,216,253,0.08);
+  }
+  .apph-logo { width: 20px; height: 20px; object-fit: contain; }
+  .apph-t { color: #f3f8fc; font-size: 12px; font-weight: 700; flex: 1; }
+  .apph-c { color: #5e7793; font-size: 8.5px; }
+
+  /* Gradient glow at top of app screen */
+  .app-glow { position: absolute; top: 62px; left: 0; right: 0; height: 70px;
+    background: radial-gradient(120% 100% at 50% 0%, rgba(1,145,206,0.28) 0%, transparent 70%); }
+
+  /* Category rows */
+  .cat { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-bottom: 1px solid rgba(31,51,73,0.5); }
+  .cat:last-of-type { border-bottom: none; }
+  .cat-ic { width: 32px; height: 32px; border-radius: 10px; background: rgba(132,216,253,0.10);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cat-ic svg { width: 15px; height: 15px; }
+  .cat-b { flex: 1; min-width: 0; }
+  .cat-n { font-size: 10px; font-weight: 700; color: #f3f8fc; }
+  .cat-p { font-size: 8px; color: #5e7793; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-r { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .cat-t { font-size: 7.5px; color: #5e7793; }
+  .cat-d { background: linear-gradient(135deg, #01519d, #0191ce); color: white;
+    border-radius: 9px; padding: 1px 6px; font-size: 8px; font-weight: 700; }
+
+  /* Quick action row */
+  .quick-row { display: flex; gap: 6px; padding: 10px 12px; }
+  .qbtn { flex: 1; background: rgba(132,216,253,0.08); border: 1px solid rgba(132,216,253,0.12);
+    border-radius: 12px; padding: 8px 4px; text-align: center; }
+  .qbtn svg { width: 12px; height: 12px; display: block; margin: 0 auto 3px; }
+  .qbtn-l { font-size: 7.5px; color: #8da4bd; font-weight: 600; }
+
+  /* Bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,24,38,0.95);
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; padding: 5px 4px 7px; }
+  .bi { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .bi-ic { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bi-ic.on { background: linear-gradient(135deg, #0191ce, #0171ce); }
+  .bi-ic svg { width: 13px; height: 13px; }
+  .bi-l { font-size: 7px; font-weight: 600; }
+  .bi-l.on { color: #84d8fd; }
+  .bi-l.off { color: #5e7793; }
+
+  /* Bottom band */
+  .bband { position: absolute; bottom: 0; left: 0; right: 0; background: #0191CE;
+    padding: 15px 32px 20px; text-align: center; z-index: 20; }
+  .bband p { font-size: 13px; color: white; font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.2px; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="ov"></div>
+
+  <!-- Text column (left) -->
+  <div class="text-col">
+    <div class="logo-row">
+      <img class="logo-img" src="well-logo.png" alt="WELL" />
+      <span class="logo-wm">WELL with Loretta</span>
+    </div>
+    <h1>Women<br>who<br><em>get it.</em><br>All in<br>one place.</h1>
+    <p class="sub" style="margin-top:14px;">You finally found<br>your place for all things<br>wellness, connection,<br>community &amp;<br>thriving together.</p>
+  </div>
+
+  <!-- Phone (right column) -->
+  <div class="phone-area">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+        <div class="app-glow"></div>
+
+        <div class="apph">
+          <img class="apph-logo" src="well-logo.png" alt="" />
+          <span class="apph-t">Community</span>
+          <span class="apph-c">5 channels</span>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="quick-row">
+          <div class="qbtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <div class="qbtn-l">New Post</div>
+          </div>
+          <div class="qbtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#8da4bd" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div class="qbtn-l">Messages</div>
+          </div>
+          <div class="qbtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#8da4bd" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div class="qbtn-l">My Tribe</div>
+          </div>
+        </div>
+
+        <div class="cat">
+          <div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+          <div class="cat-b"><div class="cat-n">Nutrition &amp; Nourishment</div><div class="cat-p">Sarah: "This anti-inflammatory..."</div></div>
+          <div class="cat-r"><span class="cat-t">2m</span><span class="cat-d">3</span></div>
+        </div>
+        <div class="cat">
+          <div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></div>
+          <div class="cat-b"><div class="cat-n">Sleep &amp; Rest</div><div class="cat-p">Lisa: "Magnesium changed everything"</div></div>
+          <div class="cat-r"><span class="cat-t">14m</span><span class="cat-d">7</span></div>
+        </div>
+        <div class="cat">
+          <div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg></div>
+          <div class="cat-b"><div class="cat-n">Movement &amp; Body</div><div class="cat-p">New: Morning flow video posted</div></div>
+          <div class="cat-r"><span class="cat-t">1h</span><span class="cat-d">2</span></div>
+        </div>
+        <div class="cat">
+          <div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="cat-b"><div class="cat-n">Mindset &amp; Emotions</div><div class="cat-p">Maria: "Feeling so grateful..."</div></div>
+          <div class="cat-r"><span class="cat-t">2h</span></div>
+        </div>
+        <div class="cat">
+          <div class="cat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#84d8fd" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <div class="cat-b"><div class="cat-n">Resources &amp; Experts</div><div class="cat-p">New article from Dr. Chen</div></div>
+          <div class="cat-r"><span class="cat-t">3h</span><span class="cat-d">1</span></div>
+        </div>
+
+        <div class="bnav">
+          <div class="bi"><div class="bi-ic on"><svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bi-l on">Home</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bi-l off">Community</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bi-l off">Well Cup</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div><span class="bi-l off">Wellness</span></div>
+          <div class="bi"><div class="bi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bi-l off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bband"><p>Your wellness community — all in one place</p></div>
+</body>
+</html>

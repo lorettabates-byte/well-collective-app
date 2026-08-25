@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 430px; height: 932px; overflow: hidden; background: #01519D; }
+  body { width: 430px; height: 932px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif; }
+
+  /* Background photo — landscape, right crop. Let photo breathe — much lighter overlay */
+  .bg { position: absolute; inset: 0; background: url('photos/photo-landscape.jpg') 43% top / cover no-repeat; }
+  .ov { position: absolute; inset: 0; background: linear-gradient(180deg,
+    rgba(1,81,157,0.78) 0%,
+    rgba(1,81,157,0.22) 28%,
+    rgba(1,81,157,0.12) 52%,
+    rgba(1,81,157,0.55) 76%,
+    rgba(1,81,157,0.92) 100%); }
+
+  /* Top header bar */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 52px 24px 16px;
+    display: flex; align-items: center; gap: 12px;
+    z-index: 10;
+  }
+  .logo-img { width: 50px; height: 50px; object-fit: contain; }
+  .chan-info { display: flex; flex-direction: column; gap: 2px; }
+  .chan-name { color: white; font-size: 15px; font-weight: 700; }
+  .chan-sub { color: rgba(255,255,255,0.65); font-size: 11px; }
+
+  /* Caption */
+  .caption {
+    position: absolute; top: 90px; left: 0; right: 0;
+    padding: 16px 28px; z-index: 10;
+  }
+  .caption h2 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 52px; color: white; font-weight: 600; line-height: 1.05;
+    text-shadow: 0 2px 20px rgba(1,81,157,0.6);
+  }
+  .caption h2 em { color: #84D8FD; font-style: italic; }
+  .caption p { font-size: 14px; color: rgba(255,255,255,0.88); margin-top: 10px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.4); }
+
+  /* Phone mockup — proper iPhone 1:2.17 proportions, centered */
+  .phone-area { position: absolute; top: 380px; left: 88px; right: 88px; z-index: 10; }
+  .phone-outer {
+    background: #060810; border-radius: 40px; padding: 7px;
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.14), 0 28px 64px rgba(0,0,0,0.72), 0 8px 20px rgba(0,0,0,0.50);
+  }
+  /* 430-88-88=254px outer → 240px inner, screen height trimmed to fit */
+  .phone-screen { background: #050b14; border-radius: 34px; overflow: hidden; height: 470px; position: relative; }
+  .pdyn { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 68px; height: 20px; background: #060810; border-radius: 10px; z-index: 5; }
+
+  /* Chat header */
+  .apph {
+    background: linear-gradient(135deg, #01519d 0%, #0191ce 100%);
+    padding: 40px 14px 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .back-btn { color: rgba(255,255,255,0.85); font-size: 18px; font-weight: 300; line-height: 1; }
+  .apph-info { flex: 1; }
+  .apph-n { color: white; font-size: 12px; font-weight: 700; }
+  .apph-s { color: rgba(255,255,255,0.65); font-size: 8.5px; margin-top: 1px; }
+
+  /* Messages */
+  .msg-list { padding: 12px; display: flex; flex-direction: column; gap: 11px; }
+  .msg-row { display: flex; gap: 8px; align-items: flex-end; }
+  .msg-row.right { flex-direction: row-reverse; }
+  .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+  .msg-wrap { display: flex; flex-direction: column; gap: 3px; max-width: 76%; }
+  .msg-name { font-size: 8.5px; color: #84d8fd; font-weight: 700; margin-left: 2px; }
+  .bubble { padding: 9px 12px; border-radius: 16px; font-size: 10.5px; line-height: 1.45; }
+  .bubble.in { background: #0d1826; color: #f3f8fc; border-radius: 16px 16px 16px 4px;
+    border: 1px solid rgba(132,216,253,0.10); }
+  .bubble.out { background: linear-gradient(135deg, #0171ce, #0191ce); color: white; border-radius: 16px 16px 4px 16px; }
+  .reactions { display: flex; gap: 4px; margin-top: 3px; margin-left: 2px; }
+  .react { background: rgba(13,24,38,0.9); border: 1px solid rgba(132,216,253,0.18);
+    border-radius: 10px; padding: 2px 8px; font-size: 9px; color: #8da4bd; }
+
+  /* Input bar */
+  .input-bar { position: absolute; bottom: 0; left: 0; right: 0; background: #0d1826;
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; align-items: center;
+    gap: 8px; padding: 10px 12px 14px; }
+  .input-field { flex: 1; background: #142339; border-radius: 20px; padding: 9px 14px;
+    font-size: 10.5px; color: #5e7793; border: 1px solid rgba(132,216,253,0.08); }
+  .send-btn { width: 32px; height: 32px; background: linear-gradient(135deg, #01519d, #0191ce);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .send-btn svg { width: 13px; height: 13px; }
+
+  .bband { position: absolute; bottom: 0; left: 0; right: 0; background: #0191CE;
+    padding: 14px 32px 20px; text-align: center; z-index: 20; }
+  .bband p { font-size: 13px; color: white; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="ov"></div>
+
+  <div class="topbar">
+    <img class="logo-img" src="well-logo.png" alt="WELL" />
+    <div class="chan-info">
+      <span class="chan-name">Mindset &amp; Emotions</span>
+      <span class="chan-sub">31 members &nbsp;·&nbsp; Active now</span>
+    </div>
+  </div>
+
+  <div class="caption">
+    <h2>Calm anxiety.<br>Boost energy.<br>Find <em>your people.</em></h2>
+    <p>Your WELL community lifts you up, keeps you motivated and supports your whole wellness journey.</p>
+  </div>
+
+  <div class="phone-area">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+        <div class="apph">
+          <span class="back-btn">‹</span>
+          <div class="apph-info">
+            <div class="apph-n">Nutrition &amp; Nourishment</div>
+            <div class="apph-s">24 members · Active now</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </div>
+        <div class="msg-list">
+          <div class="msg-row">
+            <div class="av" style="background:#5B9BD5;">S</div>
+            <div class="msg-wrap">
+              <span class="msg-name">Sarah M.</span>
+              <div class="bubble in">Anyone struggling with sleep lately? I finally tried magnesium and it has been a total game changer</div>
+              <div class="reactions"><span class="react">12 hearts</span><span class="react">8 cheers</span></div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="av" style="background:#0191CE;">L</div>
+            <div class="msg-wrap">
+              <span class="msg-name">Lisa K.</span>
+              <div class="bubble in">Yes!! Changed my life. Try pairing it with chamomile tea before bed</div>
+            </div>
+          </div>
+          <div class="msg-row right">
+            <div class="msg-wrap" style="align-items:flex-end;">
+              <div class="bubble out">Just ordered some. This community is absolutely everything</div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="av" style="background:#01519D;">M</div>
+            <div class="msg-wrap">
+              <span class="msg-name">Maria T.</span>
+              <div class="bubble in">Also try ashwagandha for stress — Dr. Chen shared a great post in Resources</div>
+              <div class="reactions"><span class="react">15 loves</span><span class="react">6 sparks</span></div>
+            </div>
+          </div>
+          <div class="msg-row">
+            <div class="av" style="background:#142339; border: 1px solid rgba(132,216,253,0.25);">J</div>
+            <div class="msg-wrap">
+              <span class="msg-name">Janet R.</span>
+              <div class="bubble in">This group has taught me more than any doctor visit</div>
+              <div class="reactions"><span class="react">22 laughs</span><span class="react">19 hearts</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="input-bar">
+          <div class="input-field">Message the group...</div>
+          <div class="send-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" stroke="none"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bband"><p>Peer support that actually gets it</p></div>
+</body>
+</html>

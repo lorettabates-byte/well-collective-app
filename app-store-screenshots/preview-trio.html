@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WELL Collective — Connected Trio Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #030810;
+    min-height: 100vh;
+    font-family: 'Helvetica Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 32px 60px;
+  }
+
+  .page-title {
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .page-sub {
+    color: rgba(132,216,253,0.6);
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+  }
+
+  .trio {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    position: relative;
+  }
+
+  /* Connector line behind the slides */
+  .trio::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 108px;
+    right: 108px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(132,216,253,0.15), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .slide-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+  }
+
+  .slide-label {
+    color: rgba(132,216,253,0.55);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* The scaled iPhone frame */
+  .frame-outer {
+    width: 215px;
+    height: 466px;
+    overflow: hidden;
+    border-radius: 22px;
+    box-shadow:
+      0 0 0 1px rgba(132,216,253,0.08),
+      0 24px 72px rgba(0,0,0,0.70),
+      0 8px 20px rgba(0,0,0,0.40);
+    position: relative;
+    z-index: 1;
+  }
+
+  iframe {
+    width: 430px;
+    height: 932px;
+    border: none;
+    display: block;
+    transform: scale(0.5);
+    transform-origin: top left;
+    pointer-events: none;
+  }
+
+  /* Arrow between slides */
+  .arrow-col {
+    display: flex;
+    align-items: center;
+    padding-top: 36px; /* align with slide center */
+    margin: 0 -2px;
+    z-index: 2;
+    position: relative;
+  }
+  .arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(1,145,206,0.12);
+    border: 1px solid rgba(132,216,253,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Slide number badge */
+  .slide-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(1,145,206,0.14);
+    border: 1px solid rgba(132,216,253,0.20);
+    color: #84d8fd;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-note {
+    margin-top: 36px;
+    color: rgba(255,255,255,0.22);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-align: center;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+  <p class="page-title">WELL Collective &nbsp;·&nbsp; App Store Screenshots</p>
+  <p class="page-sub">Connected Photo Slides — Flow Preview</p>
+
+  <div class="trio">
+
+    <!-- Slide 1 -->
+    <div class="slide-col">
+      <span class="slide-label">Slide 1 &nbsp;·&nbsp; Hero</span>
+      <div class="frame-outer">
+        <iframe src="slide-1-hero.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">1</div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arrow-col">
+      <div class="arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(132,216,253,0.5)" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide-col">
+      <span class="slide-label">Slide 2 &nbsp;·&nbsp; Community</span>
+      <div class="frame-outer">
+        <iframe src="slide-2-community.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">2</div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arrow-col">
+      <div class="arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(132,216,253,0.5)" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide-col">
+      <span class="slide-label">Slide 3 &nbsp;·&nbsp; Channels</span>
+      <div class="frame-outer">
+        <iframe src="slide-3-channels.html" scrolling="no"></iframe>
+      </div>
+      <div class="slide-num">3</div>
+    </div>
+
+  </div>
+
+  <p class="footer-note">
+    Open in browser at localhost:8091/preview-trio.html &nbsp;·&nbsp; Slides render at 50% scale
+  </p>
+
+</body>
+</html>

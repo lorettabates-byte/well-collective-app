@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 1024px; height: 500px; overflow: hidden; background: #050b14; }
+  body { width: 1024px; height: 500px; overflow: hidden; position: relative;
+    font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  .bg { position: absolute; inset: 0; background: #050b14; }
+  .glow-l { position: absolute; top: 0; left: 0; width: 620px; height: 500px;
+    background: radial-gradient(75% 110% at 16% 28%, rgba(1,145,206,0.38) 0%, transparent 68%); }
+  .glow-r { position: absolute; top: 0; right: 0; width: 560px; height: 500px;
+    background: radial-gradient(60% 90% at 82% 55%, rgba(1,81,157,0.28) 0%, transparent 70%); }
+  .deco-ring { position: absolute; width: 480px; height: 480px; border-radius: 50%;
+    border: 1px solid rgba(132,216,253,0.05); top: 10px; left: -120px; }
+  .deco-ring2 { position: absolute; width: 360px; height: 360px; border-radius: 50%;
+    border: 1px solid rgba(132,216,253,0.04); top: 70px; left: -60px; }
+  .divider { position: absolute; left: 506px; top: 8%; bottom: 8%; width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(132,216,253,0.13) 30%,
+    rgba(132,216,253,0.13) 70%, transparent); }
+
+  /* ── Left content ── */
+  .content { position: absolute; left: 0; top: 0; width: 508px; height: 500px;
+    padding: 0 36px 0 64px; display: flex; flex-direction: column; justify-content: center; }
+  .logo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .logo-img { width: 48px; height: 48px; object-fit: contain; }
+  .logo-wm { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic;
+    font-size: 24px; color: white; letter-spacing: 3px; font-weight: 300; }
+  .headline { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 46px;
+    font-weight: 600; color: white; line-height: 1.05; margin-bottom: 14px; }
+  .headline em { color: #84D8FD; font-style: italic; }
+  .sub { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.55; margin-bottom: 22px;
+    max-width: 380px; }
+  .feats { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .feat { display: flex; align-items: center; gap: 7px; }
+  .feat-dot { width: 5px; height: 5px; border-radius: 50%; background: #0191ce; flex-shrink: 0; }
+  .feat span { font-size: 11px; color: rgba(255,255,255,0.66); font-weight: 600; }
+
+  /* ── Shared phone frame ── */
+  .phone-outer { background: #060810; border-radius: 32px; padding: 6px; }
+  .phone-screen { background: #050b14; border-radius: 26px; overflow: hidden;
+    width: 168px; height: 365px; position: relative; }
+  .pdyn { position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 15px; background: #060810; border-radius: 8px; z-index: 5; }
+
+  /* Back phone — Community — rotated left */
+  .phone-back { position: absolute; right: 242px; top: 50%;
+    transform: translateY(-54%) rotate(-7deg); z-index: 5; }
+  .phone-back .phone-outer {
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.10),
+                0 14px 40px rgba(0,0,0,0.75), 0 4px 14px rgba(0,0,0,0.50); }
+
+  /* Front phone — Nutrition — rotated right */
+  .phone-front { position: absolute; right: 54px; top: 50%;
+    transform: translateY(-44%) rotate(5deg); z-index: 10; }
+  .phone-front .phone-outer {
+    box-shadow: 0 0 0 1px rgba(132,216,253,0.18),
+                0 22px 56px rgba(0,0,0,0.85), 0 6px 18px rgba(0,0,0,0.55); }
+
+  /* ── Community phone content ── */
+  .c-header { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 28px 11px 9px; display: flex; align-items: center; gap: 6px; }
+  .c-logo { width: 13px; height: 13px; object-fit: contain; }
+  .c-title { color: white; font-size: 10.5px; font-weight: 700; flex: 1; }
+  .c-sub { color: rgba(255,255,255,0.65); font-size: 8px; }
+  .c-glow { position: absolute; top: 46px; left: 0; right: 0; height: 50px;
+    background: radial-gradient(120% 100% at 50% 0%, rgba(1,145,206,0.22) 0%, transparent 70%); }
+  .c-feed { padding: 7px 7px 0; display: flex; flex-direction: column; gap: 5px; }
+  .c-card { background: #0d1826; border-radius: 9px; padding: 7px 9px;
+    border: 1px solid rgba(132,216,253,0.08); }
+  .c-top { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .c-av { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 7px; font-weight: 700; color: white; flex-shrink: 0; }
+  .c-name { font-size: 7.5px; font-weight: 700; color: #f3f8fc; }
+  .c-ts { font-size: 6.5px; color: #5e7793; margin-left: auto; }
+  .c-txt { font-size: 7.5px; color: #8da4bd; line-height: 1.4; }
+  .c-reacts { display: flex; gap: 3px; margin-top: 3px; }
+  .c-react { background: rgba(132,216,253,0.06); border: 1px solid rgba(132,216,253,0.12);
+    border-radius: 7px; padding: 1px 5px; font-size: 6.5px; color: #5e7793; }
+
+  /* ── Nutrition phone content ── */
+  .n-header { background: linear-gradient(135deg, #01519d, #0191ce);
+    padding: 28px 12px 9px; display: flex; align-items: center; justify-content: space-between; }
+  .n-header-left { display: flex; align-items: center; gap: 6px; }
+  .n-logo { width: 13px; height: 13px; object-fit: contain; }
+  .n-title { color: white; font-size: 10.5px; font-weight: 700; }
+  .n-date { color: rgba(255,255,255,0.68); font-size: 8px; }
+  .n-add { width: 18px; height: 18px; background: rgba(255,255,255,0.18); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; }
+  .n-add svg { width: 9px; height: 9px; }
+
+  .n-ring-section { margin: 8px 8px 0; background: #0d1826; border-radius: 12px;
+    padding: 10px 10px; display: flex; align-items: center; gap: 10px;
+    border: 1px solid rgba(132,216,253,0.08); }
+  .n-ring { position: relative; width: 68px; height: 68px; flex-shrink: 0; }
+  .n-ring svg { position: absolute; inset: 0; }
+  .n-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  .n-ring-num { font-size: 15px; font-weight: 700; color: #f3f8fc; line-height: 1; }
+  .n-ring-lbl { font-size: 6.5px; color: #5e7793; margin-top: 1px; }
+  .n-macro-list { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .n-macro { display: flex; align-items: center; gap: 5px; }
+  .n-macro-lbl { font-size: 7.5px; color: #5e7793; width: 38px; flex-shrink: 0; }
+  .n-macro-bar-wrap { flex: 1; height: 3px; background: rgba(132,216,253,0.08); border-radius: 2px; }
+  .n-macro-bar { height: 100%; border-radius: 2px; }
+  .n-macro-val { font-size: 7px; color: #8da4bd; width: 22px; text-align: right; }
+
+  .n-log { margin: 6px 8px 0; background: #0d1826; border-radius: 11px;
+    border: 1px solid rgba(132,216,253,0.08); overflow: hidden; }
+  .n-log-hd { padding: 7px 10px 4px; display: flex; align-items: center; justify-content: space-between; }
+  .n-log-t { font-size: 8.5px; font-weight: 700; color: #f3f8fc; }
+  .n-log-add { font-size: 7.5px; color: #0191ce; font-weight: 600; }
+  .n-meal { display: flex; align-items: center; gap: 7px; padding: 6px 10px;
+    border-top: 1px solid rgba(132,216,253,0.06); }
+  .n-meal-time { font-size: 6.5px; color: #5e7793; width: 40px; flex-shrink: 0; }
+  .n-meal-body { flex: 1; }
+  .n-meal-name { font-size: 8.5px; font-weight: 600; color: #f3f8fc; }
+  .n-meal-sub { font-size: 7px; color: #5e7793; margin-top: 1px; }
+  .n-meal-cal { font-size: 8.5px; font-weight: 700; color: #84d8fd; }
+
+  /* Shared bottom nav */
+  .bnav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,24,38,0.98);
+    border-top: 1px solid rgba(132,216,253,0.08); display: flex; padding: 4px 2px 5px; }
+  .bi { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .bic { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .bic.on { background: linear-gradient(135deg, #0191ce, #0171ce); }
+  .bic svg { width: 9px; height: 9px; }
+  .bl { font-size: 5.5px; font-weight: 600; }
+  .bl.on { color: #84d8fd; }
+  .bl.off { color: #5e7793; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="glow-l"></div>
+  <div class="glow-r"></div>
+  <div class="deco-ring"></div>
+  <div class="deco-ring2"></div>
+  <div class="divider"></div>
+
+  <!-- Left text -->
+  <div class="content">
+    <div class="logo-row">
+      <img class="logo-img" src="well-logo.png" alt="WELL" />
+      <span class="logo-wm">WELL with Loretta</span>
+    </div>
+    <div class="headline">Everything you need<br>to thrive,<br><em>all in one place.</em></div>
+    <p class="sub">Your wellness community for nutrition, connection, mindfulness &amp; events.</p>
+    <div class="feats">
+      <div class="feat"><div class="feat-dot"></div><span>Nutrition Tracking</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>Community Channels</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>Live Events &amp; Retreats</span></div>
+      <div class="feat"><div class="feat-dot"></div><span>Breathwork &amp; Mindfulness</span></div>
+    </div>
+  </div>
+
+  <!-- Back phone: Community -->
+  <div class="phone-back">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+        <div class="c-glow"></div>
+        <div class="c-header">
+          <img class="c-logo" src="well-logo.png" alt="" />
+          <span class="c-title">Community</span>
+          <span class="c-sub">Active now</span>
+        </div>
+        <div class="c-feed">
+          <div class="c-card">
+            <div class="c-top">
+              <div class="c-av" style="background:#5B9BD5;">S</div>
+              <span class="c-name">Sarah M.</span>
+              <span class="c-ts">2m</span>
+            </div>
+            <div class="c-txt">Finally tried magnesium — total game changer for sleep!</div>
+            <div class="c-reacts"><span class="c-react">12 hearts</span><span class="c-react">8 cheers</span></div>
+          </div>
+          <div class="c-card">
+            <div class="c-top">
+              <div class="c-av" style="background:#0191CE;">L</div>
+              <span class="c-name">Lisa K.</span>
+              <span class="c-ts">14m</span>
+            </div>
+            <div class="c-txt">Pair it with chamomile tea — life changing!</div>
+            <div class="c-reacts"><span class="c-react">9 loves</span></div>
+          </div>
+          <div class="c-card">
+            <div class="c-top">
+              <div class="c-av" style="background:#01519D;">M</div>
+              <span class="c-name">Maria T.</span>
+              <span class="c-ts">1h</span>
+            </div>
+            <div class="c-txt">This group has taught me more than any doctor visit.</div>
+            <div class="c-reacts"><span class="c-react">22 hearts</span><span class="c-react">19 sparks</span></div>
+          </div>
+        </div>
+        <div class="bnav">
+          <div class="bi"><div class="bic on"><svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bl on">Home</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bl off">Community</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bl off">Well Cup</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bl off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Front phone: Nutrition -->
+  <div class="phone-front">
+    <div class="phone-outer">
+      <div class="phone-screen">
+        <div class="pdyn"></div>
+        <div class="n-header">
+          <div class="n-header-left">
+            <img class="n-logo" src="well-logo.png" alt="" />
+            <span class="n-title">Nutrition</span>
+          </div>
+          <span class="n-date">Wed, Jul 9</span>
+          <div class="n-add"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        </div>
+
+        <div class="n-ring-section">
+          <div class="n-ring">
+            <svg viewBox="0 0 68 68" width="68" height="68">
+              <defs>
+                <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0191ce"/>
+                  <stop offset="100%" stop-color="#84d8fd"/>
+                </linearGradient>
+              </defs>
+              <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(132,216,253,0.08)" stroke-width="5"/>
+              <circle cx="34" cy="34" r="28" fill="none" stroke="url(#rg2)" stroke-width="5"
+                stroke-dasharray="115 61" stroke-linecap="round" transform="rotate(-90 34 34)"/>
+            </svg>
+            <div class="n-ring-center">
+              <span class="n-ring-num">1,640</span>
+              <span class="n-ring-lbl">cal left</span>
+            </div>
+          </div>
+          <div class="n-macro-list">
+            <div class="n-macro">
+              <span class="n-macro-lbl">Protein</span>
+              <div class="n-macro-bar-wrap"><div class="n-macro-bar" style="width:56%;background:#0191ce;"></div></div>
+              <span class="n-macro-val">68g</span>
+            </div>
+            <div class="n-macro">
+              <span class="n-macro-lbl">Carbs</span>
+              <div class="n-macro-bar-wrap"><div class="n-macro-bar" style="width:63%;background:#84d8fd;"></div></div>
+              <span class="n-macro-val">95g</span>
+            </div>
+            <div class="n-macro">
+              <span class="n-macro-lbl">Fat</span>
+              <div class="n-macro-bar-wrap"><div class="n-macro-bar" style="width:51%;background:rgba(1,145,206,0.7);"></div></div>
+              <span class="n-macro-val">28g</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="n-log">
+          <div class="n-log-hd">
+            <span class="n-log-t">Today's Food</span>
+            <span class="n-log-add">+ Add meal</span>
+          </div>
+          <div class="n-meal">
+            <span class="n-meal-time">8:30 AM</span>
+            <div class="n-meal-body">
+              <div class="n-meal-name">Greek Yogurt Bowl</div>
+              <div class="n-meal-sub">Breakfast &nbsp;·&nbsp; 24g protein</div>
+            </div>
+            <span class="n-meal-cal">312</span>
+          </div>
+          <div class="n-meal">
+            <span class="n-meal-time">12:15 PM</span>
+            <div class="n-meal-body">
+              <div class="n-meal-name">Grilled Salmon Salad</div>
+              <div class="n-meal-sub">Lunch &nbsp;·&nbsp; 38g protein</div>
+            </div>
+            <span class="n-meal-cal">485</span>
+          </div>
+        </div>
+
+        <div class="bnav">
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M3 12L12 3L21 12V20H15V14H9V20H3V12Z"/></svg></div><span class="bl off">Home</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="bl off">Community</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><rect x="6" y="4" width="12" height="9" rx="2"/><path d="M4 22h16M10 22V18l-2-2M14 22V18l2-2"/></svg></div><span class="bl off">Well Cup</span></div>
+          <div class="bi"><div class="bic on"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg></div><span class="bl on">Wellness</span></div>
+          <div class="bi"><div class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="#5e7793" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="bl off">Profile</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
