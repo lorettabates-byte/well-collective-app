@@ -17,7 +17,7 @@ import StreakHistoryModal from "../components/StreakHistoryModal";
 import EventCard from "../components/events/EventCard";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
 import WellGarden from "../components/WellGarden";
-import BrainGamesSection from "../components/games/BrainGamesSection";
+import BrainGameOfDay from "../components/games/BrainGameOfDay";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -65,7 +65,7 @@ function getQuickLinks(goalPlan?: string) {
 }
 
 type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community" | "brain-games";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup", "brain-games"];
+const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "weekly-theme", "inspiration", "brain-games", "tribe", "community", "events", "well-cup"];
 // Section display names — used by Profile layout picker and future drag-handle labels
 export const SECTION_LABELS: Record<SectionId, string> = {
   "daily-plan": "Daily Plan",
@@ -1491,12 +1491,7 @@ export default function Home() {
         }
 
         if (sectionId === "brain-games") {
-          return wrapSection(
-            <div className="mb-6">
-              <SectionHeader title="Brain Games" to="/wellness?tab=activities#brain-games" />
-              <BrainGamesSection />
-            </div>
-          );
+          return wrapSection(<BrainGameOfDay />);
         }
 
         if (sectionId === "daily-plan") {
