@@ -75,7 +75,7 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
       const prev = newKeys[letter];
       const next = states[i];
       if (prev === "correct") return;
-      if (next === "correct" || prev !== "correct") newKeys[letter] = next;
+      if (next === "correct" || prev !== "present") newKeys[letter] = next;
     });
     setKeyStates(newKeys);
     if (guess === answer) {
