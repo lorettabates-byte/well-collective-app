@@ -181,6 +181,22 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
         ))}
       </div>
 
+      {(status === "won" || status === "lost") && (
+        <button
+          onClick={() => {
+            setGrid(makeGrid());
+            setCurrentRow(0);
+            setCurrentCol(0);
+            setKeyStates({});
+            setStatus("playing");
+            setMessage("");
+          }}
+          className="mt-3 w-full text-[10px] text-text-dim py-1.5 rounded-lg border border-border"
+        >
+          Play again
+        </button>
+      )}
+
       {alreadyDone && status !== "won" && (
         <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-emerald-400 font-semibold">
           <CheckCircle2 size={13} /> Points already earned today

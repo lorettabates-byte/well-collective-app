@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Brain, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
 import GratitudeMatch from "./GratitudeMatch";
@@ -164,6 +165,7 @@ export default function BrainGameOfDay() {
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
     return new Set(raw ? raw.split(",") : []).has(game.id);
   });
+  const [showPts, setShowPts] = useState(false);
 
   const markDone = async () => {
     if (done) return;
@@ -172,6 +174,10 @@ export default function BrainGameOfDay() {
     const set = new Set(raw ? raw.split(",") : []);
     set.add(game.id);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...set].join(","));
+    // Celebration
+    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [game.color, "#84D8FD", "#FFFFFF", "#34d399"] });
+    setShowPts(true);
+    setTimeout(() => setShowPts(false), 2200);
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: game.id }).catch(() => {});
     }
@@ -189,7 +195,18 @@ export default function BrainGameOfDay() {
       </div>
 
       {/* Rich game card */}
-      <div className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-br ${game.bg}`}>
+      <div className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-br ${game.bg} relative`}>
+        {/* +20 pts floating animation on win */}
+        {showPts && (
+          <div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+            style={{ animation: "brainWinFloat 2.2s ease-out forwards" }}
+          >
+            <span className="text-2xl font-bold text-emerald-400 drop-shadow-lg" style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)" }}>
+              +20 pts
+            </span>
+          </div>
+        )}
         {/* Preview panel — always visible */}
         {!open && (
           <div className="px-4 pt-3 pb-1">

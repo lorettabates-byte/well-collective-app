@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Heart, LayoutGrid } from "lucide-react";
+import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
 import GratitudeMatch from "./GratitudeMatch";
@@ -58,6 +59,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
     return new Set(raw ? raw.split(",") : []);
   });
+  const [winningGame, setWinningGame] = useState<string | null>(null);
 
   const todayIdx = todayGameIdx();
 
@@ -66,6 +68,10 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     const newSet = new Set(doneTodaySet).add(gameId);
     setDoneTodaySet(newSet);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
+    const g = GAMES.find(x => x.id === gameId);
+    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
+    setWinningGame(gameId);
+    setTimeout(() => setWinningGame(null), 2200);
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
     }
@@ -89,7 +95,17 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           const props = { onComplete: () => markDone(game.id), alreadyDone: done };
 
           return (
-            <div key={game.id} className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-r ${game.bg}`}>
+            <div key={game.id} className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-r ${game.bg} relative`}>
+              {winningGame === game.id && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                  style={{ animation: "brainWinFloat 2.2s ease-out forwards" }}
+                >
+                  <span className="text-2xl font-bold text-emerald-400 drop-shadow-lg" style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)" }}>
+                    +20 pts
+                  </span>
+                </div>
+              )}
               <button
                 onClick={() => setOpenGame(isOpen ? null : game.id)}
                 className="w-full flex items-center gap-3 px-3 py-3 text-left"

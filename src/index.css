@@ -129,6 +129,13 @@ body {
   animation: slide-up-modal 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes brainWinFloat {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.8); }
+  15%  { opacity: 1; transform: translateY(-10px) scale(1.15); }
+  60%  { opacity: 1; transform: translateY(-30px) scale(1); }
+  100% { opacity: 0; transform: translateY(-55px) scale(0.9); }
+}
+
 /* Range input styling for touch and desktop */
 input[type="range"] {
   -webkit-appearance: none;
