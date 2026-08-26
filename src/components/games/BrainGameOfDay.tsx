@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Brain, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import confetti from "canvas-confetti";
@@ -177,15 +177,25 @@ export default function BrainGameOfDay() {
     return new Set(raw ? raw.split(",") : []).has(game.id);
   });
   const [showPts, setShowPts] = useState(false);
+  // Ref guard prevents confetti from double-firing or firing from stale closures
+  const celebratedRef = useRef(false);
+
+  // Stop confetti canvas when navigating away — canvas-confetti renders into
+  // document.body and persists across React Router navigation without this.
+  useEffect(() => {
+    return () => { confetti.reset(); };
+  }, []);
 
   const markDone = async () => {
-    if (done) return;
-    setDone(true);
+    // Check localStorage directly (avoids stale closure) AND use ref guard
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
+    const alreadyStoredDone = new Set(raw ? raw.split(",") : []).has(game.id);
+    if (alreadyStoredDone || celebratedRef.current) return;
+    celebratedRef.current = true;
+    setDone(true);
     const set = new Set(raw ? raw.split(",") : []);
     set.add(game.id);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...set].join(","));
-    // Celebration
     confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [game.color, "#84D8FD", "#FFFFFF", "#34d399"] });
     setShowPts(true);
     setTimeout(() => setShowPts(false), 2200);

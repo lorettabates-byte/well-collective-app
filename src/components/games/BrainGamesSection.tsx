@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Heart, LayoutGrid } from "lucide-react";
 import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
@@ -60,12 +60,22 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     return new Set(raw ? raw.split(",") : []);
   });
   const [winningGame, setWinningGame] = useState<string | null>(null);
+  const celebratedRef = useRef<Set<string>>(new Set());
 
   const todayIdx = todayGameIdx();
 
+  // Stop confetti canvas when navigating away
+  useEffect(() => {
+    return () => { confetti.reset(); };
+  }, []);
+
   const markDone = async (gameId: string) => {
-    if (doneTodaySet.has(gameId)) return;
-    const newSet = new Set(doneTodaySet).add(gameId);
+    // Check localStorage directly + ref guard — prevents stale closure double-fires
+    const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
+    const alreadyStoredDone = new Set(raw ? raw.split(",") : []).has(gameId);
+    if (alreadyStoredDone || celebratedRef.current.has(gameId)) return;
+    celebratedRef.current.add(gameId);
+    const newSet = new Set(raw ? raw.split(",") : []).add(gameId);
     setDoneTodaySet(newSet);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
     const g = GAMES.find(x => x.id === gameId);
