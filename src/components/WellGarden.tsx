@@ -1,4 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronUp, Pencil } from "lucide-react";
+
+const GOAL_KEY = "well-cup-personal-goal";
+const GOAL_PRESETS = [100, 200, 300, 500];
 
 interface Props { dailyPts: number; goalPts?: number }
 
@@ -12,7 +16,14 @@ const STAGES = [
   "Full bloom — a crown of light",
 ];
 
-export default function WellGarden({ dailyPts, goalPts = 200 }: Props) {
+export default function WellGarden({ dailyPts, goalPts }: Props) {
+  const [personalGoal, setPersonalGoal] = useState<number>(() => {
+    const saved = localStorage.getItem(GOAL_KEY);
+    return saved ? parseInt(saved, 10) : (goalPts ?? 200);
+  });
+  const [editingGoal, setEditingGoal] = useState(false);
+  const effectiveGoal = personalGoal;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const timeRef = useRef(0);
@@ -201,7 +212,7 @@ export default function WellGarden({ dailyPts, goalPts = 200 }: Props) {
     function frame() {
       timeRef.current += 0.016;
       const t = timeRef.current;
-      const pct = cl(ptsRef.current / goalPts, 0, 1);
+      const pct = cl(ptsRef.current / effectiveGoal, 0, 1);
       ctx.clearRect(0, 0, W, H);
 
       // Sky
@@ -266,24 +277,70 @@ export default function WellGarden({ dailyPts, goalPts = 200 }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalPts]);
 
-  const pct = Math.min(1, dailyPts / goalPts);
+  const pct = Math.min(1, dailyPts / effectiveGoal);
   const stageIdx = Math.min(6, Math.floor(pct * 7));
+  const goalMet = dailyPts >= effectiveGoal;
+
+  const saveGoal = (val: number) => {
+    if (val > 0) {
+      setPersonalGoal(val);
+      localStorage.setItem(GOAL_KEY, String(val));
+    }
+    setEditingGoal(false);
+  };
 
   return (
     <div className="rounded-card bg-surface-2 border border-border overflow-hidden mt-3">
       <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <span className="text-[11px] font-bold text-brand-light uppercase tracking-wider">Your WELL Garden</span>
+        <span className="text-[11px] font-bold text-brand-light uppercase tracking-wider">WELL Cup · Daily Garden</span>
         <span className="ml-auto text-[10px] text-text-dim">Resets daily</span>
       </div>
       <canvas ref={canvasRef} width={332} height={200} className="w-full block" />
-      <div className="px-3 pb-3 pt-1.5">
-        <div className="flex justify-between mb-1.5">
-          <span className="text-[10px] text-text-dim">{STAGES[stageIdx]}</span>
-          <span className="text-xs font-semibold text-text">{dailyPts} / {goalPts}</span>
+      <div className="px-3 pb-3 pt-2">
+        {/* pts + edit button */}
+        <div className="flex items-baseline justify-between mb-1.5">
+          <span className="text-[10px] text-text-dim italic">{STAGES[stageIdx]}</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-extrabold leading-none ${goalMet ? "text-brand-light" : "text-text"}`}>
+              {dailyPts} <span className="text-[10px] font-normal text-text-dim">/ {effectiveGoal} pts</span>
+            </span>
+            <button onClick={() => setEditingGoal(v => !v)} className="text-text-dim" aria-label="Edit goal">
+              {editingGoal ? <ChevronUp size={12} /> : <Pencil size={11} />}
+            </button>
+          </div>
         </div>
-        <div className="h-1 bg-surface rounded-full overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-brand-dark via-brand-blue to-brand-light transition-all duration-700" style={{ width: `${pct * 100}%` }} />
+
+        {/* goal presets */}
+        {editingGoal && (
+          <div className="flex gap-1.5 flex-wrap mb-2">
+            {GOAL_PRESETS.map(p => (
+              <button
+                key={p}
+                onClick={() => saveGoal(p)}
+                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all ${personalGoal === p ? "gradient-brand text-white border-transparent" : "bg-surface border-border text-text-muted"}`}
+              >
+                {p} pts
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* progress bar */}
+        <div className="h-1.5 bg-surface rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-dark via-brand-blue to-brand-light transition-all duration-700"
+            style={{ width: `${pct * 100}%` }}
+          />
         </div>
+
+        {/* caption */}
+        <p className={`text-[10px] mt-1.5 ${goalMet ? "text-brand-light font-semibold" : "text-text-dim"}`}>
+          {goalMet
+            ? "Goal reached — your garden is thriving!"
+            : dailyPts > 0
+              ? `${effectiveGoal - dailyPts} pts to go — keep going!`
+              : "Log a meal, class, or check-in to start growing."}
+        </p>
       </div>
     </div>
   );

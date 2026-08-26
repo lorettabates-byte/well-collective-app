@@ -1,14 +1,10 @@
-import { ChevronDown, ChevronUp, Pencil, Target, Trophy } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchLeaderboard, fetchYesterdayWinner, type LeaderboardEntry } from "../utils/wellCup";
 import { useApp } from "../store/AppContext";
 import Avatar from "./ui/Avatar";
 
-const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-const GOAL_PRESETS = [100, 200, 300, 500];
-const GOAL_KEY = "well-cup-personal-goal";
 
 function deriveMemberId(email: string): string {
   const lower = email.toLowerCase();
@@ -48,24 +44,6 @@ export default function WellCupLeaderboard() {
   const [view, setView] = useState<ViewState>("top5");
   const [loadingAll, setLoadingAll] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [myPointsToday, setMyPointsToday] = useState<number>(() => {
-    try {
-      const cached = JSON.parse(localStorage.getItem("well-cup-today-pts") ?? "{}") as { pts?: number; date?: string };
-      const today = new Date().toISOString().slice(0, 10);
-      if (cached.date === today) return cached.pts ?? 0;
-    } catch { /* ignore */ }
-    return 0;
-  });
-
-  // Personal goal
-  const [personalGoal, setPersonalGoal] = useState<number>(() => {
-    const saved = localStorage.getItem(GOAL_KEY);
-    return saved ? parseInt(saved, 10) : 200;
-  });
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [customInput, setCustomInput] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     Promise.all([fetchLeaderboard(10), fetchYesterdayWinner()])
       .then(([lb, winner]) => {
@@ -75,27 +53,6 @@ export default function WellCupLeaderboard() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!API_URL || !user.email) return;
-    fetch(`${API_URL}/api/activity/today?email=${encodeURIComponent(user.email)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data?.totalPoints !== undefined) setMyPointsToday(data.totalPoints); })
-      .catch(() => {});
-  }, [user.email]);
-
-  useEffect(() => {
-    if (editingGoal) inputRef.current?.focus();
-  }, [editingGoal]);
-
-  const saveGoal = (val: number) => {
-    if (val > 0) {
-      setPersonalGoal(val);
-      localStorage.setItem(GOAL_KEY, String(val));
-    }
-    setEditingGoal(false);
-    setCustomInput("");
-  };
 
   const expandToAll = async () => {
     setLoadingAll(true);
@@ -107,12 +64,8 @@ export default function WellCupLeaderboard() {
 
   if (loading) return null;
 
-  // Find the current user's rank from the leaderboard; points come from the dedicated endpoint
   const myEntry = user.email ? allEntries.find((e) => e.email?.toLowerCase() === user.email?.toLowerCase()) : undefined;
-  const myPoints = myPointsToday > 0 ? myPointsToday : (myEntry?.points ?? 0);
   const myRank = myEntry ? allEntries.indexOf(myEntry) + 1 : null;
-  const goalPct = Math.min(100, Math.round((myPoints / personalGoal) * 100));
-  const goalMet = myPoints >= personalGoal;
 
   const displayed = view === "top5" ? allEntries.slice(0, 5)
     : view === "top10" ? allEntries.slice(0, 10)
@@ -130,86 +83,9 @@ export default function WellCupLeaderboard() {
         {resetAt && <Countdown resetAt={resetAt} />}
       </div>
 
-      {/* Personal daily goal */}
-      <div className={`rounded-card px-3 py-2.5 mb-3 border ${goalMet ? "border-brand-light/50 bg-brand/10" : "border-border bg-surface-2"}`}>
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <Target size={12} className={goalMet ? "text-brand-light" : "text-text-dim"} />
-            <span className="text-[11px] font-bold text-text uppercase tracking-wide">Your Daily Goal</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {myRank && (
-              <span className="text-[10px] text-text-dim">#{myRank} on board</span>
-            )}
-            <button
-              onClick={() => setEditingGoal((v) => !v)}
-              className="text-text-dim"
-              aria-label="Edit goal"
-            >
-              {editingGoal ? <ChevronUp size={13} /> : <Pencil size={11} />}
-            </button>
-          </div>
-        </div>
-
-        {editingGoal ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2 flex-wrap">
-              {GOAL_PRESETS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => saveGoal(p)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${personalGoal === p ? "gradient-brand text-white border-transparent shadow-glow" : "bg-surface border-border text-text-muted"}`}
-                >
-                  {p} pts
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                type="number"
-                min={10}
-                max={9999}
-                placeholder="Custom…"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveGoal(parseInt(customInput, 10));
-                  if (e.key === "Escape") { setEditingGoal(false); setCustomInput(""); }
-                }}
-                className="flex-1 text-xs bg-surface border border-border rounded-pill px-3 py-1.5 text-text placeholder:text-text-dim outline-none focus:border-brand-light/50"
-              />
-              <button
-                onClick={() => customInput ? saveGoal(parseInt(customInput, 10)) : setEditingGoal(false)}
-                className="text-xs font-semibold text-brand-light"
-              >
-                Set
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-end justify-between mb-1">
-              <span className={`text-base font-extrabold leading-none ${goalMet ? "text-brand-light" : "text-text"}`}>
-                {myPoints} <span className="text-xs font-normal text-text-dim">/ {personalGoal} pts</span>
-              </span>
-              {goalMet && <span className="text-[10px] font-bold text-brand-light">Goal reached!</span>}
-            </div>
-            <div className="h-[5px] rounded-full bg-surface overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${goalMet ? "gradient-brand shadow-glow" : "gradient-brand"}`}
-                style={{ width: `${goalPct}%` }}
-              />
-            </div>
-            {!goalMet && myPoints > 0 && (
-              <p className="text-[10px] text-text-dim mt-1">{personalGoal - myPoints} pts to go — keep logging!</p>
-            )}
-            {myPoints === 0 && (
-              <p className="text-[10px] text-text-dim mt-1">Log a meal, class, or check-in to start earning.</p>
-            )}
-          </>
-        )}
-      </div>
+      {myRank && (
+        <p className="text-[10px] text-text-dim mb-3">You're #{myRank} on today's board</p>
+      )}
 
       {yesterday && (
         <div className="flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 rounded-card px-3 py-2 mb-3">
