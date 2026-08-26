@@ -55,6 +55,7 @@ import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { generateWorkout, type WorkoutPlan } from "../data/workoutLibrary";
 import { logActivity, unlogActivity } from "../utils/wellCup";
+import BrainGamesSection from "../components/games/BrainGamesSection";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
 import { ALL_BADGES } from "../data/badges";
 import { computeBadges, computeStreak, getStreakMilestone } from "../utils/streaks";
@@ -2535,6 +2536,8 @@ export default function Wellness() {
 
           </div>
         </div>
+
+        <BrainGamesSection />
       </>}
 
       {/* ── STREAKS TAB ─────────────────────────────────────── */}

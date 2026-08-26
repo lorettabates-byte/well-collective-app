@@ -23,7 +23,8 @@ export type ActivityType =
   | "tutorial_complete"
   | "notifications_enabled"
   | "add_to_homescreen"
-  | "steps";
+  | "steps"
+  | "brain_game";
 
 export interface ActivityResult {
   awarded: boolean;

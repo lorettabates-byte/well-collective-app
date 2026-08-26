@@ -16,6 +16,8 @@ import NotificationOptInModal from "../components/NotificationOptInModal";
 import StreakHistoryModal from "../components/StreakHistoryModal";
 import EventCard from "../components/events/EventCard";
 import TribeActivityStrip from "../components/home/TribeActivityStrip";
+import WellGarden from "../components/WellGarden";
+import BrainGamesSection from "../components/games/BrainGamesSection";
 import ThreadPreviewCard from "../components/community/ThreadPreviewCard";
 import InspirationCard from "../components/inspiration/InspirationCard";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -62,8 +64,8 @@ function getQuickLinks(goalPlan?: string) {
   return [...priorityLinks, ...rest];
 }
 
-type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup"];
+type SectionId = "daily-plan" | "well-cup" | "weekly-theme" | "inspiration" | "events" | "tribe" | "community" | "brain-games";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["daily-plan", "weekly-theme", "inspiration", "tribe", "community", "events", "well-cup", "brain-games"];
 // Section display names — used by Profile layout picker and future drag-handle labels
 export const SECTION_LABELS: Record<SectionId, string> = {
   "daily-plan": "Daily Plan",
@@ -73,6 +75,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   "events": "Upcoming Events",
   "tribe": "Tribe Activity",
   "community": "From the Community",
+  "brain-games": "Brain Games",
 };
 
 const GOAL_TAGLINES: Record<string, string> = {
@@ -1481,7 +1484,17 @@ export default function Home() {
           return wrapSection(
             <div className="mb-6">
               <SectionHeader title="WELL Cup" to="/well-cup" />
+              <WellGarden dailyPts={homePoints ?? 0} goalPts={200} />
               <WellCupLeaderboard />
+            </div>
+          );
+        }
+
+        if (sectionId === "brain-games") {
+          return wrapSection(
+            <div className="mb-6">
+              <SectionHeader title="Brain Games" to="/wellness?tab=activities#brain-games" />
+              <BrainGamesSection />
             </div>
           );
         }
