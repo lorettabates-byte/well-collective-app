@@ -1,4 +1,4 @@
-import { BarChart2, ChevronDown, ChevronUp, Clock, Flame, TrendingUp, Trophy, Users } from "lucide-react";
+import { BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, TrendingUp, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { Capacitor } from "@capacitor/core";
@@ -7,7 +7,7 @@ import { useApp } from "../../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-type Tab = "overview" | "members" | "sections" | "tutorial" | "wellcup";
+type Tab = "overview" | "members" | "sections" | "tutorial" | "wellcup" | "games";
 
 interface DashboardData {
   summary: {
@@ -27,6 +27,9 @@ interface DashboardData {
   wellCupByType: { activity_type: string; total_points: number; events: number; unique_earners: number }[];
   wellCupByMember: { member_email: string; name: string; total_points: number; events: number }[];
   wellCupRecent: { member_email: string; name: string; activity_type: string; points: number; metadata: Record<string, unknown> | null; created_at: string }[];
+  brainGameByType: { game_id: string; plays: number; unique_players: number; total_points: number }[];
+  brainGameTopPlayers: { member_email: string; name: string; total_plays: number; games_variety: number; total_points: number; last_played: string }[];
+  brainGameDaily: { day: string; plays: number; unique_players: number }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
   memberSections: { member_email: string; section: string; visits: number }[];
@@ -520,6 +523,7 @@ function WellCupTab({ data }: { data: DashboardData }) {
     well_activity: "WELL Activity", event_attend: "Event Attended", well_escape: "WELL Escape",
     tribe_add: "Tribe Member Added", daily_challenge_accept: "Daily Challenge",
     profile_photo: "Profile Photo", login_streak_bonus: "Login Streak Bonus",
+    brain_game: "Brain Game",
   };
 
   return (
@@ -616,6 +620,126 @@ function WellCupTab({ data }: { data: DashboardData }) {
   );
 }
 
+const GAME_LABELS: Record<string, string> = {
+  wordwell: "WordWell",
+  calmfocus: "Calm Focus",
+  gratitude: "Gratitude Match",
+  mindgarden: "Mind Garden",
+};
+
+const GAME_COLORS: Record<string, string> = {
+  wordwell: "#3b9eff",
+  calmfocus: "#f472b6",
+  gratitude: "#34d399",
+  mindgarden: "#fbbf24",
+};
+
+function GamesTab({ data }: { data: DashboardData }) {
+  const totalPlays = data.brainGameByType.reduce((s, g) => s + Number(g.plays), 0);
+  const totalUnique = data.brainGameByType.reduce((s, g) => s + Number(g.unique_players), 0);
+  const totalPts = data.brainGameByType.reduce((s, g) => s + Number(g.total_points), 0);
+  const maxPlays = Math.max(1, ...data.brainGameByType.map(g => Number(g.plays)));
+  const maxDailyPlays = Math.max(1, ...data.brainGameDaily.map(d => Number(d.plays)));
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Total Plays" value={totalPlays.toLocaleString()} sub="last 30 days" />
+        <StatCard label="Unique Players" value={totalUnique.toLocaleString()} sub="last 30 days" />
+        <StatCard label="Points Earned" value={totalPts.toLocaleString()} sub="last 30 days" />
+      </div>
+
+      {/* Daily play trend */}
+      {data.brainGameDaily.length > 0 && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-3">Daily Plays (14 days)</p>
+          <div className="flex items-end gap-1 h-20">
+            {data.brainGameDaily.map((d) => {
+              const pct = Math.round((Number(d.plays) / maxDailyPlays) * 100);
+              const date = new Date(d.day);
+              const label = `${date.getMonth() + 1}/${date.getDate()}`;
+              return (
+                <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex flex-col justify-end h-16">
+                    <div
+                      className="w-full rounded-sm gradient-brand opacity-80"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                    />
+                  </div>
+                  <span className="text-[8px] text-text-dim">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* By game */}
+      {data.brainGameByType.length > 0 && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-3">Plays by Game (last 30 days)</p>
+          <div className="flex flex-col gap-3">
+            {data.brainGameByType.map(g => (
+              <div key={g.game_id}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-text">{GAME_LABELS[g.game_id] ?? g.game_id}</span>
+                  <span className="text-xs text-text-dim">
+                    {Number(g.plays).toLocaleString()} plays · {Number(g.unique_players)} players
+                  </span>
+                </div>
+                <div className="h-2 rounded-pill bg-surface-2 overflow-hidden flex-1">
+                  <div
+                    className="h-full rounded-pill"
+                    style={{
+                      width: `${maxPlays > 0 ? Math.round((Number(g.plays) / maxPlays) * 100) : 0}%`,
+                      background: GAME_COLORS[g.game_id] ?? "#3b9eff",
+                      opacity: 0.75,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.brainGameByType.length === 0 && (
+        <div className="glass-card rounded-card p-6 text-center">
+          <Brain size={24} className="text-text-dim mx-auto mb-2" />
+          <p className="text-xs text-text-muted">No brain game plays recorded yet</p>
+        </div>
+      )}
+
+      {/* Top players */}
+      {data.brainGameTopPlayers.length > 0 && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-3">Top Players (last 30 days)</p>
+          <CollapsibleList
+            items={data.brainGameTopPlayers}
+            renderItem={(p, i) => {
+              const last = new Date(p.last_played);
+              const lastStr = last.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              return (
+                <div key={p.member_email} className="flex items-center gap-3 py-1 border-b border-border last:border-0">
+                  <span className="text-xs text-text-dim w-5 text-right shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-text truncate">{p.name || p.member_email}</p>
+                    <p className="text-[10px] text-text-dim">{p.games_variety} game{Number(p.games_variety) !== 1 ? "s" : ""} · last {lastStr}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-bold text-brand-light">{Number(p.total_plays)} plays</p>
+                    <p className="text-[10px] text-text-dim">{Number(p.total_points)} pts</p>
+                  </div>
+                </div>
+              );
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAnalytics() {
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<DashboardData | null>(null);
@@ -647,6 +771,7 @@ export default function AdminAnalytics() {
     { id: "sections", label: "Sections", icon: BarChart2 },
     { id: "tutorial", label: "Tutorial", icon: Users },
     { id: "wellcup", label: "WELL Cup", icon: Trophy },
+    { id: "games", label: "Games", icon: Brain },
   ];
 
   return (
@@ -695,6 +820,7 @@ export default function AdminAnalytics() {
             {tab === "sections" && <SectionsTab data={data} />}
             {tab === "tutorial" && <TutorialTab data={data} />}
             {tab === "wellcup" && <WellCupTab data={data} />}
+            {tab === "games" && <GamesTab data={data} />}
           </>
         )}
 
