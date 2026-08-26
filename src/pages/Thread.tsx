@@ -176,7 +176,7 @@ export default function Thread() {
           </div>
         }
       />
-      <div className="px-4 pt-4 pb-28">
+      <div className="px-4 pt-4 pb-48">
         <p className="text-xs text-text-dim mb-4">
           Started by {authorName} · {timeAgo(thread.createdAt)}
         </p>
@@ -216,7 +216,8 @@ export default function Thread() {
 
       <form
         onSubmit={handleSend}
-        className="sticky bottom-0 z-30 glass-card border-t border-border px-3 py-2.5 flex flex-col gap-2 mt-4"
+        className="fixed left-0 right-0 z-30 glass-card border-t border-border px-3 py-2.5 flex flex-col gap-2"
+        style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
       >
         {replyingTo && (
           <div className="flex items-center gap-2 px-2 py-1.5 bg-brand/10 rounded-lg border-l-2 border-brand-light/60">

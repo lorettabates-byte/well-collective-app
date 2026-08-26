@@ -239,6 +239,7 @@ export default function Messages() {
   const composeRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isNearBottomRef = useRef(true);
+  const safeAreaBottomRef = useRef(0);
 
   // Scroll messages list to bottom (targets the inner scroll container, not MobileShell)
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
@@ -254,6 +255,15 @@ export default function Messages() {
     isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
+  // Measure safe-area-inset-bottom once (for use in the keyboard reposition JS below)
+  useEffect(() => {
+    const div = document.createElement("div");
+    div.style.cssText = "position:fixed;top:-9999px;padding-bottom:env(safe-area-inset-bottom,0px)";
+    document.body.appendChild(div);
+    safeAreaBottomRef.current = parseFloat(getComputedStyle(div).paddingBottom) || 0;
+    document.body.removeChild(div);
+  }, []);
+
   // Adjust compose box when virtual keyboard opens/closes (iOS PWA / Capacitor).
   // vv.offsetTop is the viewport scroll amount which exactly cancels the keyboard
   // height in the (height + offsetTop) formula, so we drop it: keyboard height is
@@ -266,7 +276,9 @@ export default function Messages() {
       const box = composeRef.current;
       if (!box) return;
       const keyboardHeight = Math.max(0, window.innerHeight - vv.height);
-      box.style.bottom = `${keyboardHeight + 80}px`;
+      // When keyboard is open the safe area collapses to 0, so only add it when closed
+      const sab = keyboardHeight > 0 ? 0 : safeAreaBottomRef.current;
+      box.style.bottom = `${keyboardHeight + 72 + sab}px`;
       if (keyboardHeight > 0) setTimeout(() => scrollToBottom("smooth"), 80);
     };
     vv.addEventListener("resize", reposition);
@@ -543,7 +555,7 @@ export default function Messages() {
         }
       />
 
-      <div ref={messagesListRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 pt-4 pb-24 flex flex-col gap-3 min-h-0">
+      <div ref={messagesListRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 pt-4 pb-40 flex flex-col gap-3 min-h-0">
         {messages.length === 0 ? (
           <p className="text-xs text-text-muted text-center py-8">No messages yet. Start the conversation!</p>
         ) : (
@@ -581,7 +593,7 @@ export default function Messages() {
       <div
         ref={composeRef}
         className="fixed left-0 right-0 px-4 py-3 border-t border-border bg-bg"
-        style={{ bottom: 80 }}
+        style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
       >
         {pendingImage && (
           <div className="relative mb-2 inline-block">
