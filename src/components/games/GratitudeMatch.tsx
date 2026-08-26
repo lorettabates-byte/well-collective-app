@@ -68,11 +68,28 @@ const PAIR_ICONS: React.FC<{ className?: string }>[] = [
   ),
 ];
 
-// WELL logo outline for card backs
+// Real WELL logo (three-stroke flame mark) for card backs
 const WellLogoBack = () => (
-  <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-5 opacity-30">
-    <polyline points="2,4 7,20 12,8 17,20 22,4"/>
-    <line x1="28" y1="4" x2="28" y2="20"/><line x1="28" y1="20" x2="38" y2="20"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="20 9 192 270" className="w-10 h-14 opacity-50">
+    <defs>
+      <clipPath id="wlb-c1"><path d="M 0 1.351562 L 103 1.351562 L 103 263 L 0 263 Z" clipRule="nonzero"/></clipPath>
+      <clipPath id="wlb-c2"><path d="M 52 63 L 131 63 L 131 268.351562 L 52 268.351562 Z" clipRule="nonzero"/></clipPath>
+      <clipPath id="wlb-c3"><path d="M 102 117 L 169.679688 117 L 169.679688 257 L 102 257 Z" clipRule="nonzero"/></clipPath>
+      <clipPath id="wlb-c4"><rect x="0" width="170" y="0" height="269"/></clipPath>
+    </defs>
+    <g transform="matrix(1,0,0,1,42,9)">
+      <g clipPath="url(#wlb-c4)">
+        <g clipPath="url(#wlb-c1)">
+          <path fill="#00529c" d="M 84.976562 0.160156 C 100.363281 25.625 119.875 68.1875 74.523438 118.039062 C 24.457031 173.039062 22.847656 234.09375 51.957031 262.667969 C 0.0664062 242.242188 -21.699219 172.449219 29.441406 107.585938 C 73.613281 51.515625 83.046875 27.285156 84.976562 0.160156 Z"/>
+        </g>
+        <g clipPath="url(#wlb-c2)">
+          <path fill="#0091d0" d="M 113.761719 63.738281 C 115.855469 87.429688 110.011719 108.925781 84.28125 137.925781 C 31.53125 197.375 48.203125 281.105469 107.597656 266.527344 C 79.5625 256.234375 70.398438 203.109375 103.203125 165.910156 C 139.707031 124.363281 135.207031 94.5625 113.761719 63.738281 Z"/>
+        </g>
+        <g clipPath="url(#wlb-c3)">
+          <path fill="#85dbff" d="M 144.960938 117.664062 C 144.90625 133.425781 144.53125 148.273438 120.140625 174.109375 C 83.851562 212.597656 111.617188 269.261719 134.453125 253.875 C 158.09375 237.902344 167.636719 213.726562 169.082031 182.957031 C 170.53125 152.132812 144.960938 117.664062 144.960938 117.664062 Z"/>
+        </g>
+      </g>
+    </g>
   </svg>
 );
 
