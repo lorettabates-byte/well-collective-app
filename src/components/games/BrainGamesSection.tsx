@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Brain, ChevronDown, ChevronUp } from "lucide-react";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
 import GratitudeMatch from "./GratitudeMatch";

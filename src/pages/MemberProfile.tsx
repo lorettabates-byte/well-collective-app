@@ -11,6 +11,7 @@ import ChallengeInvite from "../components/tribe/ChallengeInvite";
 import EventInvite from "../components/tribe/EventInvite";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { TRIBE_CHEERS, BIRTHDAY_CHEER_ID } from "../data/cheers";
+import { MOOD_STATUSES } from "../data/moods";
 import { birthdayDateForYear } from "../utils/birthday";
 import { computeStreak } from "../utils/streaks";
 import { useApp } from "../store/AppContext";
@@ -235,6 +236,21 @@ export default function MemberProfile() {
           </div>
 
           <h1 className="text-xl font-bold text-white">{member.name}</h1>
+
+          {/* Mood label — shown when member has an active mood */}
+          {inTribe && member.moodStatus && (() => {
+            const mood = MOOD_STATUSES.find((m) => m.id === member.moodStatus);
+            if (!mood) return null;
+            return (
+              <div
+                className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium"
+                style={{ background: `${mood.color}22`, border: `1px solid ${mood.color}55`, color: "#fff" }}
+              >
+                <span>{mood.emoji}</span>
+                <span>{mood.label}</span>
+              </div>
+            );
+          })()}
           {featuredBadge && (
             <p className="text-xs font-semibold text-white/70 mt-0.5">
               {featuredBadge.icon} {featuredBadge.label}

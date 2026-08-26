@@ -43,10 +43,9 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
   const [slotStates, setSlotStates] = useState<("idle" | "lit" | "correct" | "wrong")[]>([]);
   const [result, setResult] = useState("");
   const [score, setScore] = useState(0);
-  const [finished, setFinished] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startRound = (r: number, len: number) => {
+  const startRound = (len: number) => {
     const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 6));
     setSequence(seq);
     setUserSeq([]);
@@ -64,7 +63,7 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
   };
 
   useEffect(() => {
-    startRound(0, 3);
+    startRound(3);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -84,7 +83,6 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
         setScore(newScore);
         if (round + 1 >= TOTAL_ROUNDS) {
           setPhase("done");
-          setFinished(true);
           setResult("All 5 rounds complete!");
           if (!alreadyDone) onComplete();
         } else {
@@ -94,7 +92,7 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
             const nl = seqLen + 1;
             setRound(nr);
             setSeqLen(nl);
-            startRound(nr, nl);
+            startRound(nl);
           }, 900);
         }
       }
@@ -103,7 +101,7 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
       ns[pos] = "wrong";
       setSlotStates(ns);
       setResult("Not quite — restarting round");
-      timerRef.current = setTimeout(() => startRound(round, seqLen), 1000);
+      timerRef.current = setTimeout(() => startRound(seqLen), 1000);
     }
   };
 

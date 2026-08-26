@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const WORDS = [
   "SLEEP","PEACE","VITAL","BLOOM","FOCUS","GRACE","ALIGN","RENEW","WHOLE","LIGHT",
@@ -26,8 +26,8 @@ const KEYBOARD = [
   ["ENTER","Z","X","C","V","B","N","M","⌫"],
 ];
 
-function evalGuess(guess: string, answer: string): CellState[] {
-  const result: CellState[] = Array(COLS).fill("absent");
+function evalGuess(guess: string, answer: string): ("correct" | "present" | "absent")[] {
+  const result: ("correct" | "present" | "absent")[] = Array(COLS).fill("absent");
   const answerArr = answer.split("");
   const used = Array(COLS).fill(false);
   // correct pass
