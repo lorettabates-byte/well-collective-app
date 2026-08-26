@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Heart, LayoutGrid } from "lucide-react";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
 import GratitudeMatch from "./GratitudeMatch";
@@ -15,38 +15,33 @@ const GAMES = [
   {
     id: "wordwell",
     title: "WordWell",
-    tagline: "Wordle for wellness — guess the daily word",
-    color: "#3b9eff",
-    bg: "from-blue-900/40 to-indigo-900/30",
-    border: "border-blue-700/30",
+    tagline: "Guess the daily 5-letter wellness word",
+    color: "#3b9eff", bg: "from-blue-900/40 to-indigo-900/30", border: "border-blue-700/30",
+    Icon: BookOpen,
   },
   {
     id: "calmfocus",
     title: "Calm Focus",
     tagline: "Memorize the symbol sequence. Stay present.",
-    color: "#f472b6",
-    bg: "from-pink-900/30 to-purple-900/30",
-    border: "border-pink-700/30",
+    color: "#f472b6", bg: "from-pink-900/30 to-purple-900/30", border: "border-pink-700/30",
+    Icon: Eye,
   },
   {
     id: "gratitude",
     title: "Gratitude Match",
     tagline: "Find pairs. Reflect on each gift.",
-    color: "#34d399",
-    bg: "from-emerald-900/30 to-teal-900/30",
-    border: "border-emerald-700/30",
+    color: "#34d399", bg: "from-emerald-900/30 to-teal-900/30", border: "border-emerald-700/30",
+    Icon: Heart,
   },
   {
     id: "mindgarden",
     title: "Mind Garden",
-    tagline: "Slide tiles to reveal today's garden scene.",
-    color: "#fbbf24",
-    bg: "from-amber-900/30 to-yellow-900/30",
-    border: "border-amber-700/30",
+    tagline: "Slide tiles to complete the garden.",
+    color: "#fbbf24", bg: "from-amber-900/30 to-yellow-900/30", border: "border-amber-700/30",
+    Icon: LayoutGrid,
   },
 ];
 
-// Today's featured game rotates daily
 function todayGameIdx(): number {
   const start = new Date("2024-01-01").getTime();
   const day = Math.floor((Date.now() - start) / 86400000);
@@ -76,16 +71,6 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     }
   };
 
-  const GameComponent = ({ id }: { id: string }) => {
-    const done = doneTodaySet.has(id);
-    const props = { onComplete: () => markDone(id), alreadyDone: done };
-    if (id === "wordwell") return <WordWell {...props} />;
-    if (id === "calmfocus") return <CalmFocus {...props} />;
-    if (id === "gratitude") return <GratitudeMatch {...props} />;
-    if (id === "mindgarden") return <MindGardenPuzzle {...props} />;
-    return null;
-  };
-
   return (
     <div className="glass-card rounded-card p-4 mt-4" id="brain-games">
       <div className="flex items-center gap-2 mb-1 pb-2 border-b border-border">
@@ -100,6 +85,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           const isToday = i === todayIdx;
           const isOpen = openGame === game.id;
           const done = doneTodaySet.has(game.id);
+          const GameIcon = game.Icon;
+          const props = { onComplete: () => markDone(game.id), alreadyDone: done };
 
           return (
             <div key={game.id} className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-r ${game.bg}`}>
@@ -107,6 +94,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                 onClick={() => setOpenGame(isOpen ? null : game.id)}
                 className="w-full flex items-center gap-3 px-3 py-3 text-left"
               >
+                <GameIcon size={14} style={{ color: game.color }} className="shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-text">{game.title}</span>
@@ -116,7 +104,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                       </span>
                     )}
                     {done && (
-                      <span className="text-[9px] font-semibold text-emerald-400 ml-auto">✓ Done</span>
+                      <span className="text-[9px] font-semibold text-emerald-400 ml-auto">Done</span>
                     )}
                   </div>
                   <p className="text-[10px] text-text-dim mt-0.5">{game.tagline}</p>
@@ -127,7 +115,13 @@ export default function BrainGamesSection({ initialOpen }: Props) {
               {isOpen && (
                 <div className="px-3 pb-4 border-t border-white/5">
                   <div className="mt-3">
-                    <GameComponent id={game.id} />
+                    {/* Render game components directly — NOT via an inline function component.
+                        Inline component definitions cause React to unmount/remount on every render,
+                        losing all game state. Direct rendering keeps the component identity stable. */}
+                    {game.id === "wordwell"   && <WordWell {...props} />}
+                    {game.id === "calmfocus"  && <CalmFocus {...props} />}
+                    {game.id === "gratitude"  && <GratitudeMatch {...props} />}
+                    {game.id === "mindgarden" && <MindGardenPuzzle {...props} />}
                   </div>
                 </div>
               )}

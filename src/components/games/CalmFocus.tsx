@@ -79,6 +79,7 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
       ns[pos] = "correct";
       setSlotStates(ns);
       if (newUser.length === sequence.length) {
+        setPhase("showing"); // lock input immediately — prevents spurious wrong taps
         const newScore = score + sequence.length * 10;
         setScore(newScore);
         if (round + 1 >= TOTAL_ROUNDS) {

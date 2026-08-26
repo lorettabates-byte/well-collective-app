@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Heart, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
@@ -9,10 +9,10 @@ import { logActivity } from "../../utils/wellCup";
 import { useApp } from "../../store/AppContext";
 
 const GAMES = [
-  { id: "wordwell",   title: "WordWell",        tagline: "Guess the daily wellness word",       color: "#3b9eff", bg: "from-blue-900/40 to-indigo-900/30",   border: "border-blue-700/30" },
-  { id: "calmfocus",  title: "Calm Focus",       tagline: "Memorize the symbol sequence",        color: "#f472b6", bg: "from-pink-900/30 to-purple-900/30",   border: "border-pink-700/30" },
-  { id: "gratitude",  title: "Gratitude Match",  tagline: "Find pairs. Reflect on each gift.",   color: "#34d399", bg: "from-emerald-900/30 to-teal-900/30",  border: "border-emerald-700/30" },
-  { id: "mindgarden", title: "Mind Garden",      tagline: "Slide tiles to reveal today's scene", color: "#fbbf24", bg: "from-amber-900/30 to-yellow-900/30", border: "border-amber-700/30" },
+  { id: "wordwell",   title: "WordWell",       tagline: "Guess the daily 5-letter wellness word", color: "#3b9eff", bg: "from-blue-900/40 to-indigo-900/30",   border: "border-blue-700/30",   Icon: BookOpen },
+  { id: "calmfocus",  title: "Calm Focus",      tagline: "Memorize the symbol sequence",           color: "#f472b6", bg: "from-pink-900/30 to-purple-900/30",   border: "border-pink-700/30",   Icon: Eye },
+  { id: "gratitude",  title: "Gratitude Match", tagline: "Find pairs. Reflect on each gift.",      color: "#34d399", bg: "from-emerald-900/30 to-teal-900/30",  border: "border-emerald-700/30", Icon: Heart },
+  { id: "mindgarden", title: "Mind Garden",     tagline: "Slide tiles to complete the garden",     color: "#fbbf24", bg: "from-amber-900/30 to-yellow-900/30", border: "border-amber-700/30",  Icon: LayoutGrid },
 ];
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
@@ -24,6 +24,7 @@ export default function BrainGameOfDay() {
   const { user } = useApp();
   const todayKey = todayISO();
   const game = GAMES[todayGameIdx()];
+  const GameIcon = game.Icon;
 
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(() => {
@@ -43,14 +44,7 @@ export default function BrainGameOfDay() {
     }
   };
 
-  const GameComponent = () => {
-    const props = { onComplete: markDone, alreadyDone: done };
-    if (game.id === "wordwell")   return <WordWell {...props} />;
-    if (game.id === "calmfocus")  return <CalmFocus {...props} />;
-    if (game.id === "gratitude")  return <GratitudeMatch {...props} />;
-    if (game.id === "mindgarden") return <MindGardenPuzzle {...props} />;
-    return null;
-  };
+  const props = { onComplete: markDone, alreadyDone: done };
 
   return (
     <div className="glass-card rounded-card p-4 mt-3 mb-6">
@@ -67,6 +61,7 @@ export default function BrainGameOfDay() {
           onClick={() => setOpen(v => !v)}
           className="w-full flex items-center gap-3 px-3 py-3 text-left"
         >
+          <GameIcon size={16} style={{ color: game.color }} className="shrink-0" />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-text">{game.title}</span>
@@ -86,7 +81,11 @@ export default function BrainGameOfDay() {
         {open && (
           <div className="px-3 pb-4 border-t border-white/5">
             <div className="mt-3">
-              <GameComponent />
+              {/* Direct rendering — not through an inline function component — preserves game state */}
+              {game.id === "wordwell"   && <WordWell {...props} />}
+              {game.id === "calmfocus"  && <CalmFocus {...props} />}
+              {game.id === "gratitude"  && <GratitudeMatch {...props} />}
+              {game.id === "mindgarden" && <MindGardenPuzzle {...props} />}
             </div>
           </div>
         )}
