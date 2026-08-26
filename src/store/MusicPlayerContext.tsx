@@ -59,6 +59,19 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       setProgress({ current: audio.currentTime, duration: audio.duration || 0 });
     audio.onpause = () => setIsPlaying(false);
     audio.onplay = () => setIsPlaying(true);
+    // Network stall recovery: if audio stalls while playing, reload from the
+    // same position after a short delay so the stream reconnects automatically.
+    audio.onstalled = () => {
+      setTimeout(() => {
+        const a = audioRef.current;
+        if (!a || a.paused || a.readyState >= 3) return;
+        const t = a.currentTime;
+        const src = a.src;
+        a.src = src;
+        a.currentTime = t;
+        a.play().catch(() => {});
+      }, 3000);
+    };
     // On load error, retry once with the streaming URL in case a local offline
     // file was removed by the OS. If it still fails, advance to next track.
     audio.onerror = () => {
@@ -215,24 +228,40 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   // Auto-resume after phone calls, notification overlays, or lock screen.
-  // `visibilitychange` covers both web and Capacitor native foreground/background
-  // transitions. Capacitor also fires document-level `pause` and `resume` events
-  // on iOS/Android, which catch call interruptions that don't fully background the
-  // app (e.g. an incoming call the user declines without leaving the app).
+  //
+  // Three signal sources, ranked by reliability on iOS native:
+  //
+  // 1. Native AVAudioSession interruption events (most reliable for phone calls).
+  //    The NowPlayingPlugin observes AVAudioSession.interruptionNotification and
+  //    forwards interruptionBegan / interruptionEnded to JS. This fires even when
+  //    the call is declined without backgrounding the app.
+  //
+  // 2. Capacitor document "pause" / "resume" events — fires when the app moves
+  //    fully to/from background (home button, lock screen, switching apps).
+  //
+  // 3. visibilitychange — fallback for web / PWA.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onVisibility = () => {
-      if (document.hidden) {
+    // 1. Native interruption events from NowPlayingPlugin
+    let interruptionBeganSub: { remove: () => void } | null = null;
+    let interruptionEndedSub: { remove: () => void } | null = null;
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+      NowPlaying.addListener("interruptionBegan", () => {
+        // Record playing state at the moment of interruption
         wasPlayingBeforeBackground.current = !audio.paused;
-      } else if (wasPlayingBeforeBackground.current && audio.paused) {
-        setTimeout(() => audio.play().catch(() => {}), 400);
-        wasPlayingBeforeBackground.current = false;
-      }
-    };
+      }).then((sub) => { interruptionBeganSub = sub; });
 
-    // Capacitor fires these on the document when the app moves to/from background.
+      NowPlaying.addListener("interruptionEnded", ({ shouldResume }) => {
+        if (shouldResume && wasPlayingBeforeBackground.current && audio.paused) {
+          setTimeout(() => audio.play().catch(() => {}), 400);
+        }
+        wasPlayingBeforeBackground.current = false;
+      }).then((sub) => { interruptionEndedSub = sub; });
+    }
+
+    // 2. Capacitor app lifecycle events (full background/foreground transitions)
     const onDocPause = () => {
       wasPlayingBeforeBackground.current = !audio.paused;
     };
@@ -243,13 +272,25 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       wasPlayingBeforeBackground.current = false;
     };
 
-    document.addEventListener("visibilitychange", onVisibility);
+    // 3. visibilitychange fallback
+    const onVisibility = () => {
+      if (document.hidden) {
+        wasPlayingBeforeBackground.current = !audio.paused;
+      } else if (wasPlayingBeforeBackground.current && audio.paused) {
+        setTimeout(() => audio.play().catch(() => {}), 400);
+        wasPlayingBeforeBackground.current = false;
+      }
+    };
+
     document.addEventListener("pause", onDocPause);
     document.addEventListener("resume", onDocResume);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("pause", onDocPause);
       document.removeEventListener("resume", onDocResume);
+      document.removeEventListener("visibilitychange", onVisibility);
+      interruptionBeganSub?.remove();
+      interruptionEndedSub?.remove();
     };
   }, []);
 

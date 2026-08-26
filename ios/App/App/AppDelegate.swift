@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 import Capacitor
 
 @UIApplicationMain
@@ -10,6 +11,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Required for @capacitor-community/barcode-scanner — makes the WKWebView
         // background transparent so the native camera overlay is visible during scan.
         self.window?.backgroundColor = UIColor.clear
+
+        // Configure the audio session for background music playback. Without
+        // .playback category iOS uses soloAmbient, which pauses for any system
+        // sound, stops when the screen locks, and cannot resume after a phone call.
+        do {
+            try AVAudioSession.sharedInstance().setCategory(
+                .playback,
+                mode: .default,
+                options: []
+            )
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("[Audio] AVAudioSession setup failed: \(error)")
+        }
+
         return true
     }
 

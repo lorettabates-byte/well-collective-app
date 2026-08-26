@@ -1,3 +1,4 @@
+import AVFoundation
 import Capacitor
 import Foundation
 import MediaPlayer
@@ -5,6 +6,10 @@ import MediaPlayer
 // Bridges the web MediaSession metadata to the iOS lock screen / Control Center
 // via MPNowPlayingInfoCenter. Without this, WKWebView does not forward artwork
 // to the system-level now-playing UI.
+//
+// Also observes AVAudioSession interruption notifications (phone calls, Siri,
+// other audio taking focus) and fires interruptionBegan / interruptionEnded
+// events to the JS layer so MusicPlayerContext can pause and resume correctly.
 @objc(NowPlayingPlugin)
 public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "NowPlayingPlugin"
@@ -18,6 +23,44 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     // Cache the last artwork URL so we don't re-fetch on every play/pause toggle
     private var cachedArtworkUrl: String?
     private var cachedArtwork: MPMediaItemArtwork?
+
+    public override func load() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // Called by iOS when audio is interrupted (phone call begins, Siri activates,
+    // another app takes audio focus) or when the interruption ends.
+    @objc private func handleAudioInterruption(_ notification: Notification) {
+        guard
+            let info = notification.userInfo,
+            let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+        else { return }
+
+        if type == .began {
+            // Phone call / Siri started — tell JS so it can update its "was playing" flag
+            notifyListeners("interruptionBegan", data: [:])
+        } else if type == .ended {
+            // Interruption over — check whether iOS recommends we resume
+            var shouldResume = false
+            if let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                shouldResume = options.contains(.shouldResume)
+            }
+            // Re-activate the audio session after a call (iOS deactivates it)
+            try? AVAudioSession.sharedInstance().setActive(true)
+            notifyListeners("interruptionEnded", data: ["shouldResume": shouldResume])
+        }
+    }
 
     @objc func setTrack(_ call: CAPPluginCall) {
         let title = call.getString("title") ?? ""
