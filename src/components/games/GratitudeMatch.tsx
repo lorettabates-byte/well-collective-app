@@ -129,6 +129,8 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
   const [prompt, setPrompt] = useState("");
   const [done, setDone] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(false);
+  // IDs of cards in the brief "matched" celebration window — flipped but not yet hidden
+  const [celebratingIds, setCelebratingIds] = useState<Set<number>>(new Set());
 
   // Start a new level
   const startLevel = (lvl: number) => {
@@ -146,18 +148,22 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
     const [a, b] = selected.map(id => cards.find(c => c.id === id)!);
     setMoves(m => m + 1);
     if (a.pairIdx === b.pairIdx) {
-      // matched — mark them, then trigger a gratitude prompt
-      setCards(cs => cs.map(c => c.id === a.id || c.id === b.id ? { ...c, matched: true } : c));
+      // Show both cards flipped for 700ms before hiding them as matched
+      setCelebratingIds(new Set([a.id, b.id]));
       setPrompt(ALL_PAIRS[a.pairIdx].gratitude);
       setSelected([]);
-      const matchedCount = cards.filter(c => c.matched).length + 2;
-      if (matchedCount === cards.length) {
-        setDone(true);
-        if (!alreadyDone && !pointsEarned) {
-          onComplete();
-          setPointsEarned(true);
+      setTimeout(() => {
+        setCards(cs => cs.map(c => c.id === a.id || c.id === b.id ? { ...c, matched: true } : c));
+        setCelebratingIds(new Set());
+        const matchedCount = cards.filter(c => c.matched).length + 2;
+        if (matchedCount === cards.length) {
+          setDone(true);
+          if (!alreadyDone && !pointsEarned) {
+            onComplete();
+            setPointsEarned(true);
+          }
         }
-      }
+      }, 700);
     } else {
       setTimeout(() => {
         setCards(cs => cs.map(c => c.id === a.id || c.id === b.id ? { ...c, flipped: false } : c));
@@ -170,7 +176,7 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
 
   const flip = (id: number) => {
     const card = cards.find(c => c.id === id);
-    if (!card || card.flipped || card.matched || selected.length >= 2) return;
+    if (!card || card.flipped || card.matched || selected.length >= 2 || celebratingIds.size > 0) return;
     setCards(cs => cs.map(c => c.id === id ? { ...c, flipped: true } : c));
     setSelected(s => [...s, id]);
   };
@@ -191,6 +197,8 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
           const PairIcon = PAIR_ICONS[card.pairIdx];
           const pair = ALL_PAIRS[card.pairIdx];
 
+          const isCelebrating = celebratingIds.has(card.id);
+
           if (card.matched) {
             // Invisible placeholder — keeps layout stable
             return <div key={card.id} className="aspect-[3/4]" />;
@@ -200,15 +208,18 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
             <button
               key={card.id}
               onClick={() => flip(card.id)}
+              disabled={isCelebrating}
               className={`aspect-[3/4] rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95 ${
-                card.flipped
-                  ? "border-brand-blue bg-surface-2"
-                  : "border-border/60 bg-surface hover:border-brand-blue/40"
+                isCelebrating
+                  ? "border-emerald-500 bg-emerald-900/30 shadow-[0_0_10px_rgba(52,211,153,0.35)]"
+                  : card.flipped
+                    ? "border-brand-blue bg-surface-2"
+                    : "border-border/60 bg-surface hover:border-brand-blue/40"
               }`}
             >
-              {card.flipped ? (
+              {(card.flipped || isCelebrating) ? (
                 <>
-                  <PairIcon className="w-9 h-9 text-brand-light" />
+                  <PairIcon className={`w-9 h-9 ${isCelebrating ? "text-emerald-400" : "text-brand-light"}`} />
                   <span className="text-[8px] text-text-muted leading-tight text-center px-0.5">{pair.label}</span>
                 </>
               ) : (
