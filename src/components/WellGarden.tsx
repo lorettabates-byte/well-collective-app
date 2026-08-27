@@ -291,10 +291,13 @@ export default function WellGarden({ dailyPts, goalPts }: Props) {
 
   return (
     <div className="rounded-card bg-surface-2 border border-border overflow-hidden mt-3">
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <span className="text-[11px] font-bold text-brand-light uppercase tracking-wider">WELL Cup · Daily Garden</span>
         <span className="ml-auto text-[10px] text-text-dim">Resets daily</span>
       </div>
+      <p className="px-3 pb-2 text-[11px] text-text-muted leading-relaxed">
+        Your overall health and wellness is like a garden. Every good thing you do for yourself — moving your body, resting well, nourishing your mind — helps you grow and flourish. With each daily step you take, watch your garden bloom.
+      </p>
       <canvas ref={canvasRef} width={332} height={200} className="w-full block" />
       <div className="px-3 pb-3 pt-2">
         {/* pts + edit button */}
