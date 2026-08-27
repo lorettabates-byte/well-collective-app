@@ -1,6 +1,9 @@
+import { Capacitor } from "@capacitor/core";
 import { ChevronLeft, HelpCircle, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+
+const isAndroid = Capacitor.getPlatform() === "android";
 
 interface TopBarProps {
   title: string;
@@ -41,7 +44,7 @@ export default function TopBar({
   return (
     <div
       className="sticky top-0 z-30 glass-card border-b border-border px-4 pb-4 flex flex-col gap-3"
-      style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}
+      style={{ paddingTop: isAndroid ? "1.25rem" : `max(1.25rem, env(safe-area-inset-top))` }}
     >
       <div className="flex items-center gap-3">
         {showBack && (

@@ -27,6 +27,9 @@ export default function MobileShell({ children }: { children: ReactNode }) {
         className="relative w-full sm:max-w-[430px] md:max-w-[720px] h-screen sm:h-[900px] sm:max-h-[94vh] landscape:sm:max-w-full landscape:sm:max-h-full landscape:sm:h-screen landscape:sm:rounded-none sm:rounded-[36px] overflow-hidden sm:border sm:border-border landscape:sm:border-0 bg-bg sm:shadow-2xl landscape:sm:shadow-none flex flex-col"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-64 gradient-glow z-0" />
+        {/* On Android the status bar renders on top of the WebView (edge-to-edge).
+            This spacer pushes content below it until the native status bar color fix ships. */}
+        {isAndroid && <div className="shrink-0 bg-bg" style={{ height: "max(env(safe-area-inset-top, 0px), 32px)" }} />}
         {!isOnline && (
           <div className="relative z-30 flex items-center justify-center gap-2 bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2">
             <WifiOff size={13} className="text-yellow-400 shrink-0" />

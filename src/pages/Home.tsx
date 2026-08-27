@@ -443,7 +443,7 @@ export default function Home() {
   const WALKTHROUGH_URL = "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a";
 
   return (
-    <div className="px-4 pb-6" style={{ paddingTop: `max(1.25rem, env(safe-area-inset-top))` }}>
+    <div className="px-4 pb-6" style={{ paddingTop: Capacitor.getPlatform() === "android" ? "1.25rem" : `max(1.25rem, env(safe-area-inset-top))` }}>
       <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
 
       {/* Full-screen in-app walkthrough video */}
