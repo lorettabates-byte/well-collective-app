@@ -14,7 +14,7 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 // Background music sits under the voice — low enough that guidance is always
 // clearly on top, high enough to stay present during the quiet stretches.
-const MUSIC_VOLUME = 0.22;
+const MUSIC_VOLUME = 0.10;
 // Seconds over which the music fades to silence at the end of a track.
 const FADE_SECONDS = 12;
 

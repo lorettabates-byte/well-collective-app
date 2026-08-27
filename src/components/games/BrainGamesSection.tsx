@@ -72,16 +72,20 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   const markDone = async (gameId: string) => {
     // Check localStorage directly + ref guard — prevents stale closure double-fires
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
-    const alreadyStoredDone = new Set(raw ? raw.split(",") : []).has(gameId);
-    if (alreadyStoredDone || celebratedRef.current.has(gameId)) return;
+    const existingSet = new Set(raw ? raw.split(",") : []);
+    if (existingSet.has(gameId) || celebratedRef.current.has(gameId)) return;
     celebratedRef.current.add(gameId);
-    const newSet = new Set(raw ? raw.split(",") : []).add(gameId);
+    // Only celebrate on the first game completed today — points are capped at 20/day
+    const isFirstToday = existingSet.size === 0;
+    const newSet = new Set(existingSet).add(gameId);
     setDoneTodaySet(newSet);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
-    const g = GAMES.find(x => x.id === gameId);
-    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
-    setWinningGame(gameId);
-    setTimeout(() => setWinningGame(null), 2200);
+    if (isFirstToday) {
+      const g = GAMES.find(x => x.id === gameId);
+      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
+      setWinningGame(gameId);
+      setTimeout(() => setWinningGame(null), 2200);
+    }
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
     }
@@ -92,7 +96,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       <div className="flex items-center gap-2 mb-1 pb-2 border-b border-border">
         <Brain size={15} className="text-brand-light shrink-0" />
         <h3 className="text-sm font-bold text-text">Brain Games</h3>
-        <span className="ml-auto text-[10px] text-text-dim">+20 pts per game · daily</span>
+        <span className="ml-auto text-[10px] text-text-dim">+20 pts · once daily</span>
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
 

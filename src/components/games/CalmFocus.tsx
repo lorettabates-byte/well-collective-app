@@ -128,11 +128,11 @@ export default function CalmFocus({ onComplete, alreadyDone }: Props) {
       {/* Sequence display */}
       <div className="mb-3">
         <p className="text-[10px] text-text-dim uppercase tracking-widest mb-2">{phase === "showing" ? "Memorize this sequence" : "Now tap each symbol in order"}</p>
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-1.5 justify-center">
           {sequence.map((si, i) => (
-            <div key={i} className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center transition-all ${slotBg[slotStates[i] ?? "idle"]} ${showIdx === i ? slotBg.lit : ""}`}>
+            <div key={i} className={`flex-1 max-w-[52px] aspect-square rounded-xl border-2 flex items-center justify-center transition-all ${slotBg[slotStates[i] ?? "idle"]} ${showIdx === i ? slotBg.lit : ""}`}>
               {(phase === "showing" || slotStates[i] === "correct" || slotStates[i] === "wrong") && (
-                <div className="w-9 h-9" style={{ color: SYMBOLS[si].color }}>
+                <div className="w-7 h-7" style={{ color: SYMBOLS[si].color }}>
                   {SYMBOLS[si].svg}
                 </div>
               )}

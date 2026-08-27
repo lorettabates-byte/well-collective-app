@@ -189,16 +189,19 @@ export default function BrainGameOfDay() {
   const markDone = async () => {
     // Check localStorage directly (avoids stale closure) AND use ref guard
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
-    const alreadyStoredDone = new Set(raw ? raw.split(",") : []).has(game.id);
-    if (alreadyStoredDone || celebratedRef.current) return;
+    const existingSet = new Set(raw ? raw.split(",") : []);
+    if (existingSet.has(game.id) || celebratedRef.current) return;
     celebratedRef.current = true;
+    // Only celebrate on the very first game completed today — points cap at 20/day
+    const isFirstToday = existingSet.size === 0;
     setDone(true);
-    const set = new Set(raw ? raw.split(",") : []);
-    set.add(game.id);
-    localStorage.setItem(`brain-game-done-${todayKey}`, [...set].join(","));
-    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [game.color, "#84D8FD", "#FFFFFF", "#34d399"] });
-    setShowPts(true);
-    setTimeout(() => setShowPts(false), 2200);
+    existingSet.add(game.id);
+    localStorage.setItem(`brain-game-done-${todayKey}`, [...existingSet].join(","));
+    if (isFirstToday) {
+      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [game.color, "#84D8FD", "#FFFFFF", "#34d399"] });
+      setShowPts(true);
+      setTimeout(() => setShowPts(false), 2200);
+    }
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: game.id }).catch(() => {});
     }

@@ -635,11 +635,14 @@ const GAME_COLORS: Record<string, string> = {
 };
 
 function GamesTab({ data }: { data: DashboardData }) {
-  const totalPlays = data.brainGameByType.reduce((s, g) => s + Number(g.plays), 0);
-  const totalUnique = data.brainGameByType.reduce((s, g) => s + Number(g.unique_players), 0);
-  const totalPts = data.brainGameByType.reduce((s, g) => s + Number(g.total_points), 0);
-  const maxPlays = Math.max(1, ...data.brainGameByType.map(g => Number(g.plays)));
-  const maxDailyPlays = Math.max(1, ...data.brainGameDaily.map(d => Number(d.plays)));
+  const byType = data.brainGameByType ?? [];
+  const daily = data.brainGameDaily ?? [];
+  const topPlayers = data.brainGameTopPlayers ?? [];
+  const totalPlays = byType.reduce((s, g) => s + Number(g.plays), 0);
+  const totalUnique = byType.reduce((s, g) => s + Number(g.unique_players), 0);
+  const totalPts = byType.reduce((s, g) => s + Number(g.total_points), 0);
+  const maxPlays = Math.max(1, ...byType.map(g => Number(g.plays)));
+  const maxDailyPlays = Math.max(1, ...daily.map(d => Number(d.plays)));
 
   return (
     <div className="flex flex-col gap-4">
@@ -650,11 +653,11 @@ function GamesTab({ data }: { data: DashboardData }) {
       </div>
 
       {/* Daily play trend */}
-      {data.brainGameDaily.length > 0 && (
+      {daily.length > 0 && (
         <div className="glass-card rounded-card p-4">
           <p className="text-xs font-bold text-text mb-3">Daily Plays (14 days)</p>
           <div className="flex items-end gap-1 h-20">
-            {data.brainGameDaily.map((d) => {
+            {daily.map((d) => {
               const pct = Math.round((Number(d.plays) / maxDailyPlays) * 100);
               const date = new Date(d.day);
               const label = `${date.getMonth() + 1}/${date.getDate()}`;
@@ -675,11 +678,11 @@ function GamesTab({ data }: { data: DashboardData }) {
       )}
 
       {/* By game */}
-      {data.brainGameByType.length > 0 && (
+      {byType.length > 0 && (
         <div className="glass-card rounded-card p-4">
           <p className="text-xs font-bold text-text mb-3">Plays by Game (last 30 days)</p>
           <div className="flex flex-col gap-3">
-            {data.brainGameByType.map(g => (
+            {byType.map(g => (
               <div key={g.game_id}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-text">{GAME_LABELS[g.game_id] ?? g.game_id}</span>
@@ -703,7 +706,7 @@ function GamesTab({ data }: { data: DashboardData }) {
         </div>
       )}
 
-      {data.brainGameByType.length === 0 && (
+      {byType.length === 0 && (
         <div className="glass-card rounded-card p-6 text-center">
           <Brain size={24} className="text-text-dim mx-auto mb-2" />
           <p className="text-xs text-text-muted">No brain game plays recorded yet</p>
@@ -711,11 +714,11 @@ function GamesTab({ data }: { data: DashboardData }) {
       )}
 
       {/* Top players */}
-      {data.brainGameTopPlayers.length > 0 && (
+      {topPlayers.length > 0 && (
         <div className="glass-card rounded-card p-4">
           <p className="text-xs font-bold text-text mb-3">Top Players (last 30 days)</p>
           <CollapsibleList
-            items={data.brainGameTopPlayers}
+            items={topPlayers}
             renderItem={(p, i) => {
               const last = new Date(p.last_played);
               const lastStr = last.toLocaleDateString("en-US", { month: "short", day: "numeric" });

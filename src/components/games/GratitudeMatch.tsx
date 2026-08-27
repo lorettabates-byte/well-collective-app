@@ -208,8 +208,8 @@ export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
             >
               {card.flipped ? (
                 <>
-                  <PairIcon className="w-7 h-7 text-brand-light" />
-                  <span className="text-[7px] text-text-muted leading-tight text-center px-0.5">{pair.label}</span>
+                  <PairIcon className="w-9 h-9 text-brand-light" />
+                  <span className="text-[8px] text-text-muted leading-tight text-center px-0.5">{pair.label}</span>
                 </>
               ) : (
                 <WellLogoBack />

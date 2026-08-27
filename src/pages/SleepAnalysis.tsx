@@ -196,7 +196,7 @@ export default function SleepAnalysis() {
                   {windowEntries.map((entry, i) => (
                     <div
                       key={days[i]}
-                      className="flex-1 flex flex-col items-center gap-0.5"
+                      className="flex-1 h-full flex flex-col justify-end items-center"
                     >
                       <div
                         className={`w-full rounded-t-[3px] transition-all ${barColor(entry)}`}

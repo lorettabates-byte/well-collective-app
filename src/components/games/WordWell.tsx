@@ -142,9 +142,16 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
 
   return (
     <div>
-      <p className="text-[10px] text-text-dim text-center mb-3 uppercase tracking-widest">
+      <p className="text-[10px] text-text-dim text-center mb-2 uppercase tracking-widest">
         Guess the 5-letter wellness word
       </p>
+      <div className="mb-3 rounded-lg bg-surface px-3 py-2 border border-border/50">
+        <p className="text-[10px] text-text-muted leading-relaxed">
+          Type a 5-letter word and press <span className="font-bold text-text">ENTER</span> to guess.
+          Green = correct letter and position. Yellow = right letter, wrong position. Gray = not in the word.
+          You have 6 tries to find today's wellness word.
+        </p>
+      </div>
 
       {/* Grid */}
       <div className="flex flex-col gap-1.5 mb-4">
