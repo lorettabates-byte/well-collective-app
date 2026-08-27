@@ -1,9 +1,12 @@
+import { Capacitor } from "@capacitor/core";
 import { Home, MessageCircle, Trophy, User, Waves } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useApp } from "../../store/AppContext";
 import { todayISO } from "../../utils/format";
 import { useUnreadMessageCount } from "../../hooks/useUnreadMessageCount";
+
+const isAndroid = Capacitor.getPlatform() === "android";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -61,7 +64,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="glass-card border-t border-border px-2 pt-2 flex items-center justify-between" style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}>
+    <nav className="glass-card border-t border-border px-2 pt-2 flex items-center justify-between" style={{ paddingBottom: isAndroid ? "max(env(safe-area-inset-bottom, 0px), 48px)" : "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}>
       {navItems.map(({ to, label, icon: Icon, badge }) => (
         <NavLink
           key={to}

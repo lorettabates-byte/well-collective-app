@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
@@ -7,6 +8,8 @@ import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 import { WifiOff } from "lucide-react";
 
 const LOGO_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-content/uploads/2025/04/WELL-2048-x-2048-px.png";
+
+const isAndroid = Capacitor.getPlatform() === "android";
 
 export default function MobileShell({ children }: { children: ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -30,7 +33,7 @@ export default function MobileShell({ children }: { children: ReactNode }) {
             <span className="text-[11px] font-semibold text-yellow-300">You're offline — showing saved content</span>
           </div>
         )}
-        <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
+        <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: isAndroid ? "max(calc(6rem + env(safe-area-inset-bottom, 0px)), calc(6rem + 48px))" : "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>{children}</div>
         <MiniPlayer />
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <BottomNav />
