@@ -1,4 +1,4 @@
-import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Eye, EyeOff, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { Capacitor } from "@capacitor/core";
@@ -166,6 +166,23 @@ export default function Home() {
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>(readSectionOrder);
   const [editMode, setEditMode] = useState(false);
   const [dragging, setDragging] = useState<SectionId | null>(null);
+
+  const readHiddenSections = (): SectionId[] => {
+    try {
+      const saved = localStorage.getItem("well-hidden-sections-v1");
+      if (saved) return JSON.parse(saved) as SectionId[];
+    } catch { /* ignore */ }
+    return [];
+  };
+  const [hiddenSections, setHiddenSections] = useState<SectionId[]>(readHiddenSections);
+
+  const toggleSectionVisibility = (id: SectionId) => {
+    setHiddenSections((prev) => {
+      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
+      localStorage.setItem("well-hidden-sections-v1", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const sectionOrderRef = useRef<HTMLDivElement>(null);
 
@@ -1444,41 +1461,51 @@ export default function Home() {
         const handleDragEnd = () => setDragging(null);
 
         const isDraggingThis = dragging === sectionId;
+        const isHidden = hiddenSections.includes(sectionId);
 
-        const wrapSection = (content: React.ReactNode) => (
-          <div
-            key={sectionId}
-            draggable={editMode}
-            onDragStart={editMode ? handleDragStart : undefined}
-            onDragOver={editMode ? handleDragOver : undefined}
-            onDrop={editMode ? handleDrop : undefined}
-            onDragEnd={editMode ? handleDragEnd : undefined}
-            className={`relative ${isDraggingThis ? "opacity-40" : ""}`}
-          >
-            {editMode && (
-              <>
-                <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center text-text-dim cursor-grab" style={{ width: 36 }}>
-                  <GripVertical size={22} />
-                </div>
-                <div className="absolute right-0 top-0 bottom-0 z-10 flex flex-col items-center justify-center gap-0" style={{ width: 36 }}>
-                  <button
-                    onPointerDown={(e) => { e.preventDefault(); moveSectionUp(sectionId); }}
-                    className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
-                  >
-                    <ChevronUp size={20} />
-                  </button>
-                  <button
-                    onPointerDown={(e) => { e.preventDefault(); moveSectionDown(sectionId); }}
-                    className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
-                  >
-                    <ChevronDown size={20} />
-                  </button>
-                </div>
-              </>
-            )}
-            <div className={editMode ? "px-10" : ""}>{content}</div>
-          </div>
-        );
+        const wrapSection = (content: React.ReactNode) => {
+          if (!editMode && isHidden) return null;
+          return (
+            <div
+              key={sectionId}
+              draggable={editMode}
+              onDragStart={editMode ? handleDragStart : undefined}
+              onDragOver={editMode ? handleDragOver : undefined}
+              onDrop={editMode ? handleDrop : undefined}
+              onDragEnd={editMode ? handleDragEnd : undefined}
+              className={`relative ${isDraggingThis ? "opacity-40" : ""} ${editMode && isHidden ? "opacity-40" : ""}`}
+            >
+              {editMode && (
+                <>
+                  <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center text-text-dim cursor-grab" style={{ width: 36 }}>
+                    <GripVertical size={22} />
+                  </div>
+                  <div className="absolute right-0 top-0 bottom-0 z-10 flex flex-col items-center justify-center gap-0" style={{ width: 36 }}>
+                    <button
+                      onPointerDown={(e) => { e.preventDefault(); toggleSectionVisibility(sectionId); }}
+                      className={`w-9 h-9 flex items-center justify-center active:text-brand-light ${isHidden ? "text-text-dim/50" : "text-text-dim"}`}
+                    >
+                      {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                    <button
+                      onPointerDown={(e) => { e.preventDefault(); moveSectionUp(sectionId); }}
+                      className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+                    <button
+                      onPointerDown={(e) => { e.preventDefault(); moveSectionDown(sectionId); }}
+                      className="w-9 h-9 flex items-center justify-center text-text-dim active:text-brand-light"
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                  </div>
+                </>
+              )}
+              <div className={editMode ? "px-10" : ""}>{content}</div>
+            </div>
+          );
+        };
 
         if (sectionId === "well-cup") {
           return wrapSection(
