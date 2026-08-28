@@ -78,10 +78,7 @@ function FloatingEmoji({ emoji, count = 12 }: { emoji: string; count?: number })
           style={{
             left: `${5 + (i * 89 / count) % 90}%`,
             top: "110%",
-            animationDelay: `${(i * 0.18) % 1.5}s`,
-            animationDuration: `${1.2 + (i % 3) * 0.4}s`,
-            animation: `floatUp ${1.4 + (i % 4) * 0.3}s ease-in-out infinite`,
-            animationDelay: `${(i * 0.25) % 2}s`,
+            animation: `floatUp ${1.4 + (i % 4) * 0.3}s ease-in-out ${(i * 0.25) % 2}s infinite`,
           }}
         >
           {emoji}
