@@ -28,6 +28,8 @@ interface DashboardData {
   wellCupByMember: { member_email: string; name: string; total_points: number; events: number }[];
   wellCupRecent: { member_email: string; name: string; activity_type: string; points: number; metadata: Record<string, unknown> | null; created_at: string }[];
   brainGameByType: { game_id: string; plays: number; unique_players: number; total_points: number }[];
+  brainGameTotal: { total_all_time: number } | null;
+  brainGameDailyByGame: { day: string; game_id: string; plays: number; unique_players: number }[];
   brainGameTopPlayers: { member_email: string; name: string; total_plays: number; games_variety: number; total_points: number; last_played: string }[];
   brainGameDaily: { day: string; plays: number; unique_players: number }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
@@ -638,21 +640,67 @@ function GamesTab({ data }: { data: DashboardData }) {
   const byType = data.brainGameByType ?? [];
   const daily = data.brainGameDaily ?? [];
   const topPlayers = data.brainGameTopPlayers ?? [];
+  const dailyByGame = data.brainGameDailyByGame ?? [];
+  const allTimeTotal = Number(data.brainGameTotal?.total_all_time ?? 0);
+
   const totalPlays = byType.reduce((s, g) => s + Number(g.plays), 0);
-  const totalUnique = byType.reduce((s, g) => s + Number(g.unique_players), 0);
+  // Unique players across games (use max of individual games since players can play multiple)
+  const uniqueAcross = byType.reduce((s, g) => s + Number(g.unique_players), 0);
   const totalPts = byType.reduce((s, g) => s + Number(g.total_points), 0);
   const maxPlays = Math.max(1, ...byType.map(g => Number(g.plays)));
   const maxDailyPlays = Math.max(1, ...daily.map(d => Number(d.plays)));
 
+  // Get all unique days for the stacked per-game chart
+  const allDays = Array.from(new Set(dailyByGame.map(r => r.day))).sort();
+  const GAME_IDS = ["wordwell", "calmfocus", "gratitude", "mindgarden"];
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Total Plays" value={totalPlays.toLocaleString()} sub="last 30 days" />
-        <StatCard label="Unique Players" value={totalUnique.toLocaleString()} sub="last 30 days" />
+        <StatCard label="Plays (30d)" value={totalPlays.toLocaleString()} sub={`${allTimeTotal.toLocaleString()} all time`} />
+        <StatCard label="Player-Games" value={uniqueAcross.toLocaleString()} sub="last 30 days" />
         <StatCard label="Points Earned" value={totalPts.toLocaleString()} sub="last 30 days" />
       </div>
 
-      {/* Daily play trend */}
+      {/* Per-game stat cards */}
+      {byType.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3">
+          {GAME_IDS.map(gameId => {
+            const g = byType.find(r => r.game_id === gameId);
+            const color = GAME_COLORS[gameId] ?? "#3b9eff";
+            return (
+              <div key={gameId} className="glass-card rounded-card p-3" style={{ borderLeft: `3px solid ${color}` }}>
+                <p className="text-xs font-bold text-text mb-2">{GAME_LABELS[gameId]}</p>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <span className="text-[10px] text-text-muted">Plays</span>
+                    <span className="text-xs font-bold text-text">{g ? Number(g.plays).toLocaleString() : "0"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] text-text-muted">Players</span>
+                    <span className="text-xs font-semibold text-text">{g ? Number(g.unique_players).toLocaleString() : "0"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] text-text-muted">Points</span>
+                    <span className="text-xs font-semibold text-text">{g ? Number(g.total_points).toLocaleString() : "0"}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="glass-card rounded-card p-6 text-center">
+          <Brain size={24} className="text-text-dim mx-auto mb-2" />
+          <p className="text-xs text-text-muted">No brain game plays recorded in the last 30 days</p>
+          {allTimeTotal > 0 && (
+            <p className="text-[10px] text-brand-light mt-1">{allTimeTotal} plays exist all-time (older than 30 days)</p>
+          )}
+        </div>
+      )}
+
+      {/* Daily plays bar chart (aggregate) */}
       {daily.length > 0 && (
         <div className="glass-card rounded-card p-4">
           <p className="text-xs font-bold text-text mb-3">Daily Plays (14 days)</p>
@@ -677,10 +725,62 @@ function GamesTab({ data }: { data: DashboardData }) {
         </div>
       )}
 
-      {/* By game */}
+      {/* Per-game stacked bar chart (14 days) */}
+      {dailyByGame.length > 0 && allDays.length > 0 && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-1">Plays by Game (14 days)</p>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-3 mb-3">
+            {GAME_IDS.map(id => (
+              <div key={id} className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: GAME_COLORS[id] }} />
+                <span className="text-[9px] text-text-dim">{GAME_LABELS[id]}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-end gap-1" style={{ height: 72 }}>
+            {allDays.map(day => {
+              const dayRows = dailyByGame.filter(r => r.day === day);
+              const dayTotal = dayRows.reduce((s, r) => s + Number(r.plays), 0);
+              const maxTotal = Math.max(1, ...allDays.map(d => dailyByGame.filter(r => r.day === d).reduce((s, r) => s + Number(r.plays), 0)));
+              const heightPct = Math.max((dayTotal / maxTotal) * 100, 4);
+              const date = new Date(day);
+              const label = `${date.getMonth() + 1}/${date.getDate()}`;
+              return (
+                <div key={day} className="flex-1 flex flex-col items-center gap-0.5">
+                  <div className="w-full flex flex-col justify-end overflow-hidden rounded-sm" style={{ height: 56 }}>
+                    {/* Stacked segments per game */}
+                    <div className="w-full flex flex-col-reverse" style={{ height: `${heightPct}%` }}>
+                      {GAME_IDS.map(id => {
+                        const row = dayRows.find(r => r.game_id === id);
+                        const plays = row ? Number(row.plays) : 0;
+                        if (!plays) return null;
+                        return (
+                          <div
+                            key={id}
+                            className="w-full shrink-0"
+                            style={{
+                              flex: plays,
+                              background: GAME_COLORS[id],
+                              opacity: 0.75,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <span className="text-[7px] text-text-dim">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Plays by game progress bars */}
       {byType.length > 0 && (
         <div className="glass-card rounded-card p-4">
-          <p className="text-xs font-bold text-text mb-3">Plays by Game (last 30 days)</p>
+          <p className="text-xs font-bold text-text mb-3">Share of Plays (last 30 days)</p>
           <div className="flex flex-col gap-3">
             {byType.map(g => (
               <div key={g.game_id}>
@@ -690,7 +790,7 @@ function GamesTab({ data }: { data: DashboardData }) {
                     {Number(g.plays).toLocaleString()} plays · {Number(g.unique_players)} players
                   </span>
                 </div>
-                <div className="h-2 rounded-pill bg-surface-2 overflow-hidden flex-1">
+                <div className="h-2 rounded-pill bg-surface-2 overflow-hidden">
                   <div
                     className="h-full rounded-pill"
                     style={{
@@ -703,13 +803,6 @@ function GamesTab({ data }: { data: DashboardData }) {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {byType.length === 0 && (
-        <div className="glass-card rounded-card p-6 text-center">
-          <Brain size={24} className="text-text-dim mx-auto mb-2" />
-          <p className="text-xs text-text-muted">No brain game plays recorded yet</p>
         </div>
       )}
 
