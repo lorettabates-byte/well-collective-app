@@ -163,7 +163,7 @@ export default function CustomCardModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" style={{ paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
+    <div className="fixed inset-0 z-[600] flex items-end justify-center bg-black/60" style={{ paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
       <div className="w-full max-w-lg bg-surface rounded-t-3xl overflow-hidden animate-slide-up" style={{ maxHeight: "92dvh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
