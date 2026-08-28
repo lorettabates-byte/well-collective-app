@@ -758,7 +758,26 @@ export default function CardSender({
       </div>
 
       {showCustomModal && (
-        <CustomCardModal onClose={() => setShowCustomModal(false)} />
+        <CustomCardModal
+          onClose={() => setShowCustomModal(false)}
+          onSend={(card) => {
+            setShowCustomModal(false);
+            if (!API_URL || !user.email) return;
+            clear();
+            setStage("flying");
+            later(700, () => setStage("done"));
+            fetch(`${API_URL}/api/tribe/${memberId}/card`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: user.email,
+                occasionId: "custom",
+                styleId: card.gradientId,
+                message: `${card.title}${card.body ? ` — ${card.body}` : ""}`,
+              }),
+            }).catch(() => {});
+          }}
+        />
       )}
     </>,
     document.body

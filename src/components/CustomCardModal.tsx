@@ -1,6 +1,6 @@
 import {
   Award, BookOpen, Coffee, Flame, Flower2, Gift, Globe, Heart,
-  Leaf, Moon, Music, Smile, Sparkles, Star, Sun, Waves, X, Save, Trash2
+  Leaf, Moon, Music, Send, Smile, Sparkles, Star, Sun, Waves, X, Save, Trash2
 } from "lucide-react";
 import { useState } from "react";
 import Confetti from "./ui/Confetti";
@@ -128,7 +128,13 @@ function CardPreview({ card }: { card: Partial<CustomCard> }) {
   );
 }
 
-export default function CustomCardModal({ onClose }: { onClose: () => void }) {
+export default function CustomCardModal({
+  onClose,
+  onSend,
+}: {
+  onClose: () => void;
+  onSend?: (card: CustomCard) => void;
+}) {
   const [tab, setTab] = useState<"create" | "saved">("create");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -136,6 +142,7 @@ export default function CustomCardModal({ onClose }: { onClose: () => void }) {
   const [gradientId, setGradientId] = useState<GradientId>("ocean");
   const [animationId, setAnimationId] = useState<AnimationId>("none");
   const [saved, setSaved] = useState<CustomCard[]>(loadCards);
+  const [justSaved, setJustSaved] = useState<CustomCard | null>(null);
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -153,6 +160,7 @@ export default function CustomCardModal({ onClose }: { onClose: () => void }) {
     setSaved(next);
     setTitle("");
     setBody("");
+    setJustSaved(card);
     setTab("saved");
   };
 
@@ -277,14 +285,41 @@ export default function CustomCardModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <button
-                onClick={handleSave}
-                disabled={!title.trim()}
-                className="w-full gradient-brand text-white text-sm font-bold rounded-xl py-3 shadow-glow flex items-center justify-center gap-2 disabled:opacity-40"
-              >
-                <Save size={15} />
-                Save Card
-              </button>
+              <div className={`flex gap-2 ${onSend ? "" : ""}`}>
+                <button
+                  onClick={handleSave}
+                  disabled={!title.trim()}
+                  className={`flex-1 ${onSend ? "bg-surface-2 border border-border text-text" : "gradient-brand text-white shadow-glow"} text-sm font-bold rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-40`}
+                >
+                  <Save size={15} />
+                  {onSend ? "Save" : "Save Card"}
+                </button>
+                {onSend && (
+                  <button
+                    onClick={() => {
+                      if (!title.trim()) return;
+                      const card: CustomCard = {
+                        id: Date.now().toString(),
+                        title: title.trim(),
+                        body: body.trim(),
+                        iconId,
+                        gradientId,
+                        animationId,
+                        createdAt: new Date().toISOString(),
+                      };
+                      const next = [card, ...saved];
+                      saveCards(next);
+                      setSaved(next);
+                      onSend(card);
+                    }}
+                    disabled={!title.trim()}
+                    className="flex-1 gradient-brand text-white text-sm font-bold rounded-xl py-3 shadow-glow flex items-center justify-center gap-2 disabled:opacity-40"
+                  >
+                    <Send size={15} />
+                    Send
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="p-5 flex flex-col gap-4">
@@ -302,17 +337,35 @@ export default function CustomCardModal({ onClose }: { onClose: () => void }) {
                 </div>
               ) : (
                 saved.map((card) => (
-                  <div key={card.id} className="relative">
-                    <CardPreview card={card} />
-                    <button
-                      onClick={() => handleDelete(card.id)}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center"
-                    >
-                      <Trash2 size={12} className="text-white" />
-                    </button>
-                    <p className="text-[10px] text-text-dim mt-1 text-right">
-                      {new Date(card.createdAt).toLocaleDateString()}
-                    </p>
+                  <div key={card.id}>
+                    <div className="relative">
+                      <CardPreview card={card} />
+                      <button
+                        onClick={() => handleDelete(card.id)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center"
+                      >
+                        <Trash2 size={12} className="text-white" />
+                      </button>
+                      {justSaved?.id === card.id && (
+                        <div className="absolute top-2 left-2 bg-green-500/80 text-white text-[10px] font-bold rounded-full px-2 py-0.5">
+                          Saved
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <p className="text-[10px] text-text-dim">
+                        {new Date(card.createdAt).toLocaleDateString()}
+                      </p>
+                      {onSend && (
+                        <button
+                          onClick={() => onSend(card)}
+                          className="flex items-center gap-1 gradient-brand text-white text-[11px] font-bold rounded-pill px-3 py-1 shadow-glow"
+                        >
+                          <Send size={11} />
+                          Send This Card
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
