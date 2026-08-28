@@ -343,6 +343,20 @@ export default function Profile() {
           <p className="text-sm text-white/60 mt-2 max-w-xs leading-snug">{user.bio}</p>
         )}
 
+        {activeMoodId && (() => {
+          const mood = MOOD_STATUSES.find((m) => m.id === activeMoodId);
+          if (!mood) return null;
+          return (
+            <div
+              className="flex items-center gap-1.5 mt-2 px-4 py-1.5 rounded-2xl text-xs font-medium"
+              style={{ background: `${mood.color}22`, border: `1px solid ${mood.color}55` }}
+            >
+              <span>{mood.emoji}</span>
+              <span className="font-semibold text-white">{mood.label}</span>
+            </div>
+          );
+        })()}
+
         {/* Stats strip */}
         <div className="flex items-center gap-0 mt-5 bg-white/10 rounded-2xl overflow-hidden border border-white/10 w-full max-w-xs">
           <div className="flex-1 flex flex-col items-center py-3 px-2">

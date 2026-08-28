@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Music,
   Share2,
-  Smartphone,
   Sparkles,
   Star,
   Trophy,
@@ -18,7 +17,7 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { logActivity } from "../utils/wellCup";
 import { logEvent } from "../utils/analytics";
 
@@ -36,7 +35,7 @@ interface Slide {
   body: string;
   findIt?: NavStop[];
   avatarDemo?: boolean;
-  interactive?: "notifications" | "homescreen";
+  interactive?: "notifications";
   introPoints?: boolean;
   referralDemo?: boolean;
 }
@@ -91,12 +90,6 @@ const SLIDES: Slide[] = [
     title: "Turn On Notifications 🔔",
     body: "Never miss a class, a community post, or a WELL Cup win! Enable notifications and earn 20 bonus points.",
     interactive: "notifications",
-  },
-  {
-    icon: Smartphone,
-    title: "Add to Your Home Screen 📱",
-    body: "Keep WELL Collective just one tap away — add it to your home screen like a native app and earn 25 bonus points!",
-    interactive: "homescreen",
   },
 ];
 
@@ -170,19 +163,8 @@ export default function FeatureTourModal({
 }) {
   const [step, setStep] = useState(0);
   const [notifDone, setNotifDone] = useState(false);
-  const [homescreenDone, setHomescreenDone] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
-  const deferredInstall = useRef<any>(null);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      deferredInstall.current = e;
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
 
   useEffect(() => {
     if (!API_URL || !userEmail) return;
@@ -209,23 +191,6 @@ export default function FeatureTourModal({
       // permission API not available
     }
     setNotifDone(true);
-  };
-
-  const handleHomescreen = async () => {
-    if (homescreenDone) return;
-    if (deferredInstall.current) {
-      try {
-        deferredInstall.current.prompt();
-        const { outcome } = await deferredInstall.current.userChoice;
-        if (outcome === "accepted" && userEmail) {
-          logActivity(userEmail, "add_to_homescreen").catch(() => {});
-        }
-        deferredInstall.current = null;
-      } catch {
-        // prompt not available
-      }
-    }
-    setHomescreenDone(true);
   };
 
   const handleNext = () => {
@@ -356,30 +321,6 @@ export default function FeatureTourModal({
                 </button>
               )}
               <PointsBadge points={20} />
-            </div>
-          )}
-
-          {/* Interactive: Add to Home Screen */}
-          {slide.interactive === "homescreen" && (
-            <div className="w-full flex flex-col items-center gap-2">
-              {homescreenDone ? (
-                <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
-                  <CheckCircle2 size={16} className="text-green-400" />
-                  You're all set!
-                </div>
-              ) : deferredInstall.current ? (
-                <button
-                  onClick={handleHomescreen}
-                  className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
-                >
-                  Add to Home Screen
-                </button>
-              ) : (
-                <div className="text-xs text-text-dim bg-surface-2 border border-border rounded-card px-3 py-2">
-                  On iPhone: tap the <strong>Share</strong> button in Safari → <strong>Add to Home Screen</strong>
-                </div>
-              )}
-              <PointsBadge points={25} />
             </div>
           )}
 

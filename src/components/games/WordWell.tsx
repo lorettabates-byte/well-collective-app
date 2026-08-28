@@ -179,7 +179,7 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
               <button
                 key={key}
                 onPointerDown={e => { e.preventDefault(); pressKey(key); }}
-                className={`h-10 rounded-md text-[11px] font-bold transition-all select-none ${key.length > 1 ? "px-2 min-w-[40px]" : "min-w-[26px]"} ${keyColor(key)}`}
+                className={`h-12 rounded-md text-[13px] font-bold transition-all select-none ${key.length > 1 ? "px-2.5 min-w-[46px]" : "min-w-[30px]"} ${keyColor(key)}`}
               >
                 {key}
               </button>
