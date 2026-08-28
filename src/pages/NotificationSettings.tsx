@@ -1,3 +1,4 @@
+import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { AlertCircle, BellOff, Clock, ExternalLink } from "lucide-react";
 import { useState } from "react";
@@ -103,8 +104,20 @@ export default function NotificationSettings() {
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
 
-  const openSystemSettings = () => {
-    if (platform === "ios") {
+  const openSystemSettings = async () => {
+    if (!isNative) return;
+    try {
+      if (platform === "android") {
+        // Intent URI: opens the app's notification settings page directly on Android 8+
+        await App.openUrl({
+          url: "intent:#Intent;action=android.settings.APP_NOTIFICATION_SETTINGS;S.android.provider.extra.APP_PACKAGE=com.wellcollective.app;end",
+        });
+      } else {
+        // iOS uses the app-settings: scheme
+        await App.openUrl({ url: "app-settings:" });
+      }
+    } catch {
+      // fallback: open general settings (should rarely happen)
       window.open("app-settings:", "_system");
     }
   };
@@ -116,7 +129,36 @@ export default function NotificationSettings() {
       updateNotificationSettings({ pushEnabled: false });
       return;
     }
-    // On iOS native, Notification API absence means permission is fully blocked
+
+    // On Android native, Web Push (PushManager/service worker) is not available in
+    // Capacitor's WebView. Instead, request the system notification permission via the
+    // Notification API if it exists, then open settings if it's denied. We still set
+    // pushEnabled=true when the user has granted the OS permission so they can
+    // receive server-sent notifications (the app sends via Brevo/server-side).
+    if (isNative && platform === "android") {
+      if (typeof Notification === "undefined") {
+        // WebView has no Notification API at all — send the user to settings
+        setPushError("To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.");
+        openSystemSettings();
+        return;
+      }
+      if (Notification.permission === "denied") {
+        setPushError("Notifications are blocked. Go to Settings > Apps > WELL Collective > Notifications to enable them.");
+        openSystemSettings();
+        return;
+      }
+      // Try requesting permission — this may show the Android native dialog in newer WebViews
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        updateNotificationSettings({ pushEnabled: true });
+      } else {
+        setPushError("To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.");
+        openSystemSettings();
+      }
+      return;
+    }
+
+    // iOS native: Notification API absence means permission is fully blocked
     if (isNative && platform === "ios" && typeof Notification === "undefined") {
       setPushError("Go to Settings > WELL Collective > Notifications to enable them.");
       openSystemSettings();
@@ -127,7 +169,7 @@ export default function NotificationSettings() {
       updateNotificationSettings({ pushEnabled: result.success });
       if (!result.success && result.reason) {
         setPushError(result.reason);
-        // If denied on iOS native, offer to open Settings automatically
+        // If denied on iOS native, open Settings automatically
         if (isNative && platform === "ios" && typeof Notification !== "undefined" && Notification.permission === "denied") {
           openSystemSettings();
         }
@@ -180,7 +222,7 @@ export default function NotificationSettings() {
             </div>
             {isNative && platform === "android" && (
               <button
-                onClick={() => window.open("app-settings:", "_system")}
+                onClick={openSystemSettings}
                 className="flex items-center gap-1.5 text-xs font-semibold text-red-300 underline"
               >
                 <ExternalLink size={12} />
