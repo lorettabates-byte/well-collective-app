@@ -17,6 +17,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "setTrack", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setPlaybackState", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "updateElapsed", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise),
     ]
 
@@ -31,6 +32,18 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             name: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance()
         )
+
+        // Enable lock-screen / Control Center scrubbing. When the user drags
+        // the playhead, fire a "seekTo" event so JS can update the audio element.
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.changePlaybackPositionCommand.isEnabled = true
+        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let posEvent = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            self?.notifyListeners("seekTo", data: ["position": posEvent.positionTime])
+            return .success
+        }
     }
 
     deinit {
@@ -111,8 +124,24 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func setPlaybackState(_ call: CAPPluginCall) {
         let isPlaying = call.getBool("isPlaying") ?? false
+        let currentTime = call.getDouble("currentTime") ?? -1
         var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        if currentTime >= 0 {
+            info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        call.resolve()
+    }
+
+    // Called periodically from JS (every ~5 s) while playing so the lock-screen
+    // scrub bar stays accurate. iOS auto-advances the displayed position using
+    // playbackRate, but needs an anchor point to start from.
+    @objc func updateElapsed(_ call: CAPPluginCall) {
+        let currentTime = call.getDouble("currentTime") ?? 0
+        var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         call.resolve()
     }

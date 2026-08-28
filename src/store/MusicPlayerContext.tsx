@@ -174,11 +174,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
     // On iOS native, WKWebView doesn't surface MediaSession artwork to the lock
     // screen. Call the native NowPlayingPlugin to set it via MPNowPlayingInfoCenter.
+    // Pass duration so iOS can show the scrub bar; elapsed resets to 0 on new track.
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+      const dur = audioRef.current?.duration;
       NowPlaying.setTrack({
         title: song.title,
         artist: song.artist || "WELL Collective",
         artworkUrl,
+        duration: isFinite(dur ?? NaN) ? dur : undefined,
       }).catch(() => {});
     }
   }
@@ -247,9 +250,11 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     // 1. Native interruption events from NowPlayingPlugin
     let interruptionBeganSub: { remove: () => void } | null = null;
     let interruptionEndedSub: { remove: () => void } | null = null;
+    let seekToSub: { remove: () => void } | null = null;
+    let elapsedTimer: ReturnType<typeof setInterval> | null = null;
+
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
       NowPlaying.addListener("interruptionBegan", () => {
-        // Record playing state at the moment of interruption
         wasPlayingBeforeBackground.current = !audio.paused;
       }).then((sub) => { interruptionBeganSub = sub; });
 
@@ -259,6 +264,44 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         }
         wasPlayingBeforeBackground.current = false;
       }).then((sub) => { interruptionEndedSub = sub; });
+
+      // Lock-screen scrub: user dragged the playhead — seek the audio element.
+      NowPlaying.addListener("seekTo", ({ position }) => {
+        audio.currentTime = position;
+        setProgress((p) => ({ ...p, current: position }));
+        NowPlaying.updateElapsed({ currentTime: position }).catch(() => {});
+      }).then((sub) => { seekToSub = sub; });
+
+      // Keep the lock-screen scrub bar in sync by pushing elapsed time every 5 s.
+      // iOS auto-advances the displayed position using playbackRate, but needs a
+      // fresh anchor whenever the rate or position changes significantly.
+      elapsedTimer = setInterval(() => {
+        if (!audio.paused && isFinite(audio.currentTime)) {
+          NowPlaying.updateElapsed({ currentTime: audio.currentTime }).catch(() => {});
+        }
+      }, 5000);
+
+      // Also update elapsed and duration on loadedmetadata (duration wasn't
+      // known yet when setTrack was first called at the start of the track).
+      const onMeta = () => {
+        if (isFinite(audio.duration)) {
+          NowPlaying.setTrack({
+            title: queueRef.current[queueIndexRef.current]?.title ?? "",
+            artist: queueRef.current[queueIndexRef.current]?.artist ?? "WELL Collective",
+            artworkUrl: "https://app.lorettabates.com/icons/icon-512-v2.png",
+            duration: audio.duration,
+          }).catch(() => {});
+        }
+      };
+      audio.addEventListener("loadedmetadata", onMeta);
+
+      return () => {
+        audio.removeEventListener("loadedmetadata", onMeta);
+        if (elapsedTimer) clearInterval(elapsedTimer);
+        interruptionBeganSub?.remove();
+        interruptionEndedSub?.remove();
+        seekToSub?.remove();
+      };
     }
 
     // 2. Capacitor app lifecycle events (full background/foreground transitions)
@@ -289,10 +332,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("pause", onDocPause);
       document.removeEventListener("resume", onDocResume);
       document.removeEventListener("visibilitychange", onVisibility);
-      interruptionBeganSub?.remove();
-      interruptionEndedSub?.remove();
     };
   }, []);
+
+  // Keep the native lock-screen play/pause indicator in sync, and anchor
+  // elapsedPlaybackTime so the scrub bar position is correct after toggling.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "ios") return;
+    const currentTime = audioRef.current?.currentTime ?? 0;
+    NowPlaying.setPlaybackState({ isPlaying, currentTime }).catch(() => {});
+  }, [isPlaying]);
 
   return (
     <MusicPlayerContext.Provider
