@@ -1,8 +1,9 @@
-import { Award, Check, Feather, Gift, Heart, Sun, X, Zap } from "lucide-react";
+import { Award, Check, Feather, Gift, Heart, LayoutTemplate, Sun, X, Zap } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import { createPortal } from "react-dom";
+import CustomCardModal from "../CustomCardModal";
 import { CARD_OCCASIONS } from "../../data/cards";
 import type { CardOccasion, CardStyle } from "../../data/cards";
 import { useApp } from "../../store/AppContext";
@@ -488,6 +489,7 @@ export default function CardSender({
     occasion.styles[0]
   );
   const [stage, setStage] = useState<Stage>("sealed");
+  const [showCustomModal, setShowCustomModal] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clear = () => {
@@ -620,6 +622,23 @@ export default function CardSender({
               ))}
             </div>
 
+            {/* Custom card shortcut */}
+            <button
+              onClick={() => setShowCustomModal(true)}
+              className="flex items-center gap-2 w-full glass-card border border-brand-light/20 rounded-xl px-3 py-2.5 text-left"
+            >
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "rgba(1,145,206,0.15)", border: "1px solid rgba(1,145,206,0.3)" }}
+              >
+                <LayoutTemplate size={14} className="text-brand-light" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-text">Design a Custom Card</p>
+                <p className="text-[10px] text-text-muted">Create and save your own card design</p>
+              </div>
+            </button>
+
             {/* Animation scene */}
             {stage === "done" ? (
               <div className="flex flex-col items-center justify-center py-10 gap-4">
@@ -685,7 +704,7 @@ export default function CardSender({
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted mb-2.5">
                   Card Style
                 </p>
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
                   {occasion.styles.map((style) => (
                     <button
                       key={style.id}
@@ -737,6 +756,10 @@ export default function CardSender({
           )}
         </div>
       </div>
+
+      {showCustomModal && (
+        <CustomCardModal onClose={() => setShowCustomModal(false)} />
+      )}
     </>,
     document.body
   );
