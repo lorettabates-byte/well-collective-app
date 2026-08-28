@@ -22,12 +22,23 @@ export default function MobileShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="w-full bg-bg min-h-screen sm:flex sm:items-center sm:justify-center sm:py-6 landscape:py-0">
+      {/* Solid status-bar cap for Android — sits above everything so the
+          gradient-glow can't bleed into the transparent status bar zone */}
+      {isAndroid && (
+        <div
+          className="fixed inset-x-0 top-0 z-[999] pointer-events-none"
+          style={{ height: "max(env(safe-area-inset-top, 0px), 32px)", background: "#050b14" }}
+        />
+      )}
       <div
         id="mobile-shell-frame"
         className="relative w-full sm:max-w-[430px] md:max-w-[720px] h-screen sm:h-[900px] sm:max-h-[94vh] landscape:sm:max-w-full landscape:sm:max-h-full landscape:sm:h-screen landscape:sm:rounded-none sm:rounded-[36px] overflow-hidden sm:border sm:border-border landscape:sm:border-0 bg-bg sm:shadow-2xl landscape:sm:shadow-none flex flex-col"
         style={isAndroid ? { paddingTop: "max(env(safe-area-inset-top, 0px), 32px)" } : undefined}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-64 gradient-glow z-0" />
+        <div
+          className="pointer-events-none absolute inset-x-0 h-64 gradient-glow z-0"
+          style={{ top: isAndroid ? "max(env(safe-area-inset-top, 0px), 32px)" : "0" }}
+        />
         {!isOnline && (
           <div className="relative z-30 flex items-center justify-center gap-2 bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2">
             <WifiOff size={13} className="text-yellow-400 shrink-0" />
