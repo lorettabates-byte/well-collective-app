@@ -107,14 +107,16 @@ export default function NotificationSettings() {
   const openSystemSettings = async () => {
     if (!isNative) return;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const AppAny = App as any;
       if (platform === "android") {
         // Intent URI: opens the app's notification settings page directly on Android 8+
-        await App.openUrl({
+        await AppAny.openUrl({
           url: "intent:#Intent;action=android.settings.APP_NOTIFICATION_SETTINGS;S.android.provider.extra.APP_PACKAGE=com.wellcollective.app;end",
         });
       } else {
         // iOS uses the app-settings: scheme
-        await App.openUrl({ url: "app-settings:" });
+        await AppAny.openUrl({ url: "app-settings:" });
       }
     } catch {
       // fallback: open general settings (should rarely happen)

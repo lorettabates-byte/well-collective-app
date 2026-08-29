@@ -57,7 +57,6 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
   const [flash, setFlash] = useState<"valid" | "invalid" | null>(null);
-  const [lastWord, setLastWord] = useState("");
   const dragging = useRef(false);
   const doneRef = useRef(alreadyDone);
   const cellRefs = useRef<(HTMLButtonElement | null)[][]>(
@@ -90,7 +89,6 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
     if (isValidWord(word)) {
       const next = [...found, word];
       setFound(next);
-      setLastWord(word);
       setFlash("valid"); setTimeout(() => setFlash(null), 600);
       if (next.length >= WIN_WORDS && !doneRef.current) {
         doneRef.current = true;
@@ -165,7 +163,6 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
     setPath(prev => { trySubmit(prev); return prev; });
   };
 
-  const inPath = (r: number, c: number) => path.some(([pr, pc]) => pr === r && pc === c);
   const pathIdx = (r: number, c: number) => path.findIndex(([pr, pc]) => pr === r && pc === c);
 
   const timerPct = (timeLeft / TIME_LIMIT) * 100;
