@@ -53,6 +53,7 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const [goalReached, setGoalReached] = useState(alreadyDone);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
   const [message, setMessage] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef = useRef(alreadyDone);
 
@@ -89,7 +90,7 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, onComplete]);
+  }, [status, onComplete, resetKey]);
 
   const currentWord = selected.map(i => letters[i]).join("");
 
@@ -283,7 +284,7 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
 
       {status === "playing" && (
         <button
-          onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setMessage(""); }}
+          onClick={() => { setResetKey(k => k + 1); setRound(r => r + 1); foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setMessage(""); }}
           className="mx-auto block text-[9px] text-text-dim opacity-50 hover:opacity-80 transition-opacity"
         >
           Try different letters

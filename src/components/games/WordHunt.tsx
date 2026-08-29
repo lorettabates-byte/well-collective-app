@@ -61,6 +61,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
   const [flash, setFlash] = useState<"valid" | "invalid" | null>(null);
+  const [resetKey, setResetKey] = useState(0);
   const dragging = useRef(false);
   const doneRef = useRef(alreadyDone);
   const cellRefs = useRef<(HTMLButtonElement | null)[][]>(
@@ -95,7 +96,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, onComplete]);
+  }, [status, onComplete, resetKey]);
 
   const trySubmit = useCallback((p: [number, number][]) => {
     setPath([]);
@@ -111,13 +112,15 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       foundRef.current = next;
       setFound(next);
       setFlash("valid"); setTimeout(() => setFlash(null), 500);
-      if (next.length >= WIN_WORDS && !doneRef.current) {
-        doneRef.current = true;
+      if (next.length >= WIN_WORDS) {
         clearInterval(timerRef.current!);
         setStatus("won");
-        const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
-        const timePts = Math.floor(timeLeft / 8);
-        onComplete(wordPts + timePts);
+        if (!doneRef.current) {
+          doneRef.current = true;
+          const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
+          const timePts = Math.floor(timeLeft / 8);
+          onComplete(wordPts + timePts);
+        }
       }
     } else {
       setFlash("invalid"); setTimeout(() => setFlash(null), 500);
@@ -337,7 +340,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
 
       {status === "playing" && (
         <button
-          onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setFlash(null); }}
+          onClick={() => { setResetKey(k => k + 1); setRound(r => r + 1); foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setFlash(null); }}
           className="mx-auto block text-[9px] text-text-dim opacity-50 hover:opacity-80 transition-opacity"
         >
           Try a different grid
