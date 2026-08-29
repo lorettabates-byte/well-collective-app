@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Send, CheckCircle2 } from "lucide-react";
+import { X, Send, CheckCircle2, Users } from "lucide-react";
 import { useApp } from "../../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -15,9 +15,10 @@ interface Props {
   gameName: string;
   score: number;
   onClose: () => void;
+  onSent?: () => void;
 }
 
-export default function ChallengePickerModal({ gameId, gameName, score, onClose }: Props) {
+export default function ChallengePickerModal({ gameId, gameName, score, onClose, onSent }: Props) {
   const { user } = useApp();
   const [tribe, setTribe] = useState<TribeMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,11 +58,11 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
           setError(data.error ?? "Could not send invite");
         }
       } else {
+        const resJson = await res.json();
         setSent(s => new Set(s).add(member.id));
-        // Send push notification to opponent
+        onSent?.();
+        // Send push notification with the specific challenge link
         try {
-          const resJson = await res.json();
-          const challengeId = resJson.challengeId;
           await fetch(`${API_URL}/api/notifications/send-game-invite`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -69,11 +70,11 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
               recipientId: member.id,
               inviterName: user.name || "A friend",
               gameName,
-              challengeId,
+              challengeId: resJson.challengeId,
             }),
           });
         } catch {
-          // Notification failed, but challenge was still created — silently ignore
+          // Notification failed but challenge was created — silent
         }
       }
     } catch {
@@ -91,23 +92,28 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
-          <div>
-            <p className="text-sm font-bold text-text">Share your {gameName} score</p>
-            <p className="text-xs text-text-dim mt-0.5">Invite a tribe member to play along</p>
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-brand-light shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-text">Challenge your tribe to {gameName}</p>
+              <p className="text-xs text-text-dim mt-0.5">They earn points just for playing — no matter who wins</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full text-text-dim hover:text-text">
+          <button onClick={onClose} className="p-1.5 rounded-full text-text-dim hover:text-text shrink-0 ml-2">
             <X size={16} />
           </button>
         </div>
 
-        {/* Score pill */}
-        <div className="px-5 py-3 flex items-center gap-2">
-          <span className="text-xs text-text-muted">Your score today:</span>
-          <span className="text-sm font-bold text-brand-light">{score}</span>
-        </div>
+        {/* Score pill — only show if there's a real score */}
+        {score > 0 && (
+          <div className="px-5 py-3 flex items-center gap-2 border-b border-border/40">
+            <span className="text-xs text-text-muted">Your score to beat:</span>
+            <span className="text-sm font-bold text-brand-light">{score}</span>
+          </div>
+        )}
 
         {/* Member list */}
-        <div className="px-3 pb-5 max-h-80 overflow-y-auto flex flex-col gap-1">
+        <div className="px-3 pb-5 max-h-80 overflow-y-auto flex flex-col gap-1 mt-2">
           {loading && (
             <p className="text-xs text-text-dim text-center py-6">Loading your tribe...</p>
           )}
@@ -129,16 +135,13 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                 style={{ background: "rgba(255,255,255,0.04)" }}
               >
-                {/* Avatar */}
                 <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-surface-2 flex items-center justify-center">
                   {member.avatar
                     ? <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                     : <span className="text-xs font-bold text-text-dim">{member.name.charAt(0)}</span>
                   }
                 </div>
-
                 <span className="flex-1 text-sm text-text font-medium truncate">{member.name}</span>
-
                 <button
                   onClick={() => invite(member)}
                   disabled={isSent || isSending}
@@ -149,10 +152,10 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
                     }`}
                 >
                   {isSent
-                    ? <><CheckCircle2 size={12} /> Invited</>
+                    ? <><CheckCircle2 size={12} /> Sent!</>
                     : isSending
                     ? <span className="opacity-60">Sending...</span>
-                    : <><Send size={12} /> Invite</>
+                    : <><Send size={12} /> Challenge</>
                   }
                 </button>
               </div>
