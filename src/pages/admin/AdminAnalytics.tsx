@@ -32,6 +32,8 @@ interface DashboardData {
   brainGameDailyByGame: { day: string; game_id: string; plays: number; unique_players: number }[];
   brainGameTopPlayers: { member_email: string; name: string; total_plays: number; games_variety: number; total_points: number; last_played: string }[];
   brainGameDaily: { day: string; plays: number; unique_players: number }[];
+  gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
+  gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
   memberSections: { member_email: string; section: string; visits: number }[];
@@ -525,7 +527,7 @@ function WellCupTab({ data }: { data: DashboardData }) {
     well_activity: "WELL Activity", event_attend: "Event Attended", well_escape: "WELL Escape",
     tribe_add: "Tribe Member Added", daily_challenge_accept: "Daily Challenge",
     profile_photo: "Profile Photo", login_streak_bonus: "Login Streak Bonus",
-    brain_game: "Brain Game",
+    brain_game: "Brain Game", tribe_challenge_complete: "Tribe Game Invite",
   };
 
   return (
@@ -627,6 +629,8 @@ const GAME_LABELS: Record<string, string> = {
   calmfocus: "Calm Focus",
   gratitude: "Gratitude Match",
   mindgarden: "Mind Garden",
+  anagram: "Anagram",
+  wordhunt: "Word Hunt",
 };
 
 const GAME_COLORS: Record<string, string> = {
@@ -634,6 +638,8 @@ const GAME_COLORS: Record<string, string> = {
   calmfocus: "#f472b6",
   gratitude: "#34d399",
   mindgarden: "#fbbf24",
+  anagram: "#a78bfa",
+  wordhunt: "#fb923c",
 };
 
 function GamesTab({ data }: { data: DashboardData }) {
@@ -652,7 +658,7 @@ function GamesTab({ data }: { data: DashboardData }) {
 
   // Get all unique days for the stacked per-game chart
   const allDays = Array.from(new Set(dailyByGame.map(r => r.day))).sort();
-  const GAME_IDS = ["wordwell", "calmfocus", "gratitude", "mindgarden"];
+  const GAME_IDS = ["wordwell", "calmfocus", "gratitude", "mindgarden", "anagram", "wordhunt"];
 
   return (
     <div className="flex flex-col gap-4">
@@ -665,7 +671,7 @@ function GamesTab({ data }: { data: DashboardData }) {
 
       {/* Per-game stat cards */}
       {byType.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {GAME_IDS.map(gameId => {
             const g = byType.find(r => r.game_id === gameId);
             const color = GAME_COLORS[gameId] ?? "#3b9eff";
@@ -803,6 +809,42 @@ function GamesTab({ data }: { data: DashboardData }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Tribe game invites summary */}
+      {data.gameChallengeStats && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-3">Tribe Game Invites</p>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="text-center">
+              <p className="text-lg font-bold text-text">{Number(data.gameChallengeStats.sent_30d)}</p>
+              <p className="text-[10px] text-text-muted">Sent (30d)</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-text">{Number(data.gameChallengeStats.completed_30d)}</p>
+              <p className="text-[10px] text-text-muted">Completed (30d)</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-text">{Number(data.gameChallengeStats.pending)}</p>
+              <p className="text-[10px] text-text-muted">Pending</p>
+            </div>
+          </div>
+          {data.gameChallengesByGame.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] text-text-dim font-medium uppercase tracking-wide">By Game</p>
+              {data.gameChallengesByGame.map(g => (
+                <div key={g.game_id} className="flex items-center justify-between">
+                  <span className="text-xs text-text" style={{ color: GAME_COLORS[g.game_id] ?? undefined }}>
+                    {GAME_LABELS[g.game_id] ?? g.game_id}
+                  </span>
+                  <span className="text-[10px] text-text-dim">
+                    {Number(g.sent)} sent · {Number(g.completed)} completed
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
