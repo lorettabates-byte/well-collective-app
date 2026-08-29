@@ -155,26 +155,32 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   const markDone = async (gameId: string, score?: number) => {
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
     const existingSet = new Set(raw ? raw.split(",") : []);
-    if (existingSet.has(gameId) || celebratedRef.current.has(gameId)) return;
-    celebratedRef.current.add(gameId);
-    const isFirstToday = existingSet.size === 0;
-    const newSet = new Set(existingSet).add(gameId);
-    setDoneTodaySet(newSet);
-    localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
-
-    const g = GAMES.find(x => x.id === gameId);
-    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
-    if (isFirstToday) {
-      setWinningGame(gameId);
-      setTimeout(() => setWinningGame(null), 2200);
+    const isRespondingToChallenge = activeChallenge?.gameId === gameId && activeChallenge?.direction === "incoming";
+    // Allow score submission for a challenge response even if already played today
+    if (!isRespondingToChallenge && (existingSet.has(gameId) || celebratedRef.current.has(gameId))) return;
+    const isFirstToday = !isRespondingToChallenge && existingSet.size === 0;
+    if (!isRespondingToChallenge) {
+      celebratedRef.current.add(gameId);
+      const newSet = new Set(existingSet).add(gameId);
+      setDoneTodaySet(newSet);
+      localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
     }
 
-    if (user.email) {
-      await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
+    const g = GAMES.find(x => x.id === gameId);
+
+    if (!isRespondingToChallenge) {
+      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
+      if (isFirstToday) {
+        setWinningGame(gameId);
+        setTimeout(() => setWinningGame(null), 2200);
+      }
+      if (user.email) {
+        await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
+      }
     }
 
     // If this was played in response to an incoming challenge, submit score automatically
-    if (activeChallenge && activeChallenge.gameId === gameId && activeChallenge.direction === "incoming") {
+    if (isRespondingToChallenge && activeChallenge && activeChallenge.gameId === gameId && activeChallenge.direction === "incoming") {
       if (API_URL && user.email && score != null) {
         await fetch(`${API_URL}/api/game-challenges/${activeChallenge.id}/respond`, {
           method: "POST",
@@ -298,7 +304,9 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           const done = doneTodaySet.has(game.id);
           const GameIcon = game.Icon;
           const challengeForThisGame = activeChallenge?.gameId === game.id ? activeChallenge : null;
-          const props = { onComplete: (score?: number) => markDone(game.id, score), alreadyDone: done };
+          // When playing in response to a challenge, always allow play even if already done today
+          const playingAsChallenge = challengeForThisGame?.direction === "incoming";
+          const props = { onComplete: (score?: number) => markDone(game.id, score), alreadyDone: playingAsChallenge ? false : done };
 
           return (
             <div key={game.id} id={`game-${game.id}`} className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-r ${game.bg} relative`}>
