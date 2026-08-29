@@ -294,7 +294,7 @@ export default function BrainGameOfDay() {
         to="/wellness?tab=activities#brain-games"
         className="flex items-center justify-center gap-1 mt-3 text-[11px] font-semibold text-text-dim hover:text-brand-light transition-colors"
       >
-        See all 4 brain games
+        See all 6 brain games
       </Link>
     </div>
   );
