@@ -265,14 +265,14 @@ export default function BrainGamesSection({ initialOpen }: Props) {
             return (
               <div
                 key={c.id}
-                className="rounded-xl border overflow-hidden"
+                className="rounded-xl border"
                 style={{ borderColor: isActive ? (game?.color ?? "#0191CE") + "60" : "rgba(255,255,255,0.1)", background: isActive ? `${game?.color ?? "#0191CE"}15` : "rgba(255,255,255,0.03)" }}
               >
-                <div className="flex items-center gap-3 px-3 py-2.5">
+                <div className="flex items-center gap-3 px-3 py-3">
                   {c.challengerAvatar ? (
-                    <img src={c.challengerAvatar} alt={c.challengerName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                    <img src={c.challengerAvatar} alt={c.challengerName} className="w-9 h-9 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-text-dim">{c.challengerName.charAt(0)}</span>
                     </div>
                   )}
@@ -284,14 +284,14 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                     </p>
                   </div>
                   {isActive ? (
-                    <span className="text-[9px] font-bold px-2 py-1 rounded-full" style={{ background: `${game?.color}22`, color: game?.color }}>
+                    <span className="text-[10px] font-bold px-3 py-2 rounded-full" style={{ background: `${game?.color}22`, color: game?.color }}>
                       Playing...
                     </span>
                   ) : (
                     <button
                       onClick={() => acceptChallenge(c)}
-                      className="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-lg text-white"
-                      style={{ background: game?.color ?? "#0191CE" }}
+                      className="shrink-0 text-xs font-bold px-4 py-2 rounded-xl text-white"
+                      style={{ background: game?.color ?? "#0191CE", minWidth: "72px", minHeight: "36px" }}
                     >
                       Accept
                     </button>

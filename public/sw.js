@@ -39,11 +39,13 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const appClient = clients.find((c) => c.url.startsWith(self.location.origin));
       if (appClient) {
-        // postMessage is more reliable than client.navigate() in Capacitor WebViews
-        // because navigate() may silently no-op while postMessage reaches the React
-        // Router handler in App.tsx and does a client-side navigation without a reload.
-        appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
-        return appClient.focus();
+        // Focus first, then postMessage — sending before focus() resolves means the
+        // app is still backgrounded/suspended when the message arrives and the React
+        // Router listener in App.tsx may not be active yet, causing the navigation
+        // to be silently dropped and the user lands on the home screen.
+        return appClient.focus().then(() => {
+          appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
+        });
       }
       return self.clients.openWindow(absoluteUrl);
     })
