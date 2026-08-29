@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Shuffle, Users } from "lucide-react";
+import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Share2, Shuffle, Users } from "lucide-react";
 import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
@@ -263,6 +263,14 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                     )}
                     {done && (
                       <span className="text-[9px] font-semibold text-emerald-400 ml-auto">Done</span>
+                    )}
+                    {done && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setShowChallengePicker({ gameId: game.id, gameName: game.title, score: 0 }); }}
+                        className="flex items-center gap-1 text-[9px] text-text-dim border border-border/60 rounded-full px-2 py-0.5 ml-1"
+                      >
+                        <Share2 size={9} /> Invite
+                      </button>
                     )}
                   </div>
                   <p className="text-[10px] text-text-dim mt-0.5">{game.tagline}</p>

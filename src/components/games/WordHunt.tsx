@@ -80,21 +80,22 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   }, [status]);
 
   const trySubmit = useCallback((p: [number, number][]) => {
-    if (p.length < 3) { setPath([]); dragging.current = false; return; }
+    setPath([]);
+    dragging.current = false;
+    if (p.length < 3) return;
     const word = pathWord(p, grid).toUpperCase();
     if (found.includes(word)) {
       setFlash("invalid"); setTimeout(() => setFlash(null), 500);
-      setPath([]); dragging.current = false; return;
+      return;
     }
     if (isValidWord(word)) {
       const next = [...found, word];
       setFound(next);
-      setFlash("valid"); setTimeout(() => setFlash(null), 600);
+      setFlash("valid"); setTimeout(() => setFlash(null), 500);
       if (next.length >= WIN_WORDS && !doneRef.current) {
         doneRef.current = true;
         clearInterval(timerRef.current!);
         setStatus("won");
-        // Score: each word length pts + time bonus
         const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
         const timePts = Math.floor(timeLeft / 8);
         onComplete(wordPts + timePts);
@@ -102,8 +103,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
     } else {
       setFlash("invalid"); setTimeout(() => setFlash(null), 500);
     }
-    setPath([]); dragging.current = false;
-  }, [found, grid, onComplete]);
+  }, [found, grid, onComplete, timeLeft]);
 
   const cellAt = (x: number, y: number): [number, number] | null => {
     for (let r = 0; r < GRID_SIZE; r++) {
@@ -141,7 +141,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   };
   const onMouseUp = () => {
     if (!dragging.current) return;
-    setPath(prev => { trySubmit(prev); return prev; });
+    trySubmit(path);
   };
 
   // Touch events
@@ -160,7 +160,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   };
   const onTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
-    setPath(prev => { trySubmit(prev); return prev; });
+    trySubmit(path);
   };
 
   const pathIdx = (r: number, c: number) => path.findIndex(([pr, pc]) => pr === r && pc === c);

@@ -133,18 +133,31 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       {status === "won" && (
         <div className="text-center py-2">
           <p className="text-sm font-bold text-emerald-400">Nice work! {found.length} words found.</p>
-          <p className="text-[10px] text-text-dim mt-1">Come back tomorrow for a new puzzle.</p>
+          <button
+            onClick={() => {
+              setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
+              setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+            }}
+            className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
+          >
+            Play again
+          </button>
         </div>
       )}
-      {status === "lost" && found.length > 0 && (
+      {status === "lost" && (
         <div className="text-center py-2">
-          <p className="text-sm font-bold text-amber-400">Time's up! {found.length} of {WIN_WORDS} words.</p>
-          <p className="text-[10px] text-text-dim mt-1">Keep going tomorrow.</p>
-        </div>
-      )}
-      {status === "lost" && found.length === 0 && (
-        <div className="text-center py-2">
-          <p className="text-sm font-bold text-text-muted">Time's up. Try again tomorrow.</p>
+          <p className="text-sm font-bold text-amber-400">
+            {found.length > 0 ? `Time's up! ${found.length} of ${WIN_WORDS} words.` : "Time's up. Give it another go!"}
+          </p>
+          <button
+            onClick={() => {
+              setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
+              setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+            }}
+            className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
+          >
+            Try again
+          </button>
         </div>
       )}
 
