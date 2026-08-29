@@ -257,7 +257,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       {incoming.length > 0 && (
         <div className="mb-3 flex flex-col gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-text-dim flex items-center gap-1.5">
-            <Users size={10} className="text-brand-light" /> Tribe challenges waiting for you
+            <Users size={10} className="text-brand-light" /> Tribe invites waiting for you
           </p>
           {incoming.map(c => {
             const game = GAMES.find(g => g.id === c.gameId);
@@ -279,7 +279,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-text truncate">{c.challengerName}</p>
                     <p className="text-[10px] text-text-dim">
-                      challenged you to <span className="font-semibold" style={{ color: game?.color }}>{game?.title ?? c.gameId}</span>
+                      invited you to play <span className="font-semibold" style={{ color: game?.color }}>{game?.title ?? c.gameId}</span>
                       {c.challengerScore > 0 && <span className="text-text-muted"> · their score: {c.challengerScore}</span>}
                     </p>
                   </div>
@@ -307,7 +307,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       {outgoing.length > 0 && (
         <div className="mb-3 flex flex-col gap-1.5 p-3 rounded-xl border border-border/40" style={{ background: "rgba(255,255,255,0.02)" }}>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-text-dim flex items-center gap-1.5">
-            <Trophy size={10} className="text-brand-light" /> Challenges sent — waiting for response
+            <Trophy size={10} className="text-brand-light" /> Invites sent — waiting for response
           </p>
           {outgoing.map(c => {
             const game = GAMES.find(g => g.id === c.gameId);
@@ -386,7 +386,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                     )}
                     {challengeForThisGame && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-light/20 text-brand-light">
-                        vs {challengeForThisGame.direction === "incoming" ? challengeForThisGame.challengerName.split(" ")[0] : challengeForThisGame.opponentName.split(" ")[0]}
+                        with {challengeForThisGame.direction === "incoming" ? challengeForThisGame.challengerName.split(" ")[0] : challengeForThisGame.opponentName.split(" ")[0]}
                       </span>
                     )}
                     {done && !challengeForThisGame && (
@@ -396,7 +396,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   <p className="text-[10px] text-text-dim mt-0.5">{game.tagline}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Challenge button — always available */}
+                  {/* Invite button — always available */}
                   <button
                     onClick={e => {
                       e.stopPropagation();
@@ -404,7 +404,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                     }}
                     className="text-[9px] font-semibold px-2 py-1 rounded-full border border-border/60 text-text-dim hover:text-brand-light hover:border-brand-light/40 transition-colors"
                   >
-                    Challenge
+                    Invite
                   </button>
                   {isOpen ? <ChevronUp size={14} className="text-text-dim" /> : <ChevronDown size={14} className="text-text-dim" />}
                 </div>
@@ -421,8 +421,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                       <Users size={12} style={{ color: game.color }} className="shrink-0" />
                       <span className="font-semibold" style={{ color: game.color }}>
                         {challengeForThisGame.direction === "incoming"
-                          ? `Playing vs ${challengeForThisGame.challengerName.split(" ")[0]}`
-                          : `Challenged by ${challengeForThisGame.opponentName.split(" ")[0]}`}
+                          ? `Playing with ${challengeForThisGame.challengerName.split(" ")[0]}`
+                          : `Playing with ${challengeForThisGame.opponentName.split(" ")[0]}`}
                       </span>
                       {challengeForThisGame.challengerScore > 0 && (
                         <span className="text-text-muted ml-auto">Their score: <span className="font-bold text-text">{challengeForThisGame.challengerScore}</span></span>
@@ -455,20 +455,15 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           </p>
           {recentCompleted.map(c => {
             const game = GAMES.find(g => g.id === c.gameId);
-            const youWon = c.isWinner;
-            const tie = !c.winnerEmail;
             const otherName = c.direction === "incoming" ? c.challengerName.split(" ")[0] : c.opponentName.split(" ")[0];
             const myScore = c.direction === "incoming" ? (c.opponentScore ?? "?") : c.challengerScore;
             const theirScore = c.direction === "incoming" ? c.challengerScore : (c.opponentScore ?? "?");
             return (
               <div key={c.id} className="flex items-center gap-2 py-1.5 text-[11px]">
                 <span style={{ color: game?.color }} className="shrink-0 font-semibold">{game?.title}</span>
-                <span className="text-text-dim truncate flex-1">vs {otherName}</span>
+                <span className="text-text-dim truncate flex-1">with {otherName}</span>
                 <span className="tabular-nums text-text-muted shrink-0 font-variant-numeric">
-                  {myScore} – {theirScore}
-                </span>
-                <span className={`text-[10px] font-bold shrink-0 ${tie ? "text-text-muted" : youWon ? "text-emerald-400" : "text-red-400/70"}`}>
-                  {tie ? "Tie" : youWon ? "You won" : `${otherName} won`}
+                  You {myScore} · {otherName} {theirScore}
                 </span>
               </div>
             );
@@ -484,7 +479,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
             style={{ background: "var(--color-surface)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)" }}
           >
             <div className="flex flex-col items-center gap-1 mb-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-dim">Tribe Challenge</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-dim">Playing Together</p>
               <h3 className="text-lg font-bold text-text">{challengeResult.gameName}</h3>
             </div>
 
@@ -494,33 +489,18 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                 <span className="text-3xl font-bold tabular-nums text-text">{challengeResult.myScore}</span>
                 <span className="text-[10px] text-text-dim font-semibold uppercase tracking-wider">You</span>
               </div>
-              <span className="text-text-dim text-lg font-light">vs</span>
+              <span className="text-text-dim text-lg font-light">&</span>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-3xl font-bold tabular-nums text-text">{challengeResult.theirScore}</span>
                 <span className="text-[10px] text-text-dim font-semibold uppercase tracking-wider">{challengeResult.opponentName.split(" ")[0]}</span>
               </div>
             </div>
 
-            {/* Result label */}
-            <div className="flex justify-center mb-5">
-              <span
-                className="px-4 py-1.5 rounded-full text-sm font-bold"
-                style={challengeResult.tie
-                  ? { background: "rgba(255,255,255,0.08)", color: "var(--color-text-muted)" }
-                  : challengeResult.youWon
-                  ? { background: "rgba(52,211,153,0.15)", color: "#34d399" }
-                  : { background: "rgba(248,113,113,0.12)", color: "#f87171" }
-                }
-              >
-                {challengeResult.tie ? "It's a tie!" : challengeResult.youWon ? "You won!" : `${challengeResult.opponentName.split(" ")[0]} won`}
-              </span>
-            </div>
-
             {/* Points message */}
             <p className="text-center text-xs text-text-muted mb-6">
               {challengeResult.awardedPoints
                 ? <><span className="text-emerald-400 font-bold">+25 pts</span> added to your WELL Cup score. You both earned points for playing together.</>
-                : "You both earn points for playing together — challenge complete!"}
+                : "You both earn points for playing together — well done!"}
             </p>
 
             <button

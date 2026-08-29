@@ -95,8 +95,8 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose,
           <div className="flex items-center gap-2">
             <Users size={16} className="text-brand-light shrink-0" />
             <div>
-              <p className="text-sm font-bold text-text">Challenge your tribe to {gameName}</p>
-              <p className="text-xs text-text-dim mt-0.5">They earn points just for playing — no matter who wins</p>
+              <p className="text-sm font-bold text-text">Invite your tribe to play {gameName}</p>
+              <p className="text-xs text-text-dim mt-0.5">You both earn points just for playing together</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full text-text-dim hover:text-text shrink-0 ml-2">
@@ -155,7 +155,7 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose,
                     ? <><CheckCircle2 size={12} /> Sent!</>
                     : isSending
                     ? <span className="opacity-60">Sending...</span>
-                    : <><Send size={12} /> Challenge</>
+                    : <><Send size={12} /> Invite</>
                   }
                 </button>
               </div>

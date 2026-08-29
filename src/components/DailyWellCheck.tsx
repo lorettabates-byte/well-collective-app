@@ -74,7 +74,7 @@ const POINTS_GUIDE = [
   { emoji: "🤝", label: "Add a tribe member", pts: 5 },
   { emoji: "🎯", label: "Accept a daily challenge", pts: 10 },
   { emoji: "🧠", label: "Play a daily brain game", pts: 20 },
-  { emoji: "🤜", label: "Complete a tribe brain challenge", pts: 25 },
+  { emoji: "🤜", label: "Play a brain game with a tribe member", pts: 25 },
   { emoji: "🌟", label: "Attend a WELL Escape", pts: 100 },
 ];
 
