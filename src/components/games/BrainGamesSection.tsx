@@ -100,6 +100,17 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   const [showChallengePicker, setShowChallengePicker] = useState<{ gameId: string; gameName: string; score: number } | null>(null);
   const [challenges, setChallenges] = useState<GameChallenge[]>([]);
   const [activeChallenge, setActiveChallenge] = useState<GameChallenge | null>(null);
+  const [challengeResult, setChallengeResult] = useState<{
+    gameId: string;
+    gameName: string;
+    myScore: number;
+    theirScore: number;
+    opponentName: string;
+    youWon: boolean;
+    tie: boolean;
+    awardedPoints: boolean;
+  } | null>(null);
+  const [challengePointsWin, setChallengePointsWin] = useState<string | null>(null);
   const celebratedRef = useRef<Set<string>>(new Set());
 
   const todayIdx = todayGameIdx();
@@ -182,11 +193,40 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     // If this was played in response to an incoming challenge, submit score automatically
     if (isRespondingToChallenge && activeChallenge && activeChallenge.gameId === gameId && activeChallenge.direction === "incoming") {
       if (API_URL && user.email && score != null) {
-        await fetch(`${API_URL}/api/game-challenges/${activeChallenge.id}/respond`, {
+        const respondRes = await fetch(`${API_URL}/api/game-challenges/${activeChallenge.id}/respond`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: user.email, score }),
-        }).catch(() => {});
+        }).catch(() => null);
+
+        const respondData = respondRes?.ok ? await respondRes.json().catch(() => null) : null;
+        const awardedPoints: boolean = respondData?.opponentPointsAwarded ?? false;
+        const theirScore: number = respondData?.challengerScore ?? activeChallenge.challengerScore;
+        const winnerEmail: string | null = respondData?.winnerEmail ?? null;
+        const youWon = winnerEmail === user.email;
+        const tie = winnerEmail === null;
+        const g = GAMES.find(x => x.id === gameId);
+
+        // Always fire confetti for a challenge completion
+        confetti({ particleCount: 120, spread: 75, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
+
+        // Show +25 pts float if points were awarded (first challenge of day)
+        if (awardedPoints) {
+          setChallengePointsWin(gameId);
+          setTimeout(() => setChallengePointsWin(null), 2200);
+        }
+
+        setChallengeResult({
+          gameId,
+          gameName: g?.title ?? gameId,
+          myScore: score,
+          theirScore,
+          opponentName: activeChallenge.challengerName,
+          youWon,
+          tie,
+          awardedPoints,
+        });
+
         setActiveChallenge(null);
         await loadChallenges();
       }
@@ -320,6 +360,16 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   </span>
                 </div>
               )}
+              {challengePointsWin === game.id && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                  style={{ animation: "brainWinFloat 2.2s ease-out forwards" }}
+                >
+                  <span className="text-2xl font-bold drop-shadow-lg" style={{ color: game.color, textShadow: `0 0 20px ${game.color}80` }}>
+                    +25 pts
+                  </span>
+                </div>
+              )}
 
               <button
                 onClick={() => setOpenGame(isOpen ? null : game.id)}
@@ -423,6 +473,63 @@ export default function BrainGamesSection({ initialOpen }: Props) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Challenge result overlay */}
+      {challengeResult && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.65)" }}>
+          <div
+            className="w-full max-w-md rounded-t-2xl border border-border px-6 pt-6 pb-8"
+            style={{ background: "var(--color-surface)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)" }}
+          >
+            <div className="flex flex-col items-center gap-1 mb-5">
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-dim">Tribe Challenge</p>
+              <h3 className="text-lg font-bold text-text">{challengeResult.gameName}</h3>
+            </div>
+
+            {/* Scores */}
+            <div className="flex items-center justify-center gap-6 mb-5">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-3xl font-bold tabular-nums text-text">{challengeResult.myScore}</span>
+                <span className="text-[10px] text-text-dim font-semibold uppercase tracking-wider">You</span>
+              </div>
+              <span className="text-text-dim text-lg font-light">vs</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-3xl font-bold tabular-nums text-text">{challengeResult.theirScore}</span>
+                <span className="text-[10px] text-text-dim font-semibold uppercase tracking-wider">{challengeResult.opponentName.split(" ")[0]}</span>
+              </div>
+            </div>
+
+            {/* Result label */}
+            <div className="flex justify-center mb-5">
+              <span
+                className="px-4 py-1.5 rounded-full text-sm font-bold"
+                style={challengeResult.tie
+                  ? { background: "rgba(255,255,255,0.08)", color: "var(--color-text-muted)" }
+                  : challengeResult.youWon
+                  ? { background: "rgba(52,211,153,0.15)", color: "#34d399" }
+                  : { background: "rgba(248,113,113,0.12)", color: "#f87171" }
+                }
+              >
+                {challengeResult.tie ? "It's a tie!" : challengeResult.youWon ? "You won!" : `${challengeResult.opponentName.split(" ")[0]} won`}
+              </span>
+            </div>
+
+            {/* Points message */}
+            <p className="text-center text-xs text-text-muted mb-6">
+              {challengeResult.awardedPoints
+                ? <><span className="text-emerald-400 font-bold">+25 pts</span> added to your WELL Cup score. You both earned points for playing together.</>
+                : "You both earn points for playing together — challenge complete!"}
+            </p>
+
+            <button
+              onClick={() => setChallengeResult(null)}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-white gradient-brand"
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
 
