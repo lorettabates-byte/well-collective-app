@@ -95,7 +95,6 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     return new Set(raw ? raw.split(",") : []);
   });
   const [winningGame, setWinningGame] = useState<string | null>(null);
-  const [lastScore, setLastScore] = useState<number | null>(null);
   const [showChallengePicker, setShowChallengePicker] = useState<{ gameId: string; gameName: string; score: number } | null>(null);
   const [challenges, setChallenges] = useState<GameChallenge[]>([]);
   const [activeChallenge, setActiveChallenge] = useState<GameChallenge | null>(null);
@@ -141,7 +140,6 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     // Show invite button if a score was returned and user has tribe members
     if (score != null && score > 0) {
       const gameName = g?.title ?? gameId;
-      setLastScore(score);
       setShowChallengePicker({ gameId, gameName, score });
     }
 
