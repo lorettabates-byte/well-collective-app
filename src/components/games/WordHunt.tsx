@@ -57,6 +57,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   const grid = useMemo(() => buildGrid(round), [round]);
   const [path, setPath] = useState<[number, number][]>([]);
   const [found, setFound] = useState<string[]>([]);
+  const foundRef = useRef<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
   const [flash, setFlash] = useState<"valid" | "invalid" | null>(null);
@@ -77,14 +78,24 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       setTimeLeft(t => {
         if (t <= 1) {
           clearInterval(timerRef.current!);
-          setStatus("lost");
+          const f = foundRef.current;
+          if (f.length >= WIN_WORDS) {
+            // already handled in trySubmit
+          } else {
+            setStatus("lost");
+            if (!doneRef.current) {
+              doneRef.current = true;
+              const wordPts = f.reduce((sum, w) => sum + w.length * 4, 0);
+              onComplete(wordPts > 0 ? wordPts : undefined);
+            }
+          }
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status]);
+  }, [status, onComplete]);
 
   const trySubmit = useCallback((p: [number, number][]) => {
     setPath([]);
@@ -97,6 +108,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
     }
     if (isValidWord(word)) {
       const next = [...found, word];
+      foundRef.current = next;
       setFound(next);
       setFlash("valid"); setTimeout(() => setFlash(null), 500);
       if (next.length >= WIN_WORDS && !doneRef.current) {
@@ -214,13 +226,13 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
           <p className="text-sm font-bold text-emerald-400">You found {found.length} words!</p>
           <div className="flex gap-2 justify-center mt-2">
             <button
-              onClick={() => { setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              onClick={() => { foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               Same grid
             </button>
             <button
-              onClick={() => { setRound(r => r + 1); setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               New grid
@@ -233,13 +245,13 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
           <p className="text-sm font-bold text-amber-400">Time's up! {found.length} of {WIN_WORDS} words.</p>
           <div className="flex gap-2 justify-center mt-2">
             <button
-              onClick={() => { setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              onClick={() => { foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               Same grid
             </button>
             <button
-              onClick={() => { setRound(r => r + 1); setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               New grid

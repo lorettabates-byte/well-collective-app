@@ -48,7 +48,9 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const letters = lettersForRound(round);
   const [selected, setSelected] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
+  const foundRef = useRef<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [goalReached, setGoalReached] = useState(alreadyDone);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
   const [message, setMessage] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -70,14 +72,24 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       setTimeLeft(t => {
         if (t <= 1) {
           clearInterval(timerRef.current!);
-          setStatus("lost");
+          const f = foundRef.current;
+          if (f.length >= WIN_WORDS) {
+            setStatus("won");
+            if (!doneRef.current) {
+              doneRef.current = true;
+              const wordPts = f.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
+              onComplete(wordPts);
+            }
+          } else {
+            setStatus("lost");
+          }
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status]);
+  }, [status, onComplete]);
 
   const currentWord = selected.map(i => letters[i]).join("");
 
@@ -89,20 +101,15 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
     if (!isValidWord(word)) { showMsg("Not a word"); setSelected([]); return; }
 
     const next = [...found, word];
+    foundRef.current = next;
     setFound(next);
     setSelected([]);
     showMsg(`+${word.length > 4 ? "2" : "1"} point${word.length > 4 ? "s" : ""}!`);
 
-    if (next.length >= WIN_WORDS && !doneRef.current) {
-      doneRef.current = true;
-      clearInterval(timerRef.current!);
-      setStatus("won");
-      // Score: each word = 10 pts + bonus for longer words + time bonus
-      const wordPts = next.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
-      const timePts = Math.floor(timeLeft / 6);
-      onComplete(wordPts + timePts);
+    if (next.length === WIN_WORDS) {
+      setGoalReached(true);
     }
-  }, [currentWord, found, letters, onComplete]);
+  }, [currentWord, found, letters]);
 
   const toggleLetter = (i: number) => {
     if (status !== "playing") return;
@@ -139,25 +146,26 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       )}
 
       {/* Status */}
+      {goalReached && status === "playing" && (
+        <div className="text-center py-1 px-3 rounded-xl" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <p className="text-xs font-bold text-emerald-400">Goal reached! Keep going for more points.</p>
+        </div>
+      )}
+
       {status === "won" && (
         <div className="text-center py-2">
-          <p className="text-sm font-bold text-emerald-400">Nice work! {found.length} words found.</p>
+          <p className="text-sm font-bold text-emerald-400">
+            {found.length > WIN_WORDS ? `Amazing! ${found.length} words found.` : `Nice work! ${found.length} words found.`}
+          </p>
           <div className="flex gap-2 justify-center mt-2">
             <button
-              onClick={() => {
-                setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
-                setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
-              }}
+              onClick={() => { foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setStatus("playing"); setMessage(""); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               Same letters
             </button>
             <button
-              onClick={() => {
-                setRound(r => r + 1); setFound([]); setSelected([]);
-                setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
-                doneRef.current = alreadyDone;
-              }}
+              onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setStatus("playing"); setMessage(""); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               New letters
@@ -172,20 +180,13 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           </p>
           <div className="flex gap-2 justify-center mt-2">
             <button
-              onClick={() => {
-                setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
-                setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
-              }}
+              onClick={() => { foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setStatus("playing"); setMessage(""); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               Same letters
             </button>
             <button
-              onClick={() => {
-                setRound(r => r + 1); setFound([]); setSelected([]);
-                setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
-                doneRef.current = alreadyDone;
-              }}
+              onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setStatus("playing"); setMessage(""); doneRef.current = alreadyDone; }}
               className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
             >
               New letters
@@ -197,7 +198,9 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       {/* Progress */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-text-muted uppercase tracking-wider">Words found</span>
-        <span className="text-xs font-bold text-text">{found.length} / {WIN_WORDS}</span>
+        <span className="text-xs font-bold" style={{ color: goalReached ? "#34d399" : undefined }}>
+          {found.length}{goalReached ? ` (goal: ${WIN_WORDS})` : ` / ${WIN_WORDS}`}
+        </span>
       </div>
 
       {/* Found words */}
@@ -273,7 +276,9 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       )}
 
       <p className="text-center text-[9px] text-text-dim">
-        Find {WIN_WORDS}+ words from these letters · {status === "playing" ? `${WIN_WORDS - found.length} more to win` : ""}
+        {goalReached && status === "playing"
+          ? `Keep finding words until time runs out`
+          : `Find ${WIN_WORDS}+ words from these letters · ${status === "playing" ? `${WIN_WORDS - found.length} more to reach goal` : ""}`}
       </p>
     </div>
   );
