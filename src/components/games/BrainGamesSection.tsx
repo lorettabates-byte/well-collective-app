@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Heart, LayoutGrid } from "lucide-react";
+import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Shuffle } from "lucide-react";
 import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
 import GratitudeMatch from "./GratitudeMatch";
 import MindGardenPuzzle from "./MindGardenPuzzle";
+import AnagramGame from "./AnagramGame";
+import WordHunt from "./WordHunt";
 import { logActivity } from "../../utils/wellCup";
 import { useApp } from "../../store/AppContext";
 
@@ -41,6 +43,20 @@ const GAMES = [
     color: "#fbbf24", bg: "from-amber-900/30 to-yellow-900/30", border: "border-amber-700/30",
     Icon: LayoutGrid,
   },
+  {
+    id: "anagram",
+    title: "Anagram",
+    tagline: "Unscramble the letters. Find as many words as you can.",
+    color: "#a78bfa", bg: "from-violet-900/30 to-purple-900/30", border: "border-violet-700/30",
+    Icon: Shuffle,
+  },
+  {
+    id: "wordhunt",
+    title: "Word Hunt",
+    tagline: "Trace a path through the grid to find hidden words.",
+    color: "#fb923c", bg: "from-orange-900/30 to-red-900/30", border: "border-orange-700/30",
+    Icon: Grid,
+  },
 ];
 
 function todayGameIdx(): number {
@@ -75,17 +91,19 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     const existingSet = new Set(raw ? raw.split(",") : []);
     if (existingSet.has(gameId) || celebratedRef.current.has(gameId)) return;
     celebratedRef.current.add(gameId);
-    // Only celebrate on the first game completed today — points are capped at 20/day
     const isFirstToday = existingSet.size === 0;
     const newSet = new Set(existingSet).add(gameId);
     setDoneTodaySet(newSet);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
+
+    // Confetti fires on EVERY win — +20 badge only on the first win of the day
+    const g = GAMES.find(x => x.id === gameId);
+    confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
     if (isFirstToday) {
-      const g = GAMES.find(x => x.id === gameId);
-      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
       setWinningGame(gameId);
       setTimeout(() => setWinningGame(null), 2200);
     }
+
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
     }
@@ -152,6 +170,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                     {game.id === "calmfocus"  && <CalmFocus {...props} />}
                     {game.id === "gratitude"  && <GratitudeMatch {...props} />}
                     {game.id === "mindgarden" && <MindGardenPuzzle {...props} />}
+                    {game.id === "anagram"    && <AnagramGame {...props} />}
+                    {game.id === "wordhunt"   && <WordHunt {...props} />}
                   </div>
                 </div>
               )}

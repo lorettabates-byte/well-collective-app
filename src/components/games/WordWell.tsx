@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { isValid5Letter } from "../../data/wordList";
 
 const WORDS = [
   "SLEEP","PEACE","VITAL","BLOOM","FOCUS","GRACE","ALIGN","RENEW","WHOLE","LIGHT",
@@ -67,6 +68,10 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
     if (guess.length < COLS) {
       setShake(true); setTimeout(() => setShake(false), 500);
       showMsg("Need 5 letters"); return;
+    }
+    if (!isValid5Letter(guess)) {
+      setShake(true); setTimeout(() => setShake(false), 500);
+      showMsg("Not a valid word"); return;
     }
     const states = evalGuess(guess, answer);
     setGrid(prev => prev.map((row, ri) =>
