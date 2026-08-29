@@ -334,6 +334,15 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       <p className="text-center text-[9px] text-text-dim">
         Connect adjacent letters · 3+ letter words · {WIN_WORDS} words to win
       </p>
+
+      {status === "playing" && (
+        <button
+          onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setFlash(null); }}
+          className="mx-auto block text-[9px] text-text-dim opacity-50 hover:opacity-80 transition-opacity"
+        >
+          Try a different grid
+        </button>
+      )}
     </div>
   );
 }

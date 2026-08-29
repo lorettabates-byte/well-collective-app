@@ -280,6 +280,15 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           ? `Keep finding words until time runs out`
           : `Find ${WIN_WORDS}+ words from these letters · ${status === "playing" ? `${WIN_WORDS - found.length} more to reach goal` : ""}`}
       </p>
+
+      {status === "playing" && (
+        <button
+          onClick={() => { setRound(r => r + 1); foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setMessage(""); }}
+          className="mx-auto block text-[9px] text-text-dim opacity-50 hover:opacity-80 transition-opacity"
+        >
+          Try different letters
+        </button>
+      )}
     </div>
   );
 }
