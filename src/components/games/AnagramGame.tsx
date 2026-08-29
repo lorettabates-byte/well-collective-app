@@ -41,8 +41,10 @@ const WIN_WORDS = 5;
 
 interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
 export default function AnagramGame({ onComplete, alreadyDone }: Props) {
-  const [round, setRound] = useState(0);
+  const [round, setRound] = useState(() => Number(localStorage.getItem(`anagram-round-${todayKey()}`) ?? 0));
   const letters = lettersForRound(round);
   const [selected, setSelected] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
@@ -51,6 +53,11 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const [message, setMessage] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef = useRef(alreadyDone);
+
+  // Persist round so closing/reopening the accordion keeps the same letters
+  useEffect(() => {
+    localStorage.setItem(`anagram-round-${todayKey()}`, String(round));
+  }, [round]);
 
   const showMsg = (m: string) => {
     setMessage(m);
@@ -135,16 +142,27 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       {status === "won" && (
         <div className="text-center py-2">
           <p className="text-sm font-bold text-emerald-400">Nice work! {found.length} words found.</p>
-          <button
-            onClick={() => {
-              setRound(r => r + 1); setFound([]); setSelected([]);
-              setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
-              doneRef.current = alreadyDone;
-            }}
-            className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
-          >
-            New letters
-          </button>
+          <div className="flex gap-2 justify-center mt-2">
+            <button
+              onClick={() => {
+                setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
+                setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+              }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              Same letters
+            </button>
+            <button
+              onClick={() => {
+                setRound(r => r + 1); setFound([]); setSelected([]);
+                setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
+                doneRef.current = alreadyDone;
+              }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              New letters
+            </button>
+          </div>
         </div>
       )}
       {status === "lost" && (
@@ -152,16 +170,27 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           <p className="text-sm font-bold text-amber-400">
             {found.length > 0 ? `Time's up! ${found.length} of ${WIN_WORDS} words.` : "Time's up. Give it another go!"}
           </p>
-          <button
-            onClick={() => {
-              setRound(r => r + 1); setFound([]); setSelected([]);
-              setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
-              doneRef.current = alreadyDone;
-            }}
-            className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
-          >
-            Try new letters
-          </button>
+          <div className="flex gap-2 justify-center mt-2">
+            <button
+              onClick={() => {
+                setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
+                setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+              }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              Same letters
+            </button>
+            <button
+              onClick={() => {
+                setRound(r => r + 1); setFound([]); setSelected([]);
+                setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
+                doneRef.current = alreadyDone;
+              }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              New letters
+            </button>
+          </div>
         </div>
       )}
 
