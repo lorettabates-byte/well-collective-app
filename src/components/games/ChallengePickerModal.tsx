@@ -58,6 +58,23 @@ export default function ChallengePickerModal({ gameId, gameName, score, onClose 
         }
       } else {
         setSent(s => new Set(s).add(member.id));
+        // Send push notification to opponent
+        try {
+          const resJson = await res.json();
+          const challengeId = resJson.challengeId;
+          await fetch(`${API_URL}/api/notifications/send-game-invite`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recipientId: member.id,
+              inviterName: user.name || "A friend",
+              gameName,
+              challengeId,
+            }),
+          });
+        } catch {
+          // Notification failed, but challenge was still created — silently ignore
+        }
       }
     } catch {
       setError("Network error. Try again.");

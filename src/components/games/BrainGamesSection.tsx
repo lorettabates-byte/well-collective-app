@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Share2, Shuffle, Users } from "lucide-react";
 import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
@@ -88,6 +89,7 @@ interface Props { initialOpen?: string }
 
 export default function BrainGamesSection({ initialOpen }: Props) {
   const { user } = useApp();
+  const [searchParams] = useSearchParams();
   const todayKey = todayISO();
   const [openGame, setOpenGame] = useState<string | null>(initialOpen ?? null);
   const [doneTodaySet, setDoneTodaySet] = useState<Set<string>>(() => {
@@ -115,6 +117,18 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   }, [user.email]);
 
   useEffect(() => { loadChallenges(); }, [loadChallenges]);
+
+  // Auto-load challenge from URL param (e.g., when tapping a notification)
+  useEffect(() => {
+    const challengeId = searchParams.get("challenge");
+    if (challengeId && challenges.length > 0) {
+      const challenge = challenges.find(c => c.id === challengeId);
+      if (challenge) {
+        setActiveChallenge(challenge);
+        setOpenGame(challenge.gameId);
+      }
+    }
+  }, [searchParams, challenges]);
 
   useEffect(() => {
     return () => { confetti.reset(); };
@@ -162,7 +176,10 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   };
 
   const incoming = challenges.filter(c => c.direction === "incoming" && c.status === "pending");
-  const recentCompleted = challenges.filter(c => c.status === "completed").slice(0, 3);
+  const outgoing = challenges.filter(c => c.direction === "outgoing" && c.status === "pending");
+  const outgoingCompleted = challenges.filter(c => c.direction === "outgoing" && c.status === "completed");
+  const incomingCompleted = challenges.filter(c => c.direction === "incoming" && c.status === "completed");
+  const recentCompleted = [...outgoingCompleted, ...incomingCompleted].sort((a, b) => b.expiresAt.localeCompare(a.expiresAt)).slice(0, 5);
 
   return (
     <div className="glass-card rounded-card p-4 mt-4" id="brain-games">
@@ -172,6 +189,50 @@ export default function BrainGamesSection({ initialOpen }: Props) {
         <span className="ml-auto text-[10px] text-text-dim">+20 pts · once daily</span>
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
+
+      {/* Active challenge banner - moved to top for visibility */}
+      {activeChallenge && (
+        <div
+          className="mb-3 px-3 py-2.5 rounded-xl border-2 border-brand-light/40 text-xs flex items-center gap-2 font-semibold"
+          style={{ background: "rgba(1,145,206,0.15)" }}
+        >
+          <Users size={13} className="text-brand-light shrink-0" />
+          <span className="text-text-muted">
+            Playing with <span className="text-brand-light">{activeChallenge.direction === "incoming" ? activeChallenge.challengerName : activeChallenge.opponentName}</span> on <span className="text-text font-bold">{GAMES.find(g => g.id === activeChallenge.gameId)?.title}</span>
+          </span>
+          <button
+            className="ml-auto text-[9px] text-text-dim hover:text-text"
+            onClick={() => setActiveChallenge(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Pending outgoing challenges */}
+      {outgoing.length > 0 && (
+        <div className="mb-3 flex flex-col gap-1.5 p-2.5 rounded-xl border border-border/40" style={{ background: "rgba(255,255,255,0.02)" }}>
+          <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider flex items-center gap-1.5">
+            <Share2 size={10} className="text-brand-light" /> Awaiting responses
+          </p>
+          {outgoing.map(c => {
+            const game = GAMES.find(g => g.id === c.gameId);
+            return (
+              <div key={c.id} className="flex items-center gap-2 py-1 text-[10px]">
+                {c.opponentAvatar ? (
+                  <img src={c.opponentAvatar} alt={c.opponentName} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-surface-2 flex items-center justify-center shrink-0 text-[8px] font-bold text-text-dim">
+                    {c.opponentName.charAt(0)}
+                  </div>
+                )}
+                <span className="text-text-dim truncate flex-1">{c.opponentName}</span>
+                <span className="text-text-muted shrink-0">{game?.title}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Incoming challenges + invite */}
       {(incoming.length > 0 || doneTodaySet.size > 0) && (
@@ -213,32 +274,13 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-text truncate">{c.challengerName} played {game?.title ?? c.gameId}</p>
-                  <p className="text-[10px] text-text-dim">See how your score compares</p>
+                  <p className="text-xs font-semibold text-text truncate">{c.challengerName} challenges you to {game?.title ?? c.gameId}</p>
+                  <p className="text-[10px] text-text-dim">Challenge your brains together & earn points</p>
                 </div>
                 <span className="text-[10px] font-bold shrink-0" style={{ color: game?.color ?? "#84D8FD" }}>Play</span>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Active challenge banner */}
-      {activeChallenge && (
-        <div
-          className="mb-3 px-3 py-2 rounded-xl border border-brand-light/20 text-xs flex items-center gap-2"
-          style={{ background: "rgba(1,145,206,0.08)" }}
-        >
-          <Users size={11} className="text-brand-light shrink-0" />
-          <span className="text-text-muted">
-            Playing along with <span className="text-text font-semibold">{activeChallenge.challengerName}</span> - their score: <span className="text-brand-light font-bold">{activeChallenge.challengerScore}</span>
-          </span>
-          <button
-            className="ml-auto text-[10px] text-text-dim"
-            onClick={() => setActiveChallenge(null)}
-          >
-            Clear
-          </button>
         </div>
       )}
 
@@ -307,6 +349,40 @@ export default function BrainGamesSection({ initialOpen }: Props) {
             </div>
           );
         })}
+      </div>
+
+      {/* Outgoing challenges (sent invitations) */}
+      <div className="mb-3 flex flex-col gap-1.5 mt-3 pt-3 border-t border-border/40">
+        <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider flex items-center gap-1.5">
+          <Share2 size={10} className="text-brand-light" /> Invitations sent
+        </p>
+        {outgoing.length === 0 ? (
+          <p className="text-xs text-text-muted py-2">No invitations sent yet. Complete a game and invite your tribe!</p>
+        ) : (
+          outgoing.map(c => {
+            const game = GAMES.find(g => g.id === c.gameId);
+            return (
+              <div
+                key={c.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/60"
+                style={{ background: "rgba(255,255,255,0.02)" }}
+              >
+                {c.opponentAvatar ? (
+                  <img src={c.opponentAvatar} alt={c.opponentName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] font-bold text-text-dim">{c.opponentName.charAt(0)}</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-text truncate">{c.opponentName}</p>
+                  <p className="text-[10px] text-text-dim">{game?.title ?? c.gameId} · {c.challengerScore} pts</p>
+                </div>
+                <span className="text-[9px] font-semibold text-text-dim whitespace-nowrap">Awaiting...</span>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Recent completed challenge results */}
