@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { isValidWord } from "../../data/wordList";
 
 const GRID_SIZE = 4;
@@ -21,8 +21,10 @@ function seededRng(seed: number) {
   };
 }
 
-function buildGrid(): string[][] {
-  const rng = seededRng(todaySeed() * 13 + 5);
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+function buildGrid(round = 0): string[][] {
+  const rng = seededRng(todaySeed() * 13 + 5 + round * 7919);
   return Array.from({ length: GRID_SIZE }, () =>
     Array.from({ length: GRID_SIZE }, () =>
       LETTER_POOL[Math.floor(rng() * LETTER_POOL.length)]
@@ -51,7 +53,8 @@ function wordColor(len: number): string {
 interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function WordHunt({ onComplete, alreadyDone }: Props) {
-  const grid = useRef(buildGrid()).current;
+  const [round, setRound] = useState(() => Number(localStorage.getItem(`wordhunt-round-${todayKey()}`) ?? 0));
+  const grid = useMemo(() => buildGrid(round), [round]);
   const [path, setPath] = useState<[number, number][]>([]);
   const [found, setFound] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
@@ -63,6 +66,10 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
     Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null))
   );
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(`wordhunt-round-${todayKey()}`, String(round));
+  }, [round]);
 
   useEffect(() => {
     if (status !== "playing") return;
@@ -205,12 +212,39 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       {status === "won" && (
         <div className="text-center py-1">
           <p className="text-sm font-bold text-emerald-400">You found {found.length} words!</p>
-          <p className="text-[10px] text-text-dim mt-1">Come back tomorrow for a new grid.</p>
+          <div className="flex gap-2 justify-center mt-2">
+            <button
+              onClick={() => { setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              Same grid
+            </button>
+            <button
+              onClick={() => { setRound(r => r + 1); setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              New grid
+            </button>
+          </div>
         </div>
       )}
       {status === "lost" && (
         <div className="text-center py-1">
           <p className="text-sm font-bold text-amber-400">Time's up! {found.length} of {WIN_WORDS} words.</p>
+          <div className="flex gap-2 justify-center mt-2">
+            <button
+              onClick={() => { setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              Same grid
+            </button>
+            <button
+              onClick={() => { setRound(r => r + 1); setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}
+              className="text-[10px] text-text-dim py-1.5 px-3 rounded-lg border border-border"
+            >
+              New grid
+            </button>
+          </div>
         </div>
       )}
 
