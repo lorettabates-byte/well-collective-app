@@ -1,4 +1,4 @@
-import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Eye, EyeOff, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, Utensils, Video, Waves, X } from "lucide-react";
+import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Eye, EyeOff, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, User, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
 import { Capacitor } from "@capacitor/core";
@@ -116,6 +116,9 @@ export default function Home() {
   const [showTour, setShowTour] = useState(false);
   const [showWalkthroughPrompt, setShowWalkthroughPrompt] = useState(
     () => !localStorage.getItem("well-walkthrough-seen-v1")
+  );
+  const [photoNudgeDismissed, setPhotoNudgeDismissed] = useState(
+    () => !!localStorage.getItem(`well-photo-nudge-dismissed:${user.email ?? ""}`)
   );
   const [showWalkthroughVideo, setShowWalkthroughVideo] = useState(false);
   const [winnerBanner, setWinnerBanner] = useState<{ name: string; avatar: string | null; total_points: number; win_date: string } | null>(null);
@@ -666,6 +669,37 @@ export default function Home() {
           >
             <X size={16} />
           </button>
+        </div>
+      )}
+
+      {/* Profile photo nudge — shown once until dismissed or photo added */}
+      {!user.avatar && !photoNudgeDismissed && (
+        <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3 border border-brand-light/20">
+          <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0 shadow-glow">
+            <User size={16} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-text">Add a profile photo</p>
+            <p className="text-xs text-text-muted">Help the community recognize you and earn 15 bonus points.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/profile/edit"
+              className="text-[11px] font-bold px-3 py-1.5 rounded-lg text-white gradient-brand"
+            >
+              Add photo
+            </Link>
+            <button
+              onClick={() => {
+                localStorage.setItem(`well-photo-nudge-dismissed:${user.email ?? ""}`, "1");
+                setPhotoNudgeDismissed(true);
+              }}
+              className="text-text-dim p-1"
+              aria-label="Dismiss"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
       )}
 

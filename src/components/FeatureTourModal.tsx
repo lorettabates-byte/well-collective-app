@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { logActivity } from "../utils/wellCup";
 import { logEvent } from "../utils/analytics";
 
@@ -161,6 +162,7 @@ export default function FeatureTourModal({
   userEmail?: string;
   onClose: (completed: boolean) => void;
 }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [notifDone, setNotifDone] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -325,6 +327,19 @@ export default function FeatureTourModal({
           )}
 
           {slide.findIt && <NavTrail stops={slide.findIt} />}
+
+          {/* Profile slide: direct CTA to add photo now */}
+          {slide.avatarDemo && (
+            <button
+              onClick={() => {
+                onClose(false);
+                navigate("/profile/edit");
+              }}
+              className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow"
+            >
+              Add my photo now
+            </button>
+          )}
 
           <div className="flex items-center gap-1.5 my-1">
             {SLIDES.map((_, i) => (
