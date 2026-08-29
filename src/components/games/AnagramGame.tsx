@@ -18,10 +18,11 @@ function todaySeed(): number {
   return Math.floor((Date.now() - start) / 86400000);
 }
 
-function todayLetters(): string[] {
+function lettersForRound(round: number): string[] {
   const seed = todaySeed();
-  const word = ANAGRAM_SEEDS[seed % ANAGRAM_SEEDS.length];
-  return seededShuffle(word.split(""), seed * 31 + 7);
+  // Each round steps forward through the seeds so letters are genuinely different
+  const word = ANAGRAM_SEEDS[(seed + round) % ANAGRAM_SEEDS.length];
+  return seededShuffle(word.split(""), seed * 31 + 7 + round * 97);
 }
 
 // Can this word be formed from the available letter pool?
@@ -41,8 +42,9 @@ const WIN_WORDS = 5;
 interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function AnagramGame({ onComplete, alreadyDone }: Props) {
-  const letters = todayLetters();
-  const [selected, setSelected] = useState<number[]>([]);  // indices into letters
+  const [round, setRound] = useState(0);
+  const letters = lettersForRound(round);
+  const [selected, setSelected] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [status, setStatus] = useState<"playing" | "won" | "lost">(alreadyDone ? "won" : "playing");
@@ -135,12 +137,13 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           <p className="text-sm font-bold text-emerald-400">Nice work! {found.length} words found.</p>
           <button
             onClick={() => {
-              setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
-              setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+              setRound(r => r + 1); setFound([]); setSelected([]);
+              setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
+              doneRef.current = alreadyDone;
             }}
             className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
           >
-            Play again
+            New letters
           </button>
         </div>
       )}
@@ -151,12 +154,13 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           </p>
           <button
             onClick={() => {
-              setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT);
-              setStatus("playing"); setMessage(""); doneRef.current = alreadyDone;
+              setRound(r => r + 1); setFound([]); setSelected([]);
+              setTimeLeft(TIME_LIMIT); setStatus("playing"); setMessage("");
+              doneRef.current = alreadyDone;
             }}
             className="mt-2 text-[10px] text-text-dim py-1.5 px-4 rounded-lg border border-border"
           >
-            Try again
+            Try new letters
           </button>
         </div>
       )}

@@ -173,12 +173,26 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
 
-      {/* Incoming challenges */}
-      {incoming.length > 0 && (
+      {/* Incoming challenges + invite */}
+      {(incoming.length > 0 || doneTodaySet.size > 0) && (
         <div className="mb-3 flex flex-col gap-1.5">
-          <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider flex items-center gap-1.5">
-            <Users size={10} className="text-brand-light" /> Tribe playing today
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider flex items-center gap-1.5">
+              <Users size={10} className="text-brand-light" /> {incoming.length > 0 ? "Tribe playing today" : "Play with your tribe"}
+            </p>
+            {doneTodaySet.size > 0 && (
+              <button
+                onClick={() => {
+                  const firstDone = [...doneTodaySet][0];
+                  const g = GAMES.find(x => x.id === firstDone);
+                  setShowChallengePicker({ gameId: firstDone, gameName: g?.title ?? firstDone, score: 0 });
+                }}
+                className="flex items-center gap-1 text-[9px] text-brand-light border border-brand-light/30 rounded-full px-2.5 py-1"
+              >
+                <Share2 size={9} /> Invite
+              </button>
+            )}
+          </div>
           {incoming.map(c => {
             const game = GAMES.find(g => g.id === c.gameId);
             return (
