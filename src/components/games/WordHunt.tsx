@@ -48,7 +48,7 @@ function wordColor(len: number): string {
   return CELL_COLORS[Math.min(len, 6)] ?? "#facc15";
 }
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function WordHunt({ onComplete, alreadyDone }: Props) {
   const grid = useRef(buildGrid()).current;
@@ -96,7 +96,10 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
         doneRef.current = true;
         clearInterval(timerRef.current!);
         setStatus("won");
-        onComplete();
+        // Score: each word length pts + time bonus
+        const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
+        const timePts = Math.floor(timeLeft / 8);
+        onComplete(wordPts + timePts);
       }
     } else {
       setFlash("invalid"); setTimeout(() => setFlash(null), 500);

@@ -31,7 +31,7 @@ const SYMBOLS = [
 
 const TOTAL_ROUNDS = 5;
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function CalmFocus({ onComplete, alreadyDone }: Props) {
   const [round, setRound] = useState(0);

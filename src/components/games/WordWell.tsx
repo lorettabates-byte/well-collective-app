@@ -46,7 +46,7 @@ function evalGuess(guess: string, answer: string): ("correct" | "present" | "abs
   return result;
 }
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function WordWell({ onComplete, alreadyDone }: Props) {
   const answer = todayWord();
@@ -90,7 +90,9 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
     });
     if (guess === answer) {
       setStatus("won");
-      if (!alreadyDone) onComplete();
+      // Score: 1st guess=100, 6th guess=17. Formula: ceil((6 - row) / 6 * 100)
+      const score = Math.ceil(((ROWS - currentRow) / ROWS) * 100);
+      if (!alreadyDone) onComplete(score);
       showMsg(["Genius!", "Magnificent!", "Brilliant!", "Great!", "Good!", "Phew!"][currentRow] ?? "Nice!", 3000);
     } else if (currentRow === ROWS - 1) {
       setStatus("lost");

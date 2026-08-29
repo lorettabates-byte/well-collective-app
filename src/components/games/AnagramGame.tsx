@@ -38,7 +38,7 @@ function canForm(word: string, letters: string[]): boolean {
 const TIME_LIMIT = 90;
 const WIN_WORDS = 5;
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const letters = todayLetters();
@@ -88,7 +88,10 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       doneRef.current = true;
       clearInterval(timerRef.current!);
       setStatus("won");
-      onComplete();
+      // Score: each word = 10 pts + bonus for longer words + time bonus
+      const wordPts = next.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
+      const timePts = Math.floor(timeLeft / 6);
+      onComplete(wordPts + timePts);
     }
   }, [currentWord, found, letters, onComplete]);
 

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Shuffle } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { BookOpen, Brain, ChevronDown, ChevronUp, Eye, Grid, Heart, LayoutGrid, Shuffle, Users } from "lucide-react";
 import confetti from "canvas-confetti";
 import WordWell from "./WordWell";
 import CalmFocus from "./CalmFocus";
@@ -7,8 +7,11 @@ import GratitudeMatch from "./GratitudeMatch";
 import MindGardenPuzzle from "./MindGardenPuzzle";
 import AnagramGame from "./AnagramGame";
 import WordHunt from "./WordHunt";
+import ChallengePickerModal from "./ChallengePickerModal";
 import { logActivity } from "../../utils/wellCup";
 import { useApp } from "../../store/AppContext";
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -65,6 +68,22 @@ function todayGameIdx(): number {
   return day % GAMES.length;
 }
 
+interface GameChallenge {
+  id: string;
+  gameId: string;
+  direction: "incoming" | "outgoing";
+  challengerName: string;
+  challengerAvatar?: string;
+  opponentName: string;
+  opponentAvatar?: string;
+  challengerScore: number;
+  opponentScore?: number;
+  status: "pending" | "completed" | "expired";
+  winnerEmail?: string;
+  isWinner?: boolean;
+  expiresAt: string;
+}
+
 interface Props { initialOpen?: string }
 
 export default function BrainGamesSection({ initialOpen }: Props) {
@@ -76,17 +95,33 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     return new Set(raw ? raw.split(",") : []);
   });
   const [winningGame, setWinningGame] = useState<string | null>(null);
+  const [lastScore, setLastScore] = useState<number | null>(null);
+  const [showChallengePicker, setShowChallengePicker] = useState<{ gameId: string; gameName: string; score: number } | null>(null);
+  const [challenges, setChallenges] = useState<GameChallenge[]>([]);
+  const [activeChallenge, setActiveChallenge] = useState<GameChallenge | null>(null);
   const celebratedRef = useRef<Set<string>>(new Set());
 
   const todayIdx = todayGameIdx();
 
-  // Stop confetti canvas when navigating away
+  // Load incoming challenges
+  const loadChallenges = useCallback(async () => {
+    if (!user.email || !API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/game-challenges?email=${encodeURIComponent(user.email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setChallenges((data.challenges ?? []).filter((c: GameChallenge) => c.status !== "expired"));
+      }
+    } catch { /* silent */ }
+  }, [user.email]);
+
+  useEffect(() => { loadChallenges(); }, [loadChallenges]);
+
   useEffect(() => {
     return () => { confetti.reset(); };
   }, []);
 
-  const markDone = async (gameId: string) => {
-    // Check localStorage directly + ref guard — prevents stale closure double-fires
+  const markDone = async (gameId: string, score?: number) => {
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
     const existingSet = new Set(raw ? raw.split(",") : []);
     if (existingSet.has(gameId) || celebratedRef.current.has(gameId)) return;
@@ -96,7 +131,6 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     setDoneTodaySet(newSet);
     localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
 
-    // Confetti fires on EVERY win — +20 badge only on the first win of the day
     const g = GAMES.find(x => x.id === gameId);
     confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
     if (isFirstToday) {
@@ -104,10 +138,33 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       setTimeout(() => setWinningGame(null), 2200);
     }
 
+    // Show invite button if a score was returned and user has tribe members
+    if (score != null && score > 0) {
+      const gameName = g?.title ?? gameId;
+      setLastScore(score);
+      setShowChallengePicker({ gameId, gameName, score });
+    }
+
     if (user.email) {
       await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
     }
+
+    // If completing in response to an incoming challenge, submit the score
+    if (activeChallenge && activeChallenge.gameId === gameId && activeChallenge.direction === "incoming") {
+      if (API_URL && user.email && score != null) {
+        await fetch(`${API_URL}/api/game-challenges/${activeChallenge.id}/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, score }),
+        }).catch(() => {});
+        setActiveChallenge(null);
+        await loadChallenges();
+      }
+    }
   };
+
+  const incoming = challenges.filter(c => c.direction === "incoming" && c.status === "pending");
+  const recentCompleted = challenges.filter(c => c.status === "completed").slice(0, 3);
 
   return (
     <div className="glass-card rounded-card p-4 mt-4" id="brain-games">
@@ -118,13 +175,68 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
 
+      {/* Incoming challenges */}
+      {incoming.length > 0 && (
+        <div className="mb-3 flex flex-col gap-1.5">
+          <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider flex items-center gap-1.5">
+            <Users size={10} className="text-brand-light" /> Tribe playing today
+          </p>
+          {incoming.map(c => {
+            const game = GAMES.find(g => g.id === c.gameId);
+            return (
+              <div
+                key={c.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/60 cursor-pointer"
+                style={{ background: "rgba(255,255,255,0.03)" }}
+                onClick={() => {
+                  setActiveChallenge(c);
+                  setOpenGame(c.gameId);
+                }}
+              >
+                {c.challengerAvatar ? (
+                  <img src={c.challengerAvatar} alt={c.challengerName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] font-bold text-text-dim">{c.challengerName.charAt(0)}</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-text truncate">{c.challengerName} played {game?.title ?? c.gameId}</p>
+                  <p className="text-[10px] text-text-dim">See how your score compares</p>
+                </div>
+                <span className="text-[10px] font-bold shrink-0" style={{ color: game?.color ?? "#84D8FD" }}>Play</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active challenge banner */}
+      {activeChallenge && (
+        <div
+          className="mb-3 px-3 py-2 rounded-xl border border-brand-light/20 text-xs flex items-center gap-2"
+          style={{ background: "rgba(1,145,206,0.08)" }}
+        >
+          <Users size={11} className="text-brand-light shrink-0" />
+          <span className="text-text-muted">
+            Playing along with <span className="text-text font-semibold">{activeChallenge.challengerName}</span> - their score: <span className="text-brand-light font-bold">{activeChallenge.challengerScore}</span>
+          </span>
+          <button
+            className="ml-auto text-[10px] text-text-dim"
+            onClick={() => setActiveChallenge(null)}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         {GAMES.map((game, i) => {
           const isToday = i === todayIdx;
           const isOpen = openGame === game.id;
           const done = doneTodaySet.has(game.id);
           const GameIcon = game.Icon;
-          const props = { onComplete: () => markDone(game.id), alreadyDone: done };
+          const props = { onComplete: (score?: number) => markDone(game.id, score), alreadyDone: done };
 
           return (
             <div key={game.id} className={`rounded-card border overflow-hidden ${game.border} bg-gradient-to-r ${game.bg} relative`}>
@@ -163,9 +275,6 @@ export default function BrainGamesSection({ initialOpen }: Props) {
               {isOpen && (
                 <div className="px-3 pb-4 border-t border-white/5">
                   <div className="mt-3">
-                    {/* Render game components directly — NOT via an inline function component.
-                        Inline component definitions cause React to unmount/remount on every render,
-                        losing all game state. Direct rendering keeps the component identity stable. */}
                     {game.id === "wordwell"   && <WordWell {...props} />}
                     {game.id === "calmfocus"  && <CalmFocus {...props} />}
                     {game.id === "gratitude"  && <GratitudeMatch {...props} />}
@@ -179,6 +288,45 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           );
         })}
       </div>
+
+      {/* Recent completed challenge results */}
+      {recentCompleted.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Users size={10} /> Recent with your tribe
+          </p>
+          {recentCompleted.map(c => {
+            const game = GAMES.find(g => g.id === c.gameId);
+            const youWon = c.isWinner;
+            const tie = !c.winnerEmail;
+            return (
+              <div key={c.id} className="flex items-center gap-2 py-1.5 text-[11px]">
+                <span className="text-text-dim truncate flex-1">
+                  {c.direction === "incoming" ? c.challengerName : c.opponentName} - {game?.title ?? c.gameId}
+                </span>
+                <span className="tabular-nums text-text-muted shrink-0">
+                  {c.direction === "incoming"
+                    ? `${c.opponentScore ?? "?"} vs ${c.challengerScore}`
+                    : `${c.challengerScore} vs ${c.opponentScore ?? "?"}`}
+                </span>
+                <span className={`text-[10px] font-semibold shrink-0 ${tie ? "text-text-muted" : youWon ? "text-emerald-400" : "text-text-dim"}`}>
+                  {tie ? "Tied" : youWon ? "You" : c.direction === "incoming" ? c.challengerName.split(" ")[0] : c.opponentName.split(" ")[0]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Challenge picker modal */}
+      {showChallengePicker && (
+        <ChallengePickerModal
+          gameId={showChallengePicker.gameId}
+          gameName={showChallengePicker.gameName}
+          score={showChallengePicker.score}
+          onClose={() => setShowChallengePicker(null)}
+        />
+      )}
     </div>
   );
 }

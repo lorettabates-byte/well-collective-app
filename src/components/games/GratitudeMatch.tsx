@@ -116,7 +116,7 @@ function buildDeck(pairCount: number): Card[] {
   );
 }
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function GratitudeMatch({ onComplete, alreadyDone }: Props) {
   const [level, setLevel] = useState(1);

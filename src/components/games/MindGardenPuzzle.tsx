@@ -91,7 +91,7 @@ function makeSolvable(): number[] {
   return tiles;
 }
 
-interface Props { onComplete: () => void; alreadyDone: boolean }
+interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function MindGardenPuzzle({ onComplete, alreadyDone }: Props) {
   const [tiles, setTiles] = useState<number[]>(makeSolvable);
