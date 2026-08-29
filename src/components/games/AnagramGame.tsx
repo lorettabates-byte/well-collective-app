@@ -44,6 +44,7 @@ interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export default function AnagramGame({ onComplete, alreadyDone }: Props) {
+  const [relaxed, setRelaxed] = useState(() => localStorage.getItem("anagram-relaxed") === "1");
   const [round, setRound] = useState(() => Number(localStorage.getItem(`anagram-round-${todayKey()}`) ?? 0));
   const letters = lettersForRound(round);
   const [selected, setSelected] = useState<number[]>([]);
@@ -57,6 +58,12 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef = useRef(alreadyDone);
 
+  const toggleRelaxed = () => {
+    const next = !relaxed;
+    setRelaxed(next);
+    localStorage.setItem("anagram-relaxed", next ? "1" : "0");
+  };
+
   // Persist round so closing/reopening the accordion keeps the same letters
   useEffect(() => {
     localStorage.setItem(`anagram-round-${todayKey()}`, String(round));
@@ -68,7 +75,7 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   };
 
   useEffect(() => {
-    if (status !== "playing") return;
+    if (status !== "playing" || relaxed) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
@@ -90,7 +97,7 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, onComplete, resetKey]);
+  }, [status, onComplete, resetKey, relaxed]);
 
   const currentWord = selected.map(i => letters[i]).join("");
 
@@ -109,8 +116,15 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
 
     if (next.length === WIN_WORDS) {
       setGoalReached(true);
+      // In relaxed mode, completing the goal wins immediately
+      if (relaxed && !doneRef.current) {
+        doneRef.current = true;
+        const wordPts = next.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
+        setStatus("won");
+        onComplete(wordPts);
+      }
     }
-  }, [currentWord, found, letters]);
+  }, [currentWord, found, letters, relaxed, onComplete]);
 
   const toggleLetter = (i: number) => {
     if (status !== "playing") return;
@@ -126,8 +140,22 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Timer bar */}
+      {/* Mode toggle */}
       {status === "playing" && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={toggleRelaxed}
+            className="flex items-center gap-1.5 text-[9px] text-text-dim border border-border/60 rounded-full px-2.5 py-1 transition-colors"
+            style={relaxed ? { borderColor: "rgba(52,211,153,0.4)", color: "#34d399" } : {}}
+          >
+            <span style={{ fontSize: "9px" }}>{relaxed ? "No timer" : "Timed"}</span>
+            <span className="opacity-60">{relaxed ? "on" : "off"}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Timer bar */}
+      {status === "playing" && !relaxed && (
         <div className="flex items-center gap-2">
           <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
             <div
@@ -273,11 +301,29 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
           >
             Submit
           </button>
+          {relaxed && found.length > 0 && (
+            <button
+              onClick={() => {
+                const f = foundRef.current;
+                if (!doneRef.current) {
+                  doneRef.current = true;
+                  const wordPts = f.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
+                  onComplete(f.length >= WIN_WORDS ? wordPts : undefined);
+                }
+                setStatus(f.length >= WIN_WORDS ? "won" : "lost");
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-400 border border-emerald-500/30"
+            >
+              Done
+            </button>
+          )}
         </div>
       )}
 
       <p className="text-center text-[9px] text-text-dim">
-        {goalReached && status === "playing"
+        {relaxed && status === "playing"
+          ? (goalReached ? "Keep finding more words, or tap Done" : `Find ${WIN_WORDS}+ words from these letters, no timer`)
+          : goalReached && status === "playing"
           ? `Keep finding words until time runs out`
           : `Find ${WIN_WORDS}+ words from these letters · ${status === "playing" ? `${WIN_WORDS - found.length} more to reach goal` : ""}`}
       </p>

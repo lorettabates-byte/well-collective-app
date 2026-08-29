@@ -53,6 +53,7 @@ function wordColor(len: number): string {
 interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
 export default function WordHunt({ onComplete, alreadyDone }: Props) {
+  const [relaxed, setRelaxed] = useState(() => localStorage.getItem("wordhunt-relaxed") === "1");
   const [round, setRound] = useState(() => Number(localStorage.getItem(`wordhunt-round-${todayKey()}`) ?? 0));
   const grid = useMemo(() => buildGrid(round), [round]);
   const [path, setPath] = useState<[number, number][]>([]);
@@ -64,6 +65,12 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   const [resetKey, setResetKey] = useState(0);
   const dragging = useRef(false);
   const doneRef = useRef(alreadyDone);
+
+  const toggleRelaxed = () => {
+    const next = !relaxed;
+    setRelaxed(next);
+    localStorage.setItem("wordhunt-relaxed", next ? "1" : "0");
+  };
   const cellRefs = useRef<(HTMLButtonElement | null)[][]>(
     Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null))
   );
@@ -74,7 +81,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
   }, [round]);
 
   useEffect(() => {
-    if (status !== "playing") return;
+    if (status !== "playing" || relaxed) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
@@ -96,7 +103,7 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, onComplete, resetKey]);
+  }, [status, onComplete, resetKey, relaxed]);
 
   const trySubmit = useCallback((p: [number, number][]) => {
     setPath([]);
@@ -192,8 +199,22 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
 
   return (
     <div className="flex flex-col gap-3" onMouseUp={onMouseUp}>
-      {/* Timer */}
+      {/* Mode toggle */}
       {status === "playing" && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={toggleRelaxed}
+            className="flex items-center gap-1.5 text-[9px] text-text-dim border border-border/60 rounded-full px-2.5 py-1 transition-colors"
+            style={relaxed ? { borderColor: "rgba(52,211,153,0.4)", color: "#34d399" } : {}}
+          >
+            <span style={{ fontSize: "9px" }}>{relaxed ? "No timer" : "Timed"}</span>
+            <span className="opacity-60">{relaxed ? "on" : "off"}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Timer */}
+      {status === "playing" && !relaxed && (
         <div className="flex items-center gap-2">
           <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
             <div
@@ -335,8 +356,27 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       )}
 
       <p className="text-center text-[9px] text-text-dim">
-        Connect adjacent letters · 3+ letter words · {WIN_WORDS} words to win
+        {relaxed && status === "playing"
+          ? "Connect adjacent letters · no timer · find 6 words to win"
+          : "Connect adjacent letters · 3+ letter words · 6 words to win"}
       </p>
+
+      {status === "playing" && relaxed && found.length > 0 && (
+        <button
+          onClick={() => {
+            const f = foundRef.current;
+            if (!doneRef.current) {
+              doneRef.current = true;
+              const wordPts = f.reduce((sum, w) => sum + w.length * 4, 0);
+              onComplete(f.length >= WIN_WORDS ? wordPts : undefined);
+            }
+            setStatus(f.length >= WIN_WORDS ? "won" : "lost");
+          }}
+          className="mx-auto flex items-center gap-1 text-xs font-semibold text-emerald-400 border border-emerald-500/30 rounded-xl px-4 py-2"
+        >
+          Done
+        </button>
+      )}
 
       {status === "playing" && (
         <button
