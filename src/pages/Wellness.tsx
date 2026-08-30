@@ -150,6 +150,18 @@ export default function Wellness() {
   const initialTab = (["workout", "activities", "streaks"].includes(searchParams.get("tab") ?? "") ? searchParams.get("tab") : "workout") as "workout" | "activities" | "streaks";
   const [activeTab, setActiveTab] = useState<"workout" | "activities" | "streaks">(initialTab);
 
+  // Scroll to a hash anchor (e.g. #brain-games) after the tab renders
+  useEffect(() => {
+    const hash = window.location.hash?.slice(1);
+    if (!hash) return;
+    const scroll = () => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const t = setTimeout(scroll, 350);
+    return () => clearTimeout(t);
+  }, [activeTab]);
+
   const [resistanceDone, setResistanceDone] = useState(() => localStorage.getItem(`well-resistance-${todayISO()}`) === "1");
   const [stretchingDone, setStretchingDone] = useState(() => localStorage.getItem(`well-stretching-${todayISO()}`) === "1");
   const [breathworkMarked, setBreathworkMarked] = useState(() => localStorage.getItem(`well-breathwork-marked-${todayISO()}`) === "1");

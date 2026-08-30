@@ -184,6 +184,15 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     const raw = localStorage.getItem(`brain-game-done-${todayKey}`) ?? "";
     const existingSet = new Set(raw ? raw.split(",") : []);
     const isRespondingToChallenge = activeChallenge?.gameId === gameId && activeChallenge?.direction === "incoming";
+
+    const g = GAMES.find(x => x.id === gameId);
+
+    // Confetti fires on every win, regardless of whether points are awarded
+    if (!isRespondingToChallenge) {
+      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
+    }
+
+    // Points and tracking only happen once per game per day
     // Allow score submission for a challenge response even if already played today
     if (!isRespondingToChallenge && (existingSet.has(gameId) || celebratedRef.current.has(gameId))) return;
     const isFirstToday = !isRespondingToChallenge && existingSet.size === 0;
@@ -194,10 +203,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
     }
 
-    const g = GAMES.find(x => x.id === gameId);
-
     if (!isRespondingToChallenge) {
-      confetti({ particleCount: 90, spread: 65, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
       if (isFirstToday) {
         setWinningGame(gameId);
         setTimeout(() => setWinningGame(null), 2200);
