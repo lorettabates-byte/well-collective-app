@@ -67,6 +67,10 @@ const FAQ_SECTIONS: FAQSection[] = [
         q: "Can I win both the monthly prize and the WELL Crown?",
         a: "Yes — winning a free month does not disqualify you from the year-end WELL Crown. Monthly winners are recognized each month, and the annual Crown goes to whoever accumulates the most points over the full year.",
       },
+      {
+        q: "Can I win back to back?",
+        a: "To keep things fair and give everyone a chance, consecutive wins are not allowed. If you win the daily competition, you are not eligible to win the following day. If you win the monthly prize, you are not eligible to win the following month. If you win the WELL Crown (annual), you are not eligible to win the following year. Keep showing up — your points and streak still count even during your ineligible period.",
+      },
     ],
   },
   {
