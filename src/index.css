@@ -53,12 +53,22 @@ body {
 
 .gradient-brand {
   background: linear-gradient(135deg, #01519d 0%, #0191ce 55%, #84d8fd 100%);
+  /* Forces GPU compositing — eliminates white anti-aliasing pixels at
+     border-radius edges that appear in Capacitor/Android WebViews. */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* For small circular buttons — skips the dark-navy start so the full
    circle reads as clearly blue even at 32–40px. */
 .btn-brand {
   background: linear-gradient(135deg, #0191ce 0%, #84d8fd 100%);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .gradient-surface {
