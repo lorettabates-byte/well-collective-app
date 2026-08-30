@@ -22,7 +22,7 @@ export const GAMES = [
   {
     id: "wordwell",
     title: "WordWell",
-    tagline: "Guess the daily 5-letter wellness word",
+    tagline: "Guess the daily 5-letter wellness word. One word per day.",
     color: "#3b9eff", bg: "from-blue-900/40 to-indigo-900/30", border: "border-blue-700/30",
     Icon: BookOpen,
   },
@@ -109,8 +109,10 @@ export default function BrainGamesSection({ initialOpen }: Props) {
     youWon: boolean;
     tie: boolean;
     awardedPoints: boolean;
+    pointsValue: number;
   } | null>(null);
   const [challengePointsWin, setChallengePointsWin] = useState<string | null>(null);
+  const [extraPointsGame, setExtraPointsGame] = useState<string | null>(null);
   const celebratedRef = useRef<Set<string>>(new Set());
 
   const todayIdx = todayGameIdx();
@@ -148,6 +150,9 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       if (challenge && challenge.direction === "incoming" && challenge.status === "pending") {
         setActiveChallenge(challenge);
         setOpenGame(challenge.gameId);
+        setTimeout(() => {
+          document.getElementById(`game-${challenge.gameId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 200);
       }
     }
   }, [searchParams, challenges]);
@@ -196,9 +201,23 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       if (isFirstToday) {
         setWinningGame(gameId);
         setTimeout(() => setWinningGame(null), 2200);
-      }
-      if (user.email) {
-        await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
+        if (user.email) {
+          await logActivity(user.email, "brain_game", { game: gameId }).catch(() => {});
+        }
+      } else {
+        // Additional games beyond the first earn +5 each, once per game per day
+        const extraKey = `brain-game-extra-${todayKey}`;
+        const extraRaw = localStorage.getItem(extraKey) ?? "";
+        const extraSet = new Set(extraRaw ? extraRaw.split(",") : []);
+        if (!extraSet.has(gameId)) {
+          extraSet.add(gameId);
+          localStorage.setItem(extraKey, [...extraSet].join(","));
+          setExtraPointsGame(gameId);
+          setTimeout(() => setExtraPointsGame(null), 2200);
+          if (user.email) {
+            await logActivity(user.email, "brain_game_extra", { game: gameId }).catch(() => {});
+          }
+        }
       }
     }
 
@@ -213,6 +232,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
 
         const respondData = respondRes?.ok ? await respondRes.json().catch(() => null) : null;
         const awardedPoints: boolean = respondData?.opponentPointsAwarded ?? false;
+        const pointsValue: number = respondData?.opponentPointsValue ?? (awardedPoints ? 25 : 0);
         const theirScore: number = respondData?.challengerScore ?? activeChallenge.challengerScore;
         const winnerEmail: string | null = respondData?.winnerEmail ?? null;
         const youWon = winnerEmail === user.email;
@@ -222,7 +242,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
         // Always fire confetti for a challenge completion
         confetti({ particleCount: 120, spread: 75, origin: { y: 0.7 }, colors: [g?.color ?? "#84D8FD", "#84D8FD", "#FFFFFF", "#34d399"] });
 
-        // Show +25 pts float if points were awarded (first challenge of day)
+        // Show points float if awarded (+25 first time, +5 subsequent)
         if (awardedPoints) {
           setChallengePointsWin(gameId);
           setTimeout(() => setChallengePointsWin(null), 2200);
@@ -237,6 +257,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
           youWon,
           tie,
           awardedPoints,
+          pointsValue,
         });
 
         setActiveChallenge(null);
@@ -261,7 +282,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       <div className="flex items-center gap-2 mb-1 pb-2 border-b border-border">
         <Brain size={15} className="text-brand-light shrink-0" />
         <h3 className="text-sm font-bold text-text">Brain Games</h3>
-        <span className="ml-auto text-[10px] text-text-dim">+20 pts · once daily</span>
+        <span className="ml-auto text-[10px] text-text-dim">+20 first game · +5 each after</span>
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
 
@@ -378,7 +399,17 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   style={{ animation: "brainWinFloat 2.2s ease-out forwards" }}
                 >
                   <span className="text-2xl font-bold drop-shadow-lg" style={{ color: game.color, textShadow: `0 0 20px ${game.color}80` }}>
-                    +25 pts
+                    +{challengeResult?.pointsValue ?? 25} pts
+                  </span>
+                </div>
+              )}
+              {extraPointsGame === game.id && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                  style={{ animation: "brainWinFloat 2.2s ease-out forwards" }}
+                >
+                  <span className="text-2xl font-bold text-emerald-400 drop-shadow-lg" style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)" }}>
+                    +5 pts
                   </span>
                 </div>
               )}
@@ -511,7 +542,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
             {/* Points message */}
             <p className="text-center text-xs text-text-muted mb-6">
               {challengeResult.awardedPoints
-                ? <><span className="text-emerald-400 font-bold">+25 pts</span> added to your WELL Cup score. You both earned points for playing together.</>
+                ? <><span className="text-emerald-400 font-bold">+{challengeResult.pointsValue} pts</span> added to your WELL Cup score. You both earned points for playing together.</>
                 : "You both earn points for playing together — well done!"}
             </p>
 

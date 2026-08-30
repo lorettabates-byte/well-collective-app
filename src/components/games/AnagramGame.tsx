@@ -114,11 +114,12 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
     setSelected([]);
     showMsg(`+${word.length > 4 ? "2" : "1"} point${word.length > 4 ? "s" : ""}!`);
 
-    if (next.length === WIN_WORDS) {
+    if (next.length >= WIN_WORDS) {
       setGoalReached(true);
-      // In relaxed mode, completing the goal wins immediately
-      if (relaxed && !doneRef.current) {
+      // Win fires immediately in both timed and relaxed modes
+      if (!doneRef.current) {
         doneRef.current = true;
+        clearInterval(timerRef.current!);
         const wordPts = next.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
         setStatus("won");
         onComplete(wordPts);

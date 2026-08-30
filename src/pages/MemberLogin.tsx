@@ -243,8 +243,20 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== "android") return;
+    const handler = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+        setTimeout(() => active.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+      }
+    };
+    window.visualViewport?.addEventListener("resize", handler);
+    return () => window.visualViewport?.removeEventListener("resize", handler);
+  }, []);
+
   return (
-    <div className="min-h-screen w-full bg-bg flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-bg overflow-y-auto flex items-start justify-center px-4 py-8">
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex justify-center">
           <img src={LOGO_URL} alt="WELL Collective" className="h-16" />
