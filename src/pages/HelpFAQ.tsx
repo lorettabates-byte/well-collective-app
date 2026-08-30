@@ -57,15 +57,15 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How do I win the WELL Escape?",
-        a: "The WELL Crown is awarded at the end of the year to the member with the highest cumulative point total across all 12 months. The WELL Crown winner receives a spot on a WELL Escape retreat — our exclusive wellness travel experiences.",
+        a: "The WELL Crown is awarded at the end of the year to the member with the highest cumulative point total across all 12 months. The WELL Crown winner receives a spot on a WELL Escape retreat, our exclusive wellness travel experiences.",
       },
       {
         q: "Does the WELL Escape prize include airfare?",
-        a: "The WELL Escape prize covers your retreat spot — accommodations, meals, and all retreat programming included. Airfare and travel to and from the retreat location are not included and are the responsibility of the winner.",
+        a: "The WELL Escape prize covers your retreat spot, including accommodations, meals, and all retreat programming. Airfare and travel to and from the retreat location are not included and are the responsibility of the winner.",
       },
       {
         q: "Can I win both the monthly prize and the WELL Crown?",
-        a: "Yes — winning a free month does not disqualify you from the year-end WELL Crown. Monthly winners are recognized each month, and the annual Crown goes to whoever accumulates the most points over the full year.",
+        a: "Yes. Winning a free month does not disqualify you from the year-end WELL Crown. Monthly winners are recognized each month, and the annual Crown goes to whoever accumulates the most points over the full year.",
       },
       {
         q: "Can I win back to back?",
