@@ -241,7 +241,9 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       {/* Status */}
       {status === "won" && (
         <div className="text-center py-1">
-          <p className="text-sm font-bold text-emerald-400">You found {found.length} words!</p>
+          <p className="text-sm font-bold text-emerald-400">
+            {found.length === 0 ? "Points already earned today." : `You found ${found.length} words!`}
+          </p>
           <div className="flex gap-2 justify-center mt-2">
             <button
               onClick={() => { foundRef.current = []; setFound([]); setPath([]); setTimeLeft(TIME_LIMIT); setStatus("playing"); setFlash(null); doneRef.current = alreadyDone; }}

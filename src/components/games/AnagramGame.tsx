@@ -118,12 +118,10 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
 
     if (next.length >= WIN_WORDS) {
       setGoalReached(true);
-      // Win fires immediately in both timed and relaxed modes
+      // Award points immediately but keep playing — timer ends the game naturally
       if (!doneRef.current) {
         doneRef.current = true;
-        clearInterval(timerRef.current!);
         const wordPts = next.reduce((sum, w) => sum + (w.length > 4 ? 15 : 10), 0);
-        setStatus("won");
         onComplete(wordPts);
       }
     }
@@ -186,9 +184,13 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
 
       {status === "won" && (
         <div className="text-center py-2">
-          <p className="text-sm font-bold text-emerald-400">
-            {found.length > WIN_WORDS ? `Amazing! ${found.length} words found.` : `Nice work! ${found.length} words found.`}
-          </p>
+          {found.length === 0 ? (
+            <p className="text-sm font-bold text-brand-light">Points already earned today.</p>
+          ) : (
+            <p className="text-sm font-bold text-emerald-400">
+              {found.length > WIN_WORDS ? `Amazing! ${found.length} words found.` : `Nice work! ${found.length} words found.`}
+            </p>
+          )}
           <div className="flex gap-2 justify-center mt-2">
             <button
               onClick={() => { foundRef.current = []; setFound([]); setSelected([]); setTimeLeft(TIME_LIMIT); setGoalReached(false); setStatus("playing"); setMessage(""); doneRef.current = alreadyDone; }}
