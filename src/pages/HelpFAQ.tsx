@@ -69,7 +69,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "Can I win back to back?",
-        a: "To keep things fair and give everyone a chance, consecutive wins are not allowed. If you win the daily competition, you are not eligible to win the following day. If you win the monthly prize, you are not eligible to win the following month. If you win the WELL Crown (annual), you are not eligible to win the following year. Keep showing up — your points and streak still count even during your ineligible period.",
+        a: "To keep things fair and give everyone a chance, consecutive wins are not allowed. If you win the daily competition, you are not eligible to win the following day. If you win the monthly prize, you are not eligible to win the following month. If you win the WELL Crown (annual), you are not eligible to win the WELL Crown the following year — but you are still fully eligible to win daily and monthly prizes. Your points always count toward your cumulative year total, even during any period when you are ineligible to win. Nothing you earn is wasted.",
       },
     ],
   },
