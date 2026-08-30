@@ -39,11 +39,14 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const appClient = clients.find((c) => c.url.startsWith(self.location.origin));
       if (appClient) {
-        // Focus first, then postMessage — sending before focus() resolves means the
-        // app is still backgrounded/suspended when the message arrives and the React
-        // Router listener in App.tsx may not be active yet, causing the navigation
-        // to be silently dropped and the user lands on the home screen.
+        // client.navigate() changes the page URL directly at the browser level,
+        // which React Router picks up on mount — more reliable than postMessage,
+        // which can be dropped when the app is backgrounded/suspended and the
+        // JS event listener isn't active yet.
         return appClient.focus().then(() => {
+          return appClient.navigate(absoluteUrl);
+        }).catch(() => {
+          // Fallback: postMessage if navigate() isn't supported
           appClient.postMessage({ type: "NAVIGATE", url: targetUrl });
         });
       }

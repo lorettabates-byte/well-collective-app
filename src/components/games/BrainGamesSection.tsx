@@ -128,6 +128,18 @@ export default function BrainGamesSection({ initialOpen }: Props) {
 
   useEffect(() => { loadChallenges(); }, [loadChallenges]);
 
+  // Poll every 30s and refresh when the user returns to the tab so
+  // completed challenges (e.g. Kendall played) appear without a manual reload.
+  useEffect(() => {
+    const interval = setInterval(loadChallenges, 30000);
+    const onVisibility = () => { if (!document.hidden) loadChallenges(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [loadChallenges]);
+
   // Auto-activate challenge from notification URL (?challenge=id)
   useEffect(() => {
     const challengeId = searchParams.get("challenge");
