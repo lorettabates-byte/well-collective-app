@@ -64,10 +64,12 @@ export default function AnagramGame({ onComplete, alreadyDone }: Props) {
     localStorage.setItem("anagram-relaxed", next ? "1" : "0");
   };
 
-  // Persist round so closing/reopening the accordion keeps the same letters
+  // Persist round so closing/reopening the accordion keeps the same letters.
+  // Advance by 1 when won so the next session open shows a fresh set of letters.
   useEffect(() => {
-    localStorage.setItem(`anagram-round-${todayKey()}`, String(round));
-  }, [round]);
+    const saveRound = status === "won" ? round + 1 : round;
+    localStorage.setItem(`anagram-round-${todayKey()}`, String(saveRound));
+  }, [round, status]);
 
   const showMsg = (m: string) => {
     setMessage(m);

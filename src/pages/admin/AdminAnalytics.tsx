@@ -527,7 +527,8 @@ function WellCupTab({ data }: { data: DashboardData }) {
     well_activity: "WELL Activity", event_attend: "Event Attended", well_escape: "WELL Escape",
     tribe_add: "Tribe Member Added", daily_challenge_accept: "Daily Challenge",
     profile_photo: "Profile Photo", login_streak_bonus: "Login Streak Bonus",
-    brain_game: "Brain Game", tribe_challenge_complete: "Tribe Game Invite",
+    brain_game: "Brain Game", brain_game_extra: "Brain Game (extra)",
+    tribe_challenge_complete: "Tribe Game Invite", tribe_challenge_extra: "Tribe Game (extra)",
   };
 
   return (

@@ -24,7 +24,9 @@ export type ActivityType =
   | "notifications_enabled"
   | "add_to_homescreen"
   | "steps"
-  | "brain_game";
+  | "brain_game"
+  | "brain_game_extra"
+  | "tribe_challenge_extra";
 
 export interface ActivityResult {
   awarded: boolean;

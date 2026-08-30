@@ -14,10 +14,12 @@ const ALL_PAIRS = [
 
 // SVG icons per pair — wellness-themed outlines
 const PAIR_ICONS: React.FC<{ className?: string }>[] = [
+  // Nature — tree
   ({ className }) => (
     <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 28C16 28 6 21 6 14a7 7 0 0 1 10-6.32A7 7 0 0 1 26 14c0 7-10 14-10 14Z"/>
-      <path d="M12 18c1-1.5 2.5-3 4-3s3 1.5 4 3" opacity=".5"/>
+      <line x1="16" y1="28" x2="16" y2="18"/>
+      <path d="M10 28h12"/>
+      <path d="M7 18C7 13 11 9 16 9s9 4 9 9c0 3-2 5-5 6H12c-3-1-5-3-5-6Z"/>
     </svg>
   ),
   ({ className }) => (
@@ -35,17 +37,20 @@ const PAIR_ICONS: React.FC<{ className?: string }>[] = [
       <line x1="24.2" y1="7.8" x2="22.1" y2="9.9"/><line x1="9.9" y1="22.1" x2="7.8" y2="24.2"/>
     </svg>
   ),
+  // Music — two eighth notes
   ({ className }) => (
-    <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M9 18c0-3 2-5 3-8M16 26V14M23 18c0-3-2-5-3-8"/>
-      <ellipse cx="16" cy="10" rx="6" ry="3"/>
-      <path d="M10 26h12" strokeWidth="2"/>
+    <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="22" x2="12" y2="10"/>
+      <line x1="22" y1="19.5" x2="22" y2="7.5"/>
+      <line x1="12" y1="10" x2="22" y2="7.5"/>
+      <circle cx="10" cy="22" r="2.5" fill="currentColor" stroke="none"/>
+      <circle cx="20" cy="19.5" r="2.5" fill="currentColor" stroke="none"/>
     </svg>
   ),
+  // Rest — crescent moon
   ({ className }) => (
-    <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M16 4C10 4 6 8 6 14c0 4 2 8 10 14 8-6 10-10 10-14 0-6-4-10-10-10Z"/>
-      <path d="M16 10v8M12 14h8" strokeWidth="1.4" opacity=".5"/>
+    <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M24 17C24 22.5 19.5 27 14 27C8.5 27 4 22.5 4 17C4 11.5 8.5 7 14 7C12 9 11 12 11 15C11 20.5 14 25 19 26.5C21.5 25.5 24 21.5 24 17Z"/>
     </svg>
   ),
   ({ className }) => (

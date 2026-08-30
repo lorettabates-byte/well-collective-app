@@ -87,15 +87,11 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
         if (t <= 1) {
           clearInterval(timerRef.current!);
           const f = foundRef.current;
-          if (f.length >= WIN_WORDS) {
-            // already handled in trySubmit
-          } else {
-            setStatus("lost");
-            if (!doneRef.current) {
-              doneRef.current = true;
-              const wordPts = f.reduce((sum, w) => sum + w.length * 4, 0);
-              onComplete(wordPts > 0 ? wordPts : undefined);
-            }
+          setStatus(f.length >= WIN_WORDS ? "won" : "lost");
+          if (!doneRef.current) {
+            doneRef.current = true;
+            const wordPts = f.reduce((sum, w) => sum + w.length * 4, 0);
+            onComplete(wordPts > 0 ? wordPts : undefined);
           }
           return 0;
         }
@@ -119,15 +115,13 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
       foundRef.current = next;
       setFound(next);
       setFlash("valid"); setTimeout(() => setFlash(null), 500);
-      if (next.length >= WIN_WORDS) {
-        clearInterval(timerRef.current!);
-        setStatus("won");
-        if (!doneRef.current) {
-          doneRef.current = true;
-          const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
-          const timePts = Math.floor(timeLeft / 8);
-          onComplete(wordPts + timePts);
-        }
+      // Award points as soon as the goal is reached but keep the timer running
+      // so the player can continue finding more words.
+      if (next.length >= WIN_WORDS && !doneRef.current) {
+        doneRef.current = true;
+        const wordPts = next.reduce((sum, w) => sum + w.length * 4, 0);
+        const timePts = Math.floor(timeLeft / 8);
+        onComplete(wordPts + timePts);
       }
     } else {
       setFlash("invalid"); setTimeout(() => setFlash(null), 500);
@@ -332,10 +326,19 @@ export default function WordHunt({ onComplete, alreadyDone }: Props) {
         ))}
       </div>
 
+      {/* Goal reached banner while still playing */}
+      {status === "playing" && found.length >= WIN_WORDS && (
+        <div className="text-center py-1">
+          <p className="text-xs font-bold text-emerald-400">Goal reached! Keep going — find more words.</p>
+        </div>
+      )}
+
       {/* Found words */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-text-muted uppercase tracking-wider">Found</span>
-        <span className="text-xs font-bold text-text">{found.length} / {WIN_WORDS}</span>
+        <span className="text-xs font-bold text-text">
+          {found.length < WIN_WORDS ? `${found.length} / ${WIN_WORDS}` : `${found.length} words`}
+        </span>
       </div>
       {found.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
