@@ -266,8 +266,8 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
           <button
             type="button"
             onClick={() => setMode("login")}
-            className={`text-sm font-semibold rounded-pill py-2.5 border ${
-              mode === "login" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+            className={`text-sm font-semibold rounded-pill py-2.5 ${
+              mode === "login" ? "gradient-brand text-white shadow-glow" : "border border-border text-text-muted"
             }`}
           >
             Log In
@@ -275,8 +275,8 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
           <button
             type="button"
             onClick={() => setMode("trial")}
-            className={`text-sm font-semibold rounded-pill py-2.5 border ${
-              mode === "trial" ? "gradient-brand text-white border-transparent shadow-glow" : "border-border text-text-muted"
+            className={`text-sm font-semibold rounded-pill py-2.5 ${
+              mode === "trial" ? "gradient-brand text-white shadow-glow" : "border border-border text-text-muted"
             }`}
           >
             Free Trial

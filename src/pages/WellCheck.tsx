@@ -776,10 +776,10 @@ export default function WellCheck() {
               <button
                 key={range.id}
                 onClick={() => setHistoryRange(range.id)}
-                className={`text-xs font-bold rounded-pill py-2 border transition-colors ${
+                className={`text-xs font-bold rounded-pill py-2 transition-colors ${
                   historyRange === range.id
-                    ? "gradient-brand text-white border-transparent"
-                    : "bg-surface-2 border-border text-text-muted"
+                    ? "gradient-brand text-white"
+                    : "bg-surface-2 border border-border text-text-muted"
                 }`}
               >
                 {range.label}
