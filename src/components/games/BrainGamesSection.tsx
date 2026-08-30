@@ -113,6 +113,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
   } | null>(null);
   const [challengePointsWin, setChallengePointsWin] = useState<string | null>(null);
   const [extraPointsGame, setExtraPointsGame] = useState<string | null>(null);
+  // Scores earned this session, keyed by gameId — used to pass real score to challenge picker
+  const [gameScores, setGameScores] = useState<Record<string, number>>({});
   const celebratedRef = useRef<Set<string>>(new Set());
 
   const todayIdx = todayGameIdx();
@@ -201,6 +203,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       const newSet = new Set(existingSet).add(gameId);
       setDoneTodaySet(newSet);
       localStorage.setItem(`brain-game-done-${todayKey}`, [...newSet].join(","));
+      // Store score so the Invite button can pass the real value to the challenge
+      if (score !== undefined) setGameScores(prev => ({ ...prev, [gameId]: score }));
     }
 
     if (!isRespondingToChallenge) {
@@ -445,13 +449,22 @@ export default function BrainGamesSection({ initialOpen }: Props) {
                   <p className="text-[10px] text-text-dim mt-0.5">{game.tagline}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Invite button — always available */}
+                  {/* Invite button — enabled only after playing so the real score is sent */}
                   <button
                     onClick={e => {
                       e.stopPropagation();
-                      setShowChallengePicker({ gameId: game.id, gameName: game.title, score: done ? 0 : 0 });
+                      if (!done) {
+                        setOpenGame(game.id);
+                        return;
+                      }
+                      setShowChallengePicker({ gameId: game.id, gameName: game.title, score: gameScores[game.id] ?? 0 });
                     }}
-                    className="text-[9px] font-semibold px-2 py-1 rounded-full border border-border/60 text-text-dim hover:text-brand-light hover:border-brand-light/40 transition-colors"
+                    title={done ? "Invite a tribe member to play" : "Play first, then invite a friend"}
+                    className={`text-[9px] font-semibold px-2 py-1 rounded-full border transition-colors ${
+                      done
+                        ? "border-brand-light/50 text-brand-light hover:bg-brand-light/10"
+                        : "border-border/40 text-text-dim opacity-50"
+                    }`}
                   >
                     Invite
                   </button>
