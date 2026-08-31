@@ -161,11 +161,11 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
       </div>
 
       {/* Grid */}
-      <div className="flex flex-col gap-1.5 mb-4">
+      <div className="flex flex-col gap-1 mb-3">
         {grid.map((row, ri) => (
-          <div key={ri} className={`flex gap-1.5 justify-center ${shake && ri === currentRow ? "animate-[shake_0.4s_ease]" : ""}`}>
+          <div key={ri} className={`flex gap-1 justify-center ${shake && ri === currentRow ? "animate-[shake_0.4s_ease]" : ""}`}>
             {row.map((cell, ci) => (
-              <div key={ci} className={`w-11 h-11 border-2 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-200 ${cellColor[cell.state]}`}>
+              <div key={ci} className={`w-[clamp(34px,8.5vw,44px)] h-[clamp(34px,8.5vw,44px)] border-2 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-200 ${cellColor[cell.state]}`}>
                 {cell.letter}
               </div>
             ))}
@@ -174,19 +174,19 @@ export default function WordWell({ onComplete, alreadyDone }: Props) {
       </div>
 
       {/* Message */}
-      <p className={`text-center text-xs font-semibold mb-3 h-4 ${status === "won" ? "text-emerald-400" : status === "lost" ? "text-red-400" : "text-text-muted"}`}>
+      <p className={`text-center text-xs font-semibold mb-2 h-4 ${status === "won" ? "text-emerald-400" : status === "lost" ? "text-red-400" : "text-text-muted"}`}>
         {message}
       </p>
 
       {/* Keyboard */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1">
         {KEYBOARD.map((row, ri) => (
-          <div key={ri} className="flex gap-1 justify-center">
+          <div key={ri} className="flex gap-[3px] justify-center">
             {row.map(key => (
               <button
                 key={key}
                 onPointerDown={e => { e.preventDefault(); pressKey(key); }}
-                className={`h-[clamp(36px,5.5vh,48px)] rounded-md text-[clamp(10px,1.5vh,13px)] font-bold transition-all select-none ${key.length > 1 ? "px-2 min-w-[clamp(38px,8vw,46px)]" : "min-w-[clamp(24px,6.5vw,30px)]"} ${keyColor(key)}`}
+                className={`h-[clamp(30px,4.5vh,42px)] rounded-md text-[clamp(9px,1.3vh,12px)] font-bold transition-all select-none ${key.length > 1 ? "px-1.5 min-w-[clamp(32px,7vw,40px)]" : "min-w-[clamp(20px,5.5vw,26px)]"} ${keyColor(key)}`}
               >
                 {key}
               </button>
