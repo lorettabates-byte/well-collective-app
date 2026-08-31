@@ -13,6 +13,9 @@ export default function Confetti({ active, onDone }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
   useEffect(() => {
     if (!active) return;
     const canvas = canvasRef.current;
@@ -73,13 +76,15 @@ export default function Confetti({ active, onDone }: Props) {
         rafRef.current = requestAnimationFrame(draw);
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        onDone?.();
+        onDoneRef.current?.();
       }
     };
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [active, onDone]);
+  // onDone intentionally excluded — stored in ref so animation doesn't restart on parent re-renders
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
   if (!active) return null;
 

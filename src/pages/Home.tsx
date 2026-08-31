@@ -1,6 +1,7 @@
 import { Activity, Bell, Calendar, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Dumbbell, Eye, EyeOff, Flame, Gift, GripVertical, Info, Mail, MessageCircle, Moon, Music, PenSquare, Play, Rss, Salad, Share2, Sparkles, Sun, Sunrise, User, Utensils, Video, Waves, X } from "lucide-react";
 
 import { fetchYesterdayWinner } from "../utils/wellCup";
+import { syncWellCheckWidget, getCachedWidgetSnapshot } from "../utils/wellCheckWidget";
 import { Capacitor } from "@capacitor/core";
 import { RateApp } from "capacitor-rate-app";
 import { logEvent, startSessionTracking } from "../utils/analytics";
@@ -442,6 +443,25 @@ export default function Home() {
       .then((d) => { if (d?.totalPoints != null) setHomePoints(d.totalPoints); })
       .catch(() => {});
   }, [user.email]);
+
+  // Refresh the Android home widget with the freshest points/steps/calories whenever Home loads.
+  // Merges with the last full snapshot saved by WellCheck so sleep/areas aren't lost.
+  useEffect(() => {
+    if (homePoints === null && homeSteps === null && homeMacros === null) return;
+    const cached = getCachedWidgetSnapshot();
+    const updatedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    syncWellCheckWidget({
+      points: homePoints != null ? `${homePoints} pts` : (cached.points ?? "--"),
+      areas: cached.areas ?? "--",
+      sleep: cached.sleep ?? "--",
+      energyIn: homeMacros != null ? `In ${Math.round(homeMacros.calories).toLocaleString()}` : (cached.energyIn ?? "In --"),
+      energyOut: cached.energyOut ?? "Out --",
+      steps: homeSteps != null ? homeSteps.toLocaleString() : (cached.steps ?? "--"),
+      updatedAt,
+      reminder: cached.reminder ?? "",
+      unreadCount: cached.unreadCount ?? "0",
+    });
+  }, [homePoints, homeSteps, homeMacros]);
 
   const WALKTHROUGH_URL = "https://iframe.mediadelivery.net/play/411422/626e2fdf-027e-47b9-beb8-78d92a70113a";
 
