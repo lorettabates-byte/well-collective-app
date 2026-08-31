@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "./BottomNav";
@@ -11,10 +11,30 @@ const LOGO_URL = "https://lorettabates.com/videolibrary.lorettabates.com/wp-cont
 
 const isAndroid = Capacitor.getPlatform() === "android";
 
+// Measure the real status bar height from CSS env() — falls back to 56px if
+// the WebView doesn't report safe-area-inset-top (common on some Android builds).
+function measureStatusBarHeight(): number {
+  try {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;left:0;width:1px;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;";
+    document.body.appendChild(probe);
+    const h = probe.getBoundingClientRect().height || 0;
+    document.body.removeChild(probe);
+    return h > 0 ? h : 56;
+  } catch {
+    return 56;
+  }
+}
+
 export default function MobileShell({ children }: { children: ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const isOnline = useNetworkStatus();
+  const [statusBarH, setStatusBarH] = useState(56);
+
+  useEffect(() => {
+    if (isAndroid) setStatusBarH(measureStatusBarHeight());
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
@@ -27,17 +47,17 @@ export default function MobileShell({ children }: { children: ReactNode }) {
       {isAndroid && (
         <div
           className="fixed inset-x-0 top-0 z-[999] pointer-events-none"
-          style={{ height: "max(env(safe-area-inset-top, 0px), 32px)", background: "#050b14" }}
+          style={{ height: statusBarH, background: "#050b14" }}
         />
       )}
       <div
         id="mobile-shell-frame"
         className="relative w-full sm:max-w-[430px] md:max-w-[720px] h-screen sm:h-[900px] sm:max-h-[94vh] landscape:sm:max-w-full landscape:sm:max-h-full landscape:sm:h-screen landscape:sm:rounded-none sm:rounded-[36px] overflow-hidden sm:border sm:border-border landscape:sm:border-0 bg-bg sm:shadow-2xl landscape:sm:shadow-none flex flex-col"
-        style={isAndroid ? { paddingTop: "max(env(safe-area-inset-top, 0px), 32px)" } : undefined}
+        style={isAndroid ? { paddingTop: statusBarH } : undefined}
       >
         <div
           className="pointer-events-none absolute inset-x-0 h-64 gradient-glow z-0"
-          style={{ top: isAndroid ? "max(env(safe-area-inset-top, 0px), 32px)" : "0" }}
+          style={{ top: isAndroid ? statusBarH : 0 }}
         />
         {!isOnline && (
           <div className="relative z-30 flex items-center justify-center gap-2 bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2">
