@@ -1,5 +1,6 @@
 package com.wellcollective.app;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -8,13 +9,17 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    // Enable edge-to-edge so env(safe-area-inset-bottom) reports the real
-    // Android navigation bar height and the bottom tab bar clears it correctly.
+    // Edge-to-edge: WebView extends behind system bars.
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-    // Force white status bar icons (dark appearance = false) so they're
-    // visible on the dark app background. Without this they can render as
-    // dark icons on a dark bar and look like a white block.
+    // Explicitly set status bar + navigation bar colors before super.onCreate so
+    // there is no white flash between the splash screen and the WebView loading.
+    // android:statusBarColor in styles.xml can be ignored by some Android versions
+    // in edge-to-edge mode; the Window API is always respected.
+    getWindow().setStatusBarColor(Color.parseColor("#050b14"));
+    getWindow().setNavigationBarColor(Color.TRANSPARENT);
+
+    // White icons on the dark status bar background.
     WindowInsetsControllerCompat insetsController =
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
     if (insetsController != null) {
