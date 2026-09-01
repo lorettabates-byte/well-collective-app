@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
-import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import "./index.css";
 import App from "./App.tsx";
@@ -37,16 +36,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 if (Capacitor.isNativePlatform()) {
   CapacitorUpdater.notifyAppReady();
 
-  // When Capgo finishes downloading a new bundle, apply it the next time
-  // the user backgrounds the app — no force-quit needed to get updates.
-  let pendingBundleId: string | null = null;
-  CapacitorUpdater.addListener("downloadComplete", ({ bundle }) => {
-    pendingBundleId = bundle.id;
-  });
-  CapApp.addListener("appStateChange", ({ isActive }) => {
-    if (!isActive && pendingBundleId) {
-      CapacitorUpdater.set({ id: pendingBundleId }).catch(() => {});
-      pendingBundleId = null;
+  // Apply the update immediately when Capgo finishes downloading it.
+  // set() reloads the webview with the new bundle — the app briefly
+  // refreshes but the user doesn't need to background or force-quit.
+  CapacitorUpdater.addListener("downloadComplete", async ({ bundle }) => {
+    try {
+      await CapacitorUpdater.set({ id: bundle.id });
+    } catch {
+      // set() failed; autoUpdate will retry on next cold start
     }
   });
 }
