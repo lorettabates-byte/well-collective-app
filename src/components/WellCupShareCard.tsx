@@ -526,7 +526,10 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
           onClick={(e) => e.stopPropagation()}
         />
         <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, textAlign: "center", lineHeight: 1.5 }}>
-          Press and hold the image above, then choose<br /><strong style={{ color: "white" }}>Save to Photos</strong>
+          Press and hold the image above, then choose<br />
+          <strong style={{ color: "white" }}>
+            {Capacitor.getPlatform() === "android" ? "Download image" : "Save to Photos"}
+          </strong>
         </p>
         <button
           onClick={() => setNativePreview(null)}

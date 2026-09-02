@@ -1,4 +1,4 @@
-import { Award, Check, Search, Star } from "lucide-react";
+import { Award, Check, ChevronDown, ClipboardList, Search, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
@@ -10,6 +10,30 @@ interface Member {
   name: string;
   well_cup_points: number;
 }
+
+interface ActivityRow {
+  activity_type: string;
+  points: number;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  app_open: "App open",
+  forum_post: "Forum post",
+  forum_reply: "Forum reply",
+  forum_like: "Forum like received",
+  breathwork: "Breathwork session",
+  breathwork_complete: "Breathwork complete",
+  well_check: "WELL Check",
+  event_rsvp: "Event RSVP",
+  event_checkin: "Event check-in",
+  login_streak_bonus: "Streak bonus",
+  admin_award: "Admin award",
+  referral: "Referral",
+  brain_game: "Brain game",
+  retreat_booking: "Retreat booking",
+};
 
 export default function AdminPoints() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -23,6 +47,14 @@ export default function AdminPoints() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Audit panel
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditFocused, setAuditFocused] = useState(false);
+  const [auditEmail, setAuditEmail] = useState("");
+  const [auditDays, setAuditDays] = useState("30");
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditRows, setAuditRows] = useState<ActivityRow[] | null>(null);
 
   const [spotlightSearch, setSpotlightSearch] = useState("");
   const [spotlightFocused, setSpotlightFocused] = useState(false);
@@ -89,6 +121,28 @@ export default function AdminPoints() {
   };
 
   const selected = members.find((m) => m.email === selectedEmail);
+
+  const auditFiltered = members.filter(
+    (m) =>
+      m.name.toLowerCase().includes(auditSearch.toLowerCase()) ||
+      m.email.toLowerCase().includes(auditSearch.toLowerCase())
+  );
+  const auditSelected = members.find((m) => m.email === auditEmail);
+
+  const handleAuditLoad = async () => {
+    if (!API_URL || !auditEmail) return;
+    setAuditLoading(true);
+    setAuditRows(null);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/member-activity?email=${encodeURIComponent(auditEmail)}&days=${auditDays}`, { headers: getAuthHeaders() });
+      const data = await res.json();
+      setAuditRows(res.ok ? data.activities : []);
+    } catch {
+      setAuditRows([]);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
 
   const spotlightFiltered = members.filter(
     (m) =>
@@ -286,6 +340,119 @@ export default function AdminPoints() {
           >
             {spotlightSubmitting ? "Saving…" : "Set as This Week's Spotlight"}
           </button>
+        </div>
+
+        {/* Member activity audit */}
+        <div className="glass-card rounded-card p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-0.5">
+            <ClipboardList size={14} className="text-brand-light shrink-0" />
+            <h3 className="text-sm font-bold text-text">Member Activity Audit</h3>
+          </div>
+          <p className="text-xs text-text-muted -mt-1">See exactly how a member has been earning points and why.</p>
+
+          {/* Member picker */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
+            <input
+              type="text"
+              placeholder="Search by name or email…"
+              value={auditSearch}
+              onChange={(e) => setAuditSearch(e.target.value)}
+              onFocus={() => setAuditFocused(true)}
+              onBlur={() => setTimeout(() => setAuditFocused(false), 150)}
+              className="w-full bg-surface-2 border border-border rounded-lg pl-8 pr-3 py-2 text-sm text-text placeholder:text-text-dim outline-none focus:border-brand-light"
+            />
+          </div>
+          {(auditFocused || auditSearch) && (
+            <div className="max-h-40 overflow-y-auto flex flex-col gap-1 -mt-1">
+              {auditFiltered.slice(0, 20).map((m) => (
+                <button
+                  key={m.email}
+                  type="button"
+                  onMouseDown={() => { setAuditEmail(m.email); setAuditSearch(""); setAuditFocused(false); setAuditRows(null); }}
+                  className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    auditEmail === m.email
+                      ? "bg-brand-light/20 text-brand-light font-semibold border border-brand-light/40"
+                      : "bg-surface-2 text-text hover:bg-surface-3"
+                  }`}
+                >
+                  <span className="font-medium">{m.name}</span>
+                  <span className="text-text-dim text-xs ml-2">{m.email}</span>
+                  <span className="text-text-dim text-xs ml-2">({m.well_cup_points} pts)</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {auditSelected && (
+            <p className="text-xs text-brand-light px-1">Selected: <strong>{auditSelected.name}</strong></p>
+          )}
+
+          {/* Days selector + load button */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <select
+                value={auditDays}
+                onChange={(e) => setAuditDays(e.target.value)}
+                className="w-full appearance-none bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none focus:border-brand-light pr-8"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 365 days</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+            </div>
+            <button
+              type="button"
+              onClick={handleAuditLoad}
+              disabled={auditLoading || !auditEmail}
+              className="gradient-brand text-white text-sm font-semibold rounded-lg px-4 disabled:opacity-50"
+            >
+              {auditLoading ? "Loading…" : "View"}
+            </button>
+          </div>
+
+          {/* Results */}
+          {auditRows !== null && (
+            auditRows.length === 0 ? (
+              <p className="text-xs text-text-dim px-1">No activity found in this period.</p>
+            ) : (
+              <div className="flex flex-col gap-0 border border-border rounded-lg overflow-hidden">
+                {/* Summary row */}
+                <div className="flex items-center justify-between px-3 py-2 bg-surface-3 border-b border-border">
+                  <span className="text-xs font-semibold text-text-muted">{auditRows.length} events</span>
+                  <span className="text-xs font-bold text-brand-light">
+                    {auditRows.reduce((s, r) => s + r.points, 0).toLocaleString()} pts total
+                  </span>
+                </div>
+                <div className="max-h-80 overflow-y-auto divide-y divide-border">
+                  {auditRows.map((row, i) => {
+                    const label = ACTIVITY_LABELS[row.activity_type] ?? row.activity_type.replace(/_/g, " ");
+                    const meta = row.metadata;
+                    const detail = meta?.reason as string | undefined
+                      ?? (meta?.streak != null ? `${meta.streak} day streak` : undefined)
+                      ?? (meta?.event_name as string | undefined)
+                      ?? (meta?.title as string | undefined);
+                    const dt = new Date(row.created_at);
+                    const dateStr = dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    const timeStr = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                    return (
+                      <div key={i} className="flex items-start gap-3 px-3 py-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-text">{label}</p>
+                          {detail && <p className="text-[11px] text-text-muted truncate">{detail}</p>}
+                          <p className="text-[10px] text-text-dim">{dateStr} · {timeStr}</p>
+                        </div>
+                        <span className={`text-xs font-bold shrink-0 ${row.points >= 0 ? "text-green-400" : "text-red-400"}`}>
+                          {row.points >= 0 ? "+" : ""}{row.points}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         {/* Leaderboard snapshot */}
