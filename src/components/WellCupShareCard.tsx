@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -488,6 +489,7 @@ async function saveOrDownload(dataUrl: string, filename: string): Promise<void> 
 
 export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
+  const [nativePreview, setNativePreview] = useState<{ dataUrl: string; size: "instagram" | "facebook" } | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
@@ -496,8 +498,12 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
     setGenerating(size);
     try {
       const dataUrl = await generateCard(winner, period, periodLabel, size, wellLogoAsset);
-      const label = size === "instagram" ? "instagram-story" : "facebook";
-      await saveOrDownload(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
+      if (Capacitor.isNativePlatform()) {
+        setNativePreview({ dataUrl, size });
+      } else {
+        const label = size === "instagram" ? "instagram-story" : "facebook";
+        await saveOrDownload(dataUrl, `well-cup-${period}-${label}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`);
+      }
     } catch (err) {
       console.error("Share card generation failed:", err);
     } finally {
@@ -506,6 +512,32 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   };
 
   const badgeStyle = theme.previewBadge;
+
+  if (nativePreview) {
+    return createPortal(
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: 24 }}
+        onClick={() => setNativePreview(null)}
+      >
+        <img
+          src={nativePreview.dataUrl}
+          alt="Award card"
+          style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: 12 }}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, textAlign: "center", lineHeight: 1.5 }}>
+          Press and hold the image above, then choose<br /><strong style={{ color: "white" }}>Save to Photos</strong>
+        </p>
+        <button
+          onClick={() => setNativePreview(null)}
+          style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, background: "none", border: "none", padding: 8, cursor: "pointer" }}
+        >
+          Close
+        </button>
+      </div>,
+      document.body
+    );
+  }
 
   return createPortal(
     <>
