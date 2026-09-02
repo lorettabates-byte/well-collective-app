@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { Download, X } from "lucide-react";
+import { Download, Share2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import wellLogoAsset from "../assets/well-logo-white.png";
@@ -302,10 +302,15 @@ async function generateCard(
   // Per-period decorations
   drawDecorations(ctx, period, W, H, isIG, theme);
 
-  // Load images — use pre-fetched data URL for logo to avoid CORS cache conflicts
+  // Cache-bust the avatar to avoid CORS taint from a non-CORS cached response
+  // (the preview <img> loads without crossOrigin, caching the resource; adding ?cb= forces a fresh CORS fetch)
+  const avatarCacheBusted = winner.avatar
+    ? `${winner.avatar}${winner.avatar.includes("?") ? "&" : "?"}cb=${Date.now()}`
+    : null;
+
   const [logoImg, avatarImg] = await Promise.all([
     logoDataUrl ? loadImage(logoDataUrl).catch(() => null) : Promise.resolve(null),
-    winner.avatar ? loadImage(winner.avatar).catch(() => null) : Promise.resolve(null),
+    avatarCacheBusted ? loadImage(avatarCacheBusted).catch(() => null) : Promise.resolve(null),
   ]);
 
   const initials = winner.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -467,7 +472,32 @@ async function generateCard(
     await drawProfileCircle(ctx, avatarImg, initials, photoX, photoY, photoR, 6, theme.accentHex);
   }
 
-  return canvas.toDataURL("image/png");
+  try {
+    return canvas.toDataURL("image/png");
+  } catch {
+    // Canvas tainted (avatar CORS issue) — redraw without avatar and retry
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    drawDecorations(ctx, period, W, H, isIG, theme);
+    if (isIG) {
+      if (logoImg) {
+        const lh = 360;
+        const lw = (logoImg.width / logoImg.height) * lh;
+        ctx.drawImage(logoImg, (W - lw) / 2, 110, lw, lh);
+      }
+      await drawProfileCircle(ctx, null, initials, W / 2, H * 0.5, 130, 9, theme.accentHex);
+    } else {
+      if (logoImg) {
+        const leftW = 290;
+        const lw = leftW - 24;
+        const lh = (logoImg.height / logoImg.width) * lw;
+        ctx.drawImage(logoImg, (leftW - lw) / 2, 32, lw, lh);
+      }
+      await drawProfileCircle(ctx, null, initials, W - 90 - 55, H / 2, 90, 6, theme.accentHex);
+    }
+    return canvas.toDataURL("image/png");
+  }
 }
 
 async function saveOrDownload(dataUrl: string, filename: string): Promise<void> {
@@ -489,6 +519,7 @@ async function saveOrDownload(dataUrl: string, filename: string): Promise<void> 
 
 export default function WellCupShareCard({ winner, period, periodLabel, onClose, isOwnWin = false }: Props) {
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [nativePreview, setNativePreview] = useState<{ dataUrl: string; size: "instagram" | "facebook" } | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
@@ -496,6 +527,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
 
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
+    setGenerateError(null);
     try {
       const dataUrl = await generateCard(winner, period, periodLabel, size, wellLogoAsset);
       if (Capacitor.isNativePlatform()) {
@@ -506,6 +538,7 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
       }
     } catch (err) {
       console.error("Share card generation failed:", err);
+      setGenerateError("Could not generate card — please try again.");
     } finally {
       setGenerating(null);
     }
@@ -514,29 +547,48 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const badgeStyle = theme.previewBadge;
 
   if (nativePreview) {
+    const handleNativeShare = async () => {
+      try {
+        const blob = await (await fetch(nativePreview.dataUrl)).blob();
+        const filename = `well-cup-${period}-${nativePreview.size === "instagram" ? "instagram-story" : "facebook"}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`;
+        const file = new File([blob], filename, { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "WELL Collective" });
+        }
+      } catch {
+        // User cancelled or share not supported — overlay stays open
+      }
+    };
+
     return createPortal(
       <div
         style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: 24 }}
         onClick={() => setNativePreview(null)}
       >
+        <button onClick={() => setNativePreview(null)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", padding: 8 }}>
+          <X size={20} />
+        </button>
         <img
           src={nativePreview.dataUrl}
           alt="Award card"
-          style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: 12 }}
+          style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain", borderRadius: 12 }}
           onClick={(e) => e.stopPropagation()}
         />
-        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, textAlign: "center", lineHeight: 1.5 }}>
-          Press and hold the image above, then choose<br />
-          <strong style={{ color: "white" }}>
-            {Capacitor.getPlatform() === "android" ? "Download image" : "Save to Photos"}
-          </strong>
-        </p>
         <button
-          onClick={() => setNativePreview(null)}
-          style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, background: "none", border: "none", padding: 8, cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); handleNativeShare(); }}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: "linear-gradient(135deg, #01519D, #0191CE)",
+            color: "white", border: "none", borderRadius: 12,
+            padding: "14px 32px", fontSize: 15, fontWeight: 600, cursor: "pointer",
+          }}
         >
-          Close
+          <Share2 size={16} />
+          {Capacitor.getPlatform() === "android" ? "Share / Save Image" : "Share / Save to Photos"}
         </button>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center" }}>
+          Tap the button above, then choose Save Image
+        </p>
       </div>,
       document.body
     );
@@ -636,6 +688,10 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
             </div>
           )}
         </div>
+
+        {generateError && (
+          <p className="text-xs text-red-400 text-center px-2">{generateError}</p>
+        )}
 
         <div className="flex flex-col gap-2">
           <button
