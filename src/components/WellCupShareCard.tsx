@@ -521,6 +521,8 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const [generating, setGenerating] = useState<"instagram" | "facebook" | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [nativePreview, setNativePreview] = useState<{ dataUrl: string; size: "instagram" | "facebook" } | null>(null);
+  const [nativeFileUrl, setNativeFileUrl] = useState<string | null>(null);
+  const [nativeShareError, setNativeShareError] = useState<string | null>(null);
   const theme = THEMES[period];
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 20); return () => clearTimeout(t); }, []);
@@ -528,6 +530,8 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const handleDownload = async (size: "instagram" | "facebook") => {
     setGenerating(size);
     setGenerateError(null);
+    setNativeFileUrl(null);
+    setNativeShareError(null);
     try {
       const dataUrl = await generateCard(winner, period, periodLabel, size, wellLogoAsset);
       if (Capacitor.isNativePlatform()) {
@@ -547,16 +551,32 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
   const badgeStyle = theme.previewBadge;
 
   if (nativePreview) {
+    const filename = `well-cup-${period}-${nativePreview.size === "instagram" ? "instagram-story" : "facebook"}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`;
+
     const handleNativeShare = async () => {
+      setNativeShareError(null);
       try {
         const blob = await (await fetch(nativePreview.dataUrl)).blob();
-        const filename = `well-cup-${period}-${nativePreview.size === "instagram" ? "instagram-story" : "facebook"}-${winner.name.replace(/\s+/g, "-").toLowerCase()}.png`;
         const file = new File([blob], filename, { type: "image/png" });
-        if (navigator.canShare?.({ files: [file] })) {
+
+        // Call navigator.share directly — skip canShare guard which is unreliable in WKWebView
+        if (typeof navigator.share === "function") {
           await navigator.share({ files: [file], title: "WELL Collective" });
+          return;
         }
-      } catch {
-        // User cancelled or share not supported — overlay stays open
+
+        // navigator.share not available — write to cache and show as real file URL
+        // so iOS long-press context menu can save it
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const base64 = nativePreview.dataUrl.split(",")[1];
+        const result = await Filesystem.writeFile({ path: filename, data: base64, directory: Directory.Cache });
+        setNativeFileUrl(Capacitor.convertFileSrc(result.uri));
+
+      } catch (err: unknown) {
+        const name = (err as { name?: string })?.name;
+        if (name === "AbortError") return; // user cancelled share sheet — fine
+        console.error("Share error:", err);
+        setNativeShareError("Sharing is not available on this device. Screenshot the image to save it.");
       }
     };
 
@@ -569,26 +589,37 @@ export default function WellCupShareCard({ winner, period, periodLabel, onClose,
           <X size={20} />
         </button>
         <img
-          src={nativePreview.dataUrl}
+          src={nativeFileUrl ?? nativePreview.dataUrl}
           alt="Award card"
           style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain", borderRadius: 12 }}
           onClick={(e) => e.stopPropagation()}
         />
-        <button
-          onClick={(e) => { e.stopPropagation(); handleNativeShare(); }}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "linear-gradient(135deg, #01519D, #0191CE)",
-            color: "white", border: "none", borderRadius: 12,
-            padding: "14px 32px", fontSize: 15, fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          <Share2 size={16} />
-          {Capacitor.getPlatform() === "android" ? "Share / Save Image" : "Share / Save to Photos"}
-        </button>
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center" }}>
-          Tap the button above, then choose Save Image
-        </p>
+        {nativeShareError ? (
+          <p style={{ color: "#f87171", fontSize: 13, textAlign: "center", padding: "0 16px" }}>{nativeShareError}</p>
+        ) : nativeFileUrl ? (
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, textAlign: "center" }}>
+            Press and hold the image above, then choose{" "}
+            <strong style={{ color: "white" }}>{Capacitor.getPlatform() === "android" ? "Download image" : "Save to Photos"}</strong>
+          </p>
+        ) : (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleNativeShare(); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #01519D, #0191CE)",
+                color: "white", border: "none", borderRadius: 12,
+                padding: "14px 32px", fontSize: 15, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              <Share2 size={16} />
+              {Capacitor.getPlatform() === "android" ? "Share / Save Image" : "Share / Save to Photos"}
+            </button>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center" }}>
+              Tap the button above, then choose Save Image
+            </p>
+          </>
+        )}
       </div>,
       document.body
     );
