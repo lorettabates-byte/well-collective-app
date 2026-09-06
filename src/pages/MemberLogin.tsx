@@ -219,7 +219,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
         body: JSON.stringify({ username, password }),
       });
 
-      let data: { error?: string; token?: string; user?: { email: string; name: string } };
+      let data: { error?: string; token?: string; user?: { email: string; name: string }; trialEndsAt?: string };
       try {
         data = await res.json();
       } catch {
@@ -234,6 +234,9 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
 
       localStorage.setItem("memberToken", data.token);
       localStorage.setItem("memberUser", JSON.stringify(data.user));
+      if (data.trialEndsAt) {
+        localStorage.setItem("memberTrialEndsAt", data.trialEndsAt);
+      }
 
       onSuccess();
     } catch (err) {
@@ -256,7 +259,7 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-bg overflow-y-auto flex items-start justify-center px-4 py-8">
+    <div className="min-h-screen w-full bg-bg overflow-y-auto flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex justify-center">
           <img src={LOGO_URL} alt="WELL Collective" className="h-16" />
