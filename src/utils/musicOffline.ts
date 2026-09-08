@@ -80,7 +80,25 @@ export async function deleteDownload(songId: number): Promise<void> {
 // been downloaded, otherwise falls back to the original streaming URL —
 // callers don't need to know which one they got.
 export async function getPlaybackUrl(song: Song): Promise<string> {
-  if (!Capacitor.isNativePlatform() || !isDownloaded(song.id)) return song.url;
+  if (!Capacitor.isNativePlatform()) return song.url;
+
+  // Check localStorage first; if not recorded, probe disk (covers Capgo restarts
+  // that clear localStorage but leave downloaded files intact on disk).
+  let downloaded = isDownloaded(song.id);
+  if (!downloaded) {
+    try {
+      await Filesystem.stat({ path: filePath(song.id), directory: Directory.Data });
+      // File exists on disk but wasn't in our index — restore the record.
+      const ids = loadDownloadedIds();
+      ids.add(song.id);
+      saveDownloadedIds(ids);
+      downloaded = true;
+    } catch {
+      // File genuinely not on disk.
+    }
+  }
+
+  if (!downloaded) return song.url;
 
   try {
     const { uri } = await Filesystem.getUri({ path: filePath(song.id), directory: Directory.Data });
@@ -89,5 +107,24 @@ export async function getPlaybackUrl(song: Song): Promise<string> {
     // Local record says downloaded but the file is missing (e.g. cleared by
     // the OS under storage pressure) — stream instead of failing playback.
     return song.url;
+  }
+}
+
+// Scans the songs directory and rebuilds the localStorage download index from
+// what is actually on disk. Call once at app startup to recover from Capgo
+// restarts that wipe localStorage while leaving downloaded files intact.
+export async function rebuildDownloadIndex(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const { files } = await Filesystem.readdir({ path: SONGS_DIR, directory: Directory.Data });
+    const ids = new Set<number>();
+    for (const file of files) {
+      const name = typeof file === "string" ? file : (file as { name: string }).name;
+      const match = name.match(/^(\d+)\.mp3$/);
+      if (match) ids.add(Number(match[1]));
+    }
+    if (ids.size > 0) saveDownloadedIds(ids);
+  } catch {
+    // songs/ directory doesn't exist yet — nothing downloaded, index is correct.
   }
 }

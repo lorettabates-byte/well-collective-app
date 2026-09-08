@@ -6,6 +6,7 @@ import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { Capacitor } from "@capacitor/core";
 import "./index.css";
 import App from "./App.tsx";
+import { rebuildDownloadIndex } from "./utils/musicOffline";
 import AuthGate from "./components/AuthGate";
 import { AppProvider } from "./store/AppContext";
 import { MusicPlayerProvider } from "./store/MusicPlayerContext";
@@ -35,6 +36,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 if (Capacitor.isNativePlatform()) {
   CapacitorUpdater.notifyAppReady();
+  rebuildDownloadIndex();
 
   // Apply the update immediately when Capgo finishes downloading it.
   // set() reloads the webview with the new bundle — the app briefly
