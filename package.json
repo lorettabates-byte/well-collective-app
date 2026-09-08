@@ -17,6 +17,7 @@
     "@capacitor/browser": "^8.0.3",
     "@capacitor/filesystem": "8.1.2",
     "@capacitor/ios": "^8.4.0",
+    "@capacitor/preferences": "^8.0.1",
     "@capgo/capacitor-health": "8.9.1",
     "@capgo/capacitor-updater": "^8.50.2",
     "@dnd-kit/core": "^6.3.1",

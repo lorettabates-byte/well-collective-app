@@ -2,6 +2,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LOGO_URL } from "../../components/layout/MobileShell";
+import { saveAdminSession } from "../../utils/adminAuth";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -36,8 +37,7 @@ export default function AdminLogin() {
       }
 
       const data = await res.json();
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("admin", JSON.stringify(data.admin));
+      await saveAdminSession(data.token, data.admin);
 
       navigate("/admin");
     } catch (err) {

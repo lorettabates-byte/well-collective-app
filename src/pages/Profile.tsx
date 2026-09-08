@@ -14,6 +14,7 @@ import TopBar from "../components/layout/TopBar";
 import { getBadgeDef, resolveFeaturedBadge } from "../data/badges";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
+import { clearAdminSession } from "../utils/adminAuth";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -267,9 +268,8 @@ export default function Profile() {
     localStorage.removeItem("memberTrialEndsAt");
     localStorage.removeItem("memberMembershipStatus");
     localStorage.removeItem("memberProfileSyncedEmail");
-    localStorage.removeItem("adminToken");
     localStorage.removeItem("adminEmail");
-    localStorage.removeItem("admin");
+    clearAdminSession();
     window.location.reload();
   };
 

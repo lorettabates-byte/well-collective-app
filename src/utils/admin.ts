@@ -1,5 +1,7 @@
+import { getAdminToken } from "./adminAuth";
+
 export function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("adminToken");
+  const token = getAdminToken() ?? localStorage.getItem("adminToken");
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) {
     headers.Authorization = `Bearer ${token}`;

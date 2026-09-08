@@ -5,6 +5,7 @@ import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { Capacitor } from "@capacitor/core";
 import TopBar from "../../components/layout/TopBar";
 import { useApp } from "../../store/AppContext";
+import { getAdminToken } from "../../utils/adminAuth";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -897,7 +898,7 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     if (!API_URL) { setError("No API URL configured"); setLoading(false); return; }
-    const adminKey = localStorage.getItem("adminToken") ?? "";
+    const adminKey = getAdminToken() ?? localStorage.getItem("adminToken") ?? "";
     setLoading(true);
     setError("");
     const controller = new AbortController();

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
+import { getAdminToken } from "../utils/adminAuth";
 import { checkHealthPermissions, runDailyHealthSync } from "../utils/healthSync";
 import { revalidatePushSubscription } from "../lib/push";
 import {
@@ -275,7 +276,7 @@ function todayAsDate(): Date {
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 function adminHeaders(): HeadersInit {
-  const token = window.localStorage.getItem("adminToken");
+  const token = getAdminToken() ?? window.localStorage.getItem("adminToken");
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
