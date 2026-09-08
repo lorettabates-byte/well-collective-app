@@ -36,6 +36,7 @@ interface DashboardData {
   brainGameDaily: { day: string; plays: number; unique_players: number }[];
   gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
   gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
+  appleIap: { active_count: number; total_count: number; new_this_month: number } | null;
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
   memberSections: { member_email: string; section: string; visits: number }[];
@@ -165,6 +166,35 @@ function OverviewTab({ data }: { data: DashboardData }) {
       </div>
 
       <DAUChart data={data.dau} />
+
+      {/* Apple IAP */}
+      {data.appleIap && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-1">Apple App Store</p>
+          <p className="text-[10px] text-text-dim mb-3">Members who joined through Apple in-app purchase</p>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="text-center">
+              <p className="text-xl font-bold text-text">{data.appleIap.active_count}</p>
+              <p className="text-[10px] text-text-muted">Active now</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold text-text">{data.appleIap.new_this_month}</p>
+              <p className="text-[10px] text-text-muted">New this month</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold text-text">{data.appleIap.total_count}</p>
+              <p className="text-[10px] text-text-muted">All time</p>
+            </div>
+          </div>
+          <div className="bg-surface-2 rounded-card p-3 flex justify-between items-center">
+            <div>
+              <p className="text-xs font-semibold text-text">Est. net income (Apple)</p>
+              <p className="text-[10px] text-text-dim">$30/mo × {data.appleIap.active_count} subscribers × 70% after Apple fee</p>
+            </div>
+            <p className="text-lg font-bold text-brand-light">${(data.appleIap.active_count * 30 * 0.7).toFixed(0)}<span className="text-xs font-normal text-text-muted">/mo</span></p>
+          </div>
+        </div>
+      )}
 
       {/* Retention */}
       {data.retention.length > 0 && (
