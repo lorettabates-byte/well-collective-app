@@ -36,7 +36,7 @@ interface DashboardData {
   brainGameDaily: { day: string; plays: number; unique_players: number }[];
   gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
   gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
-  appleIap: { active_count: number; total_count: number; new_this_month: number } | null;
+  appleIap: { active_count: number; total_count: number; new_this_month: number; web_active_count: number } | null;
   membersBySource: { email: string; name: string; membership_status: string; membership_source: string; created_at: string | null }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
@@ -151,8 +151,42 @@ function OverviewTab({ data }: { data: DashboardData }) {
     .sort((a, b) => b.messages - a.messages);
   const maxMsgs = Math.max(1, ...categoryActivity.map((c) => c.messages));
 
+  const appleNet = (data.appleIap?.active_count ?? 0) * 30 * 0.7;
+  const webGross = (data.appleIap?.web_active_count ?? 0) * 30;
+  const totalIncome = appleNet + webGross;
+
   return (
     <div className="flex flex-col gap-4">
+      {data.appleIap && (
+        <div className="glass-card rounded-card p-4">
+          <p className="text-xs font-bold text-text mb-3">Estimated Monthly Income</p>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <p className="text-3xl font-bold text-text">${totalIncome.toFixed(0)}<span className="text-sm font-normal text-text-muted">/mo</span></p>
+              <p className="text-[10px] text-text-dim mt-0.5">
+                {(data.appleIap.active_count + data.appleIap.web_active_count)} active paid members
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center bg-surface-2 rounded-card px-3 py-2">
+              <div>
+                <p className="text-xs font-semibold text-text">Website members</p>
+                <p className="text-[10px] text-text-dim">{data.appleIap.web_active_count} active × $30</p>
+              </div>
+              <p className="text-sm font-bold text-text">${webGross.toFixed(0)}</p>
+            </div>
+            <div className="flex justify-between items-center bg-surface-2 rounded-card px-3 py-2">
+              <div>
+                <p className="text-xs font-semibold text-text">Apple App Store</p>
+                <p className="text-[10px] text-text-dim">{data.appleIap.active_count} active × $30 − 30% Apple fee</p>
+              </div>
+              <p className="text-sm font-bold text-text">${appleNet.toFixed(0)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="DAU (today)" value={data.summary.dau_today} />
         <StatCard label="WAU (7 days)" value={data.summary.wau} />
