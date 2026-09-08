@@ -29,13 +29,19 @@ async function prefsRemove(key: string): Promise<void> {
 
 // Call once at app startup to warm the in-memory cache.
 export async function loadAdminSession(): Promise<void> {
-  _token = await prefsGet(TOKEN_KEY);
-  _admin = await prefsGet(ADMIN_KEY);
-  // Mirror into localStorage so any code that still reads it directly works.
-  if (_token) localStorage.setItem(TOKEN_KEY, _token);
-  else localStorage.removeItem(TOKEN_KEY);
-  if (_admin) localStorage.setItem(ADMIN_KEY, _admin);
-  else localStorage.removeItem(ADMIN_KEY);
+  try {
+    _token = await prefsGet(TOKEN_KEY);
+    _admin = await prefsGet(ADMIN_KEY);
+    // Mirror into localStorage so any code that still reads it directly works.
+    if (_token) localStorage.setItem(TOKEN_KEY, _token);
+    else localStorage.removeItem(TOKEN_KEY);
+    if (_admin) localStorage.setItem(ADMIN_KEY, _admin);
+    else localStorage.removeItem(ADMIN_KEY);
+  } catch {
+    // Fall back to whatever is already in localStorage.
+    _token = localStorage.getItem(TOKEN_KEY);
+    _admin = localStorage.getItem(ADMIN_KEY);
+  }
 }
 
 // Synchronous reads — valid after loadAdminSession() has resolved.
