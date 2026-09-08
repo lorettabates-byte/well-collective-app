@@ -274,9 +274,9 @@ export default function BrainGamesSection({ initialOpen }: Props) {
         await loadChallenges();
       }
     } else if (score != null && score > 0) {
-      // Offer to challenge someone after playing solo
+      // Delay so the game's own completion screen/animation finishes first
       const gameName = g?.title ?? gameId;
-      setShowChallengePicker({ gameId, gameName, score });
+      setTimeout(() => setShowChallengePicker({ gameId, gameName, score }), 2000);
     }
   };
 

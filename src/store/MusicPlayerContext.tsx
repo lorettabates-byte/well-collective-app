@@ -258,9 +258,11 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         wasPlayingBeforeBackground.current = !audio.paused;
       }).then((sub) => { interruptionBeganSub = sub; });
 
-      NowPlaying.addListener("interruptionEnded", ({ shouldResume }) => {
-        if (shouldResume && wasPlayingBeforeBackground.current && audio.paused) {
-          setTimeout(() => audio.play().catch(() => {}), 400);
+      NowPlaying.addListener("interruptionEnded", (_evt) => {
+        // Always attempt resume — iOS sets shouldResume=false after phone calls
+        // but users expect music to restart automatically in a wellness app.
+        if (wasPlayingBeforeBackground.current && audio.paused) {
+          setTimeout(() => audio.play().catch(() => {}), 1000);
         }
         wasPlayingBeforeBackground.current = false;
       }).then((sub) => { interruptionEndedSub = sub; });

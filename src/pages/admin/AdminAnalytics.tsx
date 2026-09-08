@@ -885,6 +885,7 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [capgoBundleId, setCapgoBundleId] = useState<string>("");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -895,14 +896,20 @@ export default function AdminAnalytics() {
   useEffect(() => {
     if (!API_URL) { setError("No API URL configured"); setLoading(false); return; }
     const adminKey = localStorage.getItem("adminToken") ?? "";
+    setLoading(true);
+    setError("");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
     fetch(`${API_URL}/api/analytics/dashboard`, {
       headers: { Authorization: `Bearer ${adminKey}` },
+      signal: controller.signal,
     })
-      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then((r) => { clearTimeout(timeout); if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
       .then((d) => setData(d))
-      .catch((e) => setError(e.message))
+      .catch((e: Error) => setError(e.name === "AbortError" ? "Timed out — tap Retry" : e.message))
       .finally(() => setLoading(false));
-  }, []);
+    return () => { clearTimeout(timeout); controller.abort(); };
+  }, [retryCount]);
 
   const TABS: { id: Tab; label: string; icon: typeof BarChart2 }[] = [
     { id: "overview", label: "Overview", icon: TrendingUp },
@@ -948,7 +955,13 @@ export default function AdminAnalytics() {
 
         {error && !loading && (
           <div className="glass-card rounded-card p-4 text-center">
-            <p className="text-xs text-red-400">Failed to load analytics: {error}</p>
+            <p className="text-xs text-red-400 mb-3">Failed to load analytics: {error}</p>
+            <button
+              onClick={() => setRetryCount(n => n + 1)}
+              className="gradient-brand text-white text-xs font-semibold rounded-pill px-4 py-2"
+            >
+              Retry
+            </button>
           </div>
         )}
 
