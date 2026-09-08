@@ -1,5 +1,6 @@
 import { BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, TrendingUp, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { Capacitor } from "@capacitor/core";
 import TopBar from "../../components/layout/TopBar";
@@ -880,6 +881,7 @@ function GamesTab({ data }: { data: DashboardData }) {
 }
 
 export default function AdminAnalytics() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -904,8 +906,13 @@ export default function AdminAnalytics() {
       headers: { Authorization: `Bearer ${adminKey}` },
       signal: controller.signal,
     })
-      .then((r) => { clearTimeout(timeout); if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then((d) => setData(d))
+      .then((r) => {
+        clearTimeout(timeout);
+        if (r.status === 401) { navigate("/admin/login"); return null; }
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
+      .then((d) => { if (d) setData(d); })
       .catch((e: Error) => setError(e.name === "AbortError" ? "Timed out — tap Retry" : e.message))
       .finally(() => setLoading(false));
     return () => { clearTimeout(timeout); controller.abort(); };
