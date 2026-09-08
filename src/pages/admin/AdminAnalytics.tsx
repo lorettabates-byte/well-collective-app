@@ -37,6 +37,7 @@ interface DashboardData {
   gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
   gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
   appleIap: { active_count: number; total_count: number; new_this_month: number } | null;
+  membersBySource: { email: string; name: string; membership_status: string; membership_source: string; created_at: string | null }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
   memberSections: { member_email: string; section: string; visits: number }[];
@@ -167,7 +168,7 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
       <DAUChart data={data.dau} />
 
-      {/* Apple IAP */}
+      {/* Apple IAP summary */}
       {data.appleIap && (
         <div className="glass-card rounded-card p-4">
           <p className="text-xs font-bold text-text mb-1">Apple App Store</p>
@@ -277,7 +278,96 @@ function OverviewTab({ data }: { data: DashboardData }) {
   );
 }
 
-function MembersTab({ data }: { data: DashboardData }) {
+const API_URL_MEMBERS = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+function MembersSourceSection({ data, onRefresh }: { data: DashboardData; onRefresh: () => void }) {
+  const [tagging, setTagging] = useState<string | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<"apple" | "web">("apple");
+
+  const appleMembers = data.membersBySource.filter((m) => m.membership_source === "iap_apple");
+  const webMembers = data.membersBySource.filter((m) => m.membership_source !== "iap_apple");
+
+  const handleTag = async (email: string, source: "iap_apple" | "web") => {
+    setTagging(email);
+    try {
+      const adminKey = localStorage.getItem("adminToken") ?? "";
+      await fetch(`${API_URL_MEMBERS}/api/analytics/member-source`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminKey}` },
+        body: JSON.stringify({ email, source }),
+      });
+      onRefresh();
+    } finally {
+      setTagging(null);
+    }
+  };
+
+  const shown = sourceFilter === "apple" ? appleMembers : webMembers;
+
+  return (
+    <div className="glass-card rounded-card p-4">
+      <p className="text-xs font-bold text-text mb-0.5">Members by Sign-up Source</p>
+      <p className="text-[10px] text-text-dim mb-3">Apple = joined through App Store · Web = joined through your website</p>
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setSourceFilter("apple")}
+          className={`shrink-0 text-xs px-3 py-1.5 rounded-pill border font-semibold transition-colors ${
+            sourceFilter === "apple" ? "gradient-brand text-white border-transparent" : "bg-surface-2 text-text-muted border-border"
+          }`}
+        >
+          Apple ({appleMembers.length})
+        </button>
+        <button
+          onClick={() => setSourceFilter("web")}
+          className={`shrink-0 text-xs px-3 py-1.5 rounded-pill border font-semibold transition-colors ${
+            sourceFilter === "web" ? "gradient-brand text-white border-transparent" : "bg-surface-2 text-text-muted border-border"
+          }`}
+        >
+          Website ({webMembers.length})
+        </button>
+      </div>
+
+      {shown.length === 0 ? (
+        <p className="text-xs text-text-dim text-center py-4">No members in this group yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {shown.map((m) => (
+            <div key={m.email} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-text truncate">{m.name || m.email}</p>
+                <p className="text-[10px] text-text-dim truncate">{m.email}</p>
+                <p className="text-[10px] text-text-dim">
+                  Status: <span className={m.membership_status === "active" ? "text-green-400" : "text-yellow-400"}>{m.membership_status}</span>
+                  {m.created_at ? ` · Joined ${new Date(m.created_at).toLocaleDateString()}` : ""}
+                </p>
+              </div>
+              {sourceFilter === "web" ? (
+                <button
+                  disabled={tagging === m.email}
+                  onClick={() => handleTag(m.email, "iap_apple")}
+                  className="shrink-0 text-[10px] px-2 py-1 rounded-pill border border-blue-400/40 text-blue-300 font-semibold disabled:opacity-40"
+                >
+                  {tagging === m.email ? "..." : "Mark Apple"}
+                </button>
+              ) : (
+                <button
+                  disabled={tagging === m.email}
+                  onClick={() => handleTag(m.email, "web")}
+                  className="shrink-0 text-[10px] px-2 py-1 rounded-pill border border-border text-text-muted font-semibold disabled:opacity-40"
+                >
+                  {tagging === m.email ? "..." : "Mark Web"}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MembersTab({ data, onRefresh }: { data: DashboardData; onRefresh: () => void }) {
   const [sortBy, setSortBy] = useState<"last_seen" | "points" | "visits" | "streak">("last_seen");
 
   const sorted = [...data.memberStats].sort((a, b) => {
@@ -307,6 +397,8 @@ function MembersTab({ data }: { data: DashboardData }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <MembersSourceSection data={data} onRefresh={onRefresh} />
+
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {SORT_LABELS.map(({ key, label }) => (
           <button
@@ -1006,7 +1098,7 @@ export default function AdminAnalytics() {
         {!loading && !error && data && (
           <>
             {tab === "overview" && <OverviewTab data={data} />}
-            {tab === "members" && <MembersTab data={data} />}
+            {tab === "members" && <MembersTab data={data} onRefresh={() => setRetryCount(n => n + 1)} />}
             {tab === "sections" && <SectionsTab data={data} />}
             {tab === "tutorial" && <TutorialTab data={data} />}
             {tab === "wellcup" && <WellCupTab data={data} />}
