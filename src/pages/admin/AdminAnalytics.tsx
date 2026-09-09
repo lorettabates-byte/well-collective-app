@@ -1,4 +1,4 @@
-import { BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, TrendingUp, Trophy, Users } from "lucide-react";
+import { BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, MapPin, TrendingUp, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
@@ -314,6 +314,133 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
 const API_URL_MEMBERS = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
+const UPCOMING_RETREATS = [
+  { name: "WELL Escape Mexico Legacy 2026", date: "Sept 3-6, 2026" },
+  { name: "WELL Escape Mexico Signature 2026", date: "Sept 10-13, 2026" },
+  { name: "WELL Escape Greece 2027", date: "March 10-14, 2027" },
+];
+
+function RetreatPointsSection({ data }: { data: DashboardData }) {
+  const [retreat, setRetreat] = useState(UPCOMING_RETREATS[0].name);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
+  const [results, setResults] = useState<{ email: string; name: string; awarded: boolean; notified: boolean; reason?: string }[] | null>(null);
+
+  const filtered = data.membersBySource.filter((m) => {
+    const q = search.toLowerCase();
+    return !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
+  });
+
+  const toggle = (email: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(email) ? next.delete(email) : next.add(email);
+      return next;
+    });
+  };
+
+  const handleAward = async () => {
+    if (!selected.size) return;
+    setSending(true);
+    setResults(null);
+    try {
+      const adminKey = localStorage.getItem("adminToken") ?? "";
+      const res = await fetch(`${API_URL_MEMBERS}/api/admin/retreat/award-points`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminKey}` },
+        body: JSON.stringify({ retreat_name: retreat, emails: [...selected] }),
+      });
+      const json = await res.json() as { results: { email: string; awarded: boolean; notified: boolean; reason?: string }[] };
+      // Attach names to results for display
+      const emailToName = Object.fromEntries(data.membersBySource.map((m) => [m.email, m.name]));
+      setResults(json.results.map((r) => ({ ...r, name: emailToName[r.email] || r.email })));
+      setSelected(new Set());
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="glass-card rounded-card p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <MapPin size={13} className="text-brand-light shrink-0" />
+        <p className="text-xs font-bold text-text">WELL Escape Points</p>
+      </div>
+      <p className="text-[10px] text-text-dim mb-3">Award 100 points + send a thank-you notification to retreat attendees</p>
+
+      {/* Retreat picker */}
+      <div className="mb-3">
+        <p className="text-[10px] font-semibold text-text-muted mb-1">Select retreat</p>
+        <div className="flex flex-col gap-1.5">
+          {UPCOMING_RETREATS.map((r) => (
+            <button
+              key={r.name}
+              onClick={() => { setRetreat(r.name); setResults(null); }}
+              className={`text-left px-3 py-2 rounded-card border text-xs transition-colors ${
+                retreat === r.name ? "border-brand-light bg-brand-light/10 text-text font-semibold" : "border-border bg-surface-2 text-text-muted"
+              }`}
+            >
+              {r.name} <span className="text-[10px] text-text-dim font-normal">· {r.date}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Member search + select */}
+      <div className="mb-3">
+        <p className="text-[10px] font-semibold text-text-muted mb-1">Select attendees ({selected.size} selected)</p>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or email..."
+          className="w-full bg-surface-2 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light mb-2"
+        />
+        <div className="max-h-48 overflow-y-auto flex flex-col gap-0.5">
+          {filtered.map((m) => (
+            <button
+              key={m.email}
+              onClick={() => toggle(m.email)}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-card text-left transition-colors ${
+                selected.has(m.email) ? "bg-brand-light/15 border border-brand-light/40" : "border border-transparent hover:bg-surface-2"
+              }`}
+            >
+              <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center ${selected.has(m.email) ? "border-brand-light bg-brand-light" : "border-border"}`}>
+                {selected.has(m.email) && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-text truncate">{m.name || m.email}</p>
+                <p className="text-[10px] text-text-dim truncate">{m.email}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        disabled={!selected.size || sending}
+        onClick={handleAward}
+        className="w-full gradient-brand text-white text-xs font-semibold rounded-pill py-2.5 disabled:opacity-40"
+      >
+        {sending ? "Sending..." : `Award 100 pts + notify ${selected.size || ""} member${selected.size === 1 ? "" : "s"}`}
+      </button>
+
+      {results && (
+        <div className="mt-3 flex flex-col gap-1">
+          {results.map((r) => (
+            <div key={r.email} className={`flex items-center gap-2 px-2 py-1.5 rounded-card text-[10px] ${r.awarded ? "bg-green-500/10 text-green-300" : "bg-surface-2 text-text-muted"}`}>
+              <span className="shrink-0">{r.awarded ? "✓" : "—"}</span>
+              <span className="flex-1 truncate">{r.name}</span>
+              <span className="shrink-0">{r.awarded ? `+100 pts${r.notified ? " · notified" : ""}` : r.reason}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MembersSourceSection({ data, onRefresh }: { data: DashboardData; onRefresh: () => void }) {
   const [tagging, setTagging] = useState<string | null>(null);
   const [sourceFilter, setSourceFilter] = useState<"apple" | "web">("apple");
@@ -431,6 +558,7 @@ function MembersTab({ data, onRefresh }: { data: DashboardData; onRefresh: () =>
 
   return (
     <div className="flex flex-col gap-4">
+      <RetreatPointsSection data={data} />
       <MembersSourceSection data={data} onRefresh={onRefresh} />
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
