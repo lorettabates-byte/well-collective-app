@@ -837,6 +837,13 @@ export default function AdminMusic() {
                       >
                         Push Now
                       </button>
+                      <button
+                        onClick={() => handleDelete(song.id)}
+                        aria-label="Delete queued song"
+                        className="w-7 h-7 flex items-center justify-center rounded-full border border-border text-red-400 shrink-0"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
                     {editingSongId === song.id && (
                       <div className="flex flex-col gap-2 pt-2 border-t border-border">
