@@ -199,6 +199,7 @@ export interface CommunityEvent {
   source?: "local" | "live";
   recurrenceGroupId?: string;
   soldOut?: boolean;
+  isWellEscape?: boolean;
 }
 
 export interface Song {

@@ -19,7 +19,7 @@ interface LivestreamCancellation {
 
 type EventFormValues = Pick<
   CommunityEvent,
-  "title" | "description" | "date" | "time" | "location" | "color" | "image" | "soldOut" | "url"
+  "title" | "description" | "date" | "time" | "location" | "color" | "image" | "soldOut" | "url" | "isWellEscape"
 >;
 
 interface EventFormProps {
@@ -41,6 +41,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
   const [image, setImage] = useState(initial?.image ?? "");
   const [imageError, setImageError] = useState("");
   const [soldOut, setSoldOut] = useState(initial?.soldOut ?? false);
+  const [isWellEscape, setIsWellEscape] = useState(initial?.isWellEscape ?? false);
   const [url, setUrl] = useState(initial?.url ?? "");
 
   // Crop modal state
@@ -158,6 +159,7 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
         color,
         image,
         soldOut,
+        isWellEscape,
         url: url.trim() || undefined,
       },
       repeatsWeekly ? { frequency: "weekly" } : undefined
@@ -349,6 +351,15 @@ function EventForm({ initial, onSubmit, onCancel, submitLabel, allowRecurrence }
           className="w-4 h-4 accent-red-500"
         />
         Mark as sold out
+      </label>
+      <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isWellEscape}
+          onChange={(e) => setIsWellEscape(e.target.checked)}
+          className="w-4 h-4 accent-brand-blue"
+        />
+        WELL Escape retreat (appears in retreat points section)
       </label>
       <div className="flex gap-2 mt-1">
         <button type="submit" className="flex-1 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5">
@@ -633,6 +644,11 @@ export default function AdminEvents() {
                     {event.soldOut && (
                       <span className="text-[10px] font-bold uppercase tracking-wide bg-red-500/15 text-red-400 rounded-pill px-2 py-0.5">
                         Sold Out
+                      </span>
+                    )}
+                    {event.isWellEscape && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide bg-brand-blue/15 text-brand-light rounded-pill px-2 py-0.5">
+                        WELL Escape
                       </span>
                     )}
                   </div>
