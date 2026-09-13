@@ -15,7 +15,7 @@ function seededShuffle(arr: string[], seed: number): string[] {
 
 function todaySeed(): number {
   const start = new Date("2024-01-01").getTime();
-  return Math.floor((Date.now() - start) / 86400000);
+  return Math.floor((Date.now() - 5 * 3600000 - start) / 86400000);
 }
 
 function lettersForRound(round: number): string[] {
@@ -41,7 +41,7 @@ const WIN_WORDS = 5;
 
 interface Props { onComplete: (score?: number) => void; alreadyDone: boolean }
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
 
 export default function AnagramGame({ onComplete, alreadyDone }: Props) {
   const [relaxed, setRelaxed] = useState(() => localStorage.getItem("anagram-relaxed") === "1");

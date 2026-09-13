@@ -9,9 +9,11 @@ import MindGardenPuzzle from "./MindGardenPuzzle";
 import { logActivity } from "../../utils/wellCup";
 import { useApp } from "../../store/AppContext";
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+// Offset matches the server's 5-hour UTC day boundary (5 AM UTC = 1 AM ET in summer).
+function todayISO() { return new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10); }
 function todayGameIdx() {
-  return Math.floor((Date.now() - new Date("2024-01-01").getTime()) / 86400000) % 4;
+  const offsetNow = Date.now() - 5 * 3600000;
+  return Math.floor((offsetNow - new Date("2024-01-01").getTime()) / 86400000) % 4;
 }
 
 // ── Rich visual preview panels ──────────────────────────────────────────────

@@ -10,7 +10,7 @@ const LETTER_POOL = "AAABBBCCDDDEEEEEEFFFGGGHHIIIIIJKLLLLMMMNNNNNOOOOOPPQRRRRRSS
 
 function todaySeed(): number {
   const start = new Date("2024-01-01").getTime();
-  return Math.floor((Date.now() - start) / 86400000);
+  return Math.floor((Date.now() - 5 * 3600000 - start) / 86400000);
 }
 
 function seededRng(seed: number) {
@@ -21,7 +21,7 @@ function seededRng(seed: number) {
   };
 }
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
 
 function buildGrid(round = 0): string[][] {
   const rng = seededRng(todaySeed() * 13 + 5 + round * 7919);

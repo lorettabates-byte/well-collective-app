@@ -14,8 +14,9 @@ import { useApp } from "../../store/AppContext";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
+// Offset matches the server's 5-hour UTC day boundary (5 AM UTC = 1 AM ET in summer).
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
 }
 
 export const GAMES = [
@@ -65,7 +66,7 @@ export const GAMES = [
 
 function todayGameIdx(): number {
   const start = new Date("2024-01-01").getTime();
-  const day = Math.floor((Date.now() - start) / 86400000);
+  const day = Math.floor((Date.now() - 5 * 3600000 - start) / 86400000);
   return day % GAMES.length;
 }
 
