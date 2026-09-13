@@ -2,6 +2,8 @@ import UIKit
 import AVFoundation
 import Capacitor
 import UserNotifications
+import FirebaseCore
+import FirebaseMessaging
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -9,6 +11,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        FirebaseApp.configure()
+
         // Required for @capacitor-community/barcode-scanner — makes the WKWebView
         // background transparent so the native camera overlay is visible during scan.
         self.window?.backgroundColor = UIColor.clear
@@ -29,6 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Register for remote notifications so APNs delivers push to this device.
         UNUserNotificationCenter.current().delegate = self
+        Messaging.messaging().delegate = self
         application.registerForRemoteNotifications()
 
         return true
@@ -64,6 +69,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+}
+
+extension AppDelegate: MessagingDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        // FCM token is handled by the Capacitor push-notifications plugin
+        NotificationCenter.default.post(name: Notification.Name("FCMToken"), object: fcmToken)
+    }
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
