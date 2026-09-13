@@ -1,18 +1,20 @@
 import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
 export function isPushSupported(): boolean {
+  if (Capacitor.isNativePlatform()) return true;
   return "serviceWorker" in navigator && "PushManager" in window;
 }
 
 function notSupportedMessage(): string {
   if (Capacitor.isNativePlatform()) {
     if (Capacitor.getPlatform() === "android") {
-      return "To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.";
+      return "To enable notifications, go to your phone's Settings > Apps > WELL with Loretta > Notifications and turn them on.";
     }
-    return "To enable notifications, go to Settings > WELL Collective > Notifications on your device.";
+    return "To enable notifications, go to Settings > WELL with Loretta > Notifications on your device.";
   }
   return "Notifications aren't supported in this browser. On iPhone or iPad, use Share > Add to Home Screen first, then enable notifications from there.";
 }
@@ -20,9 +22,9 @@ function notSupportedMessage(): string {
 function deniedMessage(): string {
   if (Capacitor.isNativePlatform()) {
     if (Capacitor.getPlatform() === "android") {
-      return "Notifications are blocked. Go to Settings > Apps > WELL Collective > Notifications to enable them.";
+      return "Notifications are blocked. Go to Settings > Apps > WELL with Loretta > Notifications to enable them.";
     }
-    return "Notifications are blocked. Go to Settings > WELL Collective > Notifications to enable them.";
+    return "Notifications are blocked. Go to Settings > WELL with Loretta > Notifications to enable them.";
   }
   return "Notifications are blocked for this app. Enable them in your device or browser settings, then try again.";
 }
@@ -43,28 +45,67 @@ export interface PushSubscribeResult {
   reason?: string;
 }
 
-/**
- * Requests notification permission and, if the backend is configured,
- * subscribes to real push notifications via the service worker. Returns
- * success=true if notification permission was granted (regardless of
- * whether the backend push subscription succeeded), so local in-app
- * notifications keep working even without a configured backend. On
- * failure, `reason` explains why so the UI can surface it.
- */
-export async function subscribeToPush(userEmail?: string): Promise<PushSubscribeResult> {
-  const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult> {
+  if (!API_URL) return { success: false, reason: "Push notifications aren't configured on the server." };
 
-  if (!isAndroidNative) {
-    if (typeof Notification === "undefined") {
-      return { success: false, reason: notSupportedMessage() };
+  try {
+    let permResult = await PushNotifications.checkPermissions();
+
+    if (permResult.receive === "prompt") {
+      permResult = await PushNotifications.requestPermissions();
     }
-    if (Notification.permission === "denied") {
+
+    if (permResult.receive !== "granted") {
       return { success: false, reason: deniedMessage() };
     }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      return { success: false, reason: "Notification permission was not granted." };
-    }
+
+    await PushNotifications.register();
+
+    const token = await new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Token registration timed out")), 15000);
+      PushNotifications.addListener("registration", (t) => {
+        clearTimeout(timeout);
+        resolve(t.value);
+      });
+      PushNotifications.addListener("registrationError", (err) => {
+        clearTimeout(timeout);
+        reject(new Error(err.error));
+      });
+    });
+
+    const platform = Capacitor.getPlatform();
+    await fetch(`${API_URL}/api/device-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, platform, userEmail }),
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error("Native push registration failed:", err);
+    return { success: false, reason: "Something went wrong setting up push notifications. Please try again." };
+  }
+}
+
+/**
+ * Requests notification permission and registers for push.
+ * On iOS/Android uses the native Capacitor plugin (FCM/APNs).
+ * On web/PWA uses Web Push (VAPID via service worker).
+ */
+export async function subscribeToPush(userEmail?: string): Promise<PushSubscribeResult> {
+  if (Capacitor.isNativePlatform()) {
+    return subscribeNative(userEmail);
+  }
+
+  if (typeof Notification === "undefined") {
+    return { success: false, reason: notSupportedMessage() };
+  }
+  if (Notification.permission === "denied") {
+    return { success: false, reason: deniedMessage() };
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    return { success: false, reason: "Notification permission was not granted." };
   }
 
   if (!isPushSupported()) {
@@ -109,19 +150,20 @@ export async function subscribeToPush(userEmail?: string): Promise<PushSubscribe
 }
 
 /**
- * Called silently on app startup when pushEnabled=true.
- * On Android the OS can kill the WebView at midnight, which invalidates the
- * push subscription. This re-registers silently so the user doesn't lose
- * notifications and doesn't need to reinstall.
+ * Called silently on app startup when pushEnabled=true to re-register
+ * the native token (which can rotate) or revalidate the web subscription.
  */
 export async function revalidatePushSubscription(userEmail?: string): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    await subscribeNative(userEmail).catch(() => {});
+    return;
+  }
+
   if (!isPushSupported() || !API_URL || !VAPID_PUBLIC_KEY) return;
   try {
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
-      // Subscription was dropped (Android OS killed it) — re-subscribe silently.
-      // Only possible if permission is already granted; never prompts here.
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -131,8 +173,6 @@ export async function revalidatePushSubscription(userEmail?: string): Promise<vo
         return;
       }
     }
-    // Always re-POST the subscription so the server has the latest endpoint
-    // (Android FCM rotates endpoints after a force-kill).
     const payload = { ...subscription.toJSON(), userEmail: userEmail || undefined };
     await fetch(`${API_URL}/api/subscribe`, {
       method: "POST",
@@ -144,7 +184,30 @@ export async function revalidatePushSubscription(userEmail?: string): Promise<vo
   }
 }
 
-export async function unsubscribeFromPush(): Promise<void> {
+export async function unsubscribeFromPush(userEmail?: string): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    if (!API_URL) return;
+    try {
+      const permResult = await PushNotifications.checkPermissions();
+      if (permResult.receive === "granted") {
+        await PushNotifications.register();
+        const token = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("timed out")), 10000);
+          PushNotifications.addListener("registration", (t) => { clearTimeout(timeout); resolve(t.value); });
+          PushNotifications.addListener("registrationError", (err) => { clearTimeout(timeout); reject(new Error(err.error)); });
+        });
+        await fetch(`${API_URL}/api/device-token`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+      }
+    } catch (err) {
+      console.warn("Native unsubscribe failed (non-fatal):", err);
+    }
+    return;
+  }
+
   if (!isPushSupported() || !API_URL) return;
 
   const registration = await navigator.serviceWorker.ready;
