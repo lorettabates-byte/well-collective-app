@@ -120,7 +120,7 @@ interface PersistedState {
 const DEFAULT_STATE: PersistedState = {
   user: CURRENT_USER,
   categories: CATEGORIES,
-  threads: THREADS,
+  threads: [],
   inspirations: INSPIRATIONS,
   events: EVENTS,
   notifications: NOTIFICATIONS,
