@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import TopBar from "../components/layout/TopBar";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
+import { todayISO } from "../utils/format";
 import type { Recipe, RecipeNutrition } from "../types";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -583,7 +584,7 @@ export default function Nutrition() {
   const WATER_GOAL = 8;
   const GLASS_OZ = 8;
   const WATER_GOAL_OZ = WATER_GOAL * GLASS_OZ;
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayISO();
   const waterKey = `well-water-${todayIso}-${user.email}`;
   const waterOzKey = `well-water-oz-${todayIso}-${user.email}`;
   const [waterOz, setWaterOz] = useState<number>(() => {
