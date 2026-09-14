@@ -31,5 +31,11 @@ export default defineConfig({
     // Older Safari/iOS versions (pre-16.4) are still in use by some members;
     // widen the JS syntax target so the bundle parses on those devices too.
     target: ['es2020', 'safari14', 'ios14'],
+    // Capacitor native plugins are not available in the web/PWA bundle;
+    // Rolldown/Vite would error trying to resolve them. They are only used
+    // at runtime on iOS/Android where Capacitor provides the real module.
+    rolldownOptions: {
+      external: ['@capacitor/push-notifications'],
+    },
   },
 })
