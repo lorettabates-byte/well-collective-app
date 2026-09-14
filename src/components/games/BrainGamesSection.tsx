@@ -297,8 +297,8 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       </div>
       <p className="text-xs text-text-muted mb-3 mt-2">Daily mind challenges that sharpen focus, reduce stress, and earn WELL Cup points.</p>
 
-      {/* ── INCOMING CHALLENGES — hidden while a game is open so timed games aren't interrupted ── */}
-      {incoming.length > 0 && !openGame && (
+      {/* ── INCOMING CHALLENGES — hidden while a game is actively running; reappear once the game finishes ── */}
+      {incoming.length > 0 && (!openGame || doneTodaySet.has(openGame)) && (
         <div className="mb-3 flex flex-col gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-text-dim flex items-center gap-1.5">
             <Users size={10} className="text-brand-light" /> Tribe invites waiting for you
@@ -348,7 +348,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
       )}
 
       {/* ── SENT CHALLENGES (pending) ── */}
-      {outgoing.length > 0 && !openGame && (
+      {outgoing.length > 0 && (!openGame || doneTodaySet.has(openGame)) && (
         <div className="mb-3 flex flex-col gap-1.5 p-3 rounded-xl border border-border/40" style={{ background: "rgba(255,255,255,0.02)" }}>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-text-dim flex items-center gap-1.5">
             <Trophy size={10} className="text-brand-light" /> Invites sent — waiting for response
