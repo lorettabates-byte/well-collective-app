@@ -37,7 +37,7 @@ export default function EventCard({ event, compact }: EventCardProps) {
       const res = await fetch(`${API_URL}/api/live-events/${event.id}/rsvp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: user.id }),
+        body: JSON.stringify({ memberId: user.id, memberEmail: user.email, eventDate: event.date }),
       });
       if (res.ok) {
         const data = await res.json();
