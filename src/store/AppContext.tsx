@@ -9,7 +9,6 @@ import {
   EVENTS,
   INSPIRATIONS,
   NOTIFICATIONS,
-  THREADS,
 } from "../data/mockData";
 import { logEvent } from "../utils/analytics";
 import { getFallbackRecipe } from "../data/nutritionLibrary";

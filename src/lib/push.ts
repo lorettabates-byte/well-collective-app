@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { PushNotifications } from "@capacitor/push-notifications";
+import { PushNotifications, type Token, type RegistrationError } from "@capacitor/push-notifications";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
@@ -63,11 +63,11 @@ async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult>
 
     const token = await new Promise<string>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error("Token registration timed out")), 15000);
-      PushNotifications.addListener("registration", (t) => {
+      PushNotifications.addListener("registration", (t: Token) => {
         clearTimeout(timeout);
         resolve(t.value);
       });
-      PushNotifications.addListener("registrationError", (err) => {
+      PushNotifications.addListener("registrationError", (err: RegistrationError) => {
         clearTimeout(timeout);
         reject(new Error(err.error));
       });
@@ -184,7 +184,7 @@ export async function revalidatePushSubscription(userEmail?: string): Promise<vo
   }
 }
 
-export async function unsubscribeFromPush(userEmail?: string): Promise<void> {
+export async function unsubscribeFromPush(_userEmail?: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     if (!API_URL) return;
     try {
@@ -193,8 +193,8 @@ export async function unsubscribeFromPush(userEmail?: string): Promise<void> {
         await PushNotifications.register();
         const token = await new Promise<string>((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error("timed out")), 10000);
-          PushNotifications.addListener("registration", (t) => { clearTimeout(timeout); resolve(t.value); });
-          PushNotifications.addListener("registrationError", (err) => { clearTimeout(timeout); reject(new Error(err.error)); });
+          PushNotifications.addListener("registration", (t: Token) => { clearTimeout(timeout); resolve(t.value); });
+          PushNotifications.addListener("registrationError", (err: RegistrationError) => { clearTimeout(timeout); reject(new Error(err.error)); });
         });
         await fetch(`${API_URL}/api/device-token`, {
           method: "DELETE",
