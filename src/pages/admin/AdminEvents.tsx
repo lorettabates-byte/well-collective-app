@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarX, ChevronDown, ChevronUp, Crop, ImagePlus, Pencil, Plus, Save, Star, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarX, ChevronDown, ChevronUp, Crop, Gift, ImagePlus, Pencil, Plus, Save, Star, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { useEventsFeed } from "../../hooks/useEventsFeed";
@@ -488,6 +488,75 @@ export default function AdminEvents() {
     }
   };
 
+  // WELL Escape point awarder state
+  const [escapeExpandedId, setEscapeExpandedId] = useState<string | null>(null);
+  const [escapeMembers, setEscapeMembers] = useState<{ email: string; name: string; avatar?: string }[]>([]);
+  const [escapeMembersLoading, setEscapeMembersLoading] = useState(false);
+  const [escapeSelected, setEscapeSelected] = useState<Set<string>>(new Set());
+  const [escapeManualEmail, setEscapeManualEmail] = useState("");
+  const [escapeAwarding, setEscapeAwarding] = useState(false);
+  const [escapeStatus, setEscapeStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const openEscapeAwarder = async (eventId: string) => {
+    if (escapeExpandedId === eventId) { setEscapeExpandedId(null); return; }
+    setEscapeExpandedId(eventId);
+    setEscapeStatus(null);
+    setEscapeManualEmail("");
+    setEscapeMembersLoading(true);
+    setEscapeMembers([]);
+    setEscapeSelected(new Set());
+    if (!API_URL) { setEscapeMembersLoading(false); return; }
+    try {
+      const res = await fetch(`${API_URL}/api/events/${eventId}/rsvp-members`, { headers: getAuthHeaders() });
+      const data = res.ok ? await res.json() : { members: [] };
+      const members = data.members ?? [];
+      setEscapeMembers(members);
+      setEscapeSelected(new Set(members.map((m: { email: string }) => m.email)));
+    } catch {
+      setEscapeMembers([]);
+    } finally {
+      setEscapeMembersLoading(false);
+    }
+  };
+
+  const addManualEmail = () => {
+    const email = escapeManualEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!escapeMembers.find((m) => m.email === email)) {
+      setEscapeMembers((prev) => [...prev, { email, name: email }]);
+    }
+    setEscapeSelected((prev) => new Set([...prev, email]));
+    setEscapeManualEmail("");
+  };
+
+  const handleEscapeAward = async (eventTitle: string) => {
+    if (!API_URL || escapeSelected.size === 0) return;
+    setEscapeAwarding(true);
+    setEscapeStatus(null);
+    try {
+      const res = await fetch(`${API_URL}/api/events/well-escape-award`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ eventTitle, emails: [...escapeSelected] }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const awarded = (data.results as { awarded: boolean }[]).filter((r) => r.awarded).length;
+        const skipped = escapeSelected.size - awarded;
+        setEscapeStatus({
+          type: "success",
+          message: `Awarded 100 pts to ${awarded} member${awarded !== 1 ? "s" : ""}${skipped > 0 ? ` (${skipped} already received points for this retreat)` : ""}. Notifications sent.`,
+        });
+      } else {
+        setEscapeStatus({ type: "error", message: data.error ?? "Failed to award points" });
+      }
+    } catch {
+      setEscapeStatus({ type: "error", message: "Failed to award points" });
+    } finally {
+      setEscapeAwarding(false);
+    }
+  };
+
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const sortedLive = [...liveEvents].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -583,6 +652,115 @@ export default function AdminEvents() {
             </div>
           )}
         </div>
+
+        {/* WELL Escape Point Awarder */}
+        {sorted.filter((e) => e.isWellEscape).length > 0 && (
+          <div className="glass-card rounded-card p-4 mb-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Gift size={15} className="text-brand-light" />
+              <h3 className="text-sm font-bold text-text">WELL Escape Points</h3>
+            </div>
+            <p className="text-xs text-text-muted mb-3">
+              Award 100 points and send a push notification to everyone who attended a WELL Escape retreat.
+            </p>
+            <div className="flex flex-col gap-2">
+              {sorted.filter((e) => e.isWellEscape).map((event) => (
+                <div key={event.id}>
+                  <button
+                    onClick={() => openEscapeAwarder(event.id)}
+                    className="w-full flex items-center justify-between gap-2 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-left"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-text truncate">{event.title}</p>
+                      <p className="text-xs text-text-muted">{formatDateLong(event.date)}</p>
+                    </div>
+                    {escapeExpandedId === event.id ? <ChevronUp size={14} className="shrink-0 text-text-muted" /> : <ChevronDown size={14} className="shrink-0 text-text-muted" />}
+                  </button>
+
+                  {escapeExpandedId === event.id && (
+                    <div className="mt-2 p-3 bg-surface-2 rounded-card border border-border flex flex-col gap-3">
+                      {escapeMembersLoading && <p className="text-xs text-text-muted">Loading RSVPs...</p>}
+
+                      {!escapeMembersLoading && (
+                        <>
+                          {escapeMembers.length > 0 && (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">RSVPs ({escapeMembers.length})</p>
+                                <button
+                                  onClick={() => setEscapeSelected(
+                                    escapeSelected.size === escapeMembers.length
+                                      ? new Set()
+                                      : new Set(escapeMembers.map((m) => m.email))
+                                  )}
+                                  className="text-[11px] text-brand-light font-semibold"
+                                >
+                                  {escapeSelected.size === escapeMembers.length ? "Deselect all" : "Select all"}
+                                </button>
+                              </div>
+                              {escapeMembers.map((m) => (
+                                <label key={m.email} className="flex items-center gap-2.5 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={escapeSelected.has(m.email)}
+                                    onChange={(e) => {
+                                      const next = new Set(escapeSelected);
+                                      e.target.checked ? next.add(m.email) : next.delete(m.email);
+                                      setEscapeSelected(next);
+                                    }}
+                                    className="w-4 h-4 accent-brand-blue shrink-0"
+                                  />
+                                  <span className="text-sm text-text">{m.name}</span>
+                                  <span className="text-xs text-text-dim truncate">{m.email}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                          {escapeMembers.length === 0 && (
+                            <p className="text-xs text-text-muted">No RSVPs found. Add emails manually below.</p>
+                          )}
+
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              value={escapeManualEmail}
+                              onChange={(e) => setEscapeManualEmail(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && addManualEmail()}
+                              placeholder="Add email manually..."
+                              className="flex-1 bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                            />
+                            <button
+                              type="button"
+                              onClick={addManualEmail}
+                              className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted"
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          {escapeStatus && (
+                            <p className={`text-xs ${escapeStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+                              {escapeStatus.message}
+                            </p>
+                          )}
+
+                          <button
+                            onClick={() => handleEscapeAward(event.title)}
+                            disabled={escapeSelected.size === 0 || escapeAwarding}
+                            className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 disabled:opacity-50"
+                          >
+                            <Gift size={14} />
+                            {escapeAwarding ? "Awarding..." : `Award 100 pts + Notify (${escapeSelected.size})`}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {showCreate ? (
           <EventForm
