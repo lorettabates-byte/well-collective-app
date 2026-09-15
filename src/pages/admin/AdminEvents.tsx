@@ -576,10 +576,10 @@ export default function AdminEvents() {
           message: `Awarded 100 pts to ${awarded} member${awarded !== 1 ? "s" : ""}${skipped > 0 ? ` (${skipped} already received points for this retreat)` : ""}. Notifications sent.`,
         });
       } else {
-        setEscapeStatus({ type: "error", message: data.error ?? "Failed to award points" });
+        setEscapeStatus({ type: "error", message: data.error ?? `Error ${res.status}` });
       }
-    } catch {
-      setEscapeStatus({ type: "error", message: "Failed to award points" });
+    } catch (err) {
+      setEscapeStatus({ type: "error", message: err instanceof Error ? err.message : "Failed to award points" });
     } finally {
       setEscapeAwarding(false);
     }
