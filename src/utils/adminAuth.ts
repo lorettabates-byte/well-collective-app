@@ -13,18 +13,30 @@ let _admin: string | null = null;
 
 async function prefsGet(key: string): Promise<string | null> {
   if (!Capacitor.isNativePlatform()) return localStorage.getItem(key);
-  const { value } = await Preferences.get({ key });
-  return value;
+  try {
+    const { value } = await Preferences.get({ key });
+    return value;
+  } catch {
+    return localStorage.getItem(key);
+  }
 }
 
 async function prefsSet(key: string, value: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) { localStorage.setItem(key, value); return; }
-  await Preferences.set({ key, value });
+  try {
+    await Preferences.set({ key, value });
+  } catch {
+    localStorage.setItem(key, value);
+  }
 }
 
 async function prefsRemove(key: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) { localStorage.removeItem(key); return; }
-  await Preferences.remove({ key });
+  try {
+    await Preferences.remove({ key });
+  } catch {
+    localStorage.removeItem(key);
+  }
 }
 
 // Call once at app startup to warm the in-memory cache.
