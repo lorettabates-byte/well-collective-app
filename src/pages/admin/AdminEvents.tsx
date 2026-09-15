@@ -499,16 +499,27 @@ export default function AdminEvents() {
   // Manual retreat awarder (for past retreats not in the event list)
   const MANUAL_RETREAT_ID = "__manual__";
   const [manualRetreatName, setManualRetreatName] = useState("");
+  // All members for autocomplete
+  const [allMembers, setAllMembers] = useState<{ email: string; name: string }[]>([]);
+  const [emailSuggestions, setEmailSuggestions] = useState<{ email: string; name: string }[]>([]);
 
   const openEscapeAwarder = async (eventId: string) => {
     if (escapeExpandedId === eventId) { setEscapeExpandedId(null); return; }
     setEscapeExpandedId(eventId);
     setEscapeStatus(null);
     setEscapeManualEmail("");
+    setEmailSuggestions([]);
     setEscapeMembersLoading(true);
     setEscapeMembers([]);
     setEscapeSelected(new Set());
     if (!API_URL) { setEscapeMembersLoading(false); return; }
+    // Load full member list for autocomplete if not yet loaded
+    if (allMembers.length === 0) {
+      fetch(`${API_URL}/api/admin/members`, { headers: getAuthHeaders() })
+        .then((r) => r.ok ? r.json() : { members: [] })
+        .then((d) => setAllMembers((d.members ?? []).map((m: { email: string; name: string }) => ({ email: m.email, name: m.name }))))
+        .catch(() => {});
+    }
     try {
       const res = await fetch(`${API_URL}/api/events/${eventId}/rsvp-members`, { headers: getAuthHeaders() });
       const data = res.ok ? await res.json() : { members: [] };
@@ -522,14 +533,28 @@ export default function AdminEvents() {
     }
   };
 
-  const addManualEmail = () => {
-    const email = escapeManualEmail.trim().toLowerCase();
+  const handleEmailInput = (value: string) => {
+    setEscapeManualEmail(value);
+    if (value.trim().length < 1) { setEmailSuggestions([]); return; }
+    const q = value.toLowerCase();
+    const src = allMembers.length > 0 ? allMembers : [];
+    setEmailSuggestions(
+      src
+        .filter((m) => (m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)) && !escapeSelected.has(m.email))
+        .slice(0, 6)
+    );
+  };
+
+  const addManualEmail = (emailOverride?: string) => {
+    const email = (emailOverride ?? escapeManualEmail).trim().toLowerCase();
     if (!email) return;
+    const match = allMembers.find((m) => m.email === email);
     if (!escapeMembers.find((m) => m.email === email)) {
-      setEscapeMembers((prev) => [...prev, { email, name: email }]);
+      setEscapeMembers((prev) => [...prev, { email, name: match?.name ?? email }]);
     }
     setEscapeSelected((prev) => new Set([...prev, email]));
     setEscapeManualEmail("");
+    setEmailSuggestions([]);
   };
 
   const handleEscapeAward = async (eventTitle: string) => {
@@ -722,19 +747,36 @@ export default function AdminEvents() {
                             <p className="text-xs text-text-muted">No RSVPs found. Add emails manually below.</p>
                           )}
 
-                          <div className="flex gap-2">
-                            <input
-                              type="email"
-                              value={escapeManualEmail}
-                              onChange={(e) => setEscapeManualEmail(e.target.value)}
-                              onKeyDown={(e) => e.key === "Enter" && addManualEmail()}
-                              placeholder="Add email manually..."
-                              className="flex-1 bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-                            />
+                          <div className="relative flex gap-2">
+                            <div className="flex-1 relative">
+                              <input
+                                type="text"
+                                value={escapeManualEmail}
+                                onChange={(e) => handleEmailInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addManualEmail(); } }}
+                                placeholder="Search name or email..."
+                                className="w-full bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                              />
+                              {emailSuggestions.length > 0 && (
+                                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-surface border border-border rounded-card shadow-lg overflow-hidden">
+                                  {emailSuggestions.map((s) => (
+                                    <button
+                                      key={s.email}
+                                      type="button"
+                                      onMouseDown={(e) => { e.preventDefault(); addManualEmail(s.email); }}
+                                      className="w-full flex flex-col px-3 py-2 text-left hover:bg-surface-2 transition-colors"
+                                    >
+                                      <span className="text-xs font-semibold text-text">{s.name}</span>
+                                      <span className="text-[10px] text-text-dim">{s.email}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                             <button
                               type="button"
-                              onClick={addManualEmail}
-                              className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted"
+                              onClick={() => addManualEmail()}
+                              className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted shrink-0"
                             >
                               Add
                             </button>
@@ -771,8 +813,15 @@ export default function AdminEvents() {
                       setEscapeExpandedId(MANUAL_RETREAT_ID);
                       setEscapeStatus(null);
                       setEscapeManualEmail("");
+                      setEmailSuggestions([]);
                       setEscapeMembers([]);
                       setEscapeSelected(new Set());
+                      if (API_URL && allMembers.length === 0) {
+                        fetch(`${API_URL}/api/admin/members`, { headers: getAuthHeaders() })
+                          .then((r) => r.ok ? r.json() : { members: [] })
+                          .then((d) => setAllMembers((d.members ?? []).map((m: { email: string; name: string }) => ({ email: m.email, name: m.name }))))
+                          .catch(() => {});
+                      }
                     }
                   }}
                   className="w-full flex items-center justify-between gap-2 bg-surface-2 border border-dashed border-border rounded-card px-3 py-2.5 text-left"
@@ -831,19 +880,36 @@ export default function AdminEvents() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        value={escapeManualEmail}
-                        onChange={(e) => setEscapeManualEmail(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addManualEmail()}
-                        placeholder="Add attendee email..."
-                        className="flex-1 bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
-                      />
+                    <div className="relative flex gap-2">
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          value={escapeManualEmail}
+                          onChange={(e) => handleEmailInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addManualEmail(); } }}
+                          placeholder="Search name or email..."
+                          className="w-full bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                        />
+                        {emailSuggestions.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-surface border border-border rounded-card shadow-lg overflow-hidden">
+                            {emailSuggestions.map((s) => (
+                              <button
+                                key={s.email}
+                                type="button"
+                                onMouseDown={(e) => { e.preventDefault(); addManualEmail(s.email); }}
+                                className="w-full flex flex-col px-3 py-2 text-left hover:bg-surface-2 transition-colors"
+                              >
+                                <span className="text-xs font-semibold text-text">{s.name}</span>
+                                <span className="text-[10px] text-text-dim">{s.email}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <button
                         type="button"
-                        onClick={addManualEmail}
-                        className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted"
+                        onClick={() => addManualEmail()}
+                        className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted shrink-0"
                       >
                         Add
                       </button>
