@@ -369,7 +369,7 @@ export default function FeatureTourModal({
               ) : (
                 <div className="w-full flex flex-col gap-2">
                   <a
-                    href="https://apps.apple.com/app/well-with-loretta/id6504862678"
+                    href="https://apps.apple.com/us/app/well-with-loretta/id6789703038"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={handleAppDownloaded}
