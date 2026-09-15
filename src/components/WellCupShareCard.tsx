@@ -115,6 +115,18 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+async function fetchImageAsDataUrl(url: string): Promise<string> {
+  const response = await fetch(url, { mode: "cors", cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 
 function drawRoundedRect(
   ctx: CanvasRenderingContext2D,
@@ -302,15 +314,16 @@ async function generateCard(
   // Per-period decorations
   drawDecorations(ctx, period, W, H, isIG, theme);
 
-  // Cache-bust the avatar to avoid CORS taint from a non-CORS cached response
-  // (the preview <img> loads without crossOrigin, caching the resource; adding ?cb= forces a fresh CORS fetch)
-  const avatarCacheBusted = winner.avatar
-    ? `${winner.avatar}${winner.avatar.includes("?") ? "&" : "?"}cb=${Date.now()}`
-    : null;
-
+  // Fetch avatar as a data URL via fetch() so canvas never gets tainted —
+  // loading a data: URL into canvas bypasses all CORS restrictions
   const [logoImg, avatarImg] = await Promise.all([
     logoDataUrl ? loadImage(logoDataUrl).catch(() => null) : Promise.resolve(null),
-    avatarCacheBusted ? loadImage(avatarCacheBusted).catch(() => null) : Promise.resolve(null),
+    winner.avatar
+      ? (winner.avatar.startsWith("data:")
+          ? loadImage(winner.avatar)
+          : fetchImageAsDataUrl(winner.avatar).then((dataUrl) => loadImage(dataUrl))
+        ).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   const initials = winner.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
