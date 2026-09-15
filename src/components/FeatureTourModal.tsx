@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Music,
   Share2,
+  Smartphone,
   Sparkles,
   Star,
   Trophy,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { logActivity } from "../utils/wellCup";
 import { logEvent } from "../utils/analytics";
 
@@ -36,7 +38,7 @@ interface Slide {
   body: string;
   findIt?: NavStop[];
   avatarDemo?: boolean;
-  interactive?: "notifications";
+  interactive?: "notifications" | "download_app";
   introPoints?: boolean;
   referralDemo?: boolean;
 }
@@ -91,6 +93,12 @@ const SLIDES: Slide[] = [
     title: "Turn On Notifications 🔔",
     body: "Never miss a class, a community post, or a WELL Cup win! Enable notifications and earn 20 bonus points.",
     interactive: "notifications",
+  },
+  {
+    icon: Smartphone,
+    title: "Download the App",
+    body: "Get the full native experience — lock screen widgets, faster load times, and seamless notifications. Download WELL with Loretta from the App Store or Google Play and earn 25 bonus points!",
+    interactive: "download_app",
   },
 ];
 
@@ -165,8 +173,10 @@ export default function FeatureTourModal({
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [notifDone, setNotifDone] = useState(false);
+  const [appDownloadDone, setAppDownloadDone] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
     if (!API_URL || !userEmail) return;
@@ -195,6 +205,13 @@ export default function FeatureTourModal({
     setNotifDone(true);
   };
 
+  const handleAppDownloaded = () => {
+    if (userEmail) {
+      logActivity(userEmail, "add_to_homescreen").catch(() => {});
+    }
+    setAppDownloadDone(true);
+  };
+
   const handleNext = () => {
     if (isLast) {
       if (userEmail) {
@@ -203,7 +220,22 @@ export default function FeatureTourModal({
       }
       onClose(true);
     } else {
-      const nextStep = step + 1;
+      let nextStep = step + 1;
+      // Skip the download slide entirely if already on native
+      if (isNative && SLIDES[nextStep]?.interactive === "download_app") {
+        if (userEmail) {
+          logActivity(userEmail, "add_to_homescreen").catch(() => {});
+        }
+        nextStep += 1;
+      }
+      if (nextStep >= SLIDES.length) {
+        if (userEmail) {
+          logActivity(userEmail, "tutorial_complete").catch(() => {});
+          logEvent(userEmail, "tutorial_complete", { total_steps: SLIDES.length });
+        }
+        onClose(true);
+        return;
+      }
       if (userEmail) {
         logEvent(userEmail, "tutorial_step", {
           step: nextStep,
@@ -323,6 +355,48 @@ export default function FeatureTourModal({
                 </button>
               )}
               <PointsBadge points={20} />
+            </div>
+          )}
+
+          {/* Interactive: Download app */}
+          {slide.interactive === "download_app" && (
+            <div className="w-full flex flex-col items-center gap-2">
+              {appDownloadDone ? (
+                <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+                  <CheckCircle2 size={16} className="text-green-400" />
+                  Amazing — welcome to the full experience!
+                </div>
+              ) : (
+                <div className="w-full flex flex-col gap-2">
+                  <a
+                    href="https://apps.apple.com/app/well-with-loretta/id6504862678"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleAppDownloaded}
+                    className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 shadow-glow flex items-center justify-center gap-2"
+                  >
+                    <Smartphone size={15} />
+                    Download on the App Store
+                  </a>
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.wellcollective.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleAppDownloaded}
+                    className="w-full bg-surface-2 border border-border text-text text-sm font-semibold rounded-pill py-2.5 flex items-center justify-center gap-2"
+                  >
+                    <Smartphone size={15} />
+                    Get it on Google Play
+                  </a>
+                  <button
+                    onClick={handleAppDownloaded}
+                    className="text-xs text-text-dim mt-1"
+                  >
+                    I already have it
+                  </button>
+                </div>
+              )}
+              <PointsBadge points={25} />
             </div>
           )}
 
