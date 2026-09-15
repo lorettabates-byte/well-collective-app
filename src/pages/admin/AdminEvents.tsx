@@ -496,6 +496,9 @@ export default function AdminEvents() {
   const [escapeManualEmail, setEscapeManualEmail] = useState("");
   const [escapeAwarding, setEscapeAwarding] = useState(false);
   const [escapeStatus, setEscapeStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  // Manual retreat awarder (for past retreats not in the event list)
+  const MANUAL_RETREAT_ID = "__manual__";
+  const [manualRetreatName, setManualRetreatName] = useState("");
 
   const openEscapeAwarder = async (eventId: string) => {
     if (escapeExpandedId === eventId) { setEscapeExpandedId(null); return; }
@@ -654,8 +657,7 @@ export default function AdminEvents() {
         </div>
 
         {/* WELL Escape Point Awarder */}
-        {sorted.filter((e) => e.isWellEscape).length > 0 && (
-          <div className="glass-card rounded-card p-4 mb-4">
+        <div className="glass-card rounded-card p-4 mb-4">
             <div className="flex items-center gap-1.5 mb-2">
               <Gift size={15} className="text-brand-light" />
               <h3 className="text-sm font-bold text-text">WELL Escape Points</h3>
@@ -758,9 +760,114 @@ export default function AdminEvents() {
                   )}
                 </div>
               ))}
+
+              {/* Manual award for past retreats not in the list */}
+              <div>
+                <button
+                  onClick={() => {
+                    if (escapeExpandedId === MANUAL_RETREAT_ID) {
+                      setEscapeExpandedId(null);
+                    } else {
+                      setEscapeExpandedId(MANUAL_RETREAT_ID);
+                      setEscapeStatus(null);
+                      setEscapeManualEmail("");
+                      setEscapeMembers([]);
+                      setEscapeSelected(new Set());
+                    }
+                  }}
+                  className="w-full flex items-center justify-between gap-2 bg-surface-2 border border-dashed border-border rounded-card px-3 py-2.5 text-left"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-muted">Manual Award (past retreat)</p>
+                    <p className="text-xs text-text-dim">Award points for Mexico, France, or any past WELL Escape</p>
+                  </div>
+                  {escapeExpandedId === MANUAL_RETREAT_ID ? <ChevronUp size={14} className="shrink-0 text-text-muted" /> : <ChevronDown size={14} className="shrink-0 text-text-muted" />}
+                </button>
+
+                {escapeExpandedId === MANUAL_RETREAT_ID && (
+                  <div className="mt-2 p-3 bg-surface-2 rounded-card border border-border flex flex-col gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1.5">Retreat Name</p>
+                      <input
+                        type="text"
+                        value={manualRetreatName}
+                        onChange={(e) => setManualRetreatName(e.target.value)}
+                        placeholder="e.g. Mexico WELL Escape – Legacy Sept 2026"
+                        className="w-full bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                    </div>
+
+                    {escapeMembers.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Added ({escapeMembers.length})</p>
+                          <button
+                            onClick={() => setEscapeSelected(
+                              escapeSelected.size === escapeMembers.length
+                                ? new Set()
+                                : new Set(escapeMembers.map((m) => m.email))
+                            )}
+                            className="text-[11px] text-brand-light font-semibold"
+                          >
+                            {escapeSelected.size === escapeMembers.length ? "Deselect all" : "Select all"}
+                          </button>
+                        </div>
+                        {escapeMembers.map((m) => (
+                          <label key={m.email} className="flex items-center gap-2.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={escapeSelected.has(m.email)}
+                              onChange={(e) => {
+                                const next = new Set(escapeSelected);
+                                e.target.checked ? next.add(m.email) : next.delete(m.email);
+                                setEscapeSelected(next);
+                              }}
+                              className="w-4 h-4 accent-brand-blue shrink-0"
+                            />
+                            <span className="text-sm text-text">{m.name}</span>
+                            <span className="text-xs text-text-dim truncate">{m.email}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={escapeManualEmail}
+                        onChange={(e) => setEscapeManualEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addManualEmail()}
+                        placeholder="Add attendee email..."
+                        className="flex-1 bg-surface-3 border border-border rounded-card px-3 py-2 text-xs text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
+                      />
+                      <button
+                        type="button"
+                        onClick={addManualEmail}
+                        className="px-3 py-2 text-xs font-semibold bg-surface-3 border border-border rounded-card text-text-muted"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {escapeStatus && (
+                      <p className={`text-xs ${escapeStatus.type === "success" ? "text-brand-light" : "text-red-400"}`}>
+                        {escapeStatus.message}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={() => handleEscapeAward(manualRetreatName.trim() || "WELL Escape")}
+                      disabled={escapeSelected.size === 0 || escapeAwarding || !manualRetreatName.trim()}
+                      className="w-full flex items-center justify-center gap-2 gradient-brand text-white text-sm font-semibold rounded-pill py-2.5 disabled:opacity-50"
+                    >
+                      <Gift size={14} />
+                      {escapeAwarding ? "Awarding..." : `Award 100 pts + Notify (${escapeSelected.size})`}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
 
         {showCreate ? (
           <EventForm
