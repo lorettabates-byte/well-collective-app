@@ -66,18 +66,42 @@ const TILE_COLORS = [
   "#2dd4a0","#38bdf8","#fbbf24","#f472b6","#a78bfa","#34d399","#fb923c","#60a5fa",
 ];
 
+// Seeded LCG so the daily goal is the same for every member on the same day.
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+function getDailyGoal(): number[] {
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const rand = seededRandom(seed);
+  const arr = [0, 1, 2, 3, 4, 5, 6, 7];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return [...arr, 8]; // tile 8 = empty space, always starts bottom-right in goal
+}
+
+// Computed once at load time — goal only changes when the date changes.
+const DAILY_GOAL = getDailyGoal();
+
 function isSolved(tiles: number[]): boolean {
-  return tiles.every((v, i) => v === i);
+  return tiles.every((v, i) => v === DAILY_GOAL[i]);
 }
 function canMove(pos: number, emptyPos: number): boolean {
   const r = Math.floor(pos / 3), c = pos % 3;
   const er = Math.floor(emptyPos / 3), ec = emptyPos % 3;
   return Math.abs(r - er) + Math.abs(c - ec) === 1;
 }
+// Start from the daily goal and make random valid moves — guarantees solvability.
 function makeSolvable(): number[] {
-  const tiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-  let empty = 8;
-  for (let i = 0; i < 80; i++) {
+  const tiles = [...DAILY_GOAL];
+  let empty = tiles.indexOf(8);
+  for (let i = 0; i < 120; i++) {
     const adj = [empty - 3, empty + 3, empty - 1, empty + 1].filter(p => {
       if (p < 0 || p > 8) return false;
       if (empty % 3 === 0 && p === empty - 1) return false;
@@ -123,11 +147,12 @@ export default function MindGardenPuzzle({ onComplete, alreadyDone }: Props) {
         <div>
           <p className="text-[10px] text-text-dim mb-1 uppercase tracking-wider">Goal</p>
           <div className="grid grid-cols-3 gap-0.5 w-16">
-            {[0,1,2,3,4,5,6,7].map(i => {
-              const Icon = TILE_ICONS[i];
+            {DAILY_GOAL.slice(0, 8).map((tileVal, pos) => {
+              const Icon = TILE_ICONS[tileVal];
+              const color = TILE_COLORS[tileVal];
               return (
-                <div key={i} className="w-5 h-5 rounded-sm flex items-center justify-center" style={{ background: `${TILE_COLORS[i]}22`, border: `1px solid ${TILE_COLORS[i]}44` }}>
-                  <Icon className="w-3 h-3" style={{ color: TILE_COLORS[i] }} />
+                <div key={pos} className="w-5 h-5 rounded-sm flex items-center justify-center" style={{ background: `${color}22`, border: `1px solid ${color}44` }}>
+                  <Icon className="w-3 h-3" style={{ color }} />
                 </div>
               );
             })}
