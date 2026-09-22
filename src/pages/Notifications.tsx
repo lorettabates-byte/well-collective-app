@@ -1,4 +1,4 @@
-import { AtSign, Bell, Calendar, MessageCircle, Rss, Sparkles, Users } from "lucide-react";
+import { AtSign, Bell, Calendar, MessageCircle, Rss, Sparkles, Star, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
@@ -24,6 +24,7 @@ const ICONS: Record<AppNotificationType, typeof Bell> = {
   event: Calendar,
   blog: Rss,
   tribe: Users,
+  spotlight: Star,
 };
 
 export default function Notifications() {
@@ -98,7 +99,7 @@ export default function Notifications() {
               </div>
             )}
             {sorted.map((notification) => {
-              const Icon = ICONS[notification.type];
+              const Icon = ICONS[notification.type] ?? Bell;
               const FALLBACK_LINKS: Record<AppNotificationType, string> = {
                 post: "/community",
                 reply: "/community",

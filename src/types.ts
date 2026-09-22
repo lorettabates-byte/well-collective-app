@@ -231,7 +231,7 @@ export interface CustomPeacefulSound {
   sortOrder: number;
 }
 
-export type AppNotificationType = "post" | "reply" | "mention" | "general" | "event" | "blog" | "tribe";
+export type AppNotificationType = "post" | "reply" | "mention" | "general" | "event" | "blog" | "tribe" | "spotlight";
 
 export interface AppNotification {
   id: string;
