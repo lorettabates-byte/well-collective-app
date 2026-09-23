@@ -29,6 +29,7 @@ const TYPE_LINKS: Record<AppNotificationType, string> = {
   event: "/events",
   blog: "/blog",
   tribe: "/tribe",
+  spotlight: "/well-cup",
 };
 
 import { useEffect } from "react";

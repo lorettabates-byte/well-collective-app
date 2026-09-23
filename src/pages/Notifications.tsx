@@ -108,6 +108,7 @@ export default function Notifications() {
                 event: "/events",
                 blog: "/blog",
                 tribe: "/tribe",
+                spotlight: "/well-cup",
               };
               const destination = notification.link ?? FALLBACK_LINKS[notification.type];
               return (
