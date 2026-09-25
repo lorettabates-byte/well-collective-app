@@ -43,6 +43,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export interface PushSubscribeResult {
   success: boolean;
   reason?: string;
+  permissionDenied?: boolean;
 }
 
 async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult> {
@@ -56,7 +57,7 @@ async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult>
     }
 
     if (permResult.receive !== "granted") {
-      return { success: false, reason: deniedMessage() };
+      return { success: false, reason: deniedMessage(), permissionDenied: true };
     }
 
     await PushNotifications.register();

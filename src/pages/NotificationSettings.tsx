@@ -132,47 +132,18 @@ export default function NotificationSettings() {
       return;
     }
 
-    // On Android native, Web Push (PushManager/service worker) is not available in
-    // Capacitor's WebView. Instead, request the system notification permission via the
-    // Notification API if it exists, then open settings if it's denied. We still set
-    // pushEnabled=true when the user has granted the OS permission so they can
-    // receive server-sent notifications (the app sends via Brevo/server-side).
-    if (isNative && platform === "android") {
-      if (typeof Notification === "undefined") {
-        // WebView has no Notification API at all — send the user to settings
-        setPushError("To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.");
-        openSystemSettings();
-        return;
-      }
-      if (Notification.permission === "denied") {
-        setPushError("Notifications are blocked. Go to Settings > Apps > WELL Collective > Notifications to enable them.");
-        openSystemSettings();
-        return;
-      }
-      // Try requesting permission — this may show the Android native dialog in newer WebViews
-      const perm = await Notification.requestPermission();
-      if (perm === "granted") {
-        updateNotificationSettings({ pushEnabled: true });
-      } else {
-        setPushError("To enable notifications, go to your phone's Settings > Apps > WELL Collective > Notifications and turn them on.");
-        openSystemSettings();
-      }
-      return;
-    }
-
-    // iOS native: Notification API absence means permission is fully blocked
-    if (isNative && platform === "ios" && typeof Notification === "undefined") {
-      setPushError("Go to Settings > WELL Collective > Notifications to enable them.");
-      openSystemSettings();
-      return;
-    }
+    // Native (iOS/Android): the web `Notification` API does not exist inside
+    // Capacitor's WebView, so it must never gate this flow — checking it here
+    // used to short-circuit before the real native permission prompt ever fired,
+    // which is why Settings > App never showed a Notifications entry at all.
+    // subscribeToPush() -> subscribeNative() uses the actual Capacitor
+    // PushNotifications plugin, which triggers the real OS permission dialog.
     try {
       const result = await subscribeToPush(user.email || user.name);
       updateNotificationSettings({ pushEnabled: result.success });
       if (!result.success && result.reason) {
         setPushError(result.reason);
-        // If denied on iOS native, open Settings automatically
-        if (isNative && platform === "ios" && typeof Notification !== "undefined" && Notification.permission === "denied") {
+        if (isNative && result.permissionDenied) {
           openSystemSettings();
         }
       }
