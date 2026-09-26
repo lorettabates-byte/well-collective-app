@@ -191,6 +191,9 @@ export default function Profile() {
   const [activeMoodId, setActiveMoodId] = useState<string | null>(null);
   const [moodSaving, setMoodSaving] = useState(false);
 
+  const moodTimestampKey = `well-mood-set-at-${user.email}`;
+  const MOOD_TTL_MS = 24 * 60 * 60 * 1000;
+
   useEffect(() => {
     if (!API_URL || !user.email) return;
     fetch(`${API_URL}/api/members/me?email=${encodeURIComponent(user.email)}`)
@@ -202,7 +205,30 @@ export default function Profile() {
         if (d.member.tribeConnections !== undefined) setTribeConnections(d.member.tribeConnections);
         if (d.member.addedByCount !== undefined) setAddedByCount(d.member.addedByCount);
         if (d.member.allTimePoints !== undefined) setAllTimePoints(d.member.allTimePoints);
-        if (d.member.moodStatus !== undefined) setActiveMoodId(d.member.moodStatus ?? null);
+        if (d.member.moodStatus !== undefined) {
+          const serverMood = d.member.moodStatus ?? null;
+          if (serverMood) {
+            let expired = true;
+            try {
+              const setAt = localStorage.getItem(moodTimestampKey);
+              if (setAt && Date.now() - parseInt(setAt, 10) < MOOD_TTL_MS) expired = false;
+            } catch { /* ignore */ }
+            if (expired) {
+              // Clear the expired mood on the server silently
+              fetch(`${API_URL}/api/member/mood-status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user.email, moodStatusId: null }),
+              }).catch(() => {});
+              try { localStorage.removeItem(moodTimestampKey); } catch { /* ignore */ }
+              setActiveMoodId(null);
+            } else {
+              setActiveMoodId(serverMood);
+            }
+          } else {
+            setActiveMoodId(null);
+          }
+        }
       })
       .catch(() => {});
 
@@ -254,6 +280,13 @@ export default function Profile() {
     const next = moodId === activeMoodId ? null : moodId;
     setMoodSaving(true);
     setActiveMoodId(next);
+    try {
+      if (next) {
+        localStorage.setItem(moodTimestampKey, String(Date.now()));
+      } else {
+        localStorage.removeItem(moodTimestampKey);
+      }
+    } catch { /* ignore */ }
     await fetch(`${API_URL}/api/member/mood-status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -1085,7 +1085,7 @@ export default function Nutrition() {
                     value={mealItemInput}
                     onChange={(e) => { setMealItemInput(e.target.value); setEstimateError(""); }}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMealItem())}
-                    placeholder="e.g. 2 eggs, 3oz ham, orange juice"
+                    placeholder="e.g. 2 over easy eggs"
                     className="flex-1 bg-surface-2 border border-border rounded-card px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-brand-light"
                   />
                   <button
@@ -1094,11 +1094,11 @@ export default function Nutrition() {
                     className="flex items-center gap-1.5 gradient-brand text-white text-xs font-bold rounded-pill px-3.5 shrink-0 disabled:opacity-40"
                   >
                     <Wand2 size={13} />
-                    {estimating ? "…" : "Add"}
+                    {estimating ? "…" : "+ Add Item"}
                   </button>
                 </div>
                 <p className="text-[10px] text-text-dim">
-                  List everything at once with amounts (2 servings, 10oz, 1 cup…) — each food becomes its own line you can adjust.
+                  Add one food at a time — type it, tap "+ Add Item", then add the next. Submit the whole meal when you're done.
                 </p>
 
                 {estimateError && <p className="text-[11px] text-red-400">{estimateError}</p>}
@@ -1213,7 +1213,7 @@ export default function Nutrition() {
                   disabled={savingMeal}
                   className="flex-1 gradient-brand text-white text-xs font-semibold rounded-pill py-2.5 disabled:opacity-50"
                 >
-                  {savingMeal ? "Saving…" : editingMealId != null ? "Update Meal" : "Save Meal (+10 pts)"}
+                  {savingMeal ? "Saving…" : editingMealId != null ? "Update Meal" : mealItems.length > 1 ? `Save Meal — ${mealItems.length} items (+10 pts)` : "Save Meal (+10 pts)"}
                 </button>
                 <button
                   onClick={resetMealForm}

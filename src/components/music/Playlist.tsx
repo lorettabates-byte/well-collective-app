@@ -13,6 +13,7 @@ import {
   Play,
   Repeat,
   Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   X,
@@ -156,6 +157,7 @@ export default function Playlist({
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [order, setOrder] = useState<number[]>(() => loadOrder());
   const [favoritesOnly, setFavoritesOnly] = useState(() => !!initialFavoritesOnly);
+  const [isShuffle, setIsShuffle] = useState(false);
   const [lockedReason, setLockedReason] = useState<"play" | "download" | null>(null);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
 
@@ -279,6 +281,13 @@ export default function Playlist({
         ...orderedVisibleSongs.filter((s) => !lockedSongIds.has(s.id)),
       ];
 
+  const buildQueue = (songs: Song[], startSong?: Song) => {
+    if (!isShuffle) return { queue: songs, index: startSong ? Math.max(0, songs.findIndex((s) => s.id === startSong.id)) : 0 };
+    const shuffled = [...songs].sort(() => Math.random() - 0.5);
+    const index = startSong ? Math.max(0, shuffled.findIndex((s) => s.id === startSong.id)) : 0;
+    return { queue: shuffled, index };
+  };
+
   const togglePlaySong = (song: Song) => {
     if (lockedSongIds.has(song.id)) {
       showLocked("play");
@@ -288,16 +297,14 @@ export default function Playlist({
       togglePlay();
       return;
     }
-    const startIndex = playableSongs.findIndex((s) => s.id === song.id);
-    playAt(playableSongs, startIndex, userEmail);
+    const { queue, index } = buildQueue(playableSongs, song);
+    playAt(queue, index, userEmail);
   };
 
   const handlePlayAll = () => {
     if (playableSongs.length === 0) return;
-    const startIndex = currentSong
-      ? Math.max(0, playableSongs.findIndex((s) => s.id === currentSong.id))
-      : 0;
-    playAt(playableSongs, startIndex, userEmail);
+    const { queue, index } = buildQueue(playableSongs, currentSong ?? undefined);
+    playAt(queue, index, userEmail);
   };
 
   const toggleFavorite = (id: number) => {
@@ -394,6 +401,15 @@ export default function Playlist({
         >
           <ListMusic size={16} />
           Play All
+        </button>
+        <button
+          onClick={() => setIsShuffle((v) => !v)}
+          aria-label="Toggle shuffle"
+          className={`w-11 flex items-center justify-center rounded-pill border ${
+            isShuffle ? "gradient-brand border-transparent text-white" : "border-border text-text-muted"
+          }`}
+        >
+          <Shuffle size={16} />
         </button>
         <button
           onClick={cycleRepeat}
