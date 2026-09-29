@@ -50,11 +50,14 @@ async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult>
   if (!API_URL) return { success: false, reason: "Push notifications aren't configured on the server." };
 
   try {
-    let permResult = await PushNotifications.checkPermissions();
-
-    if (permResult.receive === "prompt") {
-      permResult = await PushNotifications.requestPermissions();
-    }
+    // Always call requestPermissions() rather than gating on checkPermissions().
+    // The native plugin's checkPermissions() sometimes returns "denied" in a stale
+    // state (e.g. after a reinstall or fresh native build) even when iOS has never
+    // shown the OS dialog. Calling requestPermissions() unconditionally forces iOS
+    // to either show the dialog (fresh install / notDetermined) or return the real
+    // cached state, and either way iOS finally registers the app in Settings >
+    // WELL Collective > Notifications so the user can toggle it manually.
+    let permResult = await PushNotifications.requestPermissions();
 
     if (permResult.receive !== "granted") {
       return { success: false, reason: deniedMessage(), permissionDenied: true };
