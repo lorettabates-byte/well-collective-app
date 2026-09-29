@@ -336,6 +336,13 @@ export default function MemberLogin({ onSuccess }: { onSuccess: () => void }) {
                   {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                   {loading ? "Logging in..." : "Log In"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => Browser.open({ url: "https://lorettabates.com/videolibrary.lorettabates.com/wp-login.php?action=lostpassword" })}
+                  className="text-[11px] text-text-dim text-center underline -mt-1"
+                >
+                  Forgot your password?
+                </button>
               </form>
             </>
           ) : trialView === "start" ? (
