@@ -46,6 +46,30 @@ export interface PushSubscribeResult {
   permissionDenied?: boolean;
 }
 
+// Listeners must be attached before register(): iOS returns a cached token
+// almost instantly on repeat calls, which would otherwise be missed.
+async function getNativeToken(timeoutMs: number): Promise<string> {
+  let resolveToken!: (value: string) => void;
+  let rejectToken!: (err: Error) => void;
+  const tokenPromise = new Promise<string>((resolve, reject) => {
+    resolveToken = resolve;
+    rejectToken = reject;
+  });
+  const onToken = await PushNotifications.addListener("registration", (t: Token) => resolveToken(t.value));
+  const onError = await PushNotifications.addListener("registrationError", (err: RegistrationError) =>
+    rejectToken(new Error(err.error)),
+  );
+  const timeout = setTimeout(() => rejectToken(new Error("Token registration timed out")), timeoutMs);
+  try {
+    await PushNotifications.register();
+    return await tokenPromise;
+  } finally {
+    clearTimeout(timeout);
+    await onToken.remove().catch(() => {});
+    await onError.remove().catch(() => {});
+  }
+}
+
 async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult> {
   if (!API_URL) return { success: false, reason: "Push notifications aren't configured on the server." };
 
@@ -63,26 +87,15 @@ async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult>
       return { success: false, reason: deniedMessage(), permissionDenied: true };
     }
 
-    await PushNotifications.register();
-
-    const token = await new Promise<string>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Token registration timed out")), 15000);
-      PushNotifications.addListener("registration", (t: Token) => {
-        clearTimeout(timeout);
-        resolve(t.value);
-      });
-      PushNotifications.addListener("registrationError", (err: RegistrationError) => {
-        clearTimeout(timeout);
-        reject(new Error(err.error));
-      });
-    });
+    const token = await getNativeToken(15000);
 
     const platform = Capacitor.getPlatform();
-    await fetch(`${API_URL}/api/device-token`, {
+    const res = await fetch(`${API_URL}/api/device-token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, platform, userEmail }),
     });
+    if (!res.ok) throw new Error(`device-token save failed: ${res.status}`);
 
     return { success: true };
   } catch (err) {
@@ -194,12 +207,7 @@ export async function unsubscribeFromPush(_userEmail?: string): Promise<void> {
     try {
       const permResult = await PushNotifications.checkPermissions();
       if (permResult.receive === "granted") {
-        await PushNotifications.register();
-        const token = await new Promise<string>((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error("timed out")), 10000);
-          PushNotifications.addListener("registration", (t: Token) => { clearTimeout(timeout); resolve(t.value); });
-          PushNotifications.addListener("registrationError", (err: RegistrationError) => { clearTimeout(timeout); reject(new Error(err.error)); });
-        });
+        const token = await getNativeToken(10000);
         await fetch(`${API_URL}/api/device-token`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
