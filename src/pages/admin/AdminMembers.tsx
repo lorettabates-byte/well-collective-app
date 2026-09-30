@@ -15,6 +15,7 @@ interface AdminMember {
   avatar?: string;
   trialStartedAt?: string;
   trialEndsAt?: string;
+  paidVia?: "website" | "apple";
   updatedAt: string;
   grantedBadges?: string[];
 }
@@ -71,7 +72,11 @@ function MemberCard({
         <Link to={`/member/${deriveMemberId(member.email)}`} className="flex-1 min-w-0 hover:opacity-75 transition-opacity">
           <p className="text-sm font-semibold text-text truncate">{member.name}</p>
           <p className="text-xs text-text-muted truncate">{member.email}</p>
-          {member.trialEndsAt && (
+          {member.paidVia ? (
+            <p className="text-[11px] mt-0.5 text-green-400">
+              Paid member {member.paidVia === "apple" ? "(Apple)" : "(website)"}
+            </p>
+          ) : member.trialEndsAt && (
             <p className={`text-[11px] mt-0.5 ${isTrialExpired(member.trialEndsAt) ? "text-red-400" : "text-brand-light"}`}>
               {isTrialExpired(member.trialEndsAt) ? "Trial expired " : "Trial ends "}
               {formatDateLong(member.trialEndsAt)}
@@ -232,9 +237,10 @@ export default function AdminMembers() {
     .filter((m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q))
     .sort((a, b) => firstName(a.name).localeCompare(firstName(b.name), undefined, { sensitivity: "base" }));
 
-  const fullMembers = sortedMembers.filter((m) => !m.trialEndsAt);
-  const trialMembers = sortedMembers.filter((m) => isActiveTrial(m.trialEndsAt));
-  const expiredTrialMembers = sortedMembers.filter((m) => m.trialEndsAt && isTrialExpired(m.trialEndsAt));
+  const fullMembers = sortedMembers.filter((m) => m.paidVia || !m.trialEndsAt);
+  const trialMembers = sortedMembers.filter((m) => !m.paidVia && isActiveTrial(m.trialEndsAt));
+  const expiredTrialMembers = sortedMembers.filter((m) => !m.paidVia && m.trialEndsAt && isTrialExpired(m.trialEndsAt));
+  const paidCount = sortedMembers.filter((m) => m.paidVia).length;
 
   const handleTrialUpdated = (memberEmail: string, trialEndsAt: string) => {
     setMembers((prev) =>
@@ -355,7 +361,7 @@ export default function AdminMembers() {
               >
                 <div>
                   <p className="text-sm font-bold text-text text-left">WELL Collective Members</p>
-                  <p className="text-xs text-text-muted text-left">Full members — {fullMembers.length} total</p>
+                  <p className="text-xs text-text-muted text-left">Full members — {fullMembers.length} total, {paidCount} paid</p>
                 </div>
                 {fullMembersExpanded ? <ChevronUp size={16} className="text-text-dim shrink-0" /> : <ChevronDown size={16} className="text-text-dim shrink-0" />}
               </button>

@@ -151,8 +151,8 @@ function OverviewTab({ data }: { data: DashboardData }) {
     .sort((a, b) => b.messages - a.messages);
   const maxMsgs = Math.max(1, ...categoryActivity.map((c) => c.messages));
 
-  const appleNet = (data.appleIap?.active_count ?? 0) * 30 * 0.7;
-  const webGross = (data.appleIap?.web_active_count ?? 0) * 30;
+  const appleNet = Number(data.appleIap?.active_count ?? 0) * 30 * 0.7;
+  const webGross = Number(data.appleIap?.web_active_count ?? 0) * 30;
   const totalIncome = appleNet + webGross;
 
   return (
@@ -164,7 +164,7 @@ function OverviewTab({ data }: { data: DashboardData }) {
             <div>
               <p className="text-3xl font-bold text-text">${totalIncome.toFixed(0)}<span className="text-sm font-normal text-text-muted">/mo</span></p>
               <p className="text-[10px] text-text-dim mt-0.5">
-                {(data.appleIap.active_count + data.appleIap.web_active_count)} active paid members
+                {Number(data.appleIap.active_count) + Number(data.appleIap.web_active_count)} active paid members
               </p>
             </div>
           </div>
