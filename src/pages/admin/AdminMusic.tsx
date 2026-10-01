@@ -101,6 +101,7 @@ export default function AdminMusic() {
   const [renamingCategoryValue, setRenamingCategoryValue] = useState("");
 
   const [queuedSongs, setQueuedSongs] = useState<Song[]>([]);
+  const [queueError, setQueueError] = useState("");
   const [queueLoading, setQueueLoading] = useState(true);
 
   const [sounds, setSounds] = useState<CustomPeacefulSound[]>([]);
@@ -209,6 +210,11 @@ export default function AdminMusic() {
       if (res.ok) {
         const data = await res.json();
         setQueuedSongs(data.songs || []);
+        setQueueError("");
+      } else {
+        setQueueError(res.status === 401
+          ? "Your admin session has expired, so the queue can't load. Log in at /admin/login and it will reappear."
+          : `The song queue could not load (error ${res.status}). The scheduled songs are safe on the server.`);
       }
     } catch (err) {
       console.error("Fetch song queue error:", err);
@@ -728,6 +734,11 @@ export default function AdminMusic() {
           </div>
         )}
 
+        {queueError && (
+          <div className="glass-card rounded-card px-4 py-3 border border-red-500/30">
+            <p className="text-xs text-red-400">{queueError}</p>
+          </div>
+        )}
         {(queueLoading || queuedSongs.length > 0) && (
           <div className="glass-card rounded-card p-4 border border-brand-light/30">
             <button onClick={() => setQueueExpanded((v) => !v)} className="w-full flex items-center justify-between mb-2">
