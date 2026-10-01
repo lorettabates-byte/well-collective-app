@@ -4,6 +4,11 @@ import { PushNotifications, type Token, type RegistrationError } from "@capacito
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
+// The Android build has no google-services.json yet, so the native register() call
+// crashes the app (FirebaseApp not initialized). Flip once a build ships with it.
+const ANDROID_NATIVE_PUSH_READY = false;
+const androidPushBlocked = () => Capacitor.getPlatform() === "android" && !ANDROID_NATIVE_PUSH_READY;
+
 export function isPushSupported(): boolean {
   if (Capacitor.isNativePlatform()) return true;
   return "serviceWorker" in navigator && "PushManager" in window;
@@ -71,6 +76,9 @@ async function getNativeToken(timeoutMs: number): Promise<string> {
 }
 
 async function subscribeNative(userEmail?: string): Promise<PushSubscribeResult> {
+  if (androidPushBlocked()) {
+    return { success: false, reason: "Push notifications for Android are coming in the next app update. Everything else in the app works as usual." };
+  }
   if (!API_URL) return { success: false, reason: "Push notifications aren't configured on the server." };
 
   try {
@@ -172,6 +180,7 @@ export async function subscribeToPush(userEmail?: string): Promise<PushSubscribe
  */
 export async function revalidatePushSubscription(userEmail?: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
+    if (androidPushBlocked()) return;
     await subscribeNative(userEmail).catch(() => {});
     return;
   }
@@ -203,7 +212,7 @@ export async function revalidatePushSubscription(userEmail?: string): Promise<vo
 
 export async function unsubscribeFromPush(_userEmail?: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
-    if (!API_URL) return;
+    if (!API_URL || androidPushBlocked()) return;
     try {
       const permResult = await PushNotifications.checkPermissions();
       if (permResult.receive === "granted") {
