@@ -1,7 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 import { Purchases } from "@revenuecat/purchases-capacitor";
 
-const RC_IOS_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY as string | undefined;
+// RevenueCat's public Apple SDK key (safe to ship in the client). The env var overrides it;
+// CI builds never set it, which left every OTA bundle unable to start purchases.
+const RC_IOS_KEY = (import.meta.env.VITE_REVENUECAT_IOS_KEY as string | undefined) || "appl_dmFOQlydwsEeOMROCTVpWuvZAka";
 const ENTITLEMENT_ID = "membership";
 
 let _configured = false;

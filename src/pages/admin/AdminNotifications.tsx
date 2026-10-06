@@ -341,7 +341,7 @@ export default function AdminNotifications() {
 
         <div className="glass-card rounded-card p-4 flex flex-col gap-3 mb-4">
           <h3 className="text-sm font-bold text-text">Trial Resume Winback Email</h3>
-          <p className="text-xs text-text-muted">Auto-discovers lapsed members whose original 7-day trial has expired, and sends them a "your days are still waiting" email inviting them to return for the remaining 23 days of the full 30-day trial.</p>
+          <p className="text-xs text-text-muted">Auto-discovers lapsed members whose trial has expired, and sends them a "your days are still waiting" email inviting them back for the rest of their 30-day trial.</p>
           {trialWinbackMessage && (
             <p className={`text-xs ${trialWinbackMessage.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
               {trialWinbackMessage}

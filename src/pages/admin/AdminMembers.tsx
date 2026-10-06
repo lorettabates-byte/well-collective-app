@@ -333,7 +333,7 @@ export default function AdminMembers() {
                 onChange={(e) => setGrantTrial(e.target.checked)}
                 className="w-4 h-4 accent-brand-blue"
               />
-              <span className="text-xs text-text-muted">Grant a 7-day free trial</span>
+              <span className="text-xs text-text-muted">Grant a 30-day free trial</span>
             </label>
             <button
               type="submit"

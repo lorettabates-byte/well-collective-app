@@ -138,7 +138,7 @@ export default function SubscribeGate({
                 {purchasing ? "Processing…" : "Subscribe Now — $30/month"}
               </button>
               <p className="text-[11px] text-text-dim text-center mb-3">
-                7-day free trial included · Cancel anytime in Apple ID settings
+                Cancel anytime in Apple ID settings
               </p>
             </>
           ) : (

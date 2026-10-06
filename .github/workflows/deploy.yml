@@ -28,6 +28,7 @@ jobs:
           VITE_PUSH_API_URL: ${{ secrets.VITE_PUSH_API_URL }}
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           VITE_ADMIN_API_KEY: ${{ secrets.VITE_ADMIN_API_KEY }}
+          VITE_REVENUECAT_IOS_KEY: ${{ secrets.VITE_REVENUECAT_IOS_KEY }}
           VITE_APP_VERSION: 1.6.${{ github.run_number }}
 
       - name: Deploy to FTP
