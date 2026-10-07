@@ -37,6 +37,7 @@ interface DashboardData {
   gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
   gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
   appleIap: { active_count: number; total_count: number; new_this_month: number; web_active_count: number } | null;
+  wellEscapeEvents: { id: string; title: string; date: string }[];
   membersBySource: { email: string; name: string; membership_status: string; membership_source: string; created_at: string | null }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
   memberStats: { member_email: string; name: string; app_opens: number; section_visits: number; total_points: number; last_seen: string | null; current_streak: number | null; longest_streak: number | null }[];
@@ -314,14 +315,9 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
 const API_URL_MEMBERS = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-const UPCOMING_RETREATS = [
-  { name: "WELL Escape Mexico Legacy 2026", date: "Sept 3-6, 2026" },
-  { name: "WELL Escape Mexico Signature 2026", date: "Sept 10-13, 2026" },
-  { name: "WELL Escape Greece 2027", date: "March 10-14, 2027" },
-];
-
 function RetreatPointsSection({ data }: { data: DashboardData }) {
-  const [retreat, setRetreat] = useState(UPCOMING_RETREATS[0].name);
+  const escapes = data.wellEscapeEvents;
+  const [retreat, setRetreat] = useState(escapes[0]?.title ?? "");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
@@ -372,19 +368,23 @@ function RetreatPointsSection({ data }: { data: DashboardData }) {
       {/* Retreat picker */}
       <div className="mb-3">
         <p className="text-[10px] font-semibold text-text-muted mb-1">Select retreat</p>
-        <div className="flex flex-col gap-1.5">
-          {UPCOMING_RETREATS.map((r) => (
-            <button
-              key={r.name}
-              onClick={() => { setRetreat(r.name); setResults(null); }}
-              className={`text-left px-3 py-2 rounded-card border text-xs transition-colors ${
-                retreat === r.name ? "border-brand-light bg-brand-light/10 text-text font-semibold" : "border-border bg-surface-2 text-text-muted"
-              }`}
-            >
-              {r.name} <span className="text-[10px] text-text-dim font-normal">· {r.date}</span>
-            </button>
-          ))}
-        </div>
+        {escapes.length === 0 ? (
+          <p className="text-xs text-text-dim">No WELL Escape events yet. Open an event and toggle "WELL Escape" to add it here.</p>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {escapes.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => { setRetreat(r.title); setResults(null); }}
+                className={`text-left px-3 py-2 rounded-card border text-xs transition-colors ${
+                  retreat === r.title ? "border-brand-light bg-brand-light/10 text-text font-semibold" : "border-border bg-surface-2 text-text-muted"
+                }`}
+              >
+                {r.title} <span className="text-[10px] text-text-dim font-normal">· {new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Member search + select */}
