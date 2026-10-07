@@ -1,26 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <!-- The app UI is dark-only. Do NOT use DayNight or Light parents here: their
+         default windowBackground is WHITE in light mode, and under edge-to-edge the
+         transparent system bars reveal it as a white bar at the top and a light
+         navigation bar at the bottom. Every theme pins windowBackground explicitly. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">#050b14</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowBackground">#050b14</item>
+        <item name="android:colorBackground">#050b14</item>
         <item name="android:statusBarColor">#050b14</item>
+        <item name="android:navigationBarColor">#050b14</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-
+    <!-- Activity runs on this theme, so its windowBackground is what shows through
+         the transparent system bars. @drawable/splash is a WHITE image - never use
+         it as the window background. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <!-- REQUIRED: BridgeActivity calls super.onCreate() BEFORE setTheme(), so window
+             features are locked in from THIS theme. Theme.SplashScreen only sets the
+             framework's android:windowActionBar; AppCompatActivity reads the AppCompat
+             attributes below. Without them AppCompat installs a white ActionBar showing
+             android:label ("WELL Collective") across the top. -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">#050b14</item>
+        <item name="android:colorBackground">#050b14</item>
+        <item name="windowSplashScreenBackground">#050b14</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:statusBarColor">#050b14</item>
+        <item name="android:navigationBarColor">#050b14</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
