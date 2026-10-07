@@ -234,11 +234,13 @@ export default function BrainGamesSection({ initialOpen }: Props) {
 
     // If this was played in response to an incoming challenge, submit score automatically
     if (isRespondingToChallenge && activeChallenge && activeChallenge.gameId === gameId && activeChallenge.direction === "incoming") {
-      if (API_URL && user.email && score != null) {
+      // Games without a score (Gratitude Match, Calm Focus, Mind Garden) still complete the invite with 0
+      const respondScore = score ?? 0;
+      if (API_URL && user.email) {
         const respondRes = await fetch(`${API_URL}/api/game-challenges/${activeChallenge.id}/respond`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email, score }),
+          body: JSON.stringify({ email: user.email, score: respondScore }),
         }).catch(() => null);
 
         const respondData = respondRes?.ok ? await respondRes.json().catch(() => null) : null;
@@ -262,7 +264,7 @@ export default function BrainGamesSection({ initialOpen }: Props) {
         setChallengeResult({
           gameId,
           gameName: g?.title ?? gameId,
-          myScore: score,
+          myScore: respondScore,
           theirScore,
           opponentName: activeChallenge.challengerName,
           youWon,
