@@ -152,8 +152,9 @@ function OverviewTab({ data }: { data: DashboardData }) {
     .sort((a, b) => b.messages - a.messages);
   const maxMsgs = Math.max(1, ...categoryActivity.map((c) => c.messages));
 
-  // Apple (Small Business Program) and Google Play each keep 15%.
-  const appleNet = Number(data.appleIap?.active_count ?? 0) * 30 * 0.85;
+  // Apple keeps 30% until the Small Business Program is approved (then 0.85);
+  // Google Play keeps 15% on subscriptions.
+  const appleNet = Number(data.appleIap?.active_count ?? 0) * 30 * 0.7;
   const playCount = Number(data.appleIap?.google_play_count ?? 0);
   const playNet = playCount * 30 * 0.85;
   const webGross = Number(data.appleIap?.web_active_count ?? 0) * 30;
@@ -183,7 +184,7 @@ function OverviewTab({ data }: { data: DashboardData }) {
             <div className="flex justify-between items-center bg-surface-2 rounded-card px-3 py-2">
               <div>
                 <p className="text-xs font-semibold text-text">Apple App Store</p>
-                <p className="text-[10px] text-text-dim">{data.appleIap.active_count} active × $30 − 15% Apple fee</p>
+                <p className="text-[10px] text-text-dim">{data.appleIap.active_count} active × $30 − 30% Apple fee</p>
               </div>
               <p className="text-sm font-bold text-text">${appleNet.toFixed(0)}</p>
             </div>
