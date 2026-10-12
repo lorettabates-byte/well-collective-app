@@ -1,5 +1,6 @@
 import { ArrowUpRight, Lock, Play } from "lucide-react";
 import SectionIntroModal from "../components/SectionIntroModal";
+import ClassCancellationBanner from "../components/ClassCancellationBanner";
 import { useEffect, useState } from "react";
 import TopBar from "../components/layout/TopBar";
 import { VIDEO_CATEGORIES } from "../data/videoLibrary";
@@ -46,6 +47,8 @@ export default function VideoLibrary() {
       <TopBar title="Classes" subtitle="WELL Collective on-demand classes" icon={Play} iconColor="#0191CE" showBack />
       <SectionIntroModal sectionKey="classes" />
       <div className="px-4 pt-4 flex flex-col gap-4">
+        <ClassCancellationBanner />
+
         {/* Featured Video Library */}
         <button
           type="button"

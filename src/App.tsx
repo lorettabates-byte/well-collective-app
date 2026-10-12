@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
+import { openMemberLink } from "./utils/ssoLink";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import AdminRoute from "./components/AdminRoute";
 import MobileShell from "./components/layout/MobileShell";
@@ -95,6 +98,20 @@ function App() {
     }
     setGoalsDismissed(true);
   };
+
+  // Tapping a class-cancellation push on a phone opens the replacement class
+  // (signed in to the video library). Other pushes just open the app as before.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle: { remove: () => Promise<void> } | undefined;
+    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      const data = (action.notification.data ?? {}) as { url?: string; tag?: string };
+      if (data.tag === "class-cancellation" && data.url?.startsWith("https://lorettabates.com/")) {
+        openMemberLink(data.url, user.email);
+      }
+    }).then((h) => { handle = h; }).catch(() => {});
+    return () => { handle?.remove().catch(() => {}); };
+  }, [user.email]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;

@@ -5,6 +5,7 @@ import BirthdayCard from "../components/events/BirthdayCard";
 import CalendarMonth from "../components/events/CalendarMonth";
 import EventCard from "../components/events/EventCard";
 import TopBar from "../components/layout/TopBar";
+import { isCancelledLivestream, useClassCancellations } from "../hooks/useClassCancellations";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { useSectionTracking } from "../hooks/useSectionTracking";
@@ -50,7 +51,11 @@ export default function Events() {
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const allEvents = useMemo(() => [...events, ...liveEvents], [events, liveEvents]);
+  const classCancellations = useClassCancellations();
+  const allEvents = useMemo(
+    () => [...events, ...liveEvents].filter((e) => !isCancelledLivestream(e, classCancellations)),
+    [events, liveEvents, classCancellations]
+  );
 
   const eventDates = useMemo(() => new Set(allEvents.map((e) => e.date)), [allEvents]);
 

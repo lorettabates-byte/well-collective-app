@@ -24,6 +24,8 @@ import InspirationCard from "../components/inspiration/InspirationCard";
 import SectionHeader from "../components/ui/SectionHeader";
 import Avatar from "../components/ui/Avatar";
 import { LOGO_URL } from "../components/layout/MobileShell";
+import ClassCancellationBanner from "../components/ClassCancellationBanner";
+import { isCancelledLivestream, useClassCancellations } from "../hooks/useClassCancellations";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
 import { getTrialStatus, isActiveMember } from "../utils/trial";
@@ -92,6 +94,7 @@ export default function Home() {
   const { user, threads, blockedUserIds, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
   const visibleThreads = threads.filter((t) => !blockedUserIds.includes(t.authorId));
   const { events: liveEvents } = useEventsFeed();
+  const classCancellations = useClassCancellations();
   const unreadMessages = useUnreadMessageCount(user.email);
   const unreadNotifications = notifications.filter((n) => !n.read).length;
   const totalUnread = unreadNotifications + unreadMessages;
@@ -104,6 +107,7 @@ export default function Home() {
   const todaysInspiration = [...inspirations].sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
   const allUpcomingEvents = [...events, ...liveEvents]
     .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
+    .filter((e) => !isCancelledLivestream(e, classCancellations))
     .sort((a, b) => a.date.localeCompare(b.date));
   const featuredEvent = allUpcomingEvents.find((e) => e.id === featuredEventId);
   const upcomingEvents = [
@@ -538,6 +542,8 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <ClassCancellationBanner className="mb-4" />
 
       {/* Login streak banner */}
       {streakBanner && (

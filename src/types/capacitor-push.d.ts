@@ -22,6 +22,10 @@ declare module "@capacitor/push-notifications" {
     register(): Promise<void>;
     addListener(event: "registration", listenerFunc: (token: Token) => void): Promise<PluginListenerHandle>;
     addListener(event: "registrationError", listenerFunc: (error: RegistrationError) => void): Promise<PluginListenerHandle>;
+    addListener(
+      event: "pushNotificationActionPerformed",
+      listenerFunc: (action: { notification: { data?: Record<string, unknown> } }) => void
+    ): Promise<PluginListenerHandle>;
   }
   export declare const PushNotifications: PushNotificationsPlugin;
 }
