@@ -36,7 +36,7 @@ interface DashboardData {
   brainGameDaily: { day: string; plays: number; unique_players: number }[];
   gameChallengeStats: { pending: number; total_completed: number; total_sent: number; completed_30d: number; sent_30d: number } | null;
   gameChallengesByGame: { game_id: string; sent: number; completed: number }[];
-  appleIap: { active_count: number; total_count: number; new_this_month: number; web_active_count: number } | null;
+  appleIap: { active_count: number; total_count: number; new_this_month: number; web_active_count: number; google_play_count?: number } | null;
   wellEscapeEvents: { id: string; title: string; date: string }[];
   membersBySource: { email: string; name: string; membership_status: string; membership_source: string; created_at: string | null }[];
   retention: { day: number; cohort_size: number; retained: number; pct: number }[];
@@ -152,9 +152,12 @@ function OverviewTab({ data }: { data: DashboardData }) {
     .sort((a, b) => b.messages - a.messages);
   const maxMsgs = Math.max(1, ...categoryActivity.map((c) => c.messages));
 
-  const appleNet = Number(data.appleIap?.active_count ?? 0) * 30 * 0.7;
+  // Apple (Small Business Program) and Google Play each keep 15%.
+  const appleNet = Number(data.appleIap?.active_count ?? 0) * 30 * 0.85;
+  const playCount = Number(data.appleIap?.google_play_count ?? 0);
+  const playNet = playCount * 30 * 0.85;
   const webGross = Number(data.appleIap?.web_active_count ?? 0) * 30;
-  const totalIncome = appleNet + webGross;
+  const totalIncome = appleNet + playNet + webGross;
 
   return (
     <div className="flex flex-col gap-4">
@@ -165,7 +168,7 @@ function OverviewTab({ data }: { data: DashboardData }) {
             <div>
               <p className="text-3xl font-bold text-text">${totalIncome.toFixed(0)}<span className="text-sm font-normal text-text-muted">/mo</span></p>
               <p className="text-[10px] text-text-dim mt-0.5">
-                {Number(data.appleIap.active_count) + Number(data.appleIap.web_active_count)} active paid members
+                {Number(data.appleIap.active_count) + playCount + Number(data.appleIap.web_active_count)} active paid members
               </p>
             </div>
           </div>
@@ -180,9 +183,16 @@ function OverviewTab({ data }: { data: DashboardData }) {
             <div className="flex justify-between items-center bg-surface-2 rounded-card px-3 py-2">
               <div>
                 <p className="text-xs font-semibold text-text">Apple App Store</p>
-                <p className="text-[10px] text-text-dim">{data.appleIap.active_count} active × $30 − 30% Apple fee</p>
+                <p className="text-[10px] text-text-dim">{data.appleIap.active_count} active × $30 − 15% Apple fee</p>
               </div>
               <p className="text-sm font-bold text-text">${appleNet.toFixed(0)}</p>
+            </div>
+            <div className="flex justify-between items-center bg-surface-2 rounded-card px-3 py-2">
+              <div>
+                <p className="text-xs font-semibold text-text">Google Play</p>
+                <p className="text-[10px] text-text-dim">{playCount} active × $30 − 15% Google fee</p>
+              </div>
+              <p className="text-sm font-bold text-text">${playNet.toFixed(0)}</p>
             </div>
           </div>
         </div>
