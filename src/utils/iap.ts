@@ -5,8 +5,8 @@ import { Purchases } from "@revenuecat/purchases-capacitor";
 // override them; CI builds never set them, which once left every OTA bundle unable to
 // start purchases. Android used to get the Apple key, so Google Play could never sell.
 const RC_IOS_KEY = (import.meta.env.VITE_REVENUECAT_IOS_KEY as string | undefined) || "appl_dmFOQlydwsEeOMROCTVpWuvZAka";
-// Google Play key from RevenueCat (starts with "goog_"). Empty until Logan finishes the Play setup.
-const RC_ANDROID_KEY = (import.meta.env.VITE_REVENUECAT_ANDROID_KEY as string | undefined) || "";
+// Google Play key from RevenueCat (set up by Logan, 2026-10-12).
+const RC_ANDROID_KEY = (import.meta.env.VITE_REVENUECAT_ANDROID_KEY as string | undefined) || "goog_YlmfdEXpHEWhpmbDJiOIkgEJUuu";
 const RC_KEY = Capacitor.getPlatform() === "android" ? RC_ANDROID_KEY : RC_IOS_KEY;
 const ENTITLEMENT_ID = "membership";
 
