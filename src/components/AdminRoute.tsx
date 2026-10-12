@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { isAdminLoggedIn, loadAdminSession } from "../utils/adminAuth";
+import { isAdminLoggedIn, loadAdminSession, refreshAdminSession } from "../utils/adminAuth";
 
 export default function AdminRoute({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -9,6 +9,7 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadAdminSession()
+      .then(() => refreshAdminSession())
       .catch(() => {})
       .finally(() => {
         setIsAdmin(isAdminLoggedIn());

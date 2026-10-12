@@ -1,5 +1,6 @@
 import { Calendar, ChevronDown, ChevronUp, FileText, GripVertical, Pause, Pencil, Play, Plus, RotateCcw, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMusicPlayer } from "../../store/MusicPlayerContext";
 import {
   DndContext,
@@ -21,6 +22,7 @@ import TopBar from "../../components/layout/TopBar";
 import { SOUND_ICON_OPTIONS, SoundIcon } from "../../data/soundIconMap";
 import type { CustomPeacefulSound, Song, SongCategory } from "../../types";
 import { getAuthHeaders } from "../../utils/admin";
+import { clearAdminSession } from "../../utils/adminAuth";
 import { AMBIENT_SOUNDS } from "../../utils/ambientSounds";
 
 // Wraps a single list row so it can be picked up and dragged (touch or
@@ -68,6 +70,7 @@ function DragHandle({ attributes, listeners }: { attributes: Record<string, unkn
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
 export default function AdminMusic() {
+  const navigate = useNavigate();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -211,10 +214,12 @@ export default function AdminMusic() {
         const data = await res.json();
         setQueuedSongs(data.songs || []);
         setQueueError("");
+      } else if (res.status === 401) {
+        // Session expired: go straight to the login page instead of a dead end.
+        await clearAdminSession();
+        navigate("/admin/login", { replace: true });
       } else {
-        setQueueError(res.status === 401
-          ? "Your admin session has expired, so the queue can't load. Log in at /admin/login and it will reappear."
-          : `The song queue could not load (error ${res.status}). The scheduled songs are safe on the server.`);
+        setQueueError(`The song queue could not load (error ${res.status}). The scheduled songs are safe on the server.`);
       }
     } catch (err) {
       console.error("Fetch song queue error:", err);

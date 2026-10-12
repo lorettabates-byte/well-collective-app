@@ -83,3 +83,30 @@ export async function clearAdminSession(): Promise<void> {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(ADMIN_KEY);
 }
+
+const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
+
+// Swaps the saved admin token for a fresh one so the session keeps sliding
+// forward while the admin panel is in use. Returns false only when the server
+// says the session is no longer valid (the session is then cleared); being
+// offline keeps the current session.
+export async function refreshAdminSession(): Promise<boolean> {
+  if (!_token || !API_URL) return !!_token;
+  try {
+    const res = await fetch(`${API_URL}/api/auth/refresh`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${_token}` },
+    });
+    if (res.status === 401) {
+      await clearAdminSession();
+      return false;
+    }
+    if (res.ok) {
+      const data = (await res.json()) as { token?: string; admin?: object };
+      if (data.token && data.admin) await saveAdminSession(data.token, data.admin);
+    }
+  } catch {
+    // Offline: keep the current session.
+  }
+  return true;
+}

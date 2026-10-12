@@ -1589,9 +1589,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         entry.weeklyTheme = { title: noEmDash(entry.weeklyTheme.title), body: noEmDash(entry.weeklyTheme.body) };
         next = {
           ...next,
-          inspirations: [
+          inspirations: next.inspirations.some((i) => i.id === `weekly-${today}`)
+            ? next.inspirations
+            : [
             {
-              id: uid("i"),
+              id: `weekly-${today}`,
               title: entry.weeklyTheme.title,
               body: entry.weeklyTheme.body,
               author: "Loretta Bates",
@@ -1639,9 +1641,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (boostHour >= 15) {
           next = {
             ...next,
-            inspirations: [
+            inspirations: next.inspirations.some((i) => i.id === `motivation-${today}`)
+              ? next.inspirations
+              : [
               {
-                id: uid("i"),
+                id: `motivation-${today}`,
                 title: entry.motivationBoost.title,
                 body: entry.motivationBoost.body,
                 author: "Loretta Bates",
@@ -1661,9 +1665,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const dailyNotifId = `daily-notif-${today}`;
         next = {
           ...next,
-          inspirations: [
+          inspirations: next.inspirations.some((i) => i.id === `daily-${today}`)
+            ? next.inspirations
+            : [
             {
-              id: uid("i"),
+              id: `daily-${today}`,
               title: entry.dailyInspiration.title,
               body: entry.dailyInspiration.body,
               author: "Loretta Bates",
@@ -1772,7 +1778,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     existingDaily?.savedBy ??
                     (prev.user.savedInspirationIds?.includes(dailyId) ? [prev.user.id] : []),
                 },
-                ...updatedInspirations.filter((i) => i.cadence !== "daily"),
+                ...updatedInspirations.filter((i) => i.id !== dailyId),
               ];
             }
 
@@ -1806,7 +1812,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     existingWeekly?.savedBy ??
                     (prev.user.savedInspirationIds?.includes(weeklyId) ? [prev.user.id] : []),
                 },
-                ...updatedInspirations.filter((i) => i.cadence !== "weekly"),
+                ...updatedInspirations.filter((i) => i.id !== weeklyId),
               ];
             }
 
@@ -1837,7 +1843,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     existingMotivation?.savedBy ??
                     (prev.user.savedInspirationIds?.includes(motivationId) ? [prev.user.id] : []),
                 },
-                ...updatedInspirations.filter((i) => i.cadence !== "motivational"),
+                ...updatedInspirations.filter((i) => i.id !== motivationId),
               ];
               } // end else (after 3pm or historical)
             }
