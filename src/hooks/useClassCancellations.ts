@@ -10,13 +10,14 @@ export interface ClassCancellation {
   back_time: string;
   replacement: { title: string; url: string } | null;
   banner: string;
+  banner_from?: string; // YYYY-MM-DD, first day the banner shows (6 days before the class)
 }
 
 // Shared across screens so Home, Classes and Events make one request between them.
 let cache: { at: number; list: ClassCancellation[] } | null = null;
 let inflight: Promise<ClassCancellation[]> | null = null;
 
-function easternToday(): string {
+export function easternToday(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 }
 
