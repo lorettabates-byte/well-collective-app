@@ -91,7 +91,7 @@ const GOAL_TAGLINES: Record<string, string> = {
 };
 
 export default function Home() {
-  const { user, threads, blockedUserIds, inspirations, events, notifications, featuredEventId, currentWeeklyTheme } = useApp();
+  const { user, threads, blockedUserIds, inspirations, events, notifications, featuredEventId, currentWeeklyTheme, profileReady } = useApp();
   const visibleThreads = threads.filter((t) => !blockedUserIds.includes(t.authorId));
   const { events: liveEvents } = useEventsFeed();
   const classCancellations = useClassCancellations();
@@ -699,7 +699,9 @@ export default function Home() {
       )}
 
       {/* Profile photo nudge — shown once until dismissed or photo added */}
-      {!user.avatar && !photoNudgeDismissed && (
+      {/* Wait for the saved profile to load: photos aren't kept on the phone,
+          so every cold start has no photo until the server answers. */}
+      {profileReady && !user.avatar && !photoNudgeDismissed && (
         <div className="glass-card rounded-card p-4 mb-4 flex items-center gap-3 border border-brand-light/20">
           <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0 shadow-glow">
             <User size={16} className="text-white" />
