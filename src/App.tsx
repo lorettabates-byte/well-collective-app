@@ -1,3 +1,4 @@
+import { Browser } from "@capacitor/browser";
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
@@ -100,7 +101,8 @@ function App() {
   };
 
   // Tapping a class-cancellation push on a phone opens the replacement class
-  // (signed in to the video library). Other pushes just open the app as before.
+  // (signed in to the video library). A new-comment alert opens that comment.
+  // Other pushes just open the app as before.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let handle: { remove: () => Promise<void> } | undefined;
@@ -108,6 +110,10 @@ function App() {
       const data = (action.notification.data ?? {}) as { url?: string; tag?: string };
       if (data.tag === "class-cancellation" && data.url?.startsWith("https://lorettabates.com/")) {
         openMemberLink(data.url, user.email);
+      }
+      // New comment on a class (Loretta's alert): open the comment itself on the website.
+      if (data.tag === "new-comment" && data.url?.startsWith("https://lorettabates.com/")) {
+        Browser.open({ url: data.url }).catch(() => {});
       }
     }).then((h) => { handle = h; }).catch(() => {});
     return () => { handle?.remove().catch(() => {}); };
