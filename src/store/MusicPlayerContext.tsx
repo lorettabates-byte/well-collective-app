@@ -7,11 +7,23 @@ import { NowPlaying } from "../plugins/NowPlaying";
 
 type RepeatMode = "off" | "all" | "one";
 
+function shuffleRest(queue: Song[], index: number): Song[] {
+  const first = queue[index];
+  const rest = queue.filter((_, i) => i !== index);
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  return first ? [first, ...rest] : rest;
+}
+
 interface MusicPlayerState {
   currentSong: Song | null;
   isPlaying: boolean;
   progress: { current: number; duration: number };
   repeatMode: RepeatMode;
+  isShuffle: boolean;
+  toggleShuffle: () => void;
   playAt: (queue: Song[], index: number, userEmail?: string) => void;
   togglePlay: () => void;
   handleSkip: (direction: 1 | -1) => void;
@@ -33,6 +45,9 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState({ current: 0, duration: 0 });
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
+  const [isShuffle, setIsShuffle] = useState(false);
+  const isShuffleRef = useRef(false);
+  const originalQueueRef = useRef<Song[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Song[]>([]);
@@ -187,7 +202,35 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   }
 
   const playAt = (queue: Song[], index: number, userEmail?: string) => {
-    playAtInternal(queue, index, userEmail);
+    originalQueueRef.current = queue;
+    if (isShuffleRef.current && queue.length > 1) {
+      playAtInternal(shuffleRest(queue, index), 0, userEmail);
+    } else {
+      playAtInternal(queue, index, userEmail);
+    }
+  };
+
+  // Works mid-song: the current song keeps playing and the rest of the queue is
+  // reshuffled (or put back in list order when shuffle is turned off).
+  const toggleShuffle = () => {
+    const next = !isShuffleRef.current;
+    isShuffleRef.current = next;
+    setIsShuffle(next);
+    const queue = queueRef.current;
+    if (queue.length < 2) return;
+    const current = queue[queueIndexRef.current];
+    if (next) {
+      originalQueueRef.current = queue;
+      queueRef.current = shuffleRest(queue, queueIndexRef.current);
+      queueIndexRef.current = 0;
+    } else {
+      const original = originalQueueRef.current;
+      const idx = original.findIndex((s) => s.id === current?.id);
+      if (idx >= 0) {
+        queueRef.current = original;
+        queueIndexRef.current = idx;
+      }
+    }
   };
 
   const togglePlay = () => {
@@ -227,6 +270,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     setIsPlaying(false);
     setProgress({ current: 0, duration: 0 });
     queueRef.current = [];
+    originalQueueRef.current = [];
     queueIndexRef.current = 0;
   };
 
@@ -347,7 +391,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <MusicPlayerContext.Provider
-      value={{ currentSong, isPlaying, progress, repeatMode, playAt, togglePlay, handleSkip, cycleRepeat, handleSeek, stop }}
+      value={{ currentSong, isPlaying, progress, repeatMode, isShuffle, toggleShuffle, playAt, togglePlay, handleSkip, cycleRepeat, handleSeek, stop }}
     >
       {children}
     </MusicPlayerContext.Provider>
