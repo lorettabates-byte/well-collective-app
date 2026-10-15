@@ -55,7 +55,7 @@ function ResumeTrial({ onSuccess, onSwitchToStart }: { onSuccess: () => void; on
           const regRes = await fetch(`${API_URL}/api/iap/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email.trim() }),
+            body: JSON.stringify({ email: email.trim(), platform: Capacitor.getPlatform() }),
           });
           const regData = (await regRes.json()) as { token?: string; user?: { email: string; name: string } };
           if (regRes.ok && regData.token && regData.user) {

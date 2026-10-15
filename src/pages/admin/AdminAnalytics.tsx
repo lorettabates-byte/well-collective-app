@@ -1,6 +1,7 @@
-import { BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, MapPin, TrendingUp, Trophy, Users } from "lucide-react";
+import { ArrowLeftRight, BarChart2, Brain, ChevronDown, ChevronUp, Clock, Flame, MapPin, TrendingUp, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import MembershipMovementTab from "./MembershipMovementTab";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 import { Capacitor } from "@capacitor/core";
 import TopBar from "../../components/layout/TopBar";
@@ -9,7 +10,7 @@ import { getAdminToken } from "../../utils/adminAuth";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
-type Tab = "overview" | "members" | "sections" | "tutorial" | "wellcup" | "games";
+type Tab = "overview" | "movement" | "members" | "sections" | "tutorial" | "wellcup" | "games";
 
 interface DashboardData {
   summary: {
@@ -1178,7 +1179,8 @@ function GamesTab({ data }: { data: DashboardData }) {
 
 export default function AdminAnalytics() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(searchParams.get("tab") === "movement" ? "movement" : "overview");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1216,6 +1218,7 @@ export default function AdminAnalytics() {
 
   const TABS: { id: Tab; label: string; icon: typeof BarChart2 }[] = [
     { id: "overview", label: "Overview", icon: TrendingUp },
+    { id: "movement", label: "Joins & Cancels", icon: ArrowLeftRight },
     { id: "members", label: "Members", icon: Users },
     { id: "sections", label: "Sections", icon: BarChart2 },
     { id: "tutorial", label: "Tutorial", icon: Users },
@@ -1250,13 +1253,13 @@ export default function AdminAnalytics() {
       </div>
 
       <div className="px-4 pb-8 pt-2">
-        {loading && (
+        {tab !== "movement" && loading && (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-brand-light border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {error && !loading && (
+        {tab !== "movement" && error && !loading && (
           <div className="glass-card rounded-card p-4 text-center">
             <p className="text-xs text-red-400 mb-3">Failed to load analytics: {error}</p>
             <button
@@ -1268,7 +1271,9 @@ export default function AdminAnalytics() {
           </div>
         )}
 
-        {!loading && !error && data && (
+        {tab === "movement" && <MembershipMovementTab />}
+
+        {tab !== "movement" && !loading && !error && data && (
           <>
             {tab === "overview" && <OverviewTab data={data} />}
             {tab === "members" && <MembersTab data={data} onRefresh={() => setRetryCount(n => n + 1)} />}
@@ -1279,7 +1284,7 @@ export default function AdminAnalytics() {
           </>
         )}
 
-        {!loading && !error && !data && (
+        {tab !== "movement" && !loading && !error && !data && (
           <div className="glass-card rounded-card p-6 text-center">
             <Clock size={24} className="text-text-dim mx-auto mb-2" />
             <p className="text-xs text-text-muted">No analytics data available yet</p>

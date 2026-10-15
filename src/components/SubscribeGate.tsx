@@ -27,7 +27,7 @@ async function activateIAPOnServer(email: string): Promise<void> {
   await fetch(`${API_URL}/api/iap/activate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, platform: Capacitor.getPlatform() }),
   }).catch(() => {});
 }
 

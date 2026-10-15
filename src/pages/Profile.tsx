@@ -6,6 +6,7 @@ import { initIAP, purchaseMembership } from "../utils/iap";
 const isNative = Capacitor.isNativePlatform();
 import { MOOD_STATUSES } from "../data/moods";
 import SectionIntroModal from "../components/SectionIntroModal";
+import ManageMembershipSheet from "../components/ManageMembershipSheet";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -311,6 +312,7 @@ export default function Profile() {
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const [hasPushSub, setHasPushSub] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -573,6 +575,22 @@ export default function Profile() {
             <ChevronRight size={16} className="text-text-dim shrink-0" />
           </button>
         )}
+        {!localStorage.getItem("memberTrialEndsAt") && !!user.email && (
+          <button
+            onClick={() => setShowManage(true)}
+            className="flex items-center gap-3 glass-card rounded-card px-4 py-3.5 text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center shrink-0">
+              <Crown size={16} className="text-brand-light" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text">Manage membership</p>
+              <p className="text-xs text-text-muted">Billing, or cancel your membership</p>
+            </div>
+            <ChevronRight size={16} className="text-text-dim shrink-0" />
+          </button>
+        )}
+        {showManage && user.email && <ManageMembershipSheet email={user.email} onClose={() => setShowManage(false)} />}
         <MenuRow icon={<Users size={16} />} label="WELL Tribe" to="/tribe" />
         {hasPushSub === false && (
           <button

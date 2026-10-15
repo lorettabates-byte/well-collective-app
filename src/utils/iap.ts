@@ -74,3 +74,22 @@ export async function restoreIAPPurchases(): Promise<boolean> {
     return false;
   }
 }
+
+export interface StoreMembership {
+  store: "app_store" | "google_play" | null;
+  managementURL: string | null;
+}
+
+// Which store bills this member, if any, and the store's own page for managing it.
+export async function getStoreMembership(): Promise<StoreMembership> {
+  if (!Capacitor.isNativePlatform() || !RC_KEY) return { store: null, managementURL: null };
+  try {
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    const ent = customerInfo.entitlements.active[ENTITLEMENT_ID];
+    if (!ent) return { store: null, managementURL: null };
+    const store = String(ent.store) === "PLAY_STORE" ? "google_play" : String(ent.store) === "APP_STORE" ? "app_store" : null;
+    return { store, managementURL: customerInfo.managementURL ?? null };
+  } catch {
+    return { store: null, managementURL: null };
+  }
+}
