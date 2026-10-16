@@ -34,7 +34,17 @@ export function playWellIntro(): Promise<void> {
   try {
     const a = new Audio("/sounds/well-intro.mp3");
     a.volume = 0.6;
-    a.play()?.catch(() => { /* sound blocked: the logo still plays */ });
+    a.play()?.catch(() => {
+      // When the app opens there is no tap yet, so the phone may block the sound.
+      // Then it plays on the member's first tap, if that comes within 8 seconds.
+      const until = Date.now() + 8000;
+      const onTap = () => {
+        document.removeEventListener("pointerdown", onTap, true);
+        if (Date.now() < until) a.play()?.catch(() => {});
+      };
+      document.addEventListener("pointerdown", onTap, true);
+      setTimeout(() => document.removeEventListener("pointerdown", onTap, true), 8000);
+    });
   } catch { /* no audio: the logo still plays */ }
   return new Promise((resolve) => {
     setTimeout(resolve, 2400);
