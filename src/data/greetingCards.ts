@@ -9,6 +9,7 @@ import {
   CARD_PRINTED,
   CARD_SAMPLE_NOTES,
   insideLeft,
+  printedFor,
   photoCover,
   welcomeCover,
 } from "./cardArt";
@@ -41,8 +42,9 @@ export function designsFor(occasionId: string): CardDesign[] {
   return DESIGNS[occasionId] ?? [];
 }
 
-export function printedLine(occasionId: string): string {
-  return (CARD_PRINTED as Record<string, string>)[occasionId] ?? "";
+/** The printed line on the right page. Each design has its own (2026-10-16); photo cards use the occasion's. */
+export function printedLine(occasionId: string, designId?: string): string {
+  return designId ? printedFor(occasionId, designId) : (CARD_PRINTED as Record<string, string>)[occasionId] ?? "";
 }
 
 /** The sample note from the approved demo, used as a placeholder only. */
@@ -96,8 +98,8 @@ export function coverHtml(occasionId: string, designId: string, photo?: string |
   return d ? d.draw() : "";
 }
 
-export function insideLeftHtml(occasionId: string): string {
-  return insideLeft(occasionId);
+export function insideLeftHtml(occasionId: string, designId?: string): string {
+  return insideLeft(occasionId, designId);
 }
 
 export function fxFor(occasionId: string, designId: string): CardFx[] {

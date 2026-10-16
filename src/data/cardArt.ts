@@ -160,8 +160,51 @@ function photoCover(src, occ, thumb) {
   return '<img class="wc-photo-img" src="' + src + '" alt=""' + (thumb ? ' style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"' : '') + '>'
     + '<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><defs><linearGradient id="pg' + (thumb ? 't' : '') + '" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#0b1a3a" stop-opacity="0"/><stop offset="1" stop-color="#0b1a3a" stop-opacity=".88"/></linearGradient></defs><rect width="300" height="400" fill="url(#pg' + (thumb ? 't' : '') + ')"/><rect x="12" y="12" width="276" height="376" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.5"/>' + txt(150, 352, t, F.script, "#fff", t.length > 12 ? 40 : 52) + '</svg>';
 }
-function insideLeft(occ) {
+/* ---------- Inside pages: each design has its own picture, saying and printed line (2026-10-16) ----------
+   [background, saying colour, accent, picture, saying lines, printed line on the right page] */
+var T = { clayBg: "#f3eee8", clayInk: "#6f5f52", dropBg: "#e9eef4", dropInk: "#3c5b7d", nightBg: "#0e2244", blushBg: "#f6efea", blushInk: "#7a5a50", rose: "#f6e6e4", roseInk: "#8a3d4f" };
+var INSIDE = {
+  "b-shapes": [N.bg, "#fff", N.gold, function () { return star(150, 150, 34, N.gold) + sparkle(104, 118, 8, N.pink) + sparkle(198, 112, 10, N.sky); }, ["Another year of dancing", "like nobody is watching."], "Wishing you a year full of music, laughter and every reason to celebrate the FABULOUS you."],
+  "b-clay": [C.bg, C.type, C.a, function () { return balloon(132, 130, 28, C.a) + balloon(172, 116, 24, C.c); }, ["Float a little higher", "this year."], "May this year lift you up, one happy balloon at a time."],
+  "b-copper": [K.bg, K.ink, K.a, function () { return gift(150, 150, 36, K.a); }, ["The best gift", "is YOU."], "The best present at any party is you showing up. Happy birthday!"],
+  "b-bloom": [B.bg, B.b, B.a, function () { return candle(150, 150, 50, B.a); }, ["Make a wish.", "Then go make it happen."], "Blow out the candles and grab your crown. This is YOUR day!"],
+  "b-cheers": [N.bg, "#fff", N.gold, function () { return glass(130, 140, 30, -14, N.gold) + glass(170, 140, 30, 14, N.gold); }, ["You are the oldest you have", "ever been, and the youngest", "you will ever be again."], "Here's to you, and to a whole year full of reasons to celebrate. Cheers!"],
+  "t-clay": [C.bg, C.type, C.a, function () { return flower(150, 130, 22, C.a) + stem(150, 152, 70, C.a); }, ["Little flowers,", "big love."], "Sending you a little calm, a lot of love, and a reminder that you are never alone."],
+  "t-bloom": [B.bg, B.b, B.a, function () { return leaf(150, 160, 48, 28, null, B.a); }, ["Breathe in.", "Breathe out.", "We've got you."], "Take it one breath at a time. Your WELL family is right here with you."],
+  "t-night": [N.bg, "#fff", N.pink, function () { return arches(150, 190, 60, 3, 12, N.sky, 3) + heart(150, 160, 20, N.pink, N.pink); }, ["Sending love", "all the way to you."], "Wrapping you in the biggest hug from all of us."],
+  "t-copper": [K.bg, K.ink, K.a, function () { return heart(136, 150, 26, K.a) + heart(170, 136, 18, K.b); }, ["You are on my mind", "and in my heart."], "Just wanted you to know I am thinking of you today."],
+  "t-shapes": [N.bg, "#fff", N.pink, function () { return shapes(92, 8, [70, 100, 230, 200]); }, ["Connection.", "Community.", "Acceptance."], "This is what we are about, and you are a big part of it."],
+  "h-shapes": [N.bg, "#fff", N.gold, function () { return sun(150, 150, 26, N.gold); }, ["Don't waste today", "waiting for tomorrow."], "No reason at all. Just thinking of you and smiling."],
+  "h-clay": [C.bg, C.type, C.a, function () { return sun(150, 150, 28, C.a); }, ["You make the sunny days", "even sunnier."], "Hi friend! I miss your smile. Come dance with me soon."],
+  "h-bloom": [B.bg, B.b, B.a, function () { return wave(80, 150, 140, 14, B.a, 7) + wave(80, 176, 140, 14, B.b, 7); }, ["Hope you are", "dancing today!"], "Turn up your favorite song and shake it a little for me."],
+  "h-copper": [K.bg, K.ink, K.a, function () { return heart(150, 150, 30, K.a); }, ["You are beautiful.", "You are enough."], "Just a little hello to remind you how special you are."],
+  "h-hola": [N.bg, "#fff", N.coral, function () { return arches(150, 200, 70, 3, 14, N.coral, 6); }, ["¡Hola, hola!", "¿Cómo estás?"], "Hola, friend! Just stopping by to send you a big smile."],
+  "c-clay": [T.clayBg, T.clayInk, "#cdbba8", function () { return leaf(132, 150, 26, -30, null, "#cdbba8") + leaf(170, 136, 22, 24, null, "#b9a58f"); }, ["Love never", "really leaves us."], "Holding you in my heart, today and in the days ahead."],
+  "c-copper": [K.bg, K.ink, K.a, function () { return feather(150, 150, 44, K.a); }, ["Gently,", "one day at a time."], "Wishing you peace, and gentle moments of comfort."],
+  "c-drop": [T.dropBg, T.dropInk, T.dropInk, function () { return drop(150, 150, 34, "none", T.dropInk); }, ["We are holding", "you close."], "Sending you love, strength and prayers. I am here whenever you need me."],
+  "c-night": [T.nightBg, "#fff", "#f3e3b8", function () { return star(150, 150, 26, "#f3e3b8") + sparkle(112, 118, 5, "#cfe7f7") + sparkle(190, 128, 4, "#cfe7f7"); }, ["A light that", "keeps on shining."], "Their light lives on in every life they touched."],
+  "c-blush": [T.blushBg, T.blushInk, "#dcc4b6", function () { return flower(150, 136, 18, "#c9a596") + stem(150, 154, 64, "#c9a596"); }, ["Sending you", "gentle hugs."], "There are no perfect words, only love. And there is so much of it here for you."],
+  "g-bloom": [B.bg, B.b, B.a, function () { return '<path d="M90,170 L120,140 L150,170 L180,140 L210,170"' + S(B.a, 7) + '/>'; }, ["One step at a time,", "queen."], "You are stronger than you know. Keep going, one step at a time."],
+  "g-shapes": [N.bg, "#fff", N.gold, function () { return star(150, 150, 34, N.gold); }, ["You are stronger", "than you know."], "I believe in you, today and every day."],
+  "g-crown": [N.bg, "#fff", N.gold, function () { return crown(150, 160, 40, N.gold, N.gold); }, ["You are royalty.", "Grab your crown."], "Hold your head high. You've got this, and we've got you."],
+  "g-clay": [C.bg, C.type, C.a, function () { return mountain(150, 190, 60, C.a); }, ["Every step", "counts."], "Keep climbing. The view at the top is worth every single step."],
+  "g-fierce": [K.bg, K.ink, K.a, function () { return '<path d="M160,100 L128,162 L152,162 L138,214 L178,144 L154,144Z" fill="' + K.a + '"/>'; }, ["Nothing can", "dim your light."], "You have faced hard things before, and you are still standing. Go get it!"],
+  "k-shapes": [N.bg, "#fff", N.gold, function () { return star(150, 150, 30, N.gold) + sparkle(106, 120, 8, N.pink) + sparkle(196, 126, 9, N.sky); }, ["This is what", "we are about!"], "Look at you go! Every bit of this is so well deserved."],
+  "k-copper": [K.bg, K.ink, K.a, function () { return star(150, 150, 34, K.a); }, ["Shine on,", "superstar."], "So proud of you. Keep on shining!"],
+  "k-clay": [C.bg, C.type, C.a, function () { return trophy(150, 156, 36, C.a); }, ["Hard work", "looks good on you."], "You did the work, and it shows. Way to go!"],
+  "k-yay": [B.bg, B.b, B.a, function () { return dots(124, 30, B.a, 80, 100, 220, 200, 2.6); }, ["Time to", "celebrate!"], "Turn up the music, because this calls for a dance party!"],
+  "k-medal": [N.bg, "#fff", N.gold, function () { return medal(150, 168, 30, N.sky, N.gold); }, ["Gold medal", "moment!"], "You earned every bit of this. I am so proud of you!"],
+  "ty-disco": [N.bg, "#fff", N.gold, function () { return sparkle(150, 150, 22, N.gold) + sparkle(112, 120, 9, N.pink) + sparkle(190, 126, 11, N.sky); }, ["Thank you for", "the good vibes."], "Thank you for bringing the music, the smiles and the joy."],
+  "ty-latte": [C.bg, C.type, C.a, function () { return heart(150, 150, 26, C.a, C.a) + '<path d="M138,112 C132,100 144,94 138,82 M162,112 C156,100 168,94 162,82"' + S(C.b, 3) + '/>'; }, ["You warm", "my heart."], "Thank you for being the warm cup of kindness in my day."],
+  "ty-repeat": [K.bg, K.ink, K.a, function () { return heart(150, 150, 28, K.a, K.a); }, ["I could say it", "a thousand times."], "Thank you, thank you, thank you. It still does not feel like enough!"],
+  "ty-stamp": [B.bg, B.b, B.a, function () { return '<circle cx="150" cy="150" r="42" fill="' + B.a + '"/>' + heart(150, 154, 18, B.bg, B.bg); }, ["Gratitude,", "sealed with love."], "Thank you for all you do. It never goes unnoticed."],
+  "ty-bouquet": [T.rose, T.roseInk, "#e99aa8", function () { return '<circle cx="150" cy="150" r="26" fill="#e99aa8"/>' + flower(150, 150, 15, "#fff"); }, ["A grateful heart", "is a WELL heart."], "Thank you for being YOU. Your kindness makes every room a little brighter."]
+};
+function printedFor(occ, id) { return (INSIDE[id] || [])[5] || PRINTED[occ] || ""; }
+function insideLeft(occ, id) {
   if (occ === "welcome") return '<img class="wc-photo-img" src="' + PORTRAIT + '" alt="Loretta dancing"><svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect y="300" width="300" height="100" fill="#0b1a3a" fill-opacity=".82"/>' + txt(150, 344, "Come dance with me", F.script, "#fff", 34) + txt(150, 372, "THE WELL COLLECTIVE", F.sans, N.sky, 10, { ls: 4, weight: 600 }) + '</svg>';
+  var ins = INSIDE[id];
+  if (ins) return svg(dots(id.length * 7 + 3, 16, ins[2], 20, 20, 280, 70, 1.8) + ins[3]() + lines(ins[4], 150, ins[4].length > 2 ? 250 : 262, 26, F.serif, ins[1], 21, { style: "italic" }) + '<image href="' + LOGO + '" x="134" y="350" width="32" height="32"/>', ins[0]);
   var motif = { birthday: balloon(150, 150, 40, N.gold), "thinking-of-you": heart(150, 160, 34, N.pink, N.pink), "just-saying-hi": sun(150, 160, 32, N.gold), condolences: leaf(150, 160, 42, 15, N.sky), "youve-got-this": crown(150, 165, 46, N.gold, N.gold), congratulations: star(150, 160, 44, N.gold), "thank-you": flower(150, 160, 30, N.pink) }[occ] || "";
   var quote = { birthday: ["You are the oldest you have", "ever been, and the youngest", "you will ever be again."], "thinking-of-you": ["Connection.", "Community.", "Acceptance."], "just-saying-hi": ["Don't waste today", "waiting for tomorrow."], condolences: ["Love never", "really leaves us."], "youve-got-this": ["You are beautiful.", "You are enough."], congratulations: ["This is what", "we are about!"], "thank-you": ["A grateful heart", "is a WELL heart."] }[occ] || [""];
   return svg(shapes(77, 10, [10, 10, 290, 80]) + motif + lines(quote, 150, 262, 26, F.serif, "#fff", 21, { style: "italic" }) + '<image href="' + LOGO + '" x="134" y="350" width="32" height="32"/>', N.bg);
@@ -174,7 +217,7 @@ export interface CardDesign { id: string; name: string; fx: CardFx[]; draw: () =
 export {
   N as CARD_NIGHT, DESIGNS as CARD_DESIGNS_RAW, OCC as CARD_OCCASION_LIST, PRINTED as CARD_PRINTED,
   NOTES as CARD_SAMPLE_NOTES, COVER_TITLE as CARD_COVER_TITLE, FX_FOR as CARD_FX_FOR,
-  welcomeCover, photoCover, insideLeft, LOGO as CARD_LOGO, PORTRAIT as CARD_PORTRAIT,
+  welcomeCover, photoCover, insideLeft, printedFor, LOGO as CARD_LOGO, PORTRAIT as CARD_PORTRAIT,
 };
 
 /* ---------- Falling extras (from the approved fx()), returns the span markup ---------- */
