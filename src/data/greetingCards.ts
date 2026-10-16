@@ -1,5 +1,5 @@
 // Typed front door to the approved card art in cardArt.ts: which occasions a
-// member can pick, the three designs for each, the cover/inside markup for a
+// member can pick, the five designs for each, the cover/inside markup for a
 // stored card, and the mapping that keeps cards sent before 2026-10-16 opening.
 import {
   CARD_COVER_TITLE,

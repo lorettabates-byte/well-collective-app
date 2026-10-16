@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getAuthHeaders } from "../../utils/admin";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -14,6 +14,11 @@ interface BroadcastResult {
   error?: string;
 }
 
+interface ScheduledSend { at: string; onlyEmail?: string; done?: string; cancelled?: boolean }
+
+const whenText = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET";
+
 // One-time send of Loretta's welcome card to every current member, to
 // announce the new cards. Check first, then send. Nobody gets it twice.
 export default function WelcomeCardBroadcast() {
@@ -21,6 +26,22 @@ export default function WelcomeCardBroadcast() {
   const [busy, setBusy] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [error, setError] = useState("");
+  const [schedule, setSchedule] = useState<ScheduledSend[] | null>(null);
+
+  const scheduleCall = async (body?: { cancel: true }) => {
+    if (!API_URL) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/cards/welcome-schedule`, body
+        ? { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) }
+        : { headers: getAuthHeaders() });
+      const data = (await res.json().catch(() => ({}))) as { schedule?: ScheduledSend[] };
+      if (res.ok && data.schedule) setSchedule(data.schedule);
+    } catch {
+      /* the schedule box just stays hidden */
+    }
+  };
+  useEffect(() => { scheduleCall(); }, []);
+  const pending = (schedule ?? []).filter((s) => !s.done && !s.cancelled);
 
   const call = async (body: { dryRun: boolean; onlyEmail?: string }) => {
     if (!API_URL) return;
@@ -54,6 +75,25 @@ export default function WelcomeCardBroadcast() {
       <p className="text-xs text-text-muted mt-1">
         Sends Loretta's welcome card once to everyone who is a member right now, to show off the new cards. Check first, then send.
       </p>
+      {schedule && schedule.length > 0 && (
+        <div className="mt-3 rounded-card bg-surface-2 border border-border px-3 py-2">
+          <p className="text-xs font-semibold text-text">Scheduled</p>
+          {schedule.map((s) => (
+            <p key={s.at + (s.onlyEmail ?? "")} className="text-xs text-text-muted mt-1">
+              {whenText(s.at)}: {s.onlyEmail ? `test to ${s.onlyEmail}` : "everyone"}
+              {s.done ? " (sent)" : s.cancelled ? " (cancelled)" : ""}
+            </p>
+          ))}
+          {pending.length > 0 && (
+            <button
+              onClick={() => { if (window.confirm("Cancel the scheduled welcome-card sends?")) scheduleCall({ cancel: true }); }}
+              className="text-xs font-semibold glass-card border border-border text-text rounded-pill px-3 py-1.5 mt-2"
+            >
+              Cancel scheduled sends
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 mt-3">
         <button disabled={busy} onClick={() => call({ dryRun: true })} className="text-xs font-semibold glass-card border border-border text-text rounded-pill px-3 py-1.5 disabled:opacity-50">
           Check how many
