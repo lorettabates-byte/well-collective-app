@@ -63,8 +63,12 @@ function EnvelopeScene({
   const insideLeft = useMemo(() => insideLeftHtml(occasionId), [occasionId]);
   const printed = printedLine(occasionId);
 
+  // Cards used to be one face, so people need a nudge to open the inside (Loretta, 2026-10-16).
+  const [seenInside, setSeenInside] = useState(false);
+
   const reset = () => {
     clearTimers();
+    setSeenInside(false);
     setFxHtml("");
     setState("sealed");
   };
@@ -101,7 +105,7 @@ function EnvelopeScene({
   }, []);
 
   const onCard = () => {
-    if (state === "free") { fitSpread(); setState("spread"); }
+    if (state === "free") { fitSpread(); setState("spread"); setSeenInside(true); }
     else if (state === "spread") setState("free");
     else if (state === "sealed") open();
   };
@@ -119,7 +123,9 @@ function EnvelopeScene({
     state === "rising" ? "wc-rising" : "",
     state === "free" || state === "spread" ? "wc-free" : "",
     state === "spread" ? "wc-spread" : "",
+    state === "free" && !seenInside ? "wc-peek" : "",
   ].filter(Boolean).join(" ");
+  const tapHint = state === "free" ? (seenInside ? "Tap the card to read the front again" : "Tap the card to open it") : state === "spread" ? "Tap the card to close it" : "";
 
   return (
     <div className="wc-root" style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
@@ -166,6 +172,7 @@ function EnvelopeScene({
           dangerouslySetInnerHTML={{ __html: fxHtml }}
         />
       </div>
+      <p className="wc-tap-hint" aria-live="polite">{tapHint}</p>
       {showReplay && (
         <div className="wc-ctrl">
           <button type="button" className="wc-btn" onClick={replay}>Close and play again</button>
