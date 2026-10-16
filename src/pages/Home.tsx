@@ -25,6 +25,7 @@ import SectionHeader from "../components/ui/SectionHeader";
 import Avatar from "../components/ui/Avatar";
 import { LOGO_URL } from "../components/layout/MobileShell";
 import ClassCancellationBanner from "../components/ClassCancellationBanner";
+import UnopenedCardBanner from "../components/home/UnopenedCardBanner";
 import { isCancelledLivestream, useClassCancellations } from "../hooks/useClassCancellations";
 import { useEventsFeed } from "../hooks/useEventsFeed";
 import { useApp } from "../store/AppContext";
@@ -544,6 +545,7 @@ export default function Home() {
       )}
 
       <ClassCancellationBanner className="mb-4" />
+      <UnopenedCardBanner className="mb-4" />
 
       {/* Login streak banner */}
       {streakBanner && (
