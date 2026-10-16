@@ -2,6 +2,7 @@ import { Plus, Trash2, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import TopBar from "../../components/layout/TopBar";
 import { getAuthHeaders } from "../../utils/admin";
+import WelcomeCardBroadcast from "./WelcomeCardBroadcast";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -98,6 +99,8 @@ export default function AdminTribe() {
     <div>
       <TopBar title="Tribe Connections" subtitle="View and restore tribe memberships" icon={Users} iconColor="#0191CE" showBack />
       <div className="px-4 pt-4 pb-8">
+
+        <WelcomeCardBroadcast />
 
         <div className="glass-card rounded-card px-4 py-3 mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold text-text">Total Connections</p>

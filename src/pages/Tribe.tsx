@@ -15,6 +15,7 @@ import { useSectionTracking } from "../hooks/useSectionTracking";
 import TopBar from "../components/layout/TopBar";
 import Avatar from "../components/ui/Avatar";
 import ReceivedCardModal from "../components/tribe/ReceivedCardModal";
+import CardSender from "../components/tribe/CardSender";
 import type { ReceivedTribeCard } from "../components/tribe/ReceivedCardModal";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
@@ -210,6 +211,7 @@ export default function Tribe() {
   const [challengeToast, setChallengeToast] = useState("");
   const [receivedCard, setReceivedCard] = useState<ReceivedTribeCard | null>(null);
   const [cardLoading, setCardLoading] = useState(false);
+  const [showCardSender, setShowCardSender] = useState(false);
   const cardParam = searchParams.get("card");
   const challengeParam = searchParams.get("challenge");
 
@@ -449,6 +451,15 @@ export default function Tribe() {
         >
           {showAdd ? <X size={16} /> : <Plus size={16} />}
           {showAdd ? "Close" : "Add to WELL Tribe"}
+        </button>
+
+        {/* Cards go to anyone in the WELL Collective; the recipient is picked after writing */}
+        <button
+          onClick={() => setShowCardSender(true)}
+          className="flex items-center justify-center gap-2 text-sm font-semibold glass-card border border-border text-text rounded-pill py-2.5 w-full -mt-2 mb-5"
+        >
+          <Sparkles size={16} className="text-brand-light" />
+          Send a card
         </button>
 
         {showAdd && (
@@ -878,6 +889,7 @@ export default function Tribe() {
       {(cardParam || cardLoading || receivedCard) && (
         <ReceivedCardModal card={receivedCard} loading={cardLoading} onClose={closeReceivedCard} />
       )}
+      {showCardSender && <CardSender onClose={() => setShowCardSender(false)} />}
     </div>
   );
 }

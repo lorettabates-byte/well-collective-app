@@ -406,6 +406,17 @@ export default function MemberProfile() {
                 </button>
               </div>
             )}
+
+            {/* Cards can go to anyone in the WELL Collective, not only the Tribe */}
+            {!inTribe && (
+              <button
+                onClick={() => { setCardOccasion("just-saying-hi"); setShowCardSender(true); }}
+                className="w-full flex items-center justify-center gap-2 rounded-pill py-2 mt-2.5 text-sm font-semibold glass-card border border-border text-text"
+              >
+                <Sparkles size={14} className="text-brand-light" />
+                Send a Card
+              </button>
+            )}
           </div>
 
           {/* Birthday celebration prompt */}

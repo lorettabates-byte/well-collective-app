@@ -1,0 +1,164 @@
+/* eslint-disable */
+// @ts-nocheck: this file is kept as a near-verbatim copy of the approved JS so the
+// art cannot drift; the typed API for the app lives in greetingCards.ts.
+// WELL greeting card art, ported line for line from the approved design file
+// site-redesign/well-collective/cards-approved-2026-10-16/cards-art.js
+// (Loretta approved 2026-10-16: "Please make sure the designs stay the same").
+// Every design is vector art returned as an SVG string. Do not restyle here:
+// change the approved source first, then port the change.
+// Only edits from the source: the class name photo-img -> wc-photo-img, the
+// logo/portrait point at app assets, and the falling extras use wc- keyframes.
+
+const LOGO = "/cards/logo.png";
+const PORTRAIT = "/cards/loretta-portrait.jpg";
+
+/* ---------- Drawing helpers: every card is vector art, crisp at any size ---------- */
+function f(v) { return (+v).toFixed(1); }
+function rng(seed) { return function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+function blob(cx, cy, r, seed, fill) {
+  var R = rng(seed), n = 7, pts = [], d = "";
+  for (var i = 0; i < n; i++) { var a = i / n * Math.PI * 2, rr = r * (.89 + R() * .22); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+  for (var j = 0; j < n; j++) {
+    var p0 = pts[(j - 1 + n) % n], p1 = pts[j], p2 = pts[(j + 1) % n], p3 = pts[(j + 2) % n];
+    if (j === 0) d += "M" + f(p1[0]) + "," + f(p1[1]);
+    d += "C" + f(p1[0] + (p2[0] - p0[0]) / 6) + "," + f(p1[1] + (p2[1] - p0[1]) / 6) + " " + f(p2[0] - (p3[0] - p1[0]) / 6) + "," + f(p2[1] - (p3[1] - p1[1]) / 6) + " " + f(p2[0]) + "," + f(p2[1]);
+  }
+  return '<path d="' + d + 'Z" fill="' + fill + '"/>';
+}
+function S(c, w) { return ' fill="none" stroke="' + c + '" stroke-width="' + (w || 2.2) + '" stroke-linecap="round" stroke-linejoin="round"'; }
+function dots(seed, n, c, x0, y0, x1, y1, r) { var R = rng(seed), s = ""; for (var i = 0; i < n; i++) s += '<circle cx="' + f(x0 + R() * (x1 - x0)) + '" cy="' + f(y0 + R() * (y1 - y0)) + '" r="' + f((r || 1.6) * (.6 + R())) + '" fill="' + c + '"/>'; return s; }
+function sparkle(x, y, s, c) { return '<path d="M' + x + ',' + (y - s) + ' Q' + x + ',' + y + ' ' + (x + s) + ',' + y + ' Q' + x + ',' + y + ' ' + x + ',' + (y + s) + ' Q' + x + ',' + y + ' ' + (x - s) + ',' + y + ' Q' + x + ',' + y + ' ' + x + ',' + (y - s) + 'Z" fill="' + c + '"/>'; }
+function drop(x, y, s, fill, stroke) { return '<path d="M' + x + ',' + (y - s) + ' C' + f(x + s * .2) + ',' + f(y - s * .55) + ' ' + f(x + s * .72) + ',' + f(y - s * .1) + ' ' + f(x + s * .72) + ',' + f(y + s * .38) + ' A' + f(s * .72) + ',' + f(s * .72) + ' 0 1 1 ' + f(x - s * .72) + ',' + f(y + s * .38) + ' C' + f(x - s * .72) + ',' + f(y - s * .1) + ' ' + f(x - s * .2) + ',' + f(y - s * .55) + ' ' + x + ',' + (y - s) + 'Z" fill="' + (fill || "none") + '"' + (stroke ? ' stroke="' + stroke + '" stroke-width="2.2"' : '') + '/>'; }
+function arches(x, y, r, n, gap, c, w) { var s = ""; for (var i = 0; i < n; i++) { var rr = r - i * gap; s += '<path d="M' + f(x - rr) + ',' + y + ' A' + rr + ',' + rr + ' 0 0 1 ' + f(x + rr) + ',' + y + '"' + S(c, w || 3) + '/>'; } return s; }
+function balloon(x, y, s, c) { return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + f(s * .78) + '" ry="' + s + '"' + S(c) + '/><path d="M' + (x - 4) + ',' + (y + s + 5) + ' L' + x + ',' + (y + s) + ' L' + (x + 4) + ',' + (y + s + 5) + 'Z"' + S(c, 1.8) + '/><path d="M' + x + ',' + (y + s + 5) + ' q 8,18 -4,34 q -10,14 2,30"' + S(c, 1.6) + '/><path d="M' + f(x - s * .35) + ',' + f(y - s * .45) + ' q ' + f(s * .15) + ',' + f(-s * .25) + ' ' + f(s * .4) + ',' + f(-s * .3) + '"' + S(c, 1.8) + '/>'; }
+function flower(x, y, r, c) { var s = ""; for (var i = 0; i < 6; i++) s += '<ellipse cx="' + x + '" cy="' + (y - r) + '" rx="' + f(r * .42) + '" ry="' + f(r * .8) + '" transform="rotate(' + i * 60 + ' ' + x + ' ' + y + ')"' + S(c, 1.8) + '/>'; return s + '<circle cx="' + x + '" cy="' + y + '" r="' + f(r * .28) + '"' + S(c, 1.8) + '/>'; }
+function stem(x, y, h, c) { return '<path d="M' + x + ',' + y + ' C' + (x - 8) + ',' + f(y + h * .4) + ' ' + (x + 8) + ',' + f(y + h * .7) + ' ' + x + ',' + (y + h) + '"' + S(c, 1.8) + '/><path d="M' + x + ',' + f(y + h * .45) + ' q 18,-10 26,4 q -16,10 -26,-4z"' + S(c, 1.6) + '/>'; }
+function leaf(x, y, s, rot, c, fill) { return '<g transform="translate(' + x + ' ' + y + ') rotate(' + rot + ')"><path d="M0,' + (-s) + ' C' + f(s * .6) + ',' + f(-s * .5) + ' ' + f(s * .6) + ',' + f(s * .5) + ' 0,' + s + ' C' + f(-s * .6) + ',' + f(s * .5) + ' ' + f(-s * .6) + ',' + f(-s * .5) + ' 0,' + (-s) + 'Z" ' + (fill ? 'fill="' + fill + '"' : S(c, 1.8)) + '/><path d="M0,' + f(-s * .85) + ' L0,' + f(s * .85) + '"' + S(fill ? "rgba(0,0,0,.18)" : c, 1.4) + '/></g>'; }
+function sun(x, y, r, c) { var s = '<circle cx="' + x + '" cy="' + y + '" r="' + r + '"' + S(c) + '/>'; for (var i = 0; i < 12; i++) { var a = i * Math.PI / 6; s += '<path d="M' + f(x + Math.cos(a) * (r + 6)) + ',' + f(y + Math.sin(a) * (r + 6)) + ' L' + f(x + Math.cos(a) * (r + 16)) + ',' + f(y + Math.sin(a) * (r + 16)) + '"' + S(c) + '/>'; } return s; }
+function crown(x, y, s, c, fill) { return '<path d="M' + (x - s) + ',' + f(y + s * .5) + ' L' + (x - s) + ',' + f(y - s * .35) + ' L' + f(x - s * .5) + ',' + y + ' L' + x + ',' + f(y - s * .6) + ' L' + f(x + s * .5) + ',' + y + ' L' + (x + s) + ',' + f(y - s * .35) + ' L' + (x + s) + ',' + f(y + s * .5) + 'Z" ' + (fill ? 'fill="' + fill + '"' : S(c)) + '/><circle cx="' + x + '" cy="' + f(y - s * .72) + '" r="3.4" fill="' + c + '"/>'; }
+function star(x, y, r, fill) { var s = ""; for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; s += (i ? "L" : "M") + f(x + Math.cos(a) * rr) + "," + f(y + Math.sin(a) * rr); } return '<path d="' + s + 'Z" fill="' + fill + '"/>'; }
+function heart(x, y, s, c, fill) { return '<path d="M' + x + ',' + f(y + s * .8) + ' C' + f(x - s * 1.4) + ',' + f(y - s * .1) + ' ' + f(x - s * .6) + ',' + f(y - s * 1.1) + ' ' + x + ',' + f(y - s * .35) + ' C' + f(x + s * .6) + ',' + f(y - s * 1.1) + ' ' + f(x + s * 1.4) + ',' + f(y - s * .1) + ' ' + x + ',' + f(y + s * .8) + 'Z" ' + (fill ? 'fill="' + fill + '"' : S(c)) + '/>'; }
+function wave(x, y, w, amp, c, sw) { var d = "M" + x + "," + y; for (var i = 0; i < 6; i++) d += " q " + f(w / 12) + "," + (i % 2 ? amp : -amp) + " " + f(w / 6) + ",0"; return '<path d="' + d + '"' + S(c, sw || 6) + '/>'; }
+function gift(x, y, s, c) { return '<rect x="' + (x - s) + '" y="' + f(y - s * .4) + '" width="' + s * 2 + '" height="' + f(s * 1.4) + '" rx="3"' + S(c) + '/><rect x="' + f(x - s * 1.1) + '" y="' + f(y - s * .75) + '" width="' + f(s * 2.2) + '" height="' + f(s * .4) + '" rx="2"' + S(c) + '/><path d="M' + x + ',' + f(y - s * .75) + ' L' + x + ',' + (y + s) + '"' + S(c) + '/><path d="M' + x + ',' + f(y - s * .75) + ' c -18,-22 -32,-2 0,0 c 18,-22 32,-2 0,0"' + S(c) + '/>'; }
+function trophy(x, y, s, c) { return '<path d="M' + f(x - s * .7) + ',' + (y - s) + ' L' + f(x + s * .7) + ',' + (y - s) + ' C' + f(x + s * .7) + ',' + f(y - s * .1) + ' ' + f(x + s * .35) + ',' + f(y + s * .25) + ' ' + x + ',' + f(y + s * .3) + ' C' + f(x - s * .35) + ',' + f(y + s * .25) + ' ' + f(x - s * .7) + ',' + f(y - s * .1) + ' ' + f(x - s * .7) + ',' + (y - s) + 'Z"' + S(c) + '/><path d="M' + f(x - s * .7) + ',' + f(y - s * .8) + ' c -24,0 -22,30 2,30 M' + f(x + s * .7) + ',' + f(y - s * .8) + ' c 24,0 22,30 -2,30"' + S(c) + '/><path d="M' + x + ',' + f(y + s * .3) + ' L' + x + ',' + f(y + s * .75) + ' M' + f(x - s * .4) + ',' + f(y + s * .8) + ' L' + f(x + s * .4) + ',' + f(y + s * .8) + '"' + S(c) + '/>'; }
+function feather(x, y, s, c) { var g = '<g transform="rotate(-28 ' + x + ' ' + y + ')"><path d="M' + x + ',' + (y + s) + ' L' + x + ',' + (y - s) + '"' + S(c, 1.8) + '/><path d="M' + x + ',' + (y - s) + ' C' + f(x + s * .55) + ',' + f(y - s * .6) + ' ' + f(x + s * .5) + ',' + f(y + s * .3) + ' ' + x + ',' + f(y + s * .7) + ' C' + f(x - s * .5) + ',' + f(y + s * .3) + ' ' + f(x - s * .55) + ',' + f(y - s * .6) + ' ' + x + ',' + (y - s) + 'Z"' + S(c, 1.8) + '/>'; for (var i = 0; i < 5; i++) { var yy = f(y - s * .6 + i * s * .26); g += '<path d="M' + x + ',' + yy + ' l ' + f(s * .32) + ',' + f(-s * .14) + ' M' + x + ',' + yy + ' l ' + f(-s * .32) + ',' + f(-s * .14) + '"' + S(c, 1.2) + '/>'; } return g + '</g>'; }
+function txt(x, y, s, font, fill, size, o) { o = o || {}; return '<text x="' + x + '" y="' + y + '" text-anchor="' + (o.anchor || "middle") + '" font-family="' + font + '" font-size="' + size + '" font-weight="' + (o.weight || 400) + '" fill="' + fill + '" letter-spacing="' + (o.ls || 0) + '"' + (o.style ? ' font-style="' + o.style + '"' : '') + '>' + s + '</text>'; }
+function lines(arr, x, y, gap, font, fill, size, o) { return arr.map(function (t, i) { return txt(x, y + i * gap, t, font, fill, size, o); }).join(""); }
+var F = { bold: "Bricolage Grotesque, Arial Black, sans-serif", script: "Allura, cursive", serif: "Cormorant Garamond, Georgia, serif", sans: "Plus Jakarta Sans, sans-serif" };
+function svg(inner, bg) { return '<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="400" fill="' + bg + '"/>' + inner + '</svg>'; }
+
+/* ---------- WELL palettes ---------- */
+var N = { bg: "#0b1a3a", sky: "#84D8FD", gold: "#E8B04B", pink: "#F2A7C3", coral: "#F07F5E", lav: "#9b8cf2", teal: "#3fb6a8" };
+var C = { bg: "#f7efe7", a: "#c9824a", b: "#e9c4b6", c: "#a98b74", ink: "#ffffff", type: "#7a4a2a" };
+var K = { bg: "#173459", a: "#d99a6c", b: "#f3d2b4", ink: "#f8e7d6" };
+var B = { bg: "#10302f", a: "#F07F5E", b: "#F6B6A6" };
+function shapes(seed, n, area) {
+  var cols = [N.sky, N.gold, N.pink, N.coral, N.lav, N.teal], R = rng(seed), s = "";
+  for (var i = 0; i < n; i++) {
+    var x = area[0] + R() * (area[2] - area[0]), y = area[1] + R() * (area[3] - area[1]), c = cols[Math.floor(R() * cols.length)], k = Math.floor(R() * 6), z = 10 + R() * 12;
+    if (k === 0) s += sparkle(f(x), f(y), f(z), c);
+    else if (k === 1) s += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(z * .6) + '" fill="' + c + '"/>';
+    else if (k === 2) s += arches(+f(x), f(y), z, 2, 6, c, 4);
+    else if (k === 3) s += drop(+f(x), +f(y), z, c);
+    else if (k === 4) s += '<path d="M' + f(x - z) + ',' + f(y) + ' A' + f(z) + ',' + f(z) + ' 0 0 1 ' + f(x + z) + ',' + f(y) + 'Z" fill="' + c + '"/>';
+    else s += star(x, y, z * .7, c);
+  }
+  return s;
+}
+
+/* ---------- Designs: three per occasion ---------- */
+var DESIGNS = {
+  birthday: [
+    { id: "b-shapes", name: "Party shapes", fx: ["confetti", "balloons"], draw: function () { return svg(shapes(11, 26, [10, 10, 290, 160]) + shapes(23, 14, [10, 300, 290, 395]) + '<rect x="30" y="170" width="240" height="118" rx="14" fill="' + N.bg + '"/>' + txt(150, 222, "HAPPY", F.bold, "#fff", 46, { weight: 800, ls: 2 }) + txt(150, 268, "Birthday", F.script, N.gold, 60), N.bg); } },
+    { id: "b-clay", name: "Clay balloons", fx: ["balloons"], draw: function () { return svg(blob(110, 120, 120, 3, C.a) + blob(230, 300, 120, 8, C.b) + blob(60, 330, 90, 13, C.c) + balloon(110, 105, 34, C.ink) + balloon(170, 80, 28, C.ink) + balloon(205, 135, 24, C.ink) + dots(5, 24, C.ink, 40, 30, 270, 230) + txt(150, 330, "Happy Birthday", F.script, C.type, 46) + txt(150, 356, "IT IS YOUR DAY", F.sans, C.type, 11, { ls: 3, weight: 600 }), C.bg); } },
+    { id: "b-copper", name: "Copper gift", fx: ["confetti"], draw: function () { return svg(dots(7, 40, K.a, 15, 15, 285, 385, 2.2) + gift(150, 125, 44, K.a) + txt(150, 238, "HAPPY", F.serif, K.ink, 22, { ls: 8, weight: 500 }) + txt(150, 298, "Birthday", F.script, K.a, 74) + txt(150, 336, "CELEBRATE YOU", F.sans, K.b, 11, { ls: 4, weight: 600 }), K.bg); } }
+  ],
+  "thinking-of-you": [
+    { id: "t-clay", name: "Clay bouquet", fx: ["petals"], draw: function () { return svg(blob(170, 150, 130, 21, C.b) + blob(80, 260, 110, 4, C.a) + blob(250, 360, 80, 9, C.c) + flower(130, 120, 22, C.ink) + flower(185, 150, 18, C.ink) + stem(130, 142, 110, C.ink) + stem(185, 168, 90, C.ink) + dots(31, 18, C.ink, 50, 40, 260, 220) + txt(150, 322, "Thinking", F.script, C.type, 52) + txt(150, 354, "OF YOU", F.sans, C.type, 13, { ls: 5, weight: 600 }), C.bg); } },
+    { id: "t-bloom", name: "Big leaf", fx: ["petals"], draw: function () { return svg(leaf(150, 228, 118, 28, null, B.a) + leaf(76, 310, 48, -40, null, B.b) + lines(["THINKING", "OF YOU"], 150, 62, 42, F.bold, B.a, 38, { weight: 800, ls: 1 }) + txt(150, 384, "WELL COLLECTIVE", F.sans, B.b, 10, { ls: 4, weight: 600 }), B.bg); } },
+    { id: "t-night", name: "Night arches", fx: ["petals"], draw: function () { return svg(arches(150, 250, 110, 5, 14, N.sky, 3) + heart(150, 205, 26, N.pink, N.pink) + sparkle(70, 90, 10, N.gold) + sparkle(240, 120, 7, N.gold) + txt(150, 318, "Sending you love", F.script, "#fff", 44) + txt(150, 348, "AND A BIG HUG", F.sans, N.sky, 11, { ls: 4, weight: 600 }), N.bg); } }
+  ],
+  "just-saying-hi": [
+    { id: "h-shapes", name: "Sunny shapes", fx: ["sparkles"], draw: function () { return svg(sun(150, 120, 34, N.gold) + wave(40, 210, 220, 16, N.pink, 7) + wave(40, 236, 220, 16, N.teal, 7) + shapes(41, 12, [10, 320, 290, 395]) + txt(150, 300, "HI THERE!", F.bold, "#fff", 50, { weight: 800 }), N.bg); } },
+    { id: "h-clay", name: "Clay sun", fx: ["sparkles"], draw: function () { return svg(blob(150, 150, 140, 33, C.a) + blob(250, 350, 90, 2, C.b) + blob(40, 360, 80, 17, C.c) + sun(150, 135, 40, C.ink) + txt(150, 302, "Just saying hi", F.script, C.type, 44) + txt(150, 332, "AND THAT I MISS YOU", F.sans, C.type, 11, { ls: 3, weight: 600 }), C.bg); } },
+    { id: "h-bloom", name: "Bold wave", fx: ["sparkles"], draw: function () { return svg('<path d="M0,250 C70,190 120,310 190,250 S290,200 300,230 L300,400 L0,400Z" fill="' + B.a + '"/>' + lines(["HEY", "YOU!"], 150, 120, 74, F.bold, B.b, 80, { weight: 800 }) + txt(150, 334, "Hope you are dancing today", F.script, B.bg, 25), B.bg); } }
+  ],
+  condolences: [
+    { id: "c-clay", name: "Soft leaves", fx: ["leaves"], draw: function () { return svg(blob(150, 160, 130, 7, "#cdbba8") + blob(230, 300, 90, 12, "#e5d6ca") + leaf(120, 140, 30, -30, "#fff") + leaf(160, 110, 26, 20, "#fff") + leaf(185, 160, 22, 50, "#fff") + '<path d="M150,210 C140,170 130,150 120,140"' + S("#fff", 1.8) + '/>' + txt(150, 322, "With deepest sympathy", F.script, "#6f5f52", 34) + txt(150, 352, "HOLDING YOU CLOSE", F.sans, "#6f5f52", 10, { ls: 3, weight: 600 }), "#f3eee8"); } },
+    { id: "c-copper", name: "Copper feather", fx: ["leaves"], draw: function () { return svg(feather(150, 150, 70, K.a) + txt(150, 298, "In loving memory", F.script, K.ink, 40) + txt(150, 332, "WE ARE HERE FOR YOU", F.sans, K.b, 10, { ls: 3, weight: 600 }), K.bg); } },
+    { id: "c-drop", name: "Gentle drop", fx: ["leaves"], draw: function () { return svg(arches(150, 230, 90, 4, 16, "#b9cbe0", 3) + drop(150, 170, 46, "none", "#3c5b7d") + txt(150, 302, "Thinking of you", F.script, "#3c5b7d", 40) + txt(150, 332, "WITH LOVE AND PRAYERS", F.sans, "#3c5b7d", 10, { ls: 3, weight: 600 }), "#e9eef4"); } }
+  ],
+  "youve-got-this": [
+    { id: "g-bloom", name: "Big and bold", fx: ["sparkles"], draw: function () { return svg('<path d="M30,300 L80,250 L130,300 L180,250 L230,300 L280,250"' + S(B.b, 9) + '/>' + lines(["YOU'VE", "GOT", "THIS"], 150, 90, 70, F.bold, B.a, 72, { weight: 800 }) + txt(150, 372, "One step at a time, queen", F.script, B.b, 30), B.bg); } },
+    { id: "g-shapes", name: "Spark shapes", fx: ["sparkles"], draw: function () { return svg(shapes(57, 22, [10, 10, 290, 150]) + star(150, 215, 46, N.gold) + txt(150, 314, "You've got this", F.script, "#fff", 48) + txt(150, 344, "I BELIEVE IN YOU", F.sans, N.sky, 11, { ls: 4, weight: 600 }), N.bg); } },
+    { id: "g-crown", name: "Grab your crown", fx: ["sparkles"], draw: function () { return svg(blob(150, 150, 110, 5, "#132a55") + crown(150, 150, 56, N.gold, N.gold) + sparkle(78, 92, 9, N.pink) + sparkle(226, 104, 12, N.sky) + sparkle(210, 196, 6, N.gold) + txt(150, 298, "GRAB YOUR", F.sans, N.sky, 14, { ls: 6, weight: 600 }) + txt(150, 348, "Crown", F.script, N.gold, 76), N.bg); } }
+  ],
+  congratulations: [
+    { id: "k-shapes", name: "Confetti burst", fx: ["confetti"], draw: function () { var s = ""; for (var i = 0; i < 16; i++) { var a = i * Math.PI / 8; s += '<path d="M' + f(150 + Math.cos(a) * 40) + ',' + f(150 + Math.sin(a) * 40) + ' L' + f(150 + Math.cos(a) * 92) + ',' + f(150 + Math.sin(a) * 92) + '"' + S([N.gold, N.pink, N.sky, N.coral][i % 4], 4) + '/>'; } return svg(s + star(150, 150, 30, N.gold) + txt(150, 302, "CONGRATS!", F.bold, "#fff", 48, { weight: 800 }) + txt(150, 340, "You did it", F.script, N.gold, 40), N.bg); } },
+    { id: "k-copper", name: "Copper star", fx: ["confetti"], draw: function () { return svg(dots(19, 50, K.a, 15, 15, 285, 385, 2) + star(150, 140, 58, K.a) + txt(150, 264, "Congratulations", F.script, K.ink, 50) + txt(150, 298, "SO PROUD OF YOU", F.sans, K.b, 11, { ls: 4, weight: 600 }), K.bg); } },
+    { id: "k-clay", name: "Clay trophy", fx: ["confetti"], draw: function () { return svg(blob(140, 140, 120, 44, C.b) + blob(220, 280, 110, 6, C.a) + blob(60, 330, 70, 15, C.c) + trophy(140, 135, 46, C.ink) + dots(9, 16, C.ink, 60, 40, 240, 220) + txt(150, 322, "Way to go!", F.script, C.ink, 52), C.bg); } }
+  ]
+};
+var OCC = [["birthday", "Birthday"], ["thinking-of-you", "Thinking of You"], ["just-saying-hi", "Just Saying Hi"], ["condolences", "Condolences"], ["youve-got-this", "You've Got This"], ["congratulations", "Congratulations"], ["welcome", "Welcome from Loretta"]];
+var PRINTED = {
+  birthday: "Wishing you a year full of music, laughter and every reason to celebrate the FABULOUS you.",
+  "thinking-of-you": "Sending you a little calm, a lot of love, and a reminder that you are never alone.",
+  "just-saying-hi": "No reason at all. Just thinking of you and smiling.",
+  condolences: "Holding you in my heart, today and in the days ahead.",
+  "youve-got-this": "You are stronger than you know. Keep going, one step at a time.",
+  congratulations: "Look at you go! Every bit of this is so well deserved.",
+  welcome: "You are royalty. You are beautiful. You are enough. And you are so welcome here."
+};
+var NOTES = {
+  birthday: "Happy birthday! You light up every Tuesday class. Grab your crown, today is YOUR day!",
+  "thinking-of-you": "I am thinking of you this week. Take it one breath at a time. We are all right here with you.",
+  "just-saying-hi": "Hi friend! Missed your smile in class. Come dance with me soon!",
+  condolences: "I am so sorry for your loss. Sending you love and strength. I am here if you need anything.",
+  "youve-got-this": "I saw you shine this week and I am SO proud of you. Keep going!",
+  congratulations: "You did it!! I knew you could. Let's celebrate on the dance floor!",
+  welcome: "I am SO happy you are here! Come dance with me, say hi in the community, and remember: wellness is a journey, not a destination. Let's live life lifted...together!"
+};
+var COVER_TITLE = { birthday: "Happy Birthday", "thinking-of-you": "Thinking of You", "just-saying-hi": "Hi There!", condolences: "With Sympathy", "youve-got-this": "You've Got This", congratulations: "Congratulations" };
+var FX_FOR = { birthday: ["confetti", "balloons"], "thinking-of-you": ["petals"], "just-saying-hi": ["sparkles"], condolences: ["leaves"], "youve-got-this": ["sparkles"], congratulations: ["confetti"], welcome: ["confetti", "drops"] };
+
+function welcomeCover() { return svg(blob(150, 160, 125, 52, "#12305c") + arches(150, 205, 96, 4, 15, N.sky, 3) + drop(150, 150, 44, N.gold) + sparkle(72, 96, 9, N.pink) + sparkle(232, 88, 11, N.sky) + sparkle(222, 196, 6, N.gold) + txt(150, 278, "WELCOME TO THE", F.sans, N.sky, 12, { ls: 5, weight: 600 }) + txt(150, 326, "WELL", F.bold, "#fff", 56, { weight: 800, ls: 4 }) + txt(150, 366, "Collective", F.script, N.gold, 46), N.bg); }
+function photoCover(src, occ, thumb) {
+  var t = COVER_TITLE[occ] || "For You";
+  return '<img class="wc-photo-img" src="' + src + '" alt=""' + (thumb ? ' style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"' : '') + '>'
+    + '<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><defs><linearGradient id="pg' + (thumb ? 't' : '') + '" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#0b1a3a" stop-opacity="0"/><stop offset="1" stop-color="#0b1a3a" stop-opacity=".88"/></linearGradient></defs><rect width="300" height="400" fill="url(#pg' + (thumb ? 't' : '') + ')"/><rect x="12" y="12" width="276" height="376" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.5"/>' + txt(150, 352, t, F.script, "#fff", t.length > 12 ? 40 : 52) + '</svg>';
+}
+function insideLeft(occ) {
+  if (occ === "welcome") return '<img class="wc-photo-img" src="' + PORTRAIT + '" alt="Loretta dancing"><svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect y="300" width="300" height="100" fill="#0b1a3a" fill-opacity=".82"/>' + txt(150, 344, "Come dance with me", F.script, "#fff", 34) + txt(150, 372, "THE WELL COLLECTIVE", F.sans, N.sky, 10, { ls: 4, weight: 600 }) + '</svg>';
+  var motif = { birthday: balloon(150, 150, 40, N.gold), "thinking-of-you": heart(150, 160, 34, N.pink, N.pink), "just-saying-hi": sun(150, 160, 32, N.gold), condolences: leaf(150, 160, 42, 15, N.sky), "youve-got-this": crown(150, 165, 46, N.gold, N.gold), congratulations: star(150, 160, 44, N.gold) }[occ] || "";
+  var quote = { birthday: ["You are the oldest you have", "ever been, and the youngest", "you will ever be again."], "thinking-of-you": ["Connection.", "Community.", "Acceptance."], "just-saying-hi": ["Don't waste today", "waiting for tomorrow."], condolences: ["Love never", "really leaves us."], "youve-got-this": ["You are beautiful.", "You are enough."], congratulations: ["This is what", "we are about!"] }[occ] || [""];
+  return svg(shapes(77, 10, [10, 10, 290, 80]) + motif + lines(quote, 150, 262, 26, F.serif, "#fff", 21, { style: "italic" }) + '<image href="' + LOGO + '" x="134" y="350" width="32" height="32"/>', N.bg);
+}
+
+
+export type CardFx = "confetti" | "balloons" | "petals" | "leaves" | "sparkles" | "drops";
+export interface CardDesign { id: string; name: string; fx: CardFx[]; draw: () => string }
+
+export {
+  N as CARD_NIGHT, DESIGNS as CARD_DESIGNS_RAW, OCC as CARD_OCCASION_LIST, PRINTED as CARD_PRINTED,
+  NOTES as CARD_SAMPLE_NOTES, COVER_TITLE as CARD_COVER_TITLE, FX_FOR as CARD_FX_FOR,
+  welcomeCover, photoCover, insideLeft, LOGO as CARD_LOGO, PORTRAIT as CARD_PORTRAIT,
+};
+
+/* ---------- Falling extras (from the approved fx()), returns the span markup ---------- */
+export function fallingExtrasHtml(kinds: CardFx[]): string {
+  var R = Math.random, cols = [N.sky, N.gold, N.pink, N.coral, N.lav, N.teal, "#ffffff"], bal = [N.sky, N.pink, N.gold, N.lav, N.coral], h = "";
+  kinds.forEach(function (k) {
+    var n = k === "balloons" ? 7 : k === "sparkles" ? 22 : 34;
+    for (var i = 0; i < n; i++) {
+      var left = (R() * 100).toFixed(1) + "%", dur = (k === "balloons" ? 6 + R() * 3 : k === "leaves" ? 7 + R() * 4 : 4 + R() * 3).toFixed(2), delay = (R() * (k === "balloons" ? 2.5 : 3)).toFixed(2);
+      var v = "--dx:" + ((R() - .5) * 120).toFixed(0) + "px;--rot:" + ((R() - .5) * 900).toFixed(0) + "deg;";
+      if (k === "confetti") h += '<span style="left:' + left + ';width:' + (6 + R() * 6).toFixed(0) + 'px;height:' + (10 + R() * 8).toFixed(0) + 'px;background:' + cols[i % cols.length] + ';border-radius:2px;' + v + 'animation:wc-fall ' + dur + 's ' + delay + 's ease-in forwards"></span>';
+      else if (k === "petals") h += '<span style="left:' + left + ';width:12px;height:16px;background:' + ["#F2A7C3", "#f6c6d6", "#ffffff"][i % 3] + ';border-radius:80% 0 80% 0;opacity:.9;' + v + 'animation:wc-fall ' + (+dur + 2) + 's ' + delay + 's linear forwards"></span>';
+      else if (k === "leaves") h += '<span style="left:' + left + ';width:14px;height:20px;background:' + ["#cdbba8", "#b9cbe0", "#e5d6ca"][i % 3] + ';border-radius:0 90% 0 90%;opacity:.85;' + v + 'animation:wc-fall ' + dur + 's ' + delay + 's ease-in-out forwards"></span>';
+      else if (k === "drops") h += '<span style="left:' + left + ';width:10px;height:13px;background:' + N.sky + ';border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;' + v + 'animation:wc-fall ' + dur + 's ' + delay + 's ease-in forwards"></span>';
+      else if (k === "sparkles") h += '<span style="left:' + left + ';top:' + (R() * 85).toFixed(0) + '%;width:14px;height:14px;background:' + [N.gold, N.sky, "#fff"][i % 3] + ';clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);opacity:0;animation:wc-twinkle ' + (1.4 + R()).toFixed(2) + 's ' + delay + 's ease-in-out 3"></span>';
+      else if (k === "balloons") h += '<span style="left:' + left + ';top:0;width:34px;height:60px;' + v + 'animation:wc-rise ' + dur + 's ' + delay + 's ease-out forwards"><svg viewBox="0 0 34 60" width="34" height="60"><ellipse cx="17" cy="20" rx="15" ry="19" fill="' + bal[i % 5] + '"/><path d="M17 39 q5 9 -2 20" stroke="#fff" stroke-opacity=".6" fill="none"/><ellipse cx="11" cy="12" rx="3" ry="5" fill="#fff" opacity=".35"/></svg></span>';
+    }
+  });
+  return h;
+}

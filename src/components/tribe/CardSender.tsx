@@ -1,785 +1,320 @@
-import { Award, Check, Feather, Gift, Heart, LayoutTemplate, Sun, X, Zap } from "lucide-react";
-import type { LucideProps } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { ComponentType } from "react";
+import { Check, Loader2, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { createPortal } from "react-dom";
-import CustomCardModal from "../CustomCardModal";
-import { CARD_OCCASIONS } from "../../data/cards";
-import type { CardOccasion, CardStyle } from "../../data/cards";
+import WellCardEnvelope from "../cards/WellCardEnvelope";
+import {
+  PHOTO_DESIGN,
+  SENDABLE_OCCASIONS,
+  coverHtml,
+  designsFor,
+  sampleNote,
+} from "../../data/greetingCards";
 import { useApp } from "../../store/AppContext";
+import { compressImage, MAX_PHOTO_BYTES } from "../../utils/compressImage";
+import "../cards/wellCard.css";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
-
-type Stage =
-  | "sealed"
-  | "opening"
-  | "rising"
-  | "viewing"
-  | "sealing"
-  | "closing"
-  | "flying"
-  | "done";
+const MESSAGE_MAX = 220;
+const SIGNATURE_MAX = 40;
+// Card photos: longest edge 900px, JPEG 0.8 (about 80 to 150 KB).
+const PHOTO_EDGE = 900;
+const PHOTO_QUALITY = 0.8;
 
 interface Props {
-  memberId: string;
-  memberName: string;
+  /** Preset recipient (from a member's profile). Leave out to pick anyone after writing the card. */
+  memberId?: string;
+  memberName?: string;
   defaultOccasion?: string;
   onClose: () => void;
 }
 
-const CARD_ICONS: Record<string, ComponentType<LucideProps>> = {
-  Gift, Heart, Sun, Feather, Zap, Award,
-};
-
-/* Confetti dots for celebratory occasions */
-const CONFETTI_COLORS = [
-  "rgba(255,255,255,0.55)",
-  "rgba(255,255,255,0.30)",
-  "rgba(255,255,255,0.18)",
-];
-const CONFETTI_SEEDS = [
-  { x: 82, y: 12, r: 4, c: 0 }, { x: 14, y: 22, r: 3, c: 1 },
-  { x: 92, y: 38, r: 2, c: 2 }, { x: 6, y: 55, r: 3, c: 0 },
-  { x: 75, y: 68, r: 4, c: 1 }, { x: 28, y: 80, r: 2, c: 2 },
-  { x: 60, y: 8, r: 3, c: 0 },  { x: 42, y: 90, r: 4, c: 1 },
-];
-
-const CONFETTI_OCCASIONS = new Set(["congratulations"]);
-const FLOWER_OCCASIONS   = new Set(["thinking-of-you"]);
-const BALLOON_OCCASIONS  = new Set(["birthday"]);
-const LEAF_OCCASIONS     = new Set(["condolences"]);
-
-const CONFETTI_FALL = [
-  { x: 10, delay: 0,   dur: 2.0, color: "#f43f5e", size: 6 },
-  { x: 25, delay: 0.3, dur: 2.5, color: "#facc15", size: 8 },
-  { x: 40, delay: 0.7, dur: 1.8, color: "#60a5fa", size: 5 },
-  { x: 55, delay: 0.1, dur: 2.2, color: "#34d399", size: 7 },
-  { x: 70, delay: 0.5, dur: 2.8, color: "#a78bfa", size: 6 },
-  { x: 85, delay: 0.9, dur: 2.0, color: "#fb7185", size: 9 },
-  { x: 15, delay: 1.2, dur: 2.3, color: "#fde68a", size: 6 },
-  { x: 48, delay: 1.5, dur: 1.9, color: "#f97316", size: 7 },
-  { x: 65, delay: 0.4, dur: 2.6, color: "#f43f5e", size: 5 },
-  { x: 30, delay: 0.8, dur: 2.1, color: "#a78bfa", size: 8 },
-];
-
-const PETAL_FALL = [
-  { x: 12, delay: 0,   dur: 2.8, color: "#fda4af" },
-  { x: 28, delay: 0.4, dur: 3.2, color: "#f9a8d4" },
-  { x: 45, delay: 0.8, dur: 2.5, color: "#d8b4fe" },
-  { x: 62, delay: 0.2, dur: 3.0, color: "#fbcfe8" },
-  { x: 78, delay: 0.6, dur: 2.7, color: "#c4b5fd" },
-  { x: 20, delay: 1.0, dur: 3.4, color: "#fda4af" },
-  { x: 55, delay: 1.4, dur: 2.9, color: "#f9a8d4" },
-  { x: 88, delay: 0.3, dur: 2.6, color: "#d8b4fe" },
-];
-
-const BALLOON_FALL = [
-  { x: 8,  delay: 0,   dur: 3.0, color: "#ef5350" },
-  { x: 22, delay: 0.6, dur: 3.5, color: "#fdd835" },
-  { x: 40, delay: 1.2, dur: 2.8, color: "#42a5f5" },
-  { x: 58, delay: 0.3, dur: 3.2, color: "#66bb6a" },
-  { x: 72, delay: 0.9, dur: 3.8, color: "#ab47bc" },
-  { x: 88, delay: 1.5, dur: 3.0, color: "#ff7043" },
-  { x: 32, delay: 1.8, dur: 2.9, color: "#26c6da" },
-  { x: 62, delay: 0.5, dur: 3.4, color: "#f48fb1" },
-];
-
-const LEAF_FALL = [
-  { x: 10, delay: 0,   dur: 3.2, color: "#e65100" },
-  { x: 25, delay: 0.5, dur: 2.8, color: "#f57f17" },
-  { x: 45, delay: 1.0, dur: 3.5, color: "#bf360c" },
-  { x: 62, delay: 0.3, dur: 3.0, color: "#ff8f00" },
-  { x: 78, delay: 0.8, dur: 2.6, color: "#d84315" },
-  { x: 18, delay: 1.4, dur: 3.3, color: "#c5a028" },
-  { x: 52, delay: 1.8, dur: 2.9, color: "#9e6914" },
-  { x: 88, delay: 0.6, dur: 3.6, color: "#e65100" },
-];
-
-/* ─── Card Graphic Illustrations ──────────────────────────────────────────── */
-
-const CARD_GRAPHICS: Record<string, string> = {
-  // Birthday — each style gets a distinct celebration icon
-  "birthday/ocean":          "/card-icons/balloon-svgrepo-com-2.svg",       // two balloons, festive
-  "birthday/rose":           "/card-icons/birthday-cake-cake-svgrepo-com-2.svg", // colorful tiered cake
-  "birthday/midnight":       "/card-icons/mirror-ball-disco-svgrepo-com.svg",   // disco ball, midnight party
-  "birthday/citrus":         "/card-icons/hat-svgrepo-com.svg",              // party hat
-  "birthday/lavender":       "/card-icons/party-popper-svgrepo-com.svg",     // party popper
-  "birthday/emerald":        "/card-icons/garlands-garland-svgrepo-com.svg", // festive garlands
-
-  // Thinking of You — botanical / caring imagery
-  "thinking-of-you/blue-mist":    "/card-icons/flower-svgrepo-com.svg",          // elegant 4-petal flower
-  "thinking-of-you/warm-sunrise": "/card-icons/flowers-bouquet-svgrepo-com.svg", // warm bouquet
-  "thinking-of-you/soft-mauve":   "/card-icons/organic-flora-2-svgrepo-com.svg", // soft botanical
-  "thinking-of-you/garden":       "/card-icons/leaves-svgrepo-com.svg",           // fresh leaves
-
-  // Just Saying Hi — playful everyday moments
-  "just-saying-hi/sunny":   "/card-icons/karaoke-sing-svgrepo-com.svg",                     // music/karaoke, fun
-  "just-saying-hi/teal":    "/card-icons/mobile-phone-notification-svgrepo-com.svg",         // phone hi
-  "just-saying-hi/coral":   "/card-icons/photo-camera-photograph-svgrepo-com.svg",           // camera snap
-  "just-saying-hi/skyblue": "/card-icons/musical-note-music-and-multimedia-svgrepo-com.svg", // music note
-
-  // Condolences — peaceful, gentle imagery
-  "condolences/gentle-grey":  "/card-icons/candle-svgrepo-com.svg",                // soft candle
-  "condolences/soft-indigo":  "/card-icons/bird-svgrepo-com.svg",                  // peaceful bird
-  "condolences/ivory":        "/card-icons/tree-svgrepo-com.svg",                  // enduring tree
-  "condolences/misty-rose":   "/card-icons/flower-orange-organic-svgrepo-com.svg", // gentle flower
-
-  // You've Got This — energetic, empowering icons
-  "youve-got-this/fire":     "/card-icons/fireworks-rocket-svgrepo-com.svg", // rocket / launch
-  "youve-got-this/electric": "/card-icons/suit-vip-svgrepo-com.svg",         // VIP suit, confidence
-  "youve-got-this/bold-red": "/card-icons/crown-svgrepo-com.svg",            // crown, power
-  "youve-got-this/gold":     "/card-icons/star-svgrepo-com.svg",             // gold star
-
-  // Congratulations — achievement & celebration
-  "congratulations/champagne": "/card-icons/cheers-svgrepo-com.svg",               // champagne toast
-  "congratulations/rainbow":   "/card-icons/confetti-svgrepo-com-2.svg",           // vibrant confetti
-  "congratulations/royal":     "/card-icons/giftbox-gift-svgrepo-com.svg",         // luxury gift
-  "congratulations/starlight": "/card-icons/abstract-star-2-svgrepo-com.svg",      // starburst
-};
-
-/* ---------- CardFace ---------- */
-export function CardFace({
-  style,
-  occasion,
-  userName,
-  animate,
-  messageOverride,
-}: {
-  style: CardStyle;
-  occasion: CardOccasion;
-  userName: string;
-  animate: boolean;
-  messageOverride?: string;
-}) {
-  const IconComponent = CARD_ICONS[occasion.icon];
-  const graphicSrc = CARD_GRAPHICS[`${occasion.id}/${style.id}`] ?? CARD_GRAPHICS[occasion.id];
-  const showConfetti  = CONFETTI_OCCASIONS.has(occasion.id);
-  const showFlowers   = FLOWER_OCCASIONS.has(occasion.id);
-  const showBalloons  = BALLOON_OCCASIONS.has(occasion.id);
-  const showLeaves    = LEAF_OCCASIONS.has(occasion.id);
-
-  // scaleX flip: no 3D transforms, no backfaceVisibility — fully iOS-safe
-  const [phase, setPhase] = useState<"cover" | "flipping-out" | "flipping-in" | "inside">("cover");
-
-  useEffect(() => {
-    if (animate) {
-      const t1 = setTimeout(() => setPhase("flipping-out"), 420);
-      const t2 = setTimeout(() => setPhase("flipping-in"),  700);
-      const t3 = setTimeout(() => setPhase("inside"),       980);
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-    } else {
-      setPhase("cover");
-    }
-  }, [animate]);
-
-  const showInside = phase === "flipping-in" || phase === "inside";
-  const cardAnimation =
-    phase === "flipping-out" ? "cardFlipOut 0.28s ease-in forwards" :
-    phase === "flipping-in"  ? "cardFlipIn 0.28s ease-out forwards" :
-    "none";
-
-  const CARD_H = 286;
-
-  return (
-    <>
-      <style>{`
-        @keyframes cardFlipOut { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-        @keyframes cardFlipIn  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes confettiFall {
-          0% { top: -5%; opacity: 1; transform: rotate(0deg); }
-          100% { top: 110%; opacity: 0.4; transform: rotate(720deg) translateX(10px); }
-        }
-        @keyframes petalFallCW {
-          0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-          50% { opacity: 0.7; transform: rotate(180deg) translateX(-8px); }
-          100% { top: 110%; opacity: 0; transform: rotate(360deg) translateX(4px); }
-        }
-        @keyframes petalFallCCW {
-          0% { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-          50% { opacity: 0.7; transform: rotate(-180deg) translateX(8px); }
-          100% { top: 110%; opacity: 0; transform: rotate(-360deg) translateX(-4px); }
-        }
-        @keyframes balloonRise {
-          0%   { top: 108%; opacity: 0.9; transform: translateX(0); }
-          30%  { transform: translateX(6px); }
-          60%  { transform: translateX(-5px); }
-          100% { top: -20%; opacity: 0.8; transform: translateX(2px); }
-        }
-        @keyframes leafFallCW {
-          0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-          33%  { transform: rotate(-140deg) translateX(-7px); }
-          66%  { transform: rotate(80deg) translateX(7px); }
-          100% { top: 110%; opacity: 0.2; transform: rotate(300deg) translateX(-3px); }
-        }
-        @keyframes leafFallCCW {
-          0%   { top: -5%; opacity: 0.9; transform: rotate(0deg); }
-          33%  { transform: rotate(140deg) translateX(7px); }
-          66%  { transform: rotate(-80deg) translateX(-7px); }
-          100% { top: 110%; opacity: 0.2; transform: rotate(-300deg) translateX(3px); }
-        }
-      `}</style>
-
-      <div
-        className="w-full select-none"
-        style={{ height: CARD_H, position: "relative" }}
-      >
-        <div
-          className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: style.bg, animation: cardAnimation }}
-        >
-          {showInside ? (
-            /* ── INSIDE face ── */
-            <>
-              <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
-                style={{ background: "rgba(255,255,255,0.08)" }} />
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none"
-                style={{ background: "rgba(0,0,0,0.07)" }} />
-              <div className="absolute inset-1.5 rounded-xl pointer-events-none"
-                style={{ border: "1.5px dashed rgba(255,255,255,0.16)" }} />
-
-              {animate && showConfetti && CONFETTI_FALL.map((p, i) => (
-                <div key={i} className="absolute pointer-events-none rounded-sm"
-                  style={{
-                    left: `${p.x}%`, width: p.size, height: p.size + 4, background: p.color,
-                    animation: `confettiFall ${p.dur}s ${p.delay}s ease-in infinite`, zIndex: 15,
-                  }} />
-              ))}
-
-              {animate && showFlowers && PETAL_FALL.map((p, i) => (
-                <div key={i} className="absolute pointer-events-none"
-                  style={{
-                    left: `${p.x}%`, width: 10, height: 18, background: p.color,
-                    borderRadius: "50% 50% 50% 0",
-                    animation: `${i % 2 === 0 ? "petalFallCW" : "petalFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
-                    zIndex: 15,
-                  }} />
-              ))}
-
-              {animate && showBalloons && BALLOON_FALL.map((p, i) => (
-                <div key={i} className="absolute pointer-events-none"
-                  style={{ left: `${p.x}%`, animation: `balloonRise ${p.dur}s ${p.delay}s ease-in-out infinite`, zIndex: 15 }}>
-                  <div style={{
-                    width: 18, height: 22, background: p.color,
-                    borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
-                    position: "relative",
-                  }}>
-                    <div style={{
-                      position: "absolute", width: "28%", height: "20%",
-                      top: "18%", left: "18%",
-                      background: "rgba(255,255,255,0.38)", borderRadius: "50%",
-                    }} />
-                    <div style={{
-                      position: "absolute", bottom: -3, left: "50%",
-                      transform: "translateX(-50%)",
-                      width: 0, height: 0,
-                      borderLeft: "2px solid transparent",
-                      borderRight: "2px solid transparent",
-                      borderTop: `3px solid ${p.color}`,
-                    }} />
-                  </div>
-                  <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.32)", margin: "3px auto 0" }} />
-                </div>
-              ))}
-
-              {animate && showLeaves && LEAF_FALL.map((p, i) => (
-                <div key={i} className="absolute pointer-events-none"
-                  style={{
-                    left: `${p.x}%`, width: 10, height: 16, background: p.color,
-                    borderRadius: "0 50% 0 50%",
-                    animation: `${i % 2 === 0 ? "leafFallCW" : "leafFallCCW"} ${p.dur}s ${p.delay}s ease-in infinite`,
-                    zIndex: 15,
-                  }} />
-              ))}
-
-              {IconComponent && (
-                <div className="absolute bottom-3 right-3 pointer-events-none"
-                  style={{ opacity: 0.08, animation: animate ? "cardIconFloat 3s ease-in-out infinite" : "none" }}>
-                  <IconComponent size={52} strokeWidth={1.2} className="text-white" />
-                </div>
-              )}
-
-              <div className="relative z-10 px-6 flex flex-col justify-center h-full gap-2.5">
-                <div className="flex items-center gap-1.5">
-                  {IconComponent && (
-                    <IconComponent size={12} strokeWidth={2.2} className={`${style.textColor} opacity-60 shrink-0`} />
-                  )}
-                  <p className={`text-[9px] font-black uppercase tracking-[0.22em] opacity-50 ${style.textColor}`}>
-                    {occasion.label}
-                  </p>
-                </div>
-                <p className={`text-[17px] font-bold leading-snug ${style.textColor}`}>
-                  {messageOverride ?? style.message}
-                </p>
-                <div className={`flex items-center gap-3 ${style.textColor}`}>
-                  <div className="h-px flex-1 bg-current opacity-15" />
-                  {IconComponent && <IconComponent size={9} strokeWidth={2} className="opacity-25 shrink-0" />}
-                  <div className="h-px flex-1 bg-current opacity-15" />
-                </div>
-                <p className={`text-[11px] leading-relaxed ${style.textColor} opacity-65`} style={{ fontStyle: "italic" }}>
-                  {style.quote}
-                </p>
-                <p className={`text-[12px] font-semibold opacity-65 mt-1 ${style.textColor}`}>
-                  — from {userName || "you"}
-                </p>
-              </div>
-            </>
-          ) : (
-            /* ── COVER face ── */
-            <>
-              {showConfetti && CONFETTI_SEEDS.map((dot, i) => (
-                <div key={i} className="absolute rounded-full pointer-events-none"
-                  style={{
-                    left: `${dot.x}%`, top: `${dot.y}%`,
-                    width: dot.r * 2, height: dot.r * 2,
-                    background: CONFETTI_COLORS[dot.c],
-                  }} />
-              ))}
-
-              <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: "rgba(255,255,255,0.10)" }} />
-              <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full pointer-events-none"
-                style={{ background: "rgba(0,0,0,0.08)" }} />
-
-              {graphicSrc && (
-                <div className="absolute inset-x-0 top-0 flex items-center justify-center"
-                  style={{ height: "62%", paddingTop: "10%", paddingLeft: "12%", paddingRight: "12%" }}>
-                  <img
-                    src={graphicSrc}
-                    alt=""
-                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", opacity: 0.92 }}
-                  />
-                </div>
-              )}
-
-              <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
-                <p className={`text-[21px] font-bold leading-tight ${style.textColor}`}>
-                  {occasion.label}
-                </p>
-              </div>
-
-              <div className="absolute inset-1.5 rounded-xl pointer-events-none"
-                style={{ border: "1.5px dashed rgba(255,255,255,0.22)" }} />
-
-              {IconComponent && (
-                <div className="absolute top-3 right-4 pointer-events-none" style={{ opacity: 0.12 }}>
-                  <IconComponent size={44} strokeWidth={1.2} className="text-white" />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </>
-  );
+interface DirectoryMember {
+  id: string;
+  name: string;
+  avatar?: string;
 }
 
-/* ---------- Envelope ---------- */
-export function Envelope({
-  flapOpen,
-  flapClosing,
-  cardColor,
-}: {
-  flapOpen: boolean;
-  flapClosing: boolean;
-  cardColor: string;
-}) {
-  const flapTransform =
-    flapOpen && !flapClosing ? "rotateX(-172deg)" : "rotateX(0deg)";
-  return (
-    <div className="relative w-full" style={{ height: 160, perspective: "700px" }}>
-      {/* Envelope body — dark navy */}
-      <div
-        className="absolute inset-x-0 bottom-0"
-        style={{
-          height: 140,
-          background: "linear-gradient(160deg, #0e1c36 0%, #091224 100%)",
-          borderRadius: "0 0 16px 16px",
-          border: "1px solid rgba(1,145,206,0.22)",
-          zIndex: 2,
-          overflow: "hidden",
-        }}
-      >
-        {/* Left diagonal fold */}
-        <div style={{
-          position: "absolute", left: 0, top: 0, bottom: 0, width: "50%",
-          background: "rgba(255,255,255,0.03)",
-          clipPath: "polygon(0 0, 100% 38%, 0 100%)",
-        }} />
-        {/* Right diagonal fold */}
-        <div style={{
-          position: "absolute", right: 0, top: 0, bottom: 0, width: "50%",
-          background: "rgba(255,255,255,0.03)",
-          clipPath: "polygon(100% 0, 0 38%, 100% 100%)",
-        }} />
-        {/* Bottom V fold */}
-        <div style={{
-          position: "absolute", left: 0, right: 0, bottom: 0, height: "42%",
-          background: "rgba(0,0,0,0.18)",
-          clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
-        }} />
-        {/* Card color peek at fold line when open */}
-        <div style={{
-          position: "absolute", left: 10, right: 10, top: 0, height: 5,
-          background: cardColor,
-          borderRadius: "0 0 4px 4px",
-          opacity: flapOpen && !flapClosing ? 0.65 : 0,
-          transition: "opacity 0.4s",
-        }} />
-        {/* WELL logo wax seal */}
-        <div style={{
-          position: "absolute",
-          width: 66, height: 66, borderRadius: "50%",
-          background: "linear-gradient(135deg, #081422, #0191CE)",
-          border: "2px solid rgba(1,145,206,0.6)",
-          boxShadow: "0 3px 14px rgba(0,0,0,0.7), 0 0 0 1px rgba(1,145,206,0.15)",
-          bottom: 10, left: "50%", transform: "translateX(-50%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "7px", zIndex: 5,
-          opacity: flapOpen && !flapClosing ? 0.18 : 1,
-          transition: "opacity 0.3s",
-        }}>
-          <img
-            src="https://lorettabates.com/wp-content/uploads/2025/11/WELL-Logo-white.png"
-            alt="WELL"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          />
-        </div>
-      </div>
+type Step = "make" | "recipient" | "sending" | "done" | "error";
 
-      {/* Flap — dark navy triangle, no border so it blends seamlessly with body */}
-      <div
-        className="absolute inset-x-0 top-0"
-        style={{
-          height: 84,
-          background: "linear-gradient(180deg, #112040 0%, #0e1c36 100%)",
-          clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-          zIndex: flapOpen && !flapClosing ? 1 : 4,
-          transformOrigin: "top center",
-          transformStyle: "preserve-3d",
-          transform: flapTransform,
-          transitionDuration: flapClosing ? "500ms" : "600ms",
-          transitionProperty: "transform",
-          transitionTimingFunction: "ease-in-out",
-        }}
-      />
-      {/* Side borders above body (left + right edges of the envelope rectangle) */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, top: 0, height: 20,
-        borderLeft: "1px solid rgba(1,145,206,0.22)",
-        borderRight: "1px solid rgba(1,145,206,0.22)",
-        pointerEvents: "none",
-        zIndex: 1,
-      }} />
-    </div>
-  );
+function firstName(name: string): string {
+  return (name || "").trim().split(/\s+/)[0] || "";
 }
 
-/* ---------- Main ---------- */
-export default function CardSender({
-  memberId,
-  memberName,
-  defaultOccasion = "birthday",
-  onClose,
-}: Props) {
+export default function CardSender({ memberId, memberName, defaultOccasion = "birthday", onClose }: Props) {
   const { user } = useApp();
-  const [occasion, setOccasion] = useState<CardOccasion>(
-    CARD_OCCASIONS.find((o) => o.id === defaultOccasion) ?? CARD_OCCASIONS[0]
+  const startOcc = SENDABLE_OCCASIONS.some((o) => o.id === defaultOccasion) ? defaultOccasion : "birthday";
+  const [occasionId, setOccasionId] = useState(startOcc);
+  const [designId, setDesignId] = useState(designsFor(startOcc)[0]?.id ?? "");
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [message, setMessage] = useState("");
+  const [signature, setSignature] = useState(firstName(user.name));
+  const [step, setStep] = useState<Step>("make");
+  const [recipient, setRecipient] = useState<DirectoryMember | null>(
+    memberId ? { id: memberId, name: memberName || "" } : null
   );
-  const [selectedStyle, setSelectedStyle] = useState<CardStyle>(
-    occasion.styles[0]
+  const [members, setMembers] = useState<DirectoryMember[] | null>(API_URL ? null : []);
+  const [search, setSearch] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const designs = designsFor(occasionId);
+
+  // Thumbnails are static art; build them once per occasion.
+  const thumbs = useMemo(
+    () => designs.map((d) => ({ id: d.id, name: d.name, html: d.draw() })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [occasionId]
   );
-  const [stage, setStage] = useState<Stage>("sealed");
-  const [showCustomModal, setShowCustomModal] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clear = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  };
-  const later = (ms: number, fn: () => void) => {
-    const t = setTimeout(fn, ms);
-    timers.current.push(t);
-    return t;
-  };
-
-  const playOpen = () => {
-    clear();
-    setStage("sealed");
-    later(250, () => setStage("opening"));
-    later(900, () => setStage("rising"));
-    later(1550, () => setStage("viewing"));
-  };
+  const photoThumb = useMemo(() => (photo ? coverHtml(occasionId, PHOTO_DESIGN, photo, true) : ""), [photo, occasionId]);
 
   useEffect(() => {
-    playOpen();
-    return clear;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (step !== "recipient" || members || !API_URL) return;
+    fetch(`${API_URL}/api/members?excludeEmail=${encodeURIComponent(user.email || "")}`)
+      .then((r) => (r.ok ? r.json() : { members: [] }))
+      .then((d) => setMembers((d.members || []) as DirectoryMember[]))
+      .catch(() => setMembers([]));
+  }, [step, members, user.email]);
 
-  const handleOccasionChange = (occ: CardOccasion) => {
-    setOccasion(occ);
-    setSelectedStyle(occ.styles[0]);
-    playOpen();
+  const chooseOccasion = (id: string) => {
+    setOccasionId(id);
+    setDesignId(photo ? PHOTO_DESIGN : designsFor(id)[0]?.id ?? "");
   };
 
-  const handleSend = async () => {
-    if (stage !== "viewing" || !API_URL || !user.email) return;
-    clear();
-    setStage("sealing");
-    later(600, () => setStage("closing"));
-    later(1200, () => setStage("flying"));
-    later(1900, () => setStage("done"));
-
-    fetch(`${API_URL}/api/tribe/${memberId}/card`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        occasionId: occasion.id,
-        styleId: selectedStyle.id,
-        message: selectedStyle.message,
-      }),
-    }).catch(() => {});
-
-    later(3500, onClose);
+  const onPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPhotoError("");
+    if (file.size > MAX_PHOTO_BYTES) { setPhotoError("That photo is too big. Try a smaller one."); return; }
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await compressImage(file, PHOTO_EDGE, PHOTO_QUALITY);
+      setPhoto(dataUrl);
+      setDesignId(PHOTO_DESIGN);
+    } catch {
+      setPhotoError("That photo would not open. Try another one.");
+    } finally {
+      setPhotoBusy(false);
+    }
   };
 
-  const envelopeVisible = stage !== "done";
-  const flapOpen = ["opening", "rising", "viewing", "sealing"].includes(stage);
-  const flapClosing = stage === "closing" || stage === "flying";
+  const send = async (to: DirectoryMember) => {
+    if (!API_URL || !user.email) { setStep("error"); return; }
+    setStep("sending");
+    try {
+      const res = await fetch(`${API_URL}/api/tribe/${encodeURIComponent(to.id)}/card`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          occasionId,
+          designId,
+          styleId: designId,
+          message: message.trim(),
+          signature: signature.trim(),
+          photo: designId === PHOTO_DESIGN ? photo : undefined,
+        }),
+      });
+      setStep(res.ok ? "done" : "error");
+    } catch {
+      setStep("error");
+    }
+  };
 
-  const cardY = (() => {
-    if (stage === "sealed")  return 175;  // hidden behind envelope body
-    if (stage === "opening") return 175;  // still inside while flap opens
-    if (stage === "rising")  return 20;
-    if (stage === "viewing") return 0;
-    if (stage === "sealing") return 80;
-    return 175;
-  })();
+  const onSendClick = () => {
+    if (recipient && memberId) send(recipient);
+    else setStep("recipient");
+  };
 
-  // Card stays invisible until it actually rises — "opening" just opens the flap
-  const cardOpacity = ["sealed", "opening", "closing", "flying", "done"].includes(stage) ? 0 : 1;
-  const cardScale = stage === "viewing" ? 1 : 0.88;
-  const envelopeExitY = stage === "flying" ? -500 : stage === "viewing" ? 200 : 0;
-  const envelopeExitRotate = stage === "flying" ? -10 : 0;
-  const envelopeOpacity = stage === "flying" || stage === "viewing" ? 0 : 1;
-  const envelopeDuration = stage === "flying" ? "700ms" : stage === "viewing" ? "450ms" : "600ms";
+  const filtered = (members || []).filter(
+    (m) => !search.trim() || m.name.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const canSend = message.trim().length > 0 && !!designId && !photoBusy;
 
   return createPortal(
-    <>
-      {/* Keyframe injection */}
-      <style>{`
-        @keyframes cardIconFloat {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-6px) rotate(4deg); }
-        }
-        @keyframes cardShimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-      `}</style>
-
-      <div className="fixed inset-0 z-[500] flex flex-col">
-        <div
-          className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-          onClick={stage === "viewing" ? onClose : undefined}
-        />
-
-        <div
-          className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl flex flex-col"
-          style={{ maxHeight: "94dvh" }}
+    <div className="fixed inset-0 z-[500] flex flex-col wc-root wc-backdrop" role="dialog" aria-label="Send a card">
+      <div
+        className="flex items-center justify-between px-4 pb-3 shrink-0"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))", borderBottom: "1px solid var(--wc-line)" }}
+      >
+        <div>
+          <p className="text-[11px] uppercase" style={{ letterSpacing: ".3em", color: "var(--wc-sky)" }}>WELL Cards</p>
+          <h2 style={{ fontFamily: "var(--wc-serif)", fontWeight: 500, fontSize: 26, margin: "2px 0 0" }}>
+            {step === "recipient" ? "Who is it for?" : "Send a little love"}
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ border: "1px solid rgba(255,255,255,.35)", background: "transparent", color: "#fff" }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border shrink-0">
-            <div>
-              <h2 className="text-sm font-bold text-text">Send a Card</h2>
-              <p className="text-xs text-text-muted">to {memberName}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center"
-            >
-              <X size={14} className="text-text-muted" />
-            </button>
-          </div>
+          <X size={16} />
+        </button>
+      </div>
 
-          {/* Scrollable area */}
-          <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-5">
-            {/* Occasion tabs */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
-              {CARD_OCCASIONS.map((occ) => (
-                <button
-                  key={occ.id}
-                  onClick={() => handleOccasionChange(occ)}
-                  disabled={stage !== "viewing" && stage !== "sealed"}
-                  className={`shrink-0 text-xs font-semibold rounded-pill px-3 py-1.5 border transition-all ${
-                    occasion.id === occ.id
-                      ? "gradient-brand text-white border-transparent"
-                      : "glass-card border-border text-text-muted"
-                  }`}
-                >
-                  {occ.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom card shortcut */}
-            <button
-              onClick={() => setShowCustomModal(true)}
-              className="flex items-center gap-2 w-full glass-card border border-brand-light/20 rounded-xl px-3 py-2.5 text-left"
-            >
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "rgba(1,145,206,0.15)", border: "1px solid rgba(1,145,206,0.3)" }}
-              >
-                <LayoutTemplate size={14} className="text-brand-light" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-text">Design a Custom Card</p>
-                <p className="text-[10px] text-text-muted">Create and save your own card design</p>
-              </div>
-            </button>
-
-            {/* Animation scene */}
-            {stage === "done" ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-4">
-                <div className="w-16 h-16 rounded-full gradient-brand flex items-center justify-center shadow-glow">
-                  <Check size={28} className="text-white" />
+      <div className="flex-1 overflow-y-auto" style={{ paddingLeft: "max(16px, env(safe-area-inset-left))", paddingRight: "max(16px, env(safe-area-inset-right))" }}>
+        <div className="mx-auto flex flex-col items-center gap-4 py-5" style={{ maxWidth: 980 }}>
+          {step === "make" && (
+            <>
+              <p className="wc-note" style={{ fontSize: 15, textAlign: "center" }}>
+                Tap the WELL seal to open the envelope, then tap the card.
+              </p>
+              <WellCardEnvelope
+                occasionId={occasionId}
+                designId={designId}
+                photo={photo}
+                message={message || sampleNote(occasionId)}
+                signature={signature}
+                toLine={recipient?.name ? `For ${firstName(recipient.name)}` : "For you"}
+              />
+              <section className="wc-studio" aria-label="Make your card">
+                <div>
+                  <h2>1. Pick an occasion</h2>
+                  <div className="wc-chips" role="group" aria-label="Occasion">
+                    {SENDABLE_OCCASIONS.map((o) => (
+                      <button key={o.id} type="button" aria-pressed={o.id === occasionId} onClick={() => chooseOccasion(o.id)}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-base font-bold text-text">Card Sent!</p>
-                  <p className="text-sm text-text-muted mt-1">
-                    Your card is on its way to {memberName}.
-                  </p>
+                <div>
+                  <h2>2. Pick a design</h2>
+                  <div className="wc-designs" role="group" aria-label="Design">
+                    {thumbs.map((t) => (
+                      <button key={t.id} type="button" aria-pressed={t.id === designId} aria-label={t.name} onClick={() => setDesignId(t.id)}>
+                        <div dangerouslySetInnerHTML={{ __html: t.html }} />
+                      </button>
+                    ))}
+                    {photo && (
+                      <button type="button" aria-pressed={designId === PHOTO_DESIGN} aria-label="Your photo" onClick={() => setDesignId(PHOTO_DESIGN)}>
+                        <div dangerouslySetInnerHTML={{ __html: photoThumb }} />
+                      </button>
+                    )}
+                    <button type="button" className="wc-add" onClick={() => fileRef.current?.click()} disabled={photoBusy}>
+                      {photoBusy ? <Loader2 size={18} className="animate-spin" /> : photo ? "+ Use a different photo" : "+ Use my own photo"}
+                    </button>
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+                  {photoError && <p className="wc-note" style={{ color: "#F6B6A6", marginTop: 8 }}>{photoError}</p>}
                 </div>
-              </div>
-            ) : (
-              <div className="relative overflow-hidden" style={{ height: 340 }}>
-                {/* Card */}
-                <div
-                  className="absolute left-2 right-2 transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-                  style={{
-                    top: cardY,
-                    opacity: cardOpacity,
-                    transform: `scale(${cardScale})`,
-                    transitionDuration: ["rising", "viewing"].includes(stage)
-                      ? "700ms"
-                      : "500ms",
-                    zIndex: ["rising", "viewing"].includes(stage) ? 10 : 2,
-                    transformOrigin: "center bottom",
-                  }}
-                >
-                  <CardFace
-                    style={selectedStyle}
-                    occasion={occasion}
-                    userName={user.name}
-                    animate={stage === "viewing"}
+                <div className="wc-row2">
+                  <label htmlFor="wc-msg">
+                    3. Write your message
+                    <textarea
+                      id="wc-msg"
+                      maxLength={MESSAGE_MAX}
+                      value={message}
+                      placeholder={sampleNote(occasionId)}
+                      onChange={(e) => setMessage(e.target.value)}
+                    />
+                  </label>
+                  <label htmlFor="wc-sig">
+                    Sign it
+                    <input id="wc-sig" type="text" maxLength={SIGNATURE_MAX} value={signature} onChange={(e) => setSignature(e.target.value)} />
+                  </label>
+                </div>
+                <p className="wc-note">Each card has a printed line inside, and your note appears below it in handwriting.</p>
+              </section>
+            </>
+          )}
+
+          {step === "recipient" && (
+            <section className="wc-studio" aria-label="Choose who gets your card">
+              <div>
+                <h2>Send it to anyone in the WELL Collective</h2>
+                <div style={{ position: "relative" }}>
+                  <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--wc-muted)" }} />
+                  <input
+                    className="wc-search"
+                    style={{ paddingLeft: 38 }}
+                    type="search"
+                    placeholder="Search by name"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    autoFocus
                   />
                 </div>
-
-                {/* Envelope */}
-                {envelopeVisible && (
-                  <div
-                    className="absolute left-4 right-4 transition-all ease-in-out"
-                    style={{
-                      top: 155,
-                      zIndex: 5,
-                      transform: `translateY(${envelopeExitY}px) rotate(${envelopeExitRotate}deg)`,
-                      opacity: envelopeOpacity,
-                      transitionDuration: envelopeDuration,
-                    }}
-                  >
-                    <Envelope
-                      flapOpen={flapOpen}
-                      flapClosing={flapClosing}
-                      cardColor={selectedStyle.bg}
-                    />
-                  </div>
-                )}
               </div>
-            )}
-
-            {/* Style picker */}
-            {stage !== "done" && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted mb-2.5">
-                  Card Style
+              {members === null ? (
+                <div className="flex justify-center py-6"><Loader2 size={22} className="animate-spin" style={{ color: "var(--wc-sky)" }} /></div>
+              ) : filtered.length === 0 ? (
+                <p className="wc-note" style={{ textAlign: "center", padding: "16px 0" }}>
+                  {search ? "No one by that name yet." : "No members to show right now."}
                 </p>
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
-                  {occasion.styles.map((style) => (
-                    <button
-                      key={style.id}
-                      onClick={() => {
-                        if (stage === "viewing") setSelectedStyle(style);
-                      }}
-                      className="shrink-0 flex flex-col items-center gap-1.5"
-                    >
-                      <div
-                        className="w-14 h-14 rounded-xl shadow-md transition-all duration-200"
-                        style={{
-                          background: style.bg,
-                          outline:
-                            selectedStyle.id === style.id
-                              ? "2.5px solid rgba(1,145,206,0.9)"
-                              : "2px solid transparent",
-                          outlineOffset: "2px",
-                          opacity: selectedStyle.id === style.id ? 1 : 0.6,
-                          transform:
-                            selectedStyle.id === style.id
-                              ? "scale(1.1)"
-                              : "scale(1)",
-                        }}
-                      />
+              ) : (
+                <div className="wc-people" role="list">
+                  {filtered.map((m) => (
+                    <button key={m.id} type="button" aria-pressed={recipient?.id === m.id} onClick={() => setRecipient(m)}>
+                      {m.avatar ? <img src={m.avatar} alt="" /> : <span className="wc-initial">{(m.name || "?").charAt(0).toUpperCase()}</span>}
+                      <span className="truncate">{m.name}</span>
+                      {recipient?.id === m.id && <Check size={16} style={{ marginLeft: "auto", color: "var(--wc-sky)" }} />}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </section>
+          )}
 
-          {/* Sticky footer */}
-          {stage !== "done" && (
-            <div
-              className="px-4 pt-3 border-t border-border shrink-0"
-              style={{
-                paddingBottom:
-                  "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
-              }}
-            >
-              <button
-                onClick={handleSend}
-                disabled={stage !== "viewing"}
-                className="w-full gradient-brand text-white text-sm font-semibold rounded-pill py-3 disabled:opacity-40 transition-opacity"
-              >
-                {stage === "viewing" ? `Send to ${memberName}` : "Opening card…"}
-              </button>
+          {step === "sending" && (
+            <div className="flex flex-col items-center gap-3 py-16">
+              <Loader2 size={28} className="animate-spin" style={{ color: "var(--wc-sky)" }} />
+              <p className="wc-note" style={{ fontSize: 15 }}>Sealing your envelope...</p>
+            </div>
+          )}
+
+          {step === "done" && (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "var(--wc-sky)", color: "#050b14" }}>
+                <Check size={28} />
+              </div>
+              <p style={{ fontFamily: "var(--wc-serif)", fontSize: 30, margin: 0 }}>Your card is on its way!</p>
+              <p className="wc-note" style={{ fontSize: 15 }}>
+                {recipient?.name ? `${firstName(recipient.name)} will get a little note to open it.` : "They will get a little note to open it."}
+              </p>
+            </div>
+          )}
+
+          {step === "error" && (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p style={{ fontFamily: "var(--wc-serif)", fontSize: 28, margin: 0 }}>Oh no, that card did not go through.</p>
+              <p className="wc-note" style={{ fontSize: 15 }}>Check your connection and try again.</p>
             </div>
           )}
         </div>
       </div>
 
-      {showCustomModal && (
-        <CustomCardModal
-          onClose={() => setShowCustomModal(false)}
-          onSend={(card) => {
-            setShowCustomModal(false);
-            if (!API_URL || !user.email) return;
-            clear();
-            setStage("flying");
-            later(700, () => setStage("done"));
-            fetch(`${API_URL}/api/tribe/${memberId}/card`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: user.email,
-                occasionId: "custom",
-                styleId: card.gradientId,
-                message: `${card.title}${card.body ? ` — ${card.body}` : ""}`,
-              }),
-            }).catch(() => {});
-          }}
-        />
-      )}
-    </>,
+      <div
+        className="px-4 pt-3 shrink-0 flex justify-center gap-3"
+        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))", borderTop: "1px solid var(--wc-line)" }}
+      >
+        {step === "make" && (
+          <button type="button" className="wc-btn wc-primary" disabled={!canSend} onClick={onSendClick}>
+            {recipient && memberId ? `Send to ${firstName(recipient.name) || "them"}` : "Send"}
+          </button>
+        )}
+        {step === "recipient" && (
+          <>
+            <button type="button" className="wc-btn" onClick={() => setStep("make")}>Back</button>
+            <button type="button" className="wc-btn wc-primary" disabled={!recipient} onClick={() => recipient && send(recipient)}>
+              {recipient ? `Send to ${firstName(recipient.name) || "them"}` : "Pick someone"}
+            </button>
+          </>
+        )}
+        {step === "error" && (
+          <>
+            <button type="button" className="wc-btn" onClick={() => setStep("make")}>Back to my card</button>
+            <button type="button" className="wc-btn wc-primary" onClick={() => recipient && send(recipient)} disabled={!recipient}>Try again</button>
+          </>
+        )}
+        {step === "done" && (
+          <button type="button" className="wc-btn wc-primary" onClick={onClose}>Done</button>
+        )}
+      </div>
+    </div>,
     document.body
   );
 }
