@@ -1,8 +1,10 @@
 // The WELL logo intro with its sound, the same one the website plays on its home page.
 // In the app it plays right after a member taps a class, so the tap lets the sound play
 // (Loretta, 2026-10-16: the in-app browser never showed the intro and blocked the sound).
-// Once per app session, like the website's once per visit.
-let played = false;
+// It also plays when the app opens. It does not repeat within 10 minutes, so opening the app
+// and then tapping a class plays it once, but a class later in the day plays it again.
+const REPEAT_AFTER_MS = 10 * 60 * 1000;
+let lastPlayed = 0;
 
 const CSS = `
 .wl-app-splash { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; background: #020810; pointer-events: none; animation: wlAppOut .6s ease 2.4s forwards; }
@@ -13,10 +15,10 @@ const CSS = `
 @keyframes wlAppOut { to { opacity: 0; visibility: hidden; } }
 `;
 
-/** Plays the intro (once per session) and resolves when the logo has shown, about 2.4 s. */
+/** Plays the intro (not again within 10 minutes) and resolves when the logo has shown, about 2.4 s. */
 export function playWellIntro(): Promise<void> {
-  if (played) return Promise.resolve();
-  played = true;
+  if (Date.now() - lastPlayed < REPEAT_AFTER_MS) return Promise.resolve();
+  lastPlayed = Date.now();
   if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return Promise.resolve();
   if (!document.getElementById("wl-app-splash-css")) {
     const st = document.createElement("style");

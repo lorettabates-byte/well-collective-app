@@ -10,6 +10,7 @@ import { rebuildDownloadIndex } from "./utils/musicOffline";
 import { loadAdminSession } from "./utils/adminAuth";
 import AuthGate from "./components/AuthGate";
 import { AppProvider } from "./store/AppContext";
+import { playWellIntro } from "./utils/wellIntro";
 import { MusicPlayerProvider } from "./store/MusicPlayerContext";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -37,6 +38,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 if (Capacitor.isNativePlatform()) {
   CapacitorUpdater.notifyAppReady();
+  // The WELL logo intro with its sound when the app opens (Loretta, 2026-10-16).
+  playWellIntro();
   rebuildDownloadIndex();
   loadAdminSession();
 
