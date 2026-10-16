@@ -109,6 +109,19 @@ var DESIGNS = {
     { id: "g-clay", name: "Keep climbing", fx: ["sparkles"], draw: function () { return svg(blob(150, 150, 130, 111, C.a) + blob(240, 330, 90, 112, C.b) + mountain(150, 210, 90, C.ink) + sun(80, 80, 16, C.ink) + txt(150, 318, "Keep going", F.script, C.type, 50) + txt(150, 350, "THE VIEW IS WORTH IT", F.sans, C.type, 10, { ls: 3, weight: 600 }), C.bg); } },
     { id: "g-fierce", name: "Strong brave fierce", fx: ["sparkles"], draw: function () { return svg(lines(["STRONG.", "BRAVE.", "FIERCE."], 150, 120, 66, F.bold, K.ink, 52, { weight: 800 }) + '<path d="M70,320 L230,320"' + S(K.a, 3) + '/>' + txt(150, 362, "That is you", F.script, K.a, 40), K.bg); } }
   ],
+  "thank-you": [
+    { id: "ty-disco", name: "Heart dance", fx: ["sparkles"], draw: function () { var r = 64, cx = 150, cy = 150, g = '<path d="M150,40 L150,' + (cy - r) + '"' + S(N.sky, 2) + '/><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#22427a"/>', R = rng(171);
+      for (var k = -2; k <= 2; k++) { var y = cy + k * r * .38, w = Math.sqrt(r * r - (y - cy) * (y - cy)); g += '<path d="M' + f(cx - w) + ',' + f(y) + ' L' + f(cx + w) + ',' + f(y) + '"' + S("#4f7fc0", 1.4) + '/>'; }
+      [.32, .68].forEach(function (q) { g += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + f(r * q) + '" ry="' + r + '"' + S("#4f7fc0", 1.4) + '/>'; });
+      g += '<path d="M150,' + (cy - r) + ' L150,' + (cy + r) + '"' + S("#4f7fc0", 1.4) + '/>';
+      for (var i = 0; i < 14; i++) { var a = R() * Math.PI * 2, d = R() * r * .8; g += '<rect x="' + f(cx + Math.cos(a) * d - 4) + '" y="' + f(cy + Math.sin(a) * d - 4) + '" width="8" height="8" fill="' + [N.sky, "#fff", N.pink, N.gold][i % 4] + '" opacity=".85"/>'; }
+      for (var j = 0; j < 8; j++) { var b = j * Math.PI / 4 + .2; g += '<path d="M' + f(cx + Math.cos(b) * (r + 10)) + ',' + f(cy + Math.sin(b) * (r + 10)) + ' L' + f(cx + Math.cos(b) * (r + 24)) + ',' + f(cy + Math.sin(b) * (r + 24)) + '"' + S(N.gold, 2.4) + '/>'; }
+      return svg(g + sparkle(56, 70, 9, N.pink) + sparkle(244, 92, 11, N.sky) + txt(150, 282, "THANK YOU FOR MAKING", F.sans, N.sky, 12, { ls: 3, weight: 600 }) + txt(150, 338, "my heart dance", F.script, N.gold, 46), N.bg); } },
+    { id: "ty-latte", name: "Thanks a latte", fx: ["petals"], draw: function () { return svg('<ellipse cx="150" cy="262" rx="92" ry="14" fill="' + C.c + '"/><rect x="96" y="160" width="108" height="96" rx="14" fill="' + C.a + '"/><path d="M204,182 C236,182 236,232 204,232"' + S(C.a, 11) + '/>' + heart(150, 205, 16, "#fff", "#fff") + '<path d="M128,140 C120,124 136,116 128,100 M172,140 C164,124 180,116 172,100"' + S(C.b, 3) + '/>' + heart(150, 104, 13, C.a) + txt(150, 320, "THANKS A", F.sans, C.type, 15, { ls: 6, weight: 600 }) + txt(150, 370, "latte!", F.script, C.type, 66), C.bg); } },
+    { id: "ty-repeat", name: "Thank you, thank you", fx: ["confetti"], draw: function () { var s = ""; for (var i = 0; i < 5; i++) { var y = 64 + i * 46; s += '<text x="150" y="' + y + '" text-anchor="middle" font-family="' + F.bold + '" font-size="40" font-weight="800" letter-spacing="1" ' + (i === 2 ? 'fill="' + K.ink + '"' : 'fill="none" stroke="' + K.a + '" stroke-width="1.4"') + '>THANK YOU</text>'; } return svg(s + heart(150, 290, 13, K.a, K.a) + txt(150, 350, "from the bottom of my heart", F.script, K.b, 26), K.bg); } },
+    { id: "ty-stamp", name: "Thank you seal", fx: ["confetti"], draw: function () { var c = '<path id="tyc" d="M150,99 a66,66 0 1,1 -0.1,0" fill="none"/>'; return svg('<defs>' + c + '</defs><circle cx="150" cy="165" r="96" fill="' + B.a + '"/><circle cx="150" cy="165" r="84" fill="none" stroke="' + B.bg + '" stroke-width="1.6" stroke-dasharray="3 5"/><text font-family="' + F.sans + '" font-size="15" font-weight="700" fill="' + B.bg + '" letter-spacing="2"><textPath href="#tyc" textLength="408">THANK YOU • THANK YOU • THANK YOU •</textPath></text>' + heart(150, 170, 26, B.bg, B.bg) + txt(150, 326, "for all you do", F.script, B.b, 46) + txt(150, 360, "WITH LOVE", F.sans, B.b, 11, { ls: 5, weight: 600 }), B.bg); } },
+    { id: "ty-bouquet", name: "Bouquet for you", fx: ["petals"], draw: function () { var P = { bg: "#f6e6e4", pink: "#e99aa8", green: "#7fae9a", kraft: "#d9a77b", type: "#8a3d4f" }; return svg(leaf(104, 150, 26, -50, null, P.green) + leaf(196, 150, 26, 50, null, P.green) + '<circle cx="122" cy="132" r="24" fill="' + P.pink + '"/><circle cx="178" cy="132" r="24" fill="' + P.pink + '"/><circle cx="150" cy="104" r="26" fill="#f2b8c3"/>' + flower(122, 132, 13, "#fff") + flower(178, 132, 13, "#fff") + flower(150, 104, 14, "#fff") + '<path d="M104,170 L196,170 L150,292Z" fill="' + P.kraft + '"/><path d="M104,170 L150,292 M196,170 L150,292"' + S("#c58f63", 1.4) + '/><path d="M150,226 c-22,-18 -30,4 0,0 c22,-18 30,4 0,0 M150,226 l-10,22 M150,226 l10,22"' + S(P.type, 2.4) + '/>' + txt(150, 346, "Thank you", F.script, P.type, 56) + txt(150, 374, "THESE ARE FOR YOU", F.sans, P.type, 10, { ls: 4, weight: 600 }), P.bg); } }
+  ],
   congratulations: [
     { id: "k-shapes", name: "Confetti burst", fx: ["confetti"], draw: function () { var s = ""; for (var i = 0; i < 16; i++) { var a = i * Math.PI / 8; s += '<path d="M' + f(150 + Math.cos(a) * 40) + ',' + f(150 + Math.sin(a) * 40) + ' L' + f(150 + Math.cos(a) * 92) + ',' + f(150 + Math.sin(a) * 92) + '"' + S([N.gold, N.pink, N.sky, N.coral][i % 4], 4) + '/>'; } return svg(s + star(150, 150, 30, N.gold) + txt(150, 302, "CONGRATS!", F.bold, "#fff", 48, { weight: 800 }) + txt(150, 340, "You did it", F.script, N.gold, 40), N.bg); } },
     { id: "k-copper", name: "Copper star", fx: ["confetti"], draw: function () { return svg(dots(19, 50, K.a, 15, 15, 285, 385, 2) + star(150, 140, 58, K.a) + txt(150, 264, "Congratulations", F.script, K.ink, 50) + txt(150, 298, "SO PROUD OF YOU", F.sans, K.b, 11, { ls: 4, weight: 600 }), K.bg); } },
@@ -117,7 +130,7 @@ var DESIGNS = {
     { id: "k-medal", name: "Gold medal", fx: ["confetti"], draw: function () { return svg(arches(150, 230, 110, 3, 18, "#22427a", 6) + medal(150, 170, 40, N.sky, N.gold) + sparkle(84, 104, 9, N.pink) + sparkle(222, 120, 11, N.sky) + txt(150, 300, "SO PROUD", F.sans, N.sky, 14, { ls: 6, weight: 600 }) + txt(150, 350, "of you", F.script, N.gold, 64), N.bg); } }
   ]
 };
-var OCC = [["birthday", "Birthday"], ["thinking-of-you", "Thinking of You"], ["just-saying-hi", "Just Saying Hi"], ["condolences", "Condolences"], ["youve-got-this", "You've Got This"], ["congratulations", "Congratulations"], ["welcome", "Welcome from Loretta"]];
+var OCC = [["birthday", "Birthday"], ["thinking-of-you", "Thinking of You"], ["just-saying-hi", "Just Saying Hi"], ["condolences", "Condolences"], ["youve-got-this", "You've Got This"], ["congratulations", "Congratulations"], ["thank-you", "Thank You"], ["welcome", "Welcome from Loretta"]];
 var PRINTED = {
   birthday: "Wishing you a year full of music, laughter and every reason to celebrate the FABULOUS you.",
   "thinking-of-you": "Sending you a little calm, a lot of love, and a reminder that you are never alone.",
@@ -125,6 +138,7 @@ var PRINTED = {
   condolences: "Holding you in my heart, today and in the days ahead.",
   "youve-got-this": "You are stronger than you know. Keep going, one step at a time.",
   congratulations: "Look at you go! Every bit of this is so well deserved.",
+  "thank-you": "Thank you for being YOU. Your kindness makes every room a little brighter.",
   welcome: "You are royalty. You are beautiful. You are enough. And you are so welcome here."
 };
 var NOTES = {
@@ -134,10 +148,11 @@ var NOTES = {
   condolences: "I am so sorry for your loss. Sending you love and strength. I am here if you need anything.",
   "youve-got-this": "I saw you shine this week and I am SO proud of you. Keep going!",
   congratulations: "You did it!! I knew you could. Let's celebrate on the dance floor!",
+  "thank-you": "Thank you SO much! You made my week, and I am so grateful for you.",
   welcome: "I am SO happy you are here! Come dance with me, say hi in the community, and remember: wellness is a journey, not a destination. Let's live life lifted...together!"
 };
-var COVER_TITLE = { birthday: "Happy Birthday", "thinking-of-you": "Thinking of You", "just-saying-hi": "Hi There!", condolences: "With Sympathy", "youve-got-this": "You've Got This", congratulations: "Congratulations" };
-var FX_FOR = { birthday: ["confetti", "balloons"], "thinking-of-you": ["petals"], "just-saying-hi": ["sparkles"], condolences: ["leaves"], "youve-got-this": ["sparkles"], congratulations: ["confetti"], welcome: ["confetti", "drops"] };
+var COVER_TITLE = { birthday: "Happy Birthday", "thinking-of-you": "Thinking of You", "just-saying-hi": "Hi There!", condolences: "With Sympathy", "youve-got-this": "You've Got This", congratulations: "Congratulations", "thank-you": "Thank You" };
+var FX_FOR = { birthday: ["confetti", "balloons"], "thinking-of-you": ["petals"], "just-saying-hi": ["sparkles"], condolences: ["leaves"], "youve-got-this": ["sparkles"], congratulations: ["confetti"], "thank-you": ["sparkles", "petals"], welcome: ["confetti", "drops"] };
 
 function welcomeCover() { return svg(blob(150, 160, 125, 52, "#12305c") + arches(150, 205, 96, 4, 15, N.sky, 3) + drop(150, 150, 44, N.gold) + sparkle(72, 96, 9, N.pink) + sparkle(232, 88, 11, N.sky) + sparkle(222, 196, 6, N.gold) + txt(150, 278, "WELCOME TO THE", F.sans, N.sky, 12, { ls: 5, weight: 600 }) + txt(150, 326, "WELL", F.bold, "#fff", 56, { weight: 800, ls: 4 }) + txt(150, 366, "Collective", F.script, N.gold, 46), N.bg); }
 function photoCover(src, occ, thumb) {
@@ -147,8 +162,8 @@ function photoCover(src, occ, thumb) {
 }
 function insideLeft(occ) {
   if (occ === "welcome") return '<img class="wc-photo-img" src="' + PORTRAIT + '" alt="Loretta dancing"><svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect y="300" width="300" height="100" fill="#0b1a3a" fill-opacity=".82"/>' + txt(150, 344, "Come dance with me", F.script, "#fff", 34) + txt(150, 372, "THE WELL COLLECTIVE", F.sans, N.sky, 10, { ls: 4, weight: 600 }) + '</svg>';
-  var motif = { birthday: balloon(150, 150, 40, N.gold), "thinking-of-you": heart(150, 160, 34, N.pink, N.pink), "just-saying-hi": sun(150, 160, 32, N.gold), condolences: leaf(150, 160, 42, 15, N.sky), "youve-got-this": crown(150, 165, 46, N.gold, N.gold), congratulations: star(150, 160, 44, N.gold) }[occ] || "";
-  var quote = { birthday: ["You are the oldest you have", "ever been, and the youngest", "you will ever be again."], "thinking-of-you": ["Connection.", "Community.", "Acceptance."], "just-saying-hi": ["Don't waste today", "waiting for tomorrow."], condolences: ["Love never", "really leaves us."], "youve-got-this": ["You are beautiful.", "You are enough."], congratulations: ["This is what", "we are about!"] }[occ] || [""];
+  var motif = { birthday: balloon(150, 150, 40, N.gold), "thinking-of-you": heart(150, 160, 34, N.pink, N.pink), "just-saying-hi": sun(150, 160, 32, N.gold), condolences: leaf(150, 160, 42, 15, N.sky), "youve-got-this": crown(150, 165, 46, N.gold, N.gold), congratulations: star(150, 160, 44, N.gold), "thank-you": flower(150, 160, 30, N.pink) }[occ] || "";
+  var quote = { birthday: ["You are the oldest you have", "ever been, and the youngest", "you will ever be again."], "thinking-of-you": ["Connection.", "Community.", "Acceptance."], "just-saying-hi": ["Don't waste today", "waiting for tomorrow."], condolences: ["Love never", "really leaves us."], "youve-got-this": ["You are beautiful.", "You are enough."], congratulations: ["This is what", "we are about!"], "thank-you": ["A grateful heart", "is a WELL heart."] }[occ] || [""];
   return svg(shapes(77, 10, [10, 10, 290, 80]) + motif + lines(quote, 150, 262, 26, F.serif, "#fff", 21, { style: "italic" }) + '<image href="' + LOGO + '" x="134" y="350" width="32" height="32"/>', N.bg);
 }
 
