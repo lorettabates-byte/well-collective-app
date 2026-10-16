@@ -1,4 +1,5 @@
 import { Browser } from "@capacitor/browser";
+import { isClassLink, playWellIntro } from "./wellIntro";
 
 const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 
@@ -8,6 +9,8 @@ const API_URL = import.meta.env.VITE_PUSH_API_URL as string | undefined;
 // raw URL if the SSO link can't be generated for any reason.
 export async function openMemberLink(url: string, email: string | undefined): Promise<void> {
   let target = url;
+  // Classes open with the WELL intro and sound; the sign-in link is made while it plays.
+  const intro = isClassLink(url) ? playWellIntro() : Promise.resolve();
 
   if (email && API_URL && url.startsWith("https://lorettabates.com")) {
     try {
@@ -23,5 +26,6 @@ export async function openMemberLink(url: string, email: string | undefined): Pr
     }
   }
 
+  await intro;
   await Browser.open({ url: target });
 }
