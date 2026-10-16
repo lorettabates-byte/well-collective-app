@@ -1,4 +1,4 @@
-import { Check, Loader2, Search, X } from "lucide-react";
+import { Check, Copy, Loader2, Search, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { createPortal } from "react-dom";
@@ -35,7 +35,7 @@ interface DirectoryMember {
   avatar?: string;
 }
 
-type Step = "make" | "recipient" | "sending" | "done" | "error";
+type Step = "make" | "recipient" | "sending" | "done" | "error" | "share" | "sharing" | "shared";
 
 function firstName(name: string): string {
   return (name || "").trim().split(/\s+/)[0] || "";
@@ -58,6 +58,11 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
   const [members, setMembers] = useState<DirectoryMember[] | null>(API_URL ? null : []);
   const [search, setSearch] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  // Sharing with anyone (people outside the WELL Collective get a link to the card).
+  const [toName, setToName] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareError, setShareError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const designs = designsFor(occasionId);
 
@@ -123,6 +128,49 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
     }
   };
 
+  const openShareSheet = async (url: string) => {
+    const who = firstName(user.name);
+    const text = toName.trim()
+      ? `${toName.trim()}, I sent you a card! Tap to open it:`
+      : `I sent you a card! Tap to open it:`;
+    try {
+      if (navigator.share) { await navigator.share({ title: who ? `A card from ${who}` : "A WELL card", text, url }); return; }
+    } catch { /* closed the share sheet, or sharing is not available: the link stays on screen */ }
+  };
+
+  const createShareLink = async () => {
+    if (!API_URL || !user.email) { setShareError("Sharing is not available right now."); return; }
+    setShareError("");
+    setStep("sharing");
+    try {
+      const res = await fetch(`${API_URL}/api/cards/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          occasionId,
+          designId,
+          message: message.trim(),
+          signature: signature.trim(),
+          photo: designId === PHOTO_DESIGN ? photo : undefined,
+          toName: toName.trim() || undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !data.url) { setShareError(data.error || "That link did not work. Try again."); setStep("share"); return; }
+      setShareUrl(data.url);
+      setStep("shared");
+      openShareSheet(data.url);
+    } catch {
+      setShareError("Check your connection and try again.");
+      setStep("share");
+    }
+  };
+
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* the link is shown, so it can be copied by hand */ }
+  };
+
   const onSendClick = () => {
     if (recipient && memberId) send(recipient);
     else setStep("recipient");
@@ -142,7 +190,7 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
         <div>
           <p className="text-[11px] uppercase" style={{ letterSpacing: ".3em", color: "var(--wc-sky)" }}>WELL Cards</p>
           <h2 style={{ fontFamily: "var(--wc-serif)", fontWeight: 500, fontSize: 26, margin: "2px 0 0" }}>
-            {step === "recipient" ? "Who is it for?" : "Send a little love"}
+            {step === "recipient" ? "Who is it for?" : step === "share" || step === "sharing" || step === "shared" ? "Share with anyone" : "Send a little love"}
           </h2>
         </div>
         <button
@@ -259,6 +307,38 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
             </section>
           )}
 
+          {step === "share" && (
+            <section className="wc-studio" aria-label="Share your card with anyone">
+              <div>
+                <h2>Send it to anyone, even if they are not in the WELL Collective</h2>
+                <p className="wc-note">You get a link to your card to send by text, WhatsApp, email or social media. They open it in their browser, no app needed, and they can try the WELL Collective free for 30 days.</p>
+              </div>
+              <label htmlFor="wc-toname">
+                Their first name (on the envelope, optional)
+                <input id="wc-toname" type="text" maxLength={40} value={toName} placeholder="Maria" onChange={(e) => setToName(e.target.value)} />
+              </label>
+              {shareError && <p className="wc-note" style={{ color: "#F6B6A6" }}>{shareError}</p>}
+            </section>
+          )}
+
+          {step === "sharing" && (
+            <div className="flex flex-col items-center gap-3 py-16">
+              <Loader2 size={28} className="animate-spin" style={{ color: "var(--wc-sky)" }} />
+              <p className="wc-note" style={{ fontSize: 15 }}>Sealing your envelope...</p>
+            </div>
+          )}
+
+          {step === "shared" && (
+            <div className="flex flex-col items-center gap-3 py-12 text-center" style={{ maxWidth: 460 }}>
+              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "var(--wc-sky)", color: "#050b14" }}>
+                <Check size={28} />
+              </div>
+              <p style={{ fontFamily: "var(--wc-serif)", fontSize: 30, margin: 0 }}>Your card link is ready!</p>
+              <p className="wc-note" style={{ fontSize: 15 }}>Send this link to {toName.trim() || "them"}. Anyone with the link can open the card.</p>
+              <p className="wc-link" style={{ userSelect: "all", wordBreak: "break-all", background: "#071322", border: "1px solid var(--wc-line)", borderRadius: 10, padding: "10px 12px", fontSize: 14, color: "#fff", margin: 0 }}>{shareUrl}</p>
+            </div>
+          )}
+
           {step === "sending" && (
             <div className="flex flex-col items-center gap-3 py-16">
               <Loader2 size={28} className="animate-spin" style={{ color: "var(--wc-sky)" }} />
@@ -288,9 +368,33 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
       </div>
 
       <div
-        className="px-4 pt-3 shrink-0 flex justify-center gap-3"
+        className="px-4 pt-3 shrink-0 flex flex-wrap justify-center gap-3"
         style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))", borderTop: "1px solid var(--wc-line)" }}
       >
+        {step === "make" && !memberId && (
+          <button type="button" className="wc-btn" disabled={!canSend} onClick={() => setStep("share")}>
+            <Share2 size={14} style={{ display: "inline", verticalAlign: "-2px", marginRight: 6 }} />Share with anyone
+          </button>
+        )}
+        {step === "share" && (
+          <>
+            <button type="button" className="wc-btn" onClick={() => setStep("make")}>Back</button>
+            <button type="button" className="wc-btn wc-primary" onClick={createShareLink}>Get my link</button>
+          </>
+        )}
+        {step === "shared" && (
+          <>
+            <button type="button" className="wc-btn" onClick={copyLink}>
+              <Copy size={14} style={{ display: "inline", verticalAlign: "-2px", marginRight: 6 }} />{copied ? "Copied!" : "Copy"}
+            </button>
+            {typeof navigator !== "undefined" && "share" in navigator && (
+              <button type="button" className="wc-btn" onClick={() => openShareSheet(shareUrl)}>
+                <Share2 size={14} style={{ display: "inline", verticalAlign: "-2px", marginRight: 6 }} />Share
+              </button>
+            )}
+            <button type="button" className="wc-btn wc-primary" onClick={onClose}>Done</button>
+          </>
+        )}
         {step === "make" && (
           <button type="button" className="wc-btn wc-primary" disabled={!canSend} onClick={onSendClick}>
             {recipient && memberId ? `Send to ${firstName(recipient.name) || "them"}` : "Send"}
