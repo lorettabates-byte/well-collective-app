@@ -42,5 +42,6 @@ export function playWellIntro(): Promise<void> {
 
 /** Classes and the video library home get the intro; account, checkout, blog and events do not. */
 export function isClassLink(url: string): boolean {
-  return /^https:\/\/lorettabates\.com\/videolibrary\.lorettabates\.com\/(wpstream_vod\/[^?#]|$|\?|#)/.test(url);
+  // Single classes (wpstream_vod), class categories (media_category), the livestream page (wellcollective) and the library home.
+  return /^https:\/\/lorettabates\.com\/videolibrary\.lorettabates\.com\/((wpstream_vod|media_category|wellcollective)\/[^?#]|$|\?|#)/.test(url);
 }
