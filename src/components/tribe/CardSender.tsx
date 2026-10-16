@@ -84,8 +84,15 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
 
   const chooseOccasion = (id: string) => {
     setOccasionId(id);
-    setDesignId(photo ? PHOTO_DESIGN : designsFor(id)[0]?.id ?? "");
+    setDesignId(photo && designId === PHOTO_DESIGN ? PHOTO_DESIGN : designsFor(id)[0]?.id ?? "");
   };
+
+  // With a photo, the member picks where it goes: on the front (the photo design) or inside
+  // (any designed front, with the photo on the inside-left page). Loretta, 2026-10-16.
+  const photoInside = !!photo && designId !== PHOTO_DESIGN;
+  const firstDesign = () => designsFor(occasionId)[0]?.id ?? "";
+  const putPhotoInside = () => { if (designId === PHOTO_DESIGN) setDesignId(firstDesign()); };
+  const removePhoto = () => { setPhoto(null); if (designId === PHOTO_DESIGN) setDesignId(firstDesign()); };
 
   const onPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,7 +126,7 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
           styleId: designId,
           message: message.trim(),
           signature: signature.trim(),
-          photo: designId === PHOTO_DESIGN ? photo : undefined,
+          photo: photo ?? undefined,
         }),
       });
       setStep(res.ok ? "done" : "error");
@@ -152,7 +159,7 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
           designId,
           message: message.trim(),
           signature: signature.trim(),
-          photo: designId === PHOTO_DESIGN ? photo : undefined,
+          photo: photo ?? undefined,
           toName: toName.trim() || undefined,
         }),
       });
@@ -247,6 +254,16 @@ export default function CardSender({ memberId, memberName, defaultOccasion = "bi
                     </button>
                   </div>
                   <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+                  {photo && (
+                    <div style={{ marginTop: 12 }}>
+                      <p className="wc-note" style={{ marginBottom: 8 }}>Where should your photo go?</p>
+                      <div className="wc-chips" role="group" aria-label="Where your photo goes">
+                        <button type="button" aria-pressed={!photoInside} onClick={() => setDesignId(PHOTO_DESIGN)}>On the front</button>
+                        <button type="button" aria-pressed={photoInside} onClick={putPhotoInside}>Inside, with a design on the front</button>
+                        <button type="button" aria-pressed={false} onClick={removePhoto}>No photo</button>
+                      </div>
+                    </div>
+                  )}
                   {photoError && <p className="wc-note" style={{ color: "#F6B6A6", marginTop: 8 }}>{photoError}</p>}
                 </div>
                 <div className="wc-row2">

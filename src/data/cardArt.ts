@@ -201,6 +201,11 @@ var INSIDE = {
   "ty-bouquet": [T.rose, T.roseInk, "#e99aa8", function () { return '<circle cx="150" cy="150" r="26" fill="#e99aa8"/>' + flower(150, 150, 15, "#fff"); }, ["A grateful heart", "is a WELL heart."], "Thank you for being YOU. Your kindness makes every room a little brighter."]
 };
 function printedFor(occ, id) { return (INSIDE[id] || [])[5] || PRINTED[occ] || ""; }
+function photoInside(src, occ, id) {
+  // Photo inside (2026-10-16): the designed front stays, and the photo fills the inside-left page with that card's saying on a band, like the welcome card.
+  var ins = INSIDE[id], q = ins ? ins[4] : ["Sent with love"], bg = ins ? ins[0] : N.bg, ink = ins ? ins[1] : "#fff", three = q.length > 2;
+  return '<img class="wc-photo-img" src="' + src + '" alt="">' + '<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect y="' + (three ? 282 : 300) + '" width="300" height="' + (three ? 118 : 100) + '" fill="' + bg + '" fill-opacity=".9"/>' + lines(q, 150, three ? 314 : 334, 24, F.serif, ink, 20, { style: "italic" }) + '<image href="' + LOGO + '" x="140" y="372" width="20" height="20"/></svg>';
+}
 function insideLeft(occ, id) {
   if (occ === "welcome") return '<img class="wc-photo-img" src="' + PORTRAIT + '" alt="Loretta dancing"><svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect y="300" width="300" height="100" fill="#0b1a3a" fill-opacity=".82"/>' + txt(150, 344, "Come dance with me", F.script, "#fff", 34) + txt(150, 372, "THE WELL COLLECTIVE", F.sans, N.sky, 10, { ls: 4, weight: 600 }) + '</svg>';
   var ins = INSIDE[id];
@@ -217,7 +222,7 @@ export interface CardDesign { id: string; name: string; fx: CardFx[]; draw: () =
 export {
   N as CARD_NIGHT, DESIGNS as CARD_DESIGNS_RAW, OCC as CARD_OCCASION_LIST, PRINTED as CARD_PRINTED,
   NOTES as CARD_SAMPLE_NOTES, COVER_TITLE as CARD_COVER_TITLE, FX_FOR as CARD_FX_FOR,
-  welcomeCover, photoCover, insideLeft, printedFor, LOGO as CARD_LOGO, PORTRAIT as CARD_PORTRAIT,
+  welcomeCover, photoCover, photoInside, insideLeft, printedFor, LOGO as CARD_LOGO, PORTRAIT as CARD_PORTRAIT,
 };
 
 /* ---------- Falling extras (from the approved fx()), returns the span markup ---------- */

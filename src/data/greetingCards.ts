@@ -9,6 +9,7 @@ import {
   CARD_PRINTED,
   CARD_SAMPLE_NOTES,
   insideLeft,
+  photoInside,
   printedFor,
   photoCover,
   welcomeCover,
@@ -98,7 +99,10 @@ export function coverHtml(occasionId: string, designId: string, photo?: string |
   return d ? d.draw() : "";
 }
 
-export function insideLeftHtml(occasionId: string, designId?: string): string {
+/** Inside-left page. A photo with a designed front goes here (photo inside); a photo design puts it on the front instead. */
+export function insideLeftHtml(occasionId: string, designId?: string, photo?: string | null): string {
+  const p = safePhoto(photo);
+  if (p && designId && designId !== PHOTO_DESIGN && occasionId !== WELCOME_OCCASION) return photoInside(p, occasionId, designId);
   return insideLeft(occasionId, designId);
 }
 

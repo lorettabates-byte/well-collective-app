@@ -60,7 +60,7 @@ function EnvelopeScene({
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
 
   const cover = useMemo(() => coverHtml(occasionId, designId, photo), [occasionId, designId, photo]);
-  const insideLeft = useMemo(() => insideLeftHtml(occasionId, designId), [occasionId, designId]);
+  const insideLeft = useMemo(() => insideLeftHtml(occasionId, designId, photo), [occasionId, designId, photo]);
   const printed = printedLine(occasionId, designId);
 
   // Cards used to be one face, so people need a nudge to open the inside (Loretta, 2026-10-16).
